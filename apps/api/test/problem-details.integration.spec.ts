@@ -39,4 +39,28 @@ describe('Problem Details errors', () => {
       }),
     );
   });
+
+  it('returns validation problem details for an invalid catalog command', async () => {
+    const response = await app
+      .getHttpAdapter()
+      .getInstance()
+      .inject({
+        method: 'POST',
+        url: '/api/v1/admin/destinations',
+        payload: { slug: 'bad slug', translations: [] },
+      });
+    const body = response.json();
+
+    expect(response.statusCode).toBe(422);
+    expect(response.headers['content-type']).toContain('application/problem+json');
+    expect(body).toEqual(
+      expect.objectContaining({
+        code: 'VALIDATION_ERROR',
+        status: 422,
+        title: 'Validation failed',
+        type: 'https://errors.example.vn/validation',
+        traceId: expect.any(String),
+      }),
+    );
+  });
 });

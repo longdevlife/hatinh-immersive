@@ -33,19 +33,37 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     const response = exception instanceof HttpException ? exception.getResponse() : undefined;
     const traceId = request.traceId ?? randomUUID();
     const message = this.getMessage(response);
+    const isValidation = status === HttpStatus.UNPROCESSABLE_ENTITY;
 
     const problem: ApiProblem = {
       type:
         status === HttpStatus.NOT_FOUND
           ? 'https://errors.example.vn/not-found'
-          : 'https://errors.example.vn/internal-server-error',
-      title: status === HttpStatus.NOT_FOUND ? 'Not Found' : 'Internal Server Error',
+          : isValidation
+            ? 'https://errors.example.vn/validation'
+            : 'https://errors.example.vn/internal-server-error',
+      title:
+        status === HttpStatus.NOT_FOUND
+          ? 'Not Found'
+          : isValidation
+            ? 'Validation failed'
+            : 'Internal Server Error',
       status,
       detail: message,
       instance: request.originalUrl ?? request.url,
-      code: status === HttpStatus.NOT_FOUND ? 'NOT_FOUND' : 'INTERNAL_SERVER_ERROR',
+      code:
+        status === HttpStatus.NOT_FOUND
+          ? 'NOT_FOUND'
+          : isValidation
+            ? 'VALIDATION_ERROR'
+            : 'INTERNAL_SERVER_ERROR',
       traceId,
     };
+
+    const errors = this.getErrors(response);
+    if (errors) {
+      problem.errors = errors;
+    }
 
     if (isFastifyReply(reply)) {
       reply
@@ -73,5 +91,23 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     }
 
     return 'The request could not be completed.';
+  }
+
+  private getErrors(response: unknown): Record<string, string[]> | undefined {
+    if (!response || typeof response !== 'object' || !('errors' in response)) {
+      return undefined;
+    }
+
+    const errors = response.errors;
+    if (!errors || typeof errors !== 'object') {
+      return undefined;
+    }
+
+    return Object.fromEntries(
+      Object.entries(errors).map(([field, messages]) => [
+        field,
+        Array.isArray(messages) ? messages.map(String) : [String(messages)],
+      ]),
+    );
   }
 }
