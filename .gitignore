@@ -1,0 +1,37 @@
+# Dependencies and package-manager state
+node_modules/
+.pnpm-store/
+.pnp.*
+
+# Build and test output
+.turbo/
+dist/
+build/
+coverage/
+playwright-report/
+test-results/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Local engineering scratch space
+.superpowers/
+.worktrees/
+worktrees/
+
+# Internal project notes are intentionally not committed.
+*.md
+docs/
+
+# Logs and OS/editor metadata
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
