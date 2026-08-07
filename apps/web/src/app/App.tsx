@@ -1,12 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 
 import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
+
+import { destinationFixture } from '../shared/fixtures';
+import { ImmersiveExperience } from '../modules/immersive-navigation';
 import './styles/index.css';
 
 function PublicHome() {
+  const navigate = useNavigate();
+
   return (
     <main className="public-home">
       <section className="public-home__intro" aria-labelledby="public-title">
@@ -16,7 +21,11 @@ function PublicHome() {
           Một nền tảng location-first cho hành trình 3D, 360° và những câu chuyện văn hóa được tuyển
           chọn.
         </p>
-        <UiButton tone="primary" type="button">
+        <UiButton
+          tone="primary"
+          type="button"
+          onClick={() => navigate(`/explore/${destinationFixture.slug}?mode=overview3d`)}
+        >
           Bắt đầu khám phá
         </UiButton>
       </section>
@@ -39,6 +48,7 @@ export function App() {
           </header>
           <Routes>
             <Route path="/" element={<PublicHome />} />
+            <Route path="/explore/:destinationSlug" element={<ImmersiveExperience />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

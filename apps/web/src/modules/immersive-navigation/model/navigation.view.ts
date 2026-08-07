@@ -23,6 +23,10 @@ function finiteOrCurrent(value: number | undefined, current: number): number {
   return value !== undefined && Number.isFinite(value) ? value : current;
 }
 
+function roundCameraValue(value: number): number {
+  return Number(value.toFixed(3));
+}
+
 export function normalizeNavigationView(
   current: NavigationView,
   update: Partial<NavigationView>,
@@ -32,8 +36,8 @@ export function normalizeNavigationView(
   const fov = finiteOrCurrent(update.fov, current.fov);
 
   return {
-    heading: normalizeHeading(heading),
-    pitch: clamp(pitch, MIN_PITCH, MAX_PITCH),
-    fov: clamp(fov, MIN_FOV, MAX_FOV),
+    heading: roundCameraValue(normalizeHeading(heading)),
+    pitch: roundCameraValue(clamp(pitch, MIN_PITCH, MAX_PITCH)),
+    fov: roundCameraValue(clamp(fov, MIN_FOV, MAX_FOV)),
   };
 }

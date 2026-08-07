@@ -2,26 +2,38 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { RendererStatus } from '../../../shared/contracts';
 
-import type { PanoramaEnginePort, PanoramaNode } from '../domain/panorama-engine.port';
+import type {
+  PanoramaEnginePort,
+  PanoramaNode,
+  PanoramaView,
+} from '../domain/panorama-engine.port';
 
 export interface PanoramaViewportProps {
   engine: PanoramaEnginePort;
   fallback?: ReactNode;
+  initialView?: PanoramaView;
   node: PanoramaNode;
   onStatusChange?: (status: RendererStatus) => void;
+  onViewChange?: (view: PanoramaView) => void;
 }
 
 export function PanoramaViewport({
   engine,
   fallback = <p role="alert">Không thể tải không gian toàn cảnh.</p>,
+  initialView,
   node,
   onStatusChange,
+  onViewChange,
 }: PanoramaViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const initialViewRef = useRef(initialView);
   const onStatusChangeRef = useRef(onStatusChange);
+  const onViewChangeRef = useRef(onViewChange);
   const [status, setStatus] = useState<RendererStatus>('loading');
 
   onStatusChangeRef.current = onStatusChange;
+  initialViewRef.current = initialView;
+  onViewChangeRef.current = onViewChange;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -30,6 +42,11 @@ export function PanoramaViewport({
     }
 
     let cancelled = false;
+    const unsubscribeViewChanged = engine.subscribeViewChanged((view) => {
+      if (!cancelled) {
+        onViewChangeRef.current?.(view);
+      }
+    });
     const reportStatus = (nextStatus: RendererStatus) => {
       if (cancelled) {
         return;
@@ -53,6 +70,10 @@ export function PanoramaViewport({
           return;
         }
 
+        if (initialViewRef.current) {
+          engine.setView(initialViewRef.current);
+        }
+
         reportStatus('ready');
       } catch {
         reportStatus('error');
@@ -61,6 +82,7 @@ export function PanoramaViewport({
 
     return () => {
       cancelled = true;
+      unsubscribeViewChanged();
       engine.destroy();
     };
   }, [engine, node]);

@@ -13,6 +13,6 @@ export type {
   Maps3DLibrary,
 } from './adapters/google-maps3d.adapter';
 export type { CameraTarget, Map3DEnginePort, ModelPlacement } from './domain/map3d-engine.port';
-export { Map3DViewport } from './ui/Map3DViewport';
+export { LazyMap3DViewport as Map3DViewport } from './ui/lazy-map3d-viewport';
 export { LazyMap3DViewport } from './ui/lazy-map3d-viewport';
 export type { Map3DViewportProps } from './ui/Map3DViewport';

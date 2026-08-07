@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { FakePanoramaEngine } from '../adapters/fake-panorama.adapter';
 import type { PanoramaEnginePort } from '../domain/panorama-engine.port';
@@ -60,5 +60,34 @@ describe('PanoramaViewport', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Không thể tải không gian toàn cảnh',
     );
+  });
+
+  it('forwards camera changes from the engine to the composition layer', async () => {
+    const engine = new FakePanoramaEngine();
+    const onViewChange = vi.fn();
+
+    render(<PanoramaViewport engine={engine} node={node} onViewChange={onViewChange} />);
+
+    await waitFor(() => {
+      expect(engine.calls).toHaveLength(2);
+    });
+
+    const nextView = { heading: 120, pitch: -4, fov: 76 };
+    engine.emitViewChanged(nextView);
+
+    expect(onViewChange).toHaveBeenCalledWith(nextView);
+  });
+
+  it('applies a deep-linked initial view after the scene is loaded', async () => {
+    const engine = new FakePanoramaEngine();
+    const initialView = { heading: 180, pitch: -8, fov: 72 };
+
+    render(<PanoramaViewport engine={engine} node={node} initialView={initialView} />);
+
+    await waitFor(() => {
+      expect(engine.calls).toHaveLength(3);
+    });
+
+    expect(engine.calls.at(-1)).toEqual({ type: 'setView', view: initialView });
   });
 });
