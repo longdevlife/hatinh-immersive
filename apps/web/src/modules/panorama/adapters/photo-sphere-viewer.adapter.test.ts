@@ -119,12 +119,14 @@ describe('PhotoSphereViewerEngine', () => {
   it('loads the tiled runtime lazily, subscribes view changes, navigates nodes, and cleans up', async () => {
     const loadRuntime = vi.fn(async () => runtime);
     const loadPanorama = vi.fn(async () => ({
-      baseUrl: 'https://cdn.example.test/scene-01/preview.webp',
-      cols: 4,
-      rows: 2,
-      tileUrl: (column: number, row: number) =>
-        `https://cdn.example.test/scene-01/${column}-${row}.webp`,
-      width: 4096,
+      version: 1,
+      type: 'equirectangular-tiles',
+      preview: 'preview.webp',
+      tileUrlTemplate: 'tiles/{level}/{col}-{row}.webp',
+      levels: [
+        { width: 512, cols: 1, rows: 1 },
+        { width: 1024, cols: 2, rows: 1 },
+      ],
     }));
     const engine = new PhotoSphereViewerEngine({ loadPanorama, loadRuntime });
     const container = document.createElement('div');
@@ -140,6 +142,14 @@ describe('PhotoSphereViewerEngine', () => {
     expect(loadPanorama).toHaveBeenCalledWith(node);
     expect(runtime.Viewer).toHaveBeenCalledTimes(1);
     expect(fakeViewer.setPanoramaCalls).toHaveLength(1);
+    const panorama = fakeViewer.setPanoramaCalls[0] as {
+      baseUrl: string;
+      levels: unknown[];
+      tileUrl: (column: number, row: number, level: number) => string;
+    };
+    expect(panorama.baseUrl).toBe('https://cdn.example.test/scene-01/preview.webp');
+    expect(panorama.levels).toHaveLength(2);
+    expect(panorama.tileUrl(1, 0, 1)).toBe('https://cdn.example.test/scene-01/tiles/1/1-0.webp');
     expect(virtualTourPlugin.nodes).toHaveLength(1);
     expect(virtualTourPlugin.setCurrentNodeCalls).toEqual(['scene-01']);
 

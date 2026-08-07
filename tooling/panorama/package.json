@@ -1,0 +1,22 @@
+{
+  "name": "@hatinh/panorama-tooling",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint src test",
+    "panorama:build": "tsx src/cli.ts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@hatinh/immersive-contracts": "workspace:*",
+    "sharp": "0.34.3"
+  },
+  "devDependencies": {
+    "@types/node": "26.2.0",
+    "tsx": "4.20.6",
+    "typescript": "6.0.3"
+  }
+}

@@ -2,6 +2,12 @@ import '@photo-sphere-viewer/core/index.css';
 import '@photo-sphere-viewer/markers-plugin/index.css';
 import '@photo-sphere-viewer/virtual-tour-plugin/index.css';
 
+import {
+  expandPanoramaTileUrl,
+  parsePanoramaManifest,
+  type PanoramaManifest,
+} from '@hatinh/immersive-contracts';
+
 import type {
   PanoramaEnginePort,
   PanoramaNode,
@@ -109,7 +115,42 @@ async function loadPanoramaManifest(node: PanoramaNode): Promise<unknown> {
     throw new Error(`PANORAMA_MANIFEST_FETCH_FAILED_${response.status}`);
   }
 
-  return response.json();
+  return hydratePanoramaManifest(await response.json(), response.url || node.panoramaUrl);
+}
+
+function hydratePanoramaManifest(value: unknown, manifestUrl: string): unknown {
+  let manifest: PanoramaManifest;
+  try {
+    manifest = parsePanoramaManifest(value);
+  } catch {
+    return value;
+  }
+
+  return toPhotoSphereViewerPanorama(manifest, manifestUrl);
+}
+
+function toPhotoSphereViewerPanorama(
+  manifest: PanoramaManifest,
+  manifestUrl: string,
+): {
+  baseUrl: string;
+  levels: PanoramaManifest['levels'];
+  tileUrl: (column: number, row: number, level: number) => string;
+} {
+  const resolveAssetUrl = (assetPath: string) => {
+    try {
+      return new URL(assetPath, manifestUrl).toString();
+    } catch {
+      return assetPath;
+    }
+  };
+
+  return {
+    baseUrl: resolveAssetUrl(manifest.preview),
+    levels: manifest.levels,
+    tileUrl: (column, row, level) =>
+      resolveAssetUrl(expandPanoramaTileUrl(manifest, column, row, level)),
+  };
 }
 
 async function loadPhotoSphereViewerRuntime(): Promise<PhotoSphereViewerRuntime> {
@@ -160,10 +201,11 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
 
     const generation = this.mountGeneration;
     const loadGeneration = ++this.loadGeneration;
-    const [runtime, panorama] = await Promise.all([
+    const [runtime, loadedPanorama] = await Promise.all([
       this.getRuntime(),
       (this.options.loadPanorama ?? loadPanoramaManifest)(node),
     ]);
+    const panorama = hydratePanoramaManifest(loadedPanorama, node.panoramaUrl);
 
     if (
       generation !== this.mountGeneration ||

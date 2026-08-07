@@ -17,9 +17,11 @@
     "test:e2e": "turbo run test:e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "architecture:check": "depcruise --config .dependency-cruiser.cjs apps packages && node tooling/scripts/architecture-check.mjs --workspace",
+    "architecture:check": "depcruise --config .dependency-cruiser.cjs apps packages tooling && node tooling/scripts/architecture-check.mjs --workspace",
     "deadcode": "knip",
     "api:generate": "pnpm --filter @hatinh/api openapi:export && pnpm --filter @hatinh/api-client generate && prettier --write packages/api-client/openapi.json",
+    "panorama:build": "pnpm --filter @hatinh/panorama-tooling panorama:build",
+    "panorama:test": "pnpm --filter @hatinh/panorama-tooling test",
     "prepare": "husky"
   },
   "devDependencies": {

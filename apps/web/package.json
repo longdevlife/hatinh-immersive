@@ -12,6 +12,7 @@
     "test:e2e": "playwright test --config=playwright.config.ts"
   },
   "dependencies": {
+    "@hatinh/immersive-contracts": "workspace:*",
     "@hatinh/api-client": "workspace:*",
     "@hatinh/ui": "workspace:*",
     "@photo-sphere-viewer/core": "5.15.1",

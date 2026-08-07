@@ -123,7 +123,9 @@ async function collectSourceFiles(directory) {
 }
 
 export async function scanWorkspace(rootDirectory = process.cwd()) {
-  const directories = ['apps', 'packages'].map((directory) => path.join(rootDirectory, directory));
+  const directories = ['apps', 'packages', 'tooling'].map((directory) =>
+    path.join(rootDirectory, directory),
+  );
   const filePaths = (await Promise.all(directories.map(collectSourceFiles))).flat();
   const sources = await Promise.all(
     filePaths.map(async (filePath) => ({
