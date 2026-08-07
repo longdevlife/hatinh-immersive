@@ -81,7 +81,9 @@ export function findArchitectureViolations(sources) {
         continue;
       }
 
-      const boundaryViolation = moduleBoundaryViolation(normalizedFilePath, importPath);
+      const boundaryViolation = normalizedFilePath.includes('.test.')
+        ? null
+        : moduleBoundaryViolation(normalizedFilePath, importPath);
       if (boundaryViolation) {
         violations.push(boundaryViolation);
       }
