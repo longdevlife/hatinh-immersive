@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../core/database/database.module';
+import { IdentityModule } from '../identity/identity.module';
 import { DestinationCommandService } from './application/destination.commands';
 import { DESTINATION_REPOSITORY } from './application/destination.repository';
 import { DestinationQueryService } from './application/destination.queries';
@@ -9,7 +10,7 @@ import { AdminDestinationController } from './presentation/http/admin-destinatio
 import { DestinationController } from './presentation/http/destination.controller';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, IdentityModule],
   controllers: [DestinationController, AdminDestinationController],
   providers: [
     DestinationQueryService,

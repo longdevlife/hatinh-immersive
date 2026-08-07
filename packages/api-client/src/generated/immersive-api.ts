@@ -22,6 +22,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AdminLogin200,
+  AdminLoginBody,
   CompleteMediaUpload200,
   CreateDestination201,
   CreateDestinationBody,
@@ -31,6 +33,7 @@ import type {
   CreateSceneBody,
   CreateSceneLink201,
   CreateSceneLinkBody,
+  GetAdminSession200,
   GetDestination200,
   GetHealth200,
   GetImmersiveManifest200,
@@ -41,6 +44,7 @@ import type {
   PresignMediaUploadBody,
   PublishDestination200,
   PublishScene200,
+  RefreshAdminSession200,
   UpdateDestination200,
   UpdateDestinationBody,
   UpdateHotspot200,
@@ -48,6 +52,358 @@ import type {
   UpdateScene200,
   UpdateSceneBody,
 } from './model';
+
+import { customFetch } from '../mutator';
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+export type adminLoginResponse200 = {
+  data: AdminLogin200;
+  status: 200;
+};
+
+export type adminLoginResponseSuccess = adminLoginResponse200 & {
+  headers: Headers;
+};
+export type adminLoginResponse = adminLoginResponseSuccess;
+
+export const getAdminLoginUrl = () => {
+  return `/api/v1/admin/auth/login`;
+};
+
+export const adminLogin = async (
+  adminLoginBody: AdminLoginBody,
+  options?: RequestInit,
+): Promise<adminLoginResponse> => {
+  return customFetch<adminLoginResponse>(getAdminLoginUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(adminLoginBody),
+  });
+};
+
+export const getAdminLoginMutationOptions = <TError = unknown, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof adminLogin>>,
+    TError,
+    { data: AdminLoginBody },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof adminLogin>>,
+  TError,
+  { data: AdminLoginBody },
+  TContext
+> => {
+  const mutationKey = ['adminLogin'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof adminLogin>>,
+    { data: AdminLoginBody }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return adminLogin(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AdminLoginMutationResult = NonNullable<Awaited<ReturnType<typeof adminLogin>>>;
+export type AdminLoginMutationBody = AdminLoginBody;
+export type AdminLoginMutationError = unknown;
+
+export const useAdminLogin = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof adminLogin>>,
+      TError,
+      { data: AdminLoginBody },
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof adminLogin>>,
+  TError,
+  { data: AdminLoginBody },
+  TContext
+> => {
+  const mutationOptions = getAdminLoginMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+export type logoutAdminSessionResponse204 = {
+  data: void;
+  status: 204;
+};
+
+export type logoutAdminSessionResponseSuccess = logoutAdminSessionResponse204 & {
+  headers: Headers;
+};
+export type logoutAdminSessionResponse = logoutAdminSessionResponseSuccess;
+
+export const getLogoutAdminSessionUrl = () => {
+  return `/api/v1/admin/auth/logout`;
+};
+
+export const logoutAdminSession = async (
+  options?: RequestInit,
+): Promise<logoutAdminSessionResponse> => {
+  return customFetch<logoutAdminSessionResponse>(getLogoutAdminSessionUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getLogoutAdminSessionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof logoutAdminSession>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<Awaited<ReturnType<typeof logoutAdminSession>>, TError, void, TContext> => {
+  const mutationKey = ['logoutAdminSession'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof logoutAdminSession>>, void> = () => {
+    return logoutAdminSession(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LogoutAdminSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof logoutAdminSession>>
+>;
+
+export type LogoutAdminSessionMutationError = unknown;
+
+export const useLogoutAdminSession = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof logoutAdminSession>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<Awaited<ReturnType<typeof logoutAdminSession>>, TError, void, TContext> => {
+  const mutationOptions = getLogoutAdminSessionMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+export type getAdminSessionResponse200 = {
+  data: GetAdminSession200;
+  status: 200;
+};
+
+export type getAdminSessionResponseSuccess = getAdminSessionResponse200 & {
+  headers: Headers;
+};
+export type getAdminSessionResponse = getAdminSessionResponseSuccess;
+
+export const getGetAdminSessionUrl = () => {
+  return `/api/v1/admin/auth/me`;
+};
+
+export const getAdminSession = async (options?: RequestInit): Promise<getAdminSessionResponse> => {
+  return customFetch<getAdminSessionResponse>(getGetAdminSessionUrl(), {
+    ...options,
+    method: 'GET',
+  });
+};
+
+export const getGetAdminSessionQueryKey = () => {
+  return [`/api/v1/admin/auth/me`] as const;
+};
+
+export const getGetAdminSessionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAdminSession>>,
+  TError = unknown,
+>(options?: {
+  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminSession>>, TError, TData>>;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAdminSessionQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdminSession>>> = ({ signal }) =>
+    getAdminSession({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAdminSession>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetAdminSessionQueryResult = NonNullable<Awaited<ReturnType<typeof getAdminSession>>>;
+export type GetAdminSessionQueryError = unknown;
+
+export function useGetAdminSession<
+  TData = Awaited<ReturnType<typeof getAdminSession>>,
+  TError = unknown,
+>(
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminSession>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAdminSession>>,
+          TError,
+          Awaited<ReturnType<typeof getAdminSession>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetAdminSession<
+  TData = Awaited<ReturnType<typeof getAdminSession>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminSession>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getAdminSession>>,
+          TError,
+          Awaited<ReturnType<typeof getAdminSession>>
+        >,
+        'initialData'
+      >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetAdminSession<
+  TData = Awaited<ReturnType<typeof getAdminSession>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminSession>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetAdminSession<
+  TData = Awaited<ReturnType<typeof getAdminSession>>,
+  TError = unknown,
+>(
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getAdminSession>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetAdminSessionQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  query.queryKey = queryOptions.queryKey;
+
+  return query;
+}
+
+export type refreshAdminSessionResponse200 = {
+  data: RefreshAdminSession200;
+  status: 200;
+};
+
+export type refreshAdminSessionResponseSuccess = refreshAdminSessionResponse200 & {
+  headers: Headers;
+};
+export type refreshAdminSessionResponse = refreshAdminSessionResponseSuccess;
+
+export const getRefreshAdminSessionUrl = () => {
+  return `/api/v1/admin/auth/refresh`;
+};
+
+export const refreshAdminSession = async (
+  options?: RequestInit,
+): Promise<refreshAdminSessionResponse> => {
+  return customFetch<refreshAdminSessionResponse>(getRefreshAdminSessionUrl(), {
+    ...options,
+    method: 'POST',
+  });
+};
+
+export const getRefreshAdminSessionMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof refreshAdminSession>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<Awaited<ReturnType<typeof refreshAdminSession>>, TError, void, TContext> => {
+  const mutationKey = ['refreshAdminSession'];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof refreshAdminSession>>,
+    void
+  > = () => {
+    return refreshAdminSession(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RefreshAdminSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof refreshAdminSession>>
+>;
+
+export type RefreshAdminSessionMutationError = unknown;
+
+export const useRefreshAdminSession = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof refreshAdminSession>>,
+      TError,
+      void,
+      TContext
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<Awaited<ReturnType<typeof refreshAdminSession>>, TError, void, TContext> => {
+  const mutationOptions = getRefreshAdminSessionMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
 
 export type createDestinationResponse201 = {
   data: CreateDestination201;
@@ -67,17 +423,12 @@ export const createDestination = async (
   createDestinationBody: CreateDestinationBody,
   options?: RequestInit,
 ): Promise<createDestinationResponse> => {
-  const res = await fetch(getCreateDestinationUrl(), {
+  return customFetch<createDestinationResponse>(getCreateDestinationUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(createDestinationBody),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: createDestinationResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as createDestinationResponse;
 };
 
 export const getCreateDestinationMutationOptions = <
@@ -90,7 +441,7 @@ export const getCreateDestinationMutationOptions = <
     { data: CreateDestinationBody },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createDestination>>,
   TError,
@@ -98,11 +449,11 @@ export const getCreateDestinationMutationOptions = <
   TContext
 > => {
   const mutationKey = ['createDestination'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createDestination>>,
@@ -110,7 +461,7 @@ export const getCreateDestinationMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return createDestination(data, fetchOptions);
+    return createDestination(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -130,7 +481,7 @@ export const useCreateDestination = <TError = unknown, TContext = unknown>(
       { data: CreateDestinationBody },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -163,17 +514,12 @@ export const updateDestination = async (
   updateDestinationBody: UpdateDestinationBody,
   options?: RequestInit,
 ): Promise<updateDestinationResponse> => {
-  const res = await fetch(getUpdateDestinationUrl(id), {
+  return customFetch<updateDestinationResponse>(getUpdateDestinationUrl(id), {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(updateDestinationBody),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: updateDestinationResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as updateDestinationResponse;
 };
 
 export const getUpdateDestinationMutationOptions = <
@@ -186,7 +532,7 @@ export const getUpdateDestinationMutationOptions = <
     { id: string; data: UpdateDestinationBody },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateDestination>>,
   TError,
@@ -194,11 +540,11 @@ export const getUpdateDestinationMutationOptions = <
   TContext
 > => {
   const mutationKey = ['updateDestination'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateDestination>>,
@@ -206,7 +552,7 @@ export const getUpdateDestinationMutationOptions = <
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return updateDestination(id, data, fetchOptions);
+    return updateDestination(id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -226,7 +572,7 @@ export const useUpdateDestination = <TError = unknown, TContext = unknown>(
       { id: string; data: UpdateDestinationBody },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -258,15 +604,10 @@ export const publishDestination = async (
   id: string,
   options?: RequestInit,
 ): Promise<publishDestinationResponse> => {
-  const res = await fetch(getPublishDestinationUrl(id), {
+  return customFetch<publishDestinationResponse>(getPublishDestinationUrl(id), {
     ...options,
     method: 'POST',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: publishDestinationResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as publishDestinationResponse;
 };
 
 export const getPublishDestinationMutationOptions = <
@@ -279,7 +620,7 @@ export const getPublishDestinationMutationOptions = <
     { id: string },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof publishDestination>>,
   TError,
@@ -287,11 +628,11 @@ export const getPublishDestinationMutationOptions = <
   TContext
 > => {
   const mutationKey = ['publishDestination'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof publishDestination>>,
@@ -299,7 +640,7 @@ export const getPublishDestinationMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return publishDestination(id, fetchOptions);
+    return publishDestination(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -319,7 +660,7 @@ export const usePublishDestination = <TError = unknown, TContext = unknown>(
       { id: string },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -351,17 +692,12 @@ export const createHotspot = async (
   createHotspotBody: CreateHotspotBody,
   options?: RequestInit,
 ): Promise<createHotspotResponse> => {
-  const res = await fetch(getCreateHotspotUrl(), {
+  return customFetch<createHotspotResponse>(getCreateHotspotUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(createHotspotBody),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: createHotspotResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as createHotspotResponse;
 };
 
 export const getCreateHotspotMutationOptions = <TError = unknown, TContext = unknown>(options?: {
@@ -371,7 +707,7 @@ export const getCreateHotspotMutationOptions = <TError = unknown, TContext = unk
     { data: CreateHotspotBody },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createHotspot>>,
   TError,
@@ -379,11 +715,11 @@ export const getCreateHotspotMutationOptions = <TError = unknown, TContext = unk
   TContext
 > => {
   const mutationKey = ['createHotspot'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createHotspot>>,
@@ -391,7 +727,7 @@ export const getCreateHotspotMutationOptions = <TError = unknown, TContext = unk
   > = (props) => {
     const { data } = props ?? {};
 
-    return createHotspot(data, fetchOptions);
+    return createHotspot(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -409,7 +745,7 @@ export const useCreateHotspot = <TError = unknown, TContext = unknown>(
       { data: CreateHotspotBody },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -442,17 +778,12 @@ export const updateHotspot = async (
   updateHotspotBody: UpdateHotspotBody,
   options?: RequestInit,
 ): Promise<updateHotspotResponse> => {
-  const res = await fetch(getUpdateHotspotUrl(id), {
+  return customFetch<updateHotspotResponse>(getUpdateHotspotUrl(id), {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(updateHotspotBody),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: updateHotspotResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as updateHotspotResponse;
 };
 
 export const getUpdateHotspotMutationOptions = <TError = unknown, TContext = unknown>(options?: {
@@ -462,7 +793,7 @@ export const getUpdateHotspotMutationOptions = <TError = unknown, TContext = unk
     { id: string; data: UpdateHotspotBody },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateHotspot>>,
   TError,
@@ -470,11 +801,11 @@ export const getUpdateHotspotMutationOptions = <TError = unknown, TContext = unk
   TContext
 > => {
   const mutationKey = ['updateHotspot'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateHotspot>>,
@@ -482,7 +813,7 @@ export const getUpdateHotspotMutationOptions = <TError = unknown, TContext = unk
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return updateHotspot(id, data, fetchOptions);
+    return updateHotspot(id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -500,7 +831,7 @@ export const useUpdateHotspot = <TError = unknown, TContext = unknown>(
       { id: string; data: UpdateHotspotBody },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -532,15 +863,10 @@ export const completeMediaUpload = async (
   id: string,
   options?: RequestInit,
 ): Promise<completeMediaUploadResponse> => {
-  const res = await fetch(getCompleteMediaUploadUrl(id), {
+  return customFetch<completeMediaUploadResponse>(getCompleteMediaUploadUrl(id), {
     ...options,
     method: 'POST',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: completeMediaUploadResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as completeMediaUploadResponse;
 };
 
 export const getCompleteMediaUploadMutationOptions = <
@@ -553,7 +879,7 @@ export const getCompleteMediaUploadMutationOptions = <
     { id: string },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof completeMediaUpload>>,
   TError,
@@ -561,11 +887,11 @@ export const getCompleteMediaUploadMutationOptions = <
   TContext
 > => {
   const mutationKey = ['completeMediaUpload'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof completeMediaUpload>>,
@@ -573,7 +899,7 @@ export const getCompleteMediaUploadMutationOptions = <
   > = (props) => {
     const { id } = props ?? {};
 
-    return completeMediaUpload(id, fetchOptions);
+    return completeMediaUpload(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -593,7 +919,7 @@ export const useCompleteMediaUpload = <TError = unknown, TContext = unknown>(
       { id: string },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -625,17 +951,12 @@ export const presignMediaUpload = async (
   presignMediaUploadBody: PresignMediaUploadBody,
   options?: RequestInit,
 ): Promise<presignMediaUploadResponse> => {
-  const res = await fetch(getPresignMediaUploadUrl(), {
+  return customFetch<presignMediaUploadResponse>(getPresignMediaUploadUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(presignMediaUploadBody),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: presignMediaUploadResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as presignMediaUploadResponse;
 };
 
 export const getPresignMediaUploadMutationOptions = <
@@ -648,7 +969,7 @@ export const getPresignMediaUploadMutationOptions = <
     { data: PresignMediaUploadBody },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof presignMediaUpload>>,
   TError,
@@ -656,11 +977,11 @@ export const getPresignMediaUploadMutationOptions = <
   TContext
 > => {
   const mutationKey = ['presignMediaUpload'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof presignMediaUpload>>,
@@ -668,7 +989,7 @@ export const getPresignMediaUploadMutationOptions = <
   > = (props) => {
     const { data } = props ?? {};
 
-    return presignMediaUpload(data, fetchOptions);
+    return presignMediaUpload(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -688,7 +1009,7 @@ export const usePresignMediaUpload = <TError = unknown, TContext = unknown>(
       { data: PresignMediaUploadBody },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -720,17 +1041,12 @@ export const createSceneLink = async (
   createSceneLinkBody: CreateSceneLinkBody,
   options?: RequestInit,
 ): Promise<createSceneLinkResponse> => {
-  const res = await fetch(getCreateSceneLinkUrl(), {
+  return customFetch<createSceneLinkResponse>(getCreateSceneLinkUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(createSceneLinkBody),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: createSceneLinkResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as createSceneLinkResponse;
 };
 
 export const getCreateSceneLinkMutationOptions = <TError = unknown, TContext = unknown>(options?: {
@@ -740,7 +1056,7 @@ export const getCreateSceneLinkMutationOptions = <TError = unknown, TContext = u
     { data: CreateSceneLinkBody },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createSceneLink>>,
   TError,
@@ -748,11 +1064,11 @@ export const getCreateSceneLinkMutationOptions = <TError = unknown, TContext = u
   TContext
 > => {
   const mutationKey = ['createSceneLink'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createSceneLink>>,
@@ -760,7 +1076,7 @@ export const getCreateSceneLinkMutationOptions = <TError = unknown, TContext = u
   > = (props) => {
     const { data } = props ?? {};
 
-    return createSceneLink(data, fetchOptions);
+    return createSceneLink(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -780,7 +1096,7 @@ export const useCreateSceneLink = <TError = unknown, TContext = unknown>(
       { data: CreateSceneLinkBody },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -812,15 +1128,10 @@ export const deleteSceneLink = async (
   id: string,
   options?: RequestInit,
 ): Promise<deleteSceneLinkResponse> => {
-  const res = await fetch(getDeleteSceneLinkUrl(id), {
+  return customFetch<deleteSceneLinkResponse>(getDeleteSceneLinkUrl(id), {
     ...options,
     method: 'DELETE',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: deleteSceneLinkResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as deleteSceneLinkResponse;
 };
 
 export const getDeleteSceneLinkMutationOptions = <TError = unknown, TContext = unknown>(options?: {
@@ -830,7 +1141,7 @@ export const getDeleteSceneLinkMutationOptions = <TError = unknown, TContext = u
     { id: string },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof deleteSceneLink>>,
   TError,
@@ -838,11 +1149,11 @@ export const getDeleteSceneLinkMutationOptions = <TError = unknown, TContext = u
   TContext
 > => {
   const mutationKey = ['deleteSceneLink'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof deleteSceneLink>>,
@@ -850,7 +1161,7 @@ export const getDeleteSceneLinkMutationOptions = <TError = unknown, TContext = u
   > = (props) => {
     const { id } = props ?? {};
 
-    return deleteSceneLink(id, fetchOptions);
+    return deleteSceneLink(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -870,7 +1181,7 @@ export const useDeleteSceneLink = <TError = unknown, TContext = unknown>(
       { id: string },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -902,17 +1213,12 @@ export const createScene = async (
   createSceneBody: CreateSceneBody,
   options?: RequestInit,
 ): Promise<createSceneResponse> => {
-  const res = await fetch(getCreateSceneUrl(), {
+  return customFetch<createSceneResponse>(getCreateSceneUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(createSceneBody),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: createSceneResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as createSceneResponse;
 };
 
 export const getCreateSceneMutationOptions = <TError = unknown, TContext = unknown>(options?: {
@@ -922,7 +1228,7 @@ export const getCreateSceneMutationOptions = <TError = unknown, TContext = unkno
     { data: CreateSceneBody },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof createScene>>,
   TError,
@@ -930,11 +1236,11 @@ export const getCreateSceneMutationOptions = <TError = unknown, TContext = unkno
   TContext
 > => {
   const mutationKey = ['createScene'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof createScene>>,
@@ -942,7 +1248,7 @@ export const getCreateSceneMutationOptions = <TError = unknown, TContext = unkno
   > = (props) => {
     const { data } = props ?? {};
 
-    return createScene(data, fetchOptions);
+    return createScene(data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -960,7 +1266,7 @@ export const useCreateScene = <TError = unknown, TContext = unknown>(
       { data: CreateSceneBody },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -993,17 +1299,12 @@ export const updateScene = async (
   updateSceneBody: UpdateSceneBody,
   options?: RequestInit,
 ): Promise<updateSceneResponse> => {
-  const res = await fetch(getUpdateSceneUrl(id), {
+  return customFetch<updateSceneResponse>(getUpdateSceneUrl(id), {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(updateSceneBody),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: updateSceneResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as updateSceneResponse;
 };
 
 export const getUpdateSceneMutationOptions = <TError = unknown, TContext = unknown>(options?: {
@@ -1013,7 +1314,7 @@ export const getUpdateSceneMutationOptions = <TError = unknown, TContext = unkno
     { id: string; data: UpdateSceneBody },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof updateScene>>,
   TError,
@@ -1021,11 +1322,11 @@ export const getUpdateSceneMutationOptions = <TError = unknown, TContext = unkno
   TContext
 > => {
   const mutationKey = ['updateScene'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<
     Awaited<ReturnType<typeof updateScene>>,
@@ -1033,7 +1334,7 @@ export const getUpdateSceneMutationOptions = <TError = unknown, TContext = unkno
   > = (props) => {
     const { id, data } = props ?? {};
 
-    return updateScene(id, data, fetchOptions);
+    return updateScene(id, data, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1051,7 +1352,7 @@ export const useUpdateScene = <TError = unknown, TContext = unknown>(
       { id: string; data: UpdateSceneBody },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -1083,15 +1384,10 @@ export const publishScene = async (
   id: string,
   options?: RequestInit,
 ): Promise<publishSceneResponse> => {
-  const res = await fetch(getPublishSceneUrl(id), {
+  return customFetch<publishSceneResponse>(getPublishSceneUrl(id), {
     ...options,
     method: 'POST',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: publishSceneResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as publishSceneResponse;
 };
 
 export const getPublishSceneMutationOptions = <TError = unknown, TContext = unknown>(options?: {
@@ -1101,7 +1397,7 @@ export const getPublishSceneMutationOptions = <TError = unknown, TContext = unkn
     { id: string },
     TContext
   >;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }): UseMutationOptions<
   Awaited<ReturnType<typeof publishScene>>,
   TError,
@@ -1109,18 +1405,18 @@ export const getPublishSceneMutationOptions = <TError = unknown, TContext = unkn
   TContext
 > => {
   const mutationKey = ['publishScene'];
-  const { mutation: mutationOptions, fetch: fetchOptions } = options
+  const { mutation: mutationOptions, request: requestOptions } = options
     ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
       ? options
       : { ...options, mutation: { ...options.mutation, mutationKey } }
-    : { mutation: { mutationKey }, fetch: undefined };
+    : { mutation: { mutationKey }, request: undefined };
 
   const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishScene>>, { id: string }> = (
     props,
   ) => {
     const { id } = props ?? {};
 
-    return publishScene(id, fetchOptions);
+    return publishScene(id, requestOptions);
   };
 
   return { mutationFn, ...mutationOptions };
@@ -1138,7 +1434,7 @@ export const usePublishScene = <TError = unknown, TContext = unknown>(
       { id: string },
       TContext
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseMutationResult<
@@ -1169,15 +1465,10 @@ export const getListDestinationsUrl = () => {
 export const listDestinations = async (
   options?: RequestInit,
 ): Promise<listDestinationsResponse> => {
-  const res = await fetch(getListDestinationsUrl(), {
+  return customFetch<listDestinationsResponse>(getListDestinationsUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listDestinationsResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as listDestinationsResponse;
 };
 
 export const getListDestinationsQueryKey = () => {
@@ -1189,14 +1480,14 @@ export const getListDestinationsQueryOptions = <
   TError = unknown,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>>;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getListDestinationsQueryKey();
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof listDestinations>>> = ({ signal }) =>
-    listDestinations({ ...(signal ? { signal } : {}), ...fetchOptions });
+    listDestinations({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listDestinations>>,
@@ -1222,7 +1513,7 @@ export function useListDestinations<
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1240,7 +1531,7 @@ export function useListDestinations<
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1250,7 +1541,7 @@ export function useListDestinations<
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1261,7 +1552,7 @@ export function useListDestinations<
 >(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1294,15 +1585,10 @@ export const getDestination = async (
   slug: string,
   options?: RequestInit,
 ): Promise<getDestinationResponse> => {
-  const res = await fetch(getGetDestinationUrl(slug), {
+  return customFetch<getDestinationResponse>(getGetDestinationUrl(slug), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getDestinationResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as getDestinationResponse;
 };
 
 export const getGetDestinationQueryKey = (slug?: string) => {
@@ -1316,15 +1602,15 @@ export const getGetDestinationQueryOptions = <
   slug: string,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getDestination>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
 ) => {
-  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetDestinationQueryKey(slug);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getDestination>>> = ({ signal }) =>
-    getDestination(slug, { ...(signal ? { signal } : {}), ...fetchOptions });
+    getDestination(slug, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!slug, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getDestination>>,
@@ -1351,7 +1637,7 @@ export function useGetDestination<
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1370,7 +1656,7 @@ export function useGetDestination<
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1381,7 +1667,7 @@ export function useGetDestination<
   slug: string,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getDestination>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1393,7 +1679,7 @@ export function useGetDestination<
   slug: string,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getDestination>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1426,15 +1712,10 @@ export const getImmersiveManifest = async (
   slug: string,
   options?: RequestInit,
 ): Promise<getImmersiveManifestResponse> => {
-  const res = await fetch(getGetImmersiveManifestUrl(slug), {
+  return customFetch<getImmersiveManifestResponse>(getGetImmersiveManifestUrl(slug), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getImmersiveManifestResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as getImmersiveManifestResponse;
 };
 
 export const getGetImmersiveManifestQueryKey = (slug?: string) => {
@@ -1450,15 +1731,15 @@ export const getGetImmersiveManifestQueryOptions = <
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getImmersiveManifest>>, TError, TData>
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
 ) => {
-  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetImmersiveManifestQueryKey(slug);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getImmersiveManifest>>> = ({ signal }) =>
-    getImmersiveManifest(slug, { ...(signal ? { signal } : {}), ...fetchOptions });
+    getImmersiveManifest(slug, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!slug, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getImmersiveManifest>>,
@@ -1489,7 +1770,7 @@ export function useGetImmersiveManifest<
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1510,7 +1791,7 @@ export function useGetImmersiveManifest<
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1523,7 +1804,7 @@ export function useGetImmersiveManifest<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getImmersiveManifest>>, TError, TData>
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1537,7 +1818,7 @@ export function useGetImmersiveManifest<
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getImmersiveManifest>>, TError, TData>
     >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1567,15 +1848,10 @@ export const getGetHealthUrl = () => {
 };
 
 export const getHealth = async (options?: RequestInit): Promise<getHealthResponse> => {
-  const res = await fetch(getGetHealthUrl(), {
+  return customFetch<getHealthResponse>(getGetHealthUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getHealthResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as getHealthResponse;
 };
 
 export const getGetHealthQueryKey = () => {
@@ -1587,14 +1863,14 @@ export const getGetHealthQueryOptions = <
   TError = unknown,
 >(options?: {
   query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealth>>, TError, TData>>;
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetHealthQueryKey();
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getHealth>>> = ({ signal }) =>
-    getHealth({ ...(signal ? { signal } : {}), ...fetchOptions });
+    getHealth({ signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getHealth>>,
@@ -1617,7 +1893,7 @@ export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TErr
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1632,14 +1908,14 @@ export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TErr
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TError = unknown>(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealth>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1647,7 +1923,7 @@ export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TErr
 export function useGetHealth<TData = Awaited<ReturnType<typeof getHealth>>, TError = unknown>(
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getHealth>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1680,15 +1956,10 @@ export const getScene = async (
   sceneId: string,
   options?: RequestInit,
 ): Promise<getSceneResponse> => {
-  const res = await fetch(getGetSceneUrl(sceneId), {
+  return customFetch<getSceneResponse>(getGetSceneUrl(sceneId), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getSceneResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as getSceneResponse;
 };
 
 export const getGetSceneQueryKey = (sceneId?: string) => {
@@ -1702,15 +1973,15 @@ export const getGetSceneQueryOptions = <
   sceneId: string,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getScene>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
 ) => {
-  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetSceneQueryKey(sceneId);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getScene>>> = ({ signal }) =>
-    getScene(sceneId, { ...(signal ? { signal } : {}), ...fetchOptions });
+    getScene(sceneId, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!sceneId, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getScene>>,
@@ -1734,7 +2005,7 @@ export function useGetScene<TData = Awaited<ReturnType<typeof getScene>>, TError
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1750,7 +2021,7 @@ export function useGetScene<TData = Awaited<ReturnType<typeof getScene>>, TError
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1758,7 +2029,7 @@ export function useGetScene<TData = Awaited<ReturnType<typeof getScene>>, TError
   sceneId: string,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getScene>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1767,7 +2038,7 @@ export function useGetScene<TData = Awaited<ReturnType<typeof getScene>>, TError
   sceneId: string,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getScene>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1800,15 +2071,10 @@ export const getSceneNeighbors = async (
   sceneId: string,
   options?: RequestInit,
 ): Promise<getSceneNeighborsResponse> => {
-  const res = await fetch(getGetSceneNeighborsUrl(sceneId), {
+  return customFetch<getSceneNeighborsResponse>(getGetSceneNeighborsUrl(sceneId), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getSceneNeighborsResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as getSceneNeighborsResponse;
 };
 
 export const getGetSceneNeighborsQueryKey = (sceneId?: string) => {
@@ -1822,15 +2088,15 @@ export const getGetSceneNeighborsQueryOptions = <
   sceneId: string,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getSceneNeighbors>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
 ) => {
-  const { query: queryOptions, fetch: fetchOptions } = options ?? {};
+  const { query: queryOptions, request: requestOptions } = options ?? {};
 
   const queryKey = queryOptions?.queryKey ?? getGetSceneNeighborsQueryKey(sceneId);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getSceneNeighbors>>> = ({ signal }) =>
-    getSceneNeighbors(sceneId, { ...(signal ? { signal } : {}), ...fetchOptions });
+    getSceneNeighbors(sceneId, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!sceneId, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getSceneNeighbors>>,
@@ -1859,7 +2125,7 @@ export function useGetSceneNeighbors<
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1878,7 +2144,7 @@ export function useGetSceneNeighbors<
         >,
         'initialData'
       >;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1889,7 +2155,7 @@ export function useGetSceneNeighbors<
   sceneId: string,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getSceneNeighbors>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
@@ -1901,7 +2167,7 @@ export function useGetSceneNeighbors<
   sceneId: string,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getSceneNeighbors>>, TError, TData>>;
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {

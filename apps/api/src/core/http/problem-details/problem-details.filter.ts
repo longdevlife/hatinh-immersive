@@ -39,24 +39,36 @@ export class ProblemDetailsFilter implements ExceptionFilter {
       type:
         status === HttpStatus.NOT_FOUND
           ? 'https://errors.example.vn/not-found'
-          : isValidation
-            ? 'https://errors.example.vn/validation'
-            : 'https://errors.example.vn/internal-server-error',
+          : status === HttpStatus.UNAUTHORIZED
+            ? 'https://errors.example.vn/unauthorized'
+            : status === HttpStatus.FORBIDDEN
+              ? 'https://errors.example.vn/forbidden'
+              : isValidation
+                ? 'https://errors.example.vn/validation'
+                : 'https://errors.example.vn/internal-server-error',
       title:
         status === HttpStatus.NOT_FOUND
           ? 'Not Found'
-          : isValidation
-            ? 'Validation failed'
-            : 'Internal Server Error',
+          : status === HttpStatus.UNAUTHORIZED
+            ? 'Unauthorized'
+            : status === HttpStatus.FORBIDDEN
+              ? 'Forbidden'
+              : isValidation
+                ? 'Validation failed'
+                : 'Internal Server Error',
       status,
       detail: message,
       instance: request.originalUrl ?? request.url,
       code:
         status === HttpStatus.NOT_FOUND
           ? 'NOT_FOUND'
-          : isValidation
-            ? 'VALIDATION_ERROR'
-            : 'INTERNAL_SERVER_ERROR',
+          : status === HttpStatus.UNAUTHORIZED
+            ? 'UNAUTHORIZED'
+            : status === HttpStatus.FORBIDDEN
+              ? 'FORBIDDEN'
+              : isValidation
+                ? 'VALIDATION_ERROR'
+                : 'INTERNAL_SERVER_ERROR',
       traceId,
     };
 

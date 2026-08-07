@@ -16,6 +16,7 @@ export async function configureHttpApplication(app: INestApplication): Promise<O
     contentSecurityPolicy: false,
   });
   await fastify.register(cors, {
+    credentials: true,
     origin: environment.corsOrigins,
   });
   await fastify.register(rateLimit, {

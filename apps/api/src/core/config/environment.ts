@@ -32,6 +32,16 @@ const environmentSchema = z.object({
     .int()
     .positive()
     .default(500 * 1024 * 1024),
+  AUTH_BOOTSTRAP_EMAIL: z.string().email().optional(),
+  AUTH_BOOTSTRAP_PASSWORD: z.string().min(12).optional(),
+  AUTH_BOOTSTRAP_ROLE: z.enum(['ADMIN', 'EDITOR', 'REVIEWER', 'VIEWER']).default('ADMIN'),
+  AUTH_ACCESS_TTL_SECONDS: z.coerce.number().int().min(60).max(3600).default(900),
+  AUTH_REFRESH_TTL_SECONDS: z.coerce
+    .number()
+    .int()
+    .min(3600)
+    .max(60 * 60 * 24 * 90)
+    .default(60 * 60 * 24 * 30),
 });
 
 export interface AppEnvironment {
@@ -53,6 +63,13 @@ export interface AppEnvironment {
     presignExpiresInSeconds: number;
   };
   mediaMaxBytes: number;
+  auth: {
+    bootstrapEmail?: string;
+    bootstrapPassword?: string;
+    bootstrapRole: 'ADMIN' | 'EDITOR' | 'REVIEWER' | 'VIEWER';
+    accessTtlSeconds: number;
+    refreshTtlSeconds: number;
+  };
 }
 
 export function loadEnvironment(env: NodeJS.ProcessEnv = process.env): AppEnvironment {
@@ -79,5 +96,14 @@ export function loadEnvironment(env: NodeJS.ProcessEnv = process.env): AppEnviro
       presignExpiresInSeconds: parsed.S3_PRESIGN_EXPIRES_SECONDS,
     },
     mediaMaxBytes: parsed.MEDIA_MAX_BYTES,
+    auth: {
+      ...(parsed.AUTH_BOOTSTRAP_EMAIL ? { bootstrapEmail: parsed.AUTH_BOOTSTRAP_EMAIL } : {}),
+      ...(parsed.AUTH_BOOTSTRAP_PASSWORD
+        ? { bootstrapPassword: parsed.AUTH_BOOTSTRAP_PASSWORD }
+        : {}),
+      bootstrapRole: parsed.AUTH_BOOTSTRAP_ROLE,
+      accessTtlSeconds: parsed.AUTH_ACCESS_TTL_SECONDS,
+      refreshTtlSeconds: parsed.AUTH_REFRESH_TTL_SECONDS,
+    },
   };
 }

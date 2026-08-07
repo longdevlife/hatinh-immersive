@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   UnprocessableEntityException,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -26,6 +27,8 @@ import {
   parseBody,
   updateDestinationBodySchema,
 } from './destination.dto';
+import { Roles } from '../../../identity/identity.decorators';
+import { AccessSessionGuard, IdentityRolesGuard } from '../../../identity/identity.guards';
 
 const destinationWriteSchema = {
   type: 'object',
@@ -60,10 +63,12 @@ const destinationWriteSchema = {
 
 @ApiTags('admin-destinations')
 @Controller('admin/destinations')
+@UseGuards(AccessSessionGuard, IdentityRolesGuard)
 export class AdminDestinationController {
   constructor(private readonly commandService: DestinationCommandService) {}
 
   @Post()
+  @Roles('ADMIN', 'EDITOR')
   @ApiOperation({ operationId: 'createDestination' })
   @ApiBody({ schema: { ...destinationWriteSchema, required: ['slug', 'translations'] } })
   @ApiCreatedResponse({
@@ -84,6 +89,7 @@ export class AdminDestinationController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN', 'EDITOR')
   @ApiOperation({ operationId: 'updateDestination' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ schema: destinationWriteSchema })
@@ -110,6 +116,7 @@ export class AdminDestinationController {
   }
 
   @Post(':id/publish')
+  @Roles('ADMIN', 'REVIEWER')
   @ApiOperation({ operationId: 'publishDestination' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @HttpCode(HttpStatus.OK)

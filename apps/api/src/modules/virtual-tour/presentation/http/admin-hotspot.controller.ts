@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBody,
   ApiCreatedResponse,
@@ -13,6 +13,8 @@ import type { CreateHotspotInput, UpdateHotspotInput } from '../../domain/hotspo
 import { hotspotAdminResponseSchema } from '../../../../core/http/openapi.schemas';
 import { createHotspotBodySchema, parseBody, updateHotspotBodySchema } from './virtual-tour.dto';
 import { rethrowVirtualTourHttpError } from './virtual-tour-http.errors';
+import { Roles } from '../../../identity/identity.decorators';
+import { AccessSessionGuard, IdentityRolesGuard } from '../../../identity/identity.guards';
 
 const hotspotWriteSchema = {
   type: 'object',
@@ -41,10 +43,12 @@ const hotspotUpdateSchema = {
 
 @ApiTags('admin-immersive')
 @Controller('admin/hotspots')
+@UseGuards(AccessSessionGuard, IdentityRolesGuard)
 export class AdminHotspotController {
   constructor(private readonly commandService: VirtualTourCommandService) {}
 
   @Post()
+  @Roles('ADMIN', 'EDITOR')
   @ApiOperation({ operationId: 'createHotspot' })
   @ApiBody({ schema: hotspotWriteSchema })
   @ApiCreatedResponse({
@@ -72,6 +76,7 @@ export class AdminHotspotController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN', 'EDITOR')
   @ApiOperation({ operationId: 'updateHotspot' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ schema: hotspotUpdateSchema })

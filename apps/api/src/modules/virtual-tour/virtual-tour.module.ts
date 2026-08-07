@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../core/database/database.module';
+import { IdentityModule } from '../identity/identity.module';
 import { CatalogModule } from '../catalog/catalog.module';
 import { VirtualTourCommandService } from './application/virtual-tour.commands';
 import { VIRTUAL_TOUR_REPOSITORY } from './application/virtual-tour.repository';
@@ -12,7 +13,7 @@ import { AdminSceneLinkController } from './presentation/http/admin-scene-link.c
 import { VirtualTourController } from './presentation/http/virtual-tour.controller';
 
 @Module({
-  imports: [DatabaseModule, CatalogModule],
+  imports: [DatabaseModule, CatalogModule, IdentityModule],
   controllers: [
     VirtualTourController,
     AdminSceneController,

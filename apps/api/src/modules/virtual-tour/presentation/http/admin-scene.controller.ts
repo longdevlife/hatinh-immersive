@@ -1,4 +1,13 @@
-import { Body, Controller, HttpCode, HttpStatus, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBody,
   ApiCreatedResponse,
@@ -13,6 +22,8 @@ import type { CreateSceneNodeInput, UpdateSceneNodeInput } from '../../domain/sc
 import { sceneNodeAdminResponseSchema } from '../../../../core/http/openapi.schemas';
 import { createSceneBodySchema, parseBody, updateSceneBodySchema } from './virtual-tour.dto';
 import { rethrowVirtualTourHttpError } from './virtual-tour-http.errors';
+import { Roles } from '../../../identity/identity.decorators';
+import { AccessSessionGuard, IdentityRolesGuard } from '../../../identity/identity.guards';
 
 const sceneWriteSchema = {
   type: 'object',
@@ -44,10 +55,12 @@ const sceneWriteSchema = {
 
 @ApiTags('admin-immersive')
 @Controller('admin/scenes')
+@UseGuards(AccessSessionGuard, IdentityRolesGuard)
 export class AdminSceneController {
   constructor(private readonly commandService: VirtualTourCommandService) {}
 
   @Post()
+  @Roles('ADMIN', 'EDITOR')
   @ApiOperation({ operationId: 'createScene' })
   @ApiBody({ schema: { ...sceneWriteSchema, required: ['destinationId', 'name', 'geoPoint'] } })
   @ApiCreatedResponse({
@@ -79,6 +92,7 @@ export class AdminSceneController {
   }
 
   @Patch(':id')
+  @Roles('ADMIN', 'EDITOR')
   @ApiOperation({ operationId: 'updateScene' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ schema: sceneWriteSchema })
@@ -110,6 +124,7 @@ export class AdminSceneController {
   }
 
   @Post(':id/publish')
+  @Roles('ADMIN', 'REVIEWER')
   @ApiOperation({ operationId: 'publishScene' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @HttpCode(HttpStatus.OK)

@@ -5,6 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-route
 import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
 import { AdminWorkspace } from '../modules/catalog-management/ui/AdminWorkspace';
+import { AdminAuthGate } from '../modules/identity/ui/AdminAuthGate';
 import './styles/index.css';
 
 function AdminHome() {
@@ -42,7 +43,14 @@ export function App() {
           </header>
           <Routes>
             <Route path="/" element={<AdminHome />} />
-            <Route path="/workspace" element={<AdminWorkspace />} />
+            <Route
+              path="/workspace"
+              element={
+                <AdminAuthGate>
+                  <AdminWorkspace />
+                </AdminAuthGate>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

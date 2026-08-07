@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { loadEnvironment } from '../../core/config/environment';
 import { DatabaseModule } from '../../core/database/database.module';
+import { IdentityModule } from '../identity/identity.module';
 import { MEDIA_UPLOAD_POLICY, MediaCommandService } from './application/media.commands';
 import { MEDIA_ASSET_REPOSITORY } from './application/media.repository';
 import { OBJECT_STORAGE } from './application/object-storage.port';
@@ -10,7 +11,7 @@ import { S3ObjectStorageAdapter } from './infrastructure/s3-object-storage.adapt
 import { AdminMediaController } from './presentation/http/admin-media.controller';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, IdentityModule],
   controllers: [AdminMediaController],
   providers: [
     MediaCommandService,

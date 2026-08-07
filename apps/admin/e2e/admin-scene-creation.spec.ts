@@ -15,6 +15,35 @@ test('creates a scene and hotspot that appear in the public immersive manifest',
     const url = new URL(request.url());
     const method = request.method();
 
+    if (method === 'GET' && url.pathname === '/api/v1/admin/auth/me') {
+      await route.fulfill({
+        contentType: 'application/problem+json',
+        json: {
+          code: 'UNAUTHORIZED',
+          detail: 'Authentication is required.',
+          status: 401,
+          title: 'Unauthorized',
+          type: 'https://api.hatinh-immersive.local/problems/unauthorized',
+        },
+        status: 401,
+      });
+      return;
+    }
+
+    if (method === 'POST' && url.pathname === '/api/v1/admin/auth/login') {
+      await route.fulfill({
+        json: {
+          user: {
+            email: 'admin@example.com',
+            id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            role: 'ADMIN',
+          },
+        },
+        status: 200,
+      });
+      return;
+    }
+
     if (method === 'GET' && url.pathname === '/api/v1/destinations') {
       await route.fulfill({ json: [] });
       return;
@@ -128,6 +157,11 @@ test('creates a scene and hotspot that appear in the public immersive manifest',
   });
 
   await page.goto('/workspace');
+  await expect(page.getByRole('heading', { name: 'Welcome back.' })).toBeVisible();
+  await page.getByLabel('Email').fill('admin@example.com');
+  await page.getByLabel('Password').fill('correct horse battery staple');
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.getByLabel('Destination name')).toBeVisible();
   await page.getByLabel('Destination name').fill('Sơn Tràng cổ đàm');
   await page.getByLabel('Slug').fill('son-trang-co-dam');
   await page.getByLabel('Summary').fill('Một hành trình di sản ven núi.');

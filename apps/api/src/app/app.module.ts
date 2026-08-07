@@ -1,5 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 
 import { ProblemDetailsFilter } from '../core/http/problem-details/problem-details.filter';
@@ -9,6 +9,9 @@ import { DatabaseModule } from '../core/database/database.module';
 import { CatalogModule } from '../modules/catalog/catalog.module';
 import { VirtualTourModule } from '../modules/virtual-tour/virtual-tour.module';
 import { MediaModule } from '../modules/media/media.module';
+import { IdentityModule } from '../modules/identity/identity.module';
+import { AuditModule } from '../modules/audit/audit.module';
+import { AuditInterceptor } from '../modules/audit/audit.interceptor';
 
 @Module({
   imports: [
@@ -21,12 +24,18 @@ import { MediaModule } from '../modules/media/media.module';
     CatalogModule,
     VirtualTourModule,
     MediaModule,
+    IdentityModule,
+    AuditModule,
     HealthModule,
   ],
   providers: [
     {
       provide: APP_FILTER,
       useClass: ProblemDetailsFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditInterceptor,
     },
   ],
 })

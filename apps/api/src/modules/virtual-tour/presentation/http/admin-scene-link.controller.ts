@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBody,
   ApiCreatedResponse,
@@ -15,13 +24,17 @@ import {
 import { createSceneLinkBodySchema, parseBody } from './virtual-tour.dto';
 import { rethrowVirtualTourHttpError } from './virtual-tour-http.errors';
 import { sceneLinkAdminResponseSchema } from '../../../../core/http/openapi.schemas';
+import { Roles } from '../../../identity/identity.decorators';
+import { AccessSessionGuard, IdentityRolesGuard } from '../../../identity/identity.guards';
 
 @ApiTags('admin-immersive')
 @Controller('admin/scene-links')
+@UseGuards(AccessSessionGuard, IdentityRolesGuard)
 export class AdminSceneLinkController {
   constructor(private readonly commandService: VirtualTourCommandService) {}
 
   @Post()
+  @Roles('ADMIN', 'EDITOR')
   @ApiOperation({ operationId: 'createSceneLink' })
   @ApiBody({
     schema: {
@@ -63,6 +76,7 @@ export class AdminSceneLinkController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN', 'EDITOR')
   @ApiOperation({ operationId: 'deleteSceneLink' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @HttpCode(HttpStatus.NO_CONTENT)

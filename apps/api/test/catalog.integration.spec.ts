@@ -8,12 +8,16 @@ import { sql } from 'drizzle-orm';
 import { configureHttpApplication } from '../src/app/app.bootstrap';
 import { AppModule } from '../src/app/app.module';
 import { createDatabase, migrateDatabase } from '../src/core/database/db';
+import { adminInject, configureTestBootstrap, loginAsAdmin } from './auth-test.utils';
 
 const databaseUrl =
   process.env.DATABASE_URL ?? 'postgresql://hatinh:hatinh@127.0.0.1:55432/hatinh_immersive';
 
+configureTestBootstrap();
+
 describe('Catalog HTTP API', () => {
   let app: NestFastifyApplication;
+  let adminCookie: string;
   const client = postgres(databaseUrl, { max: 1 });
   const { db } = createDatabase(client);
 
@@ -29,6 +33,7 @@ describe('Catalog HTTP API', () => {
     await configureHttpApplication(app);
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
+    adminCookie = await loginAsAdmin(app);
   });
 
   afterAll(async () => {
@@ -39,26 +44,23 @@ describe('Catalog HTTP API', () => {
   it('creates, publishes, lists, and reads a destination through the public contract', async () => {
     const slug = `son-trang-${randomUUID().slice(0, 8)}`;
     const defaultSceneId = randomUUID();
-    const createResponse = await app
-      .getHttpAdapter()
-      .getInstance()
-      .inject({
-        method: 'POST',
-        url: '/api/v1/admin/destinations',
-        payload: {
-          slug,
-          geoPoint: { latitude: 18.3421, longitude: 105.9032 },
-          defaultSceneId,
-          translations: [
-            {
-              locale: 'vi',
-              name: 'Sơn Trang Cổ Đạm',
-              summary: 'Một điểm đến immersive của Hà Tĩnh.',
-              description: 'Nội dung giới thiệu điểm đến.',
-            },
-          ],
-        },
-      });
+    const createResponse = await adminInject(app, adminCookie, {
+      method: 'POST',
+      url: '/api/v1/admin/destinations',
+      payload: {
+        slug,
+        geoPoint: { latitude: 18.3421, longitude: 105.9032 },
+        defaultSceneId,
+        translations: [
+          {
+            locale: 'vi',
+            name: 'Sơn Trang Cổ Đạm',
+            summary: 'Một điểm đến immersive của Hà Tĩnh.',
+            description: 'Nội dung giới thiệu điểm đến.',
+          },
+        ],
+      },
+    });
 
     expect(createResponse.statusCode).toBe(201);
     const created = createResponse.json();
@@ -71,23 +73,20 @@ describe('Catalog HTTP API', () => {
     );
 
     const updatedSummary = 'Một điểm đến immersive đã được biên tập.';
-    const updateResponse = await app
-      .getHttpAdapter()
-      .getInstance()
-      .inject({
-        method: 'PATCH',
-        url: `/api/v1/admin/destinations/${created.id}`,
-        payload: {
-          translations: [
-            {
-              locale: 'vi',
-              name: 'Sơn Trang Cổ Đạm',
-              summary: updatedSummary,
-              description: 'Nội dung giới thiệu điểm đến đã cập nhật.',
-            },
-          ],
-        },
-      });
+    const updateResponse = await adminInject(app, adminCookie, {
+      method: 'PATCH',
+      url: `/api/v1/admin/destinations/${created.id}`,
+      payload: {
+        translations: [
+          {
+            locale: 'vi',
+            name: 'Sơn Trang Cổ Đạm',
+            summary: updatedSummary,
+            description: 'Nội dung giới thiệu điểm đến đã cập nhật.',
+          },
+        ],
+      },
+    });
 
     expect(updateResponse.statusCode).toBe(200);
     expect(updateResponse.json()).toEqual(
@@ -97,13 +96,10 @@ describe('Catalog HTTP API', () => {
       }),
     );
 
-    const publishResponse = await app
-      .getHttpAdapter()
-      .getInstance()
-      .inject({
-        method: 'POST',
-        url: `/api/v1/admin/destinations/${created.id}/publish`,
-      });
+    const publishResponse = await adminInject(app, adminCookie, {
+      method: 'POST',
+      url: `/api/v1/admin/destinations/${created.id}/publish`,
+    });
 
     expect(publishResponse.statusCode).toBe(200);
     expect(publishResponse.json()).toEqual(expect.objectContaining({ status: 'published' }));

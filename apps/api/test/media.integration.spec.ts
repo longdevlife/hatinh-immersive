@@ -7,12 +7,16 @@ import postgres from 'postgres';
 import { configureHttpApplication } from '../src/app/app.bootstrap';
 import { AppModule } from '../src/app/app.module';
 import { createDatabase, migrateDatabase } from '../src/core/database/db';
+import { adminInject, configureTestBootstrap, loginAsAdmin } from './auth-test.utils';
 
 const databaseUrl =
   process.env.DATABASE_URL ?? 'postgresql://hatinh:hatinh@127.0.0.1:55432/hatinh_immersive';
 
+configureTestBootstrap();
+
 describe('Media upload HTTP API', () => {
   let app: NestFastifyApplication;
+  let adminCookie: string;
   const client = postgres(databaseUrl, { max: 1 });
   const { db } = createDatabase(client);
 
@@ -25,6 +29,7 @@ describe('Media upload HTTP API', () => {
     await configureHttpApplication(app);
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
+    adminCookie = await loginAsAdmin(app);
   });
 
   afterAll(async () => {
@@ -34,19 +39,16 @@ describe('Media upload HTTP API', () => {
 
   it('presigns a direct upload, uploads to MinIO, and completes metadata without proxying bytes', async () => {
     const payload = new Uint8Array(Buffer.from('immersive-test'));
-    const presignResponse = await app
-      .getHttpAdapter()
-      .getInstance()
-      .inject({
-        method: 'POST',
-        url: '/api/v1/admin/media/presign',
-        payload: {
-          mediaKind: 'panorama',
-          originalFilename: 'son-trang.jpg',
-          contentType: 'image/jpeg',
-          sizeBytes: payload.byteLength,
-        },
-      });
+    const presignResponse = await adminInject(app, adminCookie, {
+      method: 'POST',
+      url: '/api/v1/admin/media/presign',
+      payload: {
+        mediaKind: 'panorama',
+        originalFilename: 'son-trang.jpg',
+        contentType: 'image/jpeg',
+        sizeBytes: payload.byteLength,
+      },
+    });
 
     expect(presignResponse.statusCode).toBe(201);
     const presigned = presignResponse.json();
@@ -60,13 +62,10 @@ describe('Media upload HTTP API', () => {
     });
     expect(uploadResponse.ok).toBe(true);
 
-    const completeResponse = await app
-      .getHttpAdapter()
-      .getInstance()
-      .inject({
-        method: 'POST',
-        url: `/api/v1/admin/media/${presigned.asset.id}/complete-upload`,
-      });
+    const completeResponse = await adminInject(app, adminCookie, {
+      method: 'POST',
+      url: `/api/v1/admin/media/${presigned.asset.id}/complete-upload`,
+    });
 
     expect(completeResponse.statusCode).toBe(200);
     expect(completeResponse.json()).toEqual(
@@ -79,15 +78,12 @@ describe('Media upload HTTP API', () => {
   });
 
   it('rejects an upload request that tries to send bytes through the metadata endpoint', async () => {
-    const response = await app
-      .getHttpAdapter()
-      .getInstance()
-      .inject({
-        method: 'POST',
-        url: '/api/v1/admin/media/presign',
-        payload: Buffer.from('raw panorama bytes'),
-        headers: { 'content-type': 'application/octet-stream' },
-      });
+    const response = await adminInject(app, adminCookie, {
+      method: 'POST',
+      url: '/api/v1/admin/media/presign',
+      payload: Buffer.from('raw panorama bytes'),
+      headers: { 'content-type': 'application/octet-stream' },
+    });
 
     expect(response.statusCode).toBe(415);
   });

@@ -13,6 +13,12 @@ export default defineConfig({
       httpClient: 'fetch',
       clean: true,
       prettier: true,
+      override: {
+        mutator: {
+          name: 'customFetch',
+          path: './src/mutator.ts',
+        },
+      },
     },
   },
 });

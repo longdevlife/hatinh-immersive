@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Param, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBody,
   ApiCreatedResponse,
@@ -15,6 +15,8 @@ import {
 } from '../../../../core/http/openapi.schemas';
 import { parseMediaBody, presignMediaBodySchema } from './media.dto';
 import { rethrowMediaHttpError } from './media-http.errors';
+import { Roles } from '../../../identity/identity.decorators';
+import { AccessSessionGuard, IdentityRolesGuard } from '../../../identity/identity.guards';
 
 const presignBodySchema = {
   type: 'object',
@@ -29,10 +31,12 @@ const presignBodySchema = {
 
 @ApiTags('admin-media')
 @Controller('admin/media')
+@UseGuards(AccessSessionGuard, IdentityRolesGuard)
 export class AdminMediaController {
   constructor(private readonly mediaCommandService: MediaCommandService) {}
 
   @Post('presign')
+  @Roles('ADMIN', 'EDITOR')
   @ApiOperation({ operationId: 'presignMediaUpload' })
   @ApiBody({ schema: presignBodySchema })
   @ApiCreatedResponse({
@@ -50,6 +54,7 @@ export class AdminMediaController {
   }
 
   @Post(':id/complete-upload')
+  @Roles('ADMIN', 'EDITOR')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ operationId: 'completeMediaUpload' })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })

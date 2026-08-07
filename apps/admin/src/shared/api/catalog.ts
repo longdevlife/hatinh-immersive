@@ -1,4 +1,8 @@
 export {
+  adminLogin,
+  getAdminSession,
+  logoutAdminSession,
+  refreshAdminSession,
   createDestination,
   createHotspot,
   createScene,

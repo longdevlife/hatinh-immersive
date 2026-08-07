@@ -10,6 +10,162 @@
   },
   "openapi": "3.0.0",
   "paths": {
+    "/api/v1/admin/auth/login": {
+      "post": {
+        "operationId": "adminLogin",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "email": {
+                    "format": "email",
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                },
+                "required": ["email", "password"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "user": {
+                      "properties": {
+                        "email": {
+                          "format": "email",
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "role": {
+                          "enum": ["ADMIN", "EDITOR", "REVIEWER", "VIEWER"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "email", "role"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["user"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": ["admin-auth"]
+      }
+    },
+    "/api/v1/admin/auth/logout": {
+      "post": {
+        "operationId": "logoutAdminSession",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": ["admin-auth"]
+      }
+    },
+    "/api/v1/admin/auth/me": {
+      "get": {
+        "operationId": "getAdminSession",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "user": {
+                      "properties": {
+                        "email": {
+                          "format": "email",
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "role": {
+                          "enum": ["ADMIN", "EDITOR", "REVIEWER", "VIEWER"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "email", "role"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["user"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": ["admin-auth"]
+      }
+    },
+    "/api/v1/admin/auth/refresh": {
+      "post": {
+        "operationId": "refreshAdminSession",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "user": {
+                      "properties": {
+                        "email": {
+                          "format": "email",
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "role": {
+                          "enum": ["ADMIN", "EDITOR", "REVIEWER", "VIEWER"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "email", "role"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["user"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": ["admin-auth"]
+      }
+    },
     "/api/v1/admin/destinations": {
       "post": {
         "operationId": "createDestination",
