@@ -1,0 +1,313 @@
+import '@photo-sphere-viewer/core/index.css';
+import '@photo-sphere-viewer/markers-plugin/index.css';
+import '@photo-sphere-viewer/virtual-tour-plugin/index.css';
+
+import type {
+  PanoramaEnginePort,
+  PanoramaNode,
+  PanoramaView,
+} from '../domain/panorama-engine.port';
+
+const MIN_FOV = 30;
+const MAX_FOV = 120;
+const MAX_ZOOM = 100;
+
+type PhotoSphereViewerEventListener = (event?: unknown) => void;
+
+export interface PhotoSphereViewerOptions {
+  adapter: unknown;
+  container: HTMLElement;
+  panorama: unknown;
+  plugins: unknown[];
+}
+
+export interface PhotoSphereViewerInstance {
+  addEventListener(type: string, listener: PhotoSphereViewerEventListener): void;
+  destroy(): void;
+  getPlugin<T>(id: string): T;
+  getPosition(): { pitch: number; yaw: number };
+  getZoomLevel(): number;
+  removeEventListener(type: string, listener: PhotoSphereViewerEventListener): void;
+  rotate(position: { pitch: number; yaw: number }): void;
+  setPanorama(panorama: unknown, options?: unknown): Promise<boolean>;
+  zoom(level: number): void;
+}
+
+export interface PhotoSphereVirtualTourPlugin {
+  setCurrentNode(nodeId: string, options?: unknown): Promise<boolean>;
+  setNodes(nodes: PhotoSphereVirtualTourNode[]): void;
+}
+
+export interface PhotoSphereVirtualTourNode {
+  gps: [number, number];
+  id: string;
+  links: [];
+  name: string;
+  panorama: unknown;
+  thumbnail?: string;
+}
+
+export interface PhotoSphereViewerRuntime {
+  EquirectangularTilesAdapter: unknown;
+  MarkersPlugin: unknown;
+  Viewer: new (options: PhotoSphereViewerOptions) => PhotoSphereViewerInstance;
+  VirtualTourPlugin: {
+    withConfig(config: unknown): unknown;
+  };
+}
+
+export interface PhotoSphereViewerAdapterOptions {
+  loadPanorama?: (node: PanoramaNode) => Promise<unknown>;
+  loadRuntime?: () => Promise<PhotoSphereViewerRuntime>;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function normalizeHeading(heading: number): number {
+  const normalized = heading % 360;
+  return normalized < 0 ? normalized + 360 : normalized;
+}
+
+function degreesToRadians(degrees: number): number {
+  return (degrees * Math.PI) / 180;
+}
+
+function radiansToDegrees(radians: number): number {
+  return (radians * 180) / Math.PI;
+}
+
+function fovToZoom(fov: number): number {
+  const normalizedFov = clamp(fov, MIN_FOV, MAX_FOV);
+  return ((MAX_FOV - normalizedFov) / (MAX_FOV - MIN_FOV)) * MAX_ZOOM;
+}
+
+function zoomToFov(zoom: number): number {
+  const normalizedZoom = clamp(zoom, 0, MAX_ZOOM);
+  return MAX_FOV - (normalizedZoom / MAX_ZOOM) * (MAX_FOV - MIN_FOV);
+}
+
+function toVirtualTourNode(node: PanoramaNode, panorama: unknown): PhotoSphereVirtualTourNode {
+  return {
+    gps: [node.lng, node.lat],
+    id: node.id,
+    links: [],
+    name: node.id,
+    panorama,
+    ...(node.previewUrl === null ? {} : { thumbnail: node.previewUrl }),
+  };
+}
+
+async function loadPanoramaManifest(node: PanoramaNode): Promise<unknown> {
+  if (typeof fetch !== 'function') {
+    throw new Error('PANORAMA_FETCH_UNAVAILABLE');
+  }
+
+  const response = await fetch(node.panoramaUrl);
+  if (!response.ok) {
+    throw new Error(`PANORAMA_MANIFEST_FETCH_FAILED_${response.status}`);
+  }
+
+  return response.json();
+}
+
+async function loadPhotoSphereViewerRuntime(): Promise<PhotoSphereViewerRuntime> {
+  const [core, tiles, markers, virtualTour] = await Promise.all([
+    import('@photo-sphere-viewer/core'),
+    import('@photo-sphere-viewer/equirectangular-tiles-adapter'),
+    import('@photo-sphere-viewer/markers-plugin'),
+    import('@photo-sphere-viewer/virtual-tour-plugin'),
+  ]);
+
+  return {
+    EquirectangularTilesAdapter: tiles.EquirectangularTilesAdapter,
+    MarkersPlugin: markers.MarkersPlugin,
+    Viewer: core.Viewer as unknown as PhotoSphereViewerRuntime['Viewer'],
+    VirtualTourPlugin: virtualTour.VirtualTourPlugin,
+  };
+}
+
+export class PhotoSphereViewerEngine implements PanoramaEnginePort {
+  private container: HTMLElement | null = null;
+  private runtime: PhotoSphereViewerRuntime | null = null;
+  private runtimePromise: Promise<PhotoSphereViewerRuntime> | null = null;
+  private viewer: PhotoSphereViewerInstance | null = null;
+  private virtualTour: PhotoSphereVirtualTourPlugin | null = null;
+  private readonly nodes = new Map<string, PhotoSphereVirtualTourNode>();
+  private readonly viewListeners = new Set<(view: PanoramaView) => void>();
+  private readonly options: PhotoSphereViewerAdapterOptions;
+  private readonly handlePositionUpdated = () => this.emitView();
+  private readonly handleZoomUpdated = () => this.emitView();
+  private mountGeneration = 0;
+  private loadGeneration = 0;
+
+  constructor(options: PhotoSphereViewerAdapterOptions = {}) {
+    this.options = options;
+  }
+
+  async mount(container: HTMLElement): Promise<void> {
+    ++this.mountGeneration;
+    this.destroyViewer();
+    this.container = container;
+  }
+
+  async loadNode(node: PanoramaNode): Promise<void> {
+    const container = this.container;
+    if (!container) {
+      throw new Error('PHOTO_SPHERE_VIEWER_NOT_MOUNTED');
+    }
+
+    const generation = this.mountGeneration;
+    const loadGeneration = ++this.loadGeneration;
+    const [runtime, panorama] = await Promise.all([
+      this.getRuntime(),
+      (this.options.loadPanorama ?? loadPanoramaManifest)(node),
+    ]);
+
+    if (
+      generation !== this.mountGeneration ||
+      loadGeneration !== this.loadGeneration ||
+      !this.container
+    ) {
+      return;
+    }
+
+    this.nodes.set(node.id, toVirtualTourNode(node, panorama));
+
+    if (!this.viewer) {
+      this.createViewer(container, runtime, panorama, node.id);
+    }
+
+    this.virtualTour?.setNodes([...this.nodes.values()]);
+
+    const viewer = this.viewer;
+    if (!viewer) {
+      throw new Error('PHOTO_SPHERE_VIEWER_NOT_MOUNTED');
+    }
+
+    await viewer.setPanorama(panorama, { transition: false });
+    if (loadGeneration !== this.loadGeneration || generation !== this.mountGeneration) {
+      return;
+    }
+
+    await this.virtualTour?.setCurrentNode(node.id, {
+      effect: 'none',
+      rotation: false,
+      showLoader: false,
+    });
+    this.setView(node.initialView);
+  }
+
+  setView(view: PanoramaView): void {
+    if (!this.viewer) {
+      return;
+    }
+
+    this.viewer.rotate({
+      pitch: degreesToRadians(clamp(view.pitch, -90, 90)),
+      yaw: degreesToRadians(normalizeHeading(view.heading)),
+    });
+    this.viewer.zoom(fovToZoom(view.fov));
+  }
+
+  subscribeViewChanged(listener: (view: PanoramaView) => void): () => void {
+    this.viewListeners.add(listener);
+    return () => this.viewListeners.delete(listener);
+  }
+
+  destroy(): void {
+    ++this.mountGeneration;
+    this.destroyViewer();
+    this.container = null;
+    this.nodes.clear();
+    this.viewListeners.clear();
+  }
+
+  private createViewer(
+    container: HTMLElement,
+    runtime: PhotoSphereViewerRuntime,
+    panorama: unknown,
+    startNodeId: string,
+  ): void {
+    const virtualTourConfig = runtime.VirtualTourPlugin.withConfig({
+      dataMode: 'client',
+      nodes: [...this.nodes.values()],
+      positionMode: 'gps',
+      preload: true,
+      renderMode: '3d',
+      startNodeId,
+      transitionOptions: {
+        effect: 'fade',
+        rotation: true,
+        showLoader: true,
+      },
+    });
+    const viewer = new runtime.Viewer({
+      adapter: runtime.EquirectangularTilesAdapter,
+      container,
+      panorama,
+      plugins: [virtualTourConfig, runtime.MarkersPlugin],
+    });
+
+    this.viewer = viewer;
+    this.virtualTour = viewer.getPlugin<PhotoSphereVirtualTourPlugin>('virtual-tour');
+    viewer.addEventListener('position-updated', this.handlePositionUpdated);
+    viewer.addEventListener('zoom-updated', this.handleZoomUpdated);
+  }
+
+  private emitView(): void {
+    if (!this.viewer) {
+      return;
+    }
+
+    const position = this.viewer.getPosition();
+    const view: PanoramaView = {
+      fov: zoomToFov(this.viewer.getZoomLevel()),
+      heading: normalizeHeading(radiansToDegrees(position.yaw)),
+      pitch: clamp(radiansToDegrees(position.pitch), -90, 90),
+    };
+
+    for (const listener of this.viewListeners) {
+      listener(view);
+    }
+  }
+
+  private destroyViewer(): void {
+    if (this.viewer) {
+      this.viewer.removeEventListener('position-updated', this.handlePositionUpdated);
+      this.viewer.removeEventListener('zoom-updated', this.handleZoomUpdated);
+      this.viewer.destroy();
+    }
+
+    this.viewer = null;
+    this.virtualTour = null;
+  }
+
+  private async getRuntime(): Promise<PhotoSphereViewerRuntime> {
+    if (this.runtime) {
+      return this.runtime;
+    }
+
+    if (!this.runtimePromise) {
+      this.runtimePromise = this.options.loadRuntime
+        ? this.options.loadRuntime()
+        : loadPhotoSphereViewerRuntime();
+    }
+
+    try {
+      const runtime = await this.runtimePromise;
+      this.runtime = runtime;
+      return runtime;
+    } catch (error) {
+      this.runtimePromise = null;
+      throw error;
+    }
+  }
+}
+
+export function createPhotoSphereViewerEngine(
+  options: PhotoSphereViewerAdapterOptions = {},
+): PanoramaEnginePort {
+  return new PhotoSphereViewerEngine(options);
+}
