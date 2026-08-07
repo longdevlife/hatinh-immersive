@@ -15,6 +15,13 @@
       "when": 1786130602035,
       "tag": "0001_even_amphibian",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786131334788,
+      "tag": "0002_parched_demogoblin",
+      "breakpoints": true
     }
   ]
 }

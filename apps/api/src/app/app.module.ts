@@ -7,6 +7,7 @@ import { TraceIdMiddleware } from '../core/observability/trace-id.middleware';
 import { HealthModule } from '../core/health/health.module';
 import { DatabaseModule } from '../core/database/database.module';
 import { CatalogModule } from '../modules/catalog/catalog.module';
+import { VirtualTourModule } from '../modules/virtual-tour/virtual-tour.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { CatalogModule } from '../modules/catalog/catalog.module';
     }),
     DatabaseModule,
     CatalogModule,
+    VirtualTourModule,
     HealthModule,
   ],
   providers: [
