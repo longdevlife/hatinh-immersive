@@ -22,6 +22,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CompleteMediaUpload200,
   CreateDestination201,
   CreateDestinationBody,
   CreateHotspot201,
@@ -36,6 +37,8 @@ import type {
   GetScene200,
   GetSceneNeighbors200Item,
   ListDestinations200Item,
+  PresignMediaUpload201,
+  PresignMediaUploadBody,
   PublishDestination200,
   PublishScene200,
   UpdateDestination200,
@@ -507,6 +510,194 @@ export const useUpdateHotspot = <TError = unknown, TContext = unknown>(
   TContext
 > => {
   const mutationOptions = getUpdateHotspotMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+export type completeMediaUploadResponse200 = {
+  data: CompleteMediaUpload200;
+  status: 200;
+};
+
+export type completeMediaUploadResponseSuccess = completeMediaUploadResponse200 & {
+  headers: Headers;
+};
+export type completeMediaUploadResponse = completeMediaUploadResponseSuccess;
+
+export const getCompleteMediaUploadUrl = (id: string) => {
+  return `/api/v1/admin/media/${id}/complete-upload`;
+};
+
+export const completeMediaUpload = async (
+  id: string,
+  options?: RequestInit,
+): Promise<completeMediaUploadResponse> => {
+  const res = await fetch(getCompleteMediaUploadUrl(id), {
+    ...options,
+    method: 'POST',
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: completeMediaUploadResponse['data'] = body ? JSON.parse(body) : {};
+  return { data, status: res.status, headers: res.headers } as completeMediaUploadResponse;
+};
+
+export const getCompleteMediaUploadMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof completeMediaUpload>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof completeMediaUpload>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ['completeMediaUpload'];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof completeMediaUpload>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return completeMediaUpload(id, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CompleteMediaUploadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof completeMediaUpload>>
+>;
+
+export type CompleteMediaUploadMutationError = unknown;
+
+export const useCompleteMediaUpload = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof completeMediaUpload>>,
+      TError,
+      { id: string },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof completeMediaUpload>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationOptions = getCompleteMediaUploadMutationOptions(options);
+
+  return useMutation(mutationOptions, queryClient);
+};
+
+export type presignMediaUploadResponse201 = {
+  data: PresignMediaUpload201;
+  status: 201;
+};
+
+export type presignMediaUploadResponseSuccess = presignMediaUploadResponse201 & {
+  headers: Headers;
+};
+export type presignMediaUploadResponse = presignMediaUploadResponseSuccess;
+
+export const getPresignMediaUploadUrl = () => {
+  return `/api/v1/admin/media/presign`;
+};
+
+export const presignMediaUpload = async (
+  presignMediaUploadBody: PresignMediaUploadBody,
+  options?: RequestInit,
+): Promise<presignMediaUploadResponse> => {
+  const res = await fetch(getPresignMediaUploadUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(presignMediaUploadBody),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: presignMediaUploadResponse['data'] = body ? JSON.parse(body) : {};
+  return { data, status: res.status, headers: res.headers } as presignMediaUploadResponse;
+};
+
+export const getPresignMediaUploadMutationOptions = <
+  TError = unknown,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof presignMediaUpload>>,
+    TError,
+    { data: PresignMediaUploadBody },
+    TContext
+  >;
+  fetch?: RequestInit;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof presignMediaUpload>>,
+  TError,
+  { data: PresignMediaUploadBody },
+  TContext
+> => {
+  const mutationKey = ['presignMediaUpload'];
+  const { mutation: mutationOptions, fetch: fetchOptions } = options
+    ? options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, fetch: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof presignMediaUpload>>,
+    { data: PresignMediaUploadBody }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return presignMediaUpload(data, fetchOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PresignMediaUploadMutationResult = NonNullable<
+  Awaited<ReturnType<typeof presignMediaUpload>>
+>;
+export type PresignMediaUploadMutationBody = PresignMediaUploadBody;
+export type PresignMediaUploadMutationError = unknown;
+
+export const usePresignMediaUpload = <TError = unknown, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof presignMediaUpload>>,
+      TError,
+      { data: PresignMediaUploadBody },
+      TContext
+    >;
+    fetch?: RequestInit;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof presignMediaUpload>>,
+  TError,
+  { data: PresignMediaUploadBody },
+  TContext
+> => {
+  const mutationOptions = getPresignMediaUploadMutationOptions(options);
 
   return useMutation(mutationOptions, queryClient);
 };

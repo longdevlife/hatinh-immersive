@@ -1,6 +1,53 @@
 const dateTimeSchema = { type: 'string', format: 'date-time' };
 const uuidSchema = { type: 'string', format: 'uuid' };
 
+const mediaAssetProperties = {
+  id: uuidSchema,
+  mediaKind: { type: 'string', enum: ['panorama', 'image', 'audio', 'model3d'] },
+  originalFilename: { type: 'string' },
+  contentType: { type: 'string' },
+  sizeBytes: { type: 'integer' },
+  storageKey: { type: 'string' },
+  status: { type: 'string', enum: ['pending', 'uploaded', 'processing', 'ready', 'failed'] },
+  etag: { type: 'string', nullable: true },
+  failureCode: { type: 'string', nullable: true },
+  createdAt: dateTimeSchema,
+  updatedAt: dateTimeSchema,
+  uploadedAt: { ...dateTimeSchema, nullable: true },
+  readyAt: { ...dateTimeSchema, nullable: true },
+};
+
+export const mediaAssetAdminResponseSchema = {
+  type: 'object',
+  required: [
+    'id',
+    'mediaKind',
+    'originalFilename',
+    'contentType',
+    'sizeBytes',
+    'storageKey',
+    'status',
+    'etag',
+    'failureCode',
+    'createdAt',
+    'updatedAt',
+    'uploadedAt',
+    'readyAt',
+  ],
+  properties: mediaAssetProperties,
+};
+
+export const mediaPresignResponseSchema = {
+  type: 'object',
+  required: ['asset', 'uploadUrl', 'expiresInSeconds', 'requiredHeaders'],
+  properties: {
+    asset: mediaAssetAdminResponseSchema,
+    uploadUrl: { type: 'string', format: 'uri' },
+    expiresInSeconds: { type: 'integer' },
+    requiredHeaders: { type: 'object', additionalProperties: { type: 'string' } },
+  },
+};
+
 const translationSchema = {
   type: 'object',
   required: ['locale', 'name', 'summary', 'description'],

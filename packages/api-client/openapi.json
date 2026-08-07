@@ -712,6 +712,238 @@
         "tags": ["admin-immersive"]
       }
     },
+    "/api/v1/admin/media/{id}/complete-upload": {
+      "post": {
+        "operationId": "completeMediaUpload",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "contentType": {
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "etag": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "failureCode": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "mediaKind": {
+                      "enum": ["panorama", "image", "audio", "model3d"],
+                      "type": "string"
+                    },
+                    "originalFilename": {
+                      "type": "string"
+                    },
+                    "readyAt": {
+                      "format": "date-time",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "sizeBytes": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "enum": ["pending", "uploaded", "processing", "ready", "failed"],
+                      "type": "string"
+                    },
+                    "storageKey": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "uploadedAt": {
+                      "format": "date-time",
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "mediaKind",
+                    "originalFilename",
+                    "contentType",
+                    "sizeBytes",
+                    "storageKey",
+                    "status",
+                    "etag",
+                    "failureCode",
+                    "createdAt",
+                    "updatedAt",
+                    "uploadedAt",
+                    "readyAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Verified the object in storage and completed the upload."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-media"]
+      }
+    },
+    "/api/v1/admin/media/presign": {
+      "post": {
+        "operationId": "presignMediaUpload",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "contentType": {
+                    "maxLength": 160,
+                    "type": "string"
+                  },
+                  "mediaKind": {
+                    "enum": ["panorama", "image", "audio", "model3d"],
+                    "type": "string"
+                  },
+                  "originalFilename": {
+                    "maxLength": 240,
+                    "type": "string"
+                  },
+                  "sizeBytes": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": ["mediaKind", "originalFilename", "contentType", "sizeBytes"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "asset": {
+                      "properties": {
+                        "contentType": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "etag": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "failureCode": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "mediaKind": {
+                          "enum": ["panorama", "image", "audio", "model3d"],
+                          "type": "string"
+                        },
+                        "originalFilename": {
+                          "type": "string"
+                        },
+                        "readyAt": {
+                          "format": "date-time",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "sizeBytes": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "enum": ["pending", "uploaded", "processing", "ready", "failed"],
+                          "type": "string"
+                        },
+                        "storageKey": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "format": "date-time",
+                          "type": "string"
+                        },
+                        "uploadedAt": {
+                          "format": "date-time",
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "mediaKind",
+                        "originalFilename",
+                        "contentType",
+                        "sizeBytes",
+                        "storageKey",
+                        "status",
+                        "etag",
+                        "failureCode",
+                        "createdAt",
+                        "updatedAt",
+                        "uploadedAt",
+                        "readyAt"
+                      ],
+                      "type": "object"
+                    },
+                    "expiresInSeconds": {
+                      "type": "integer"
+                    },
+                    "requiredHeaders": {
+                      "additionalProperties": {
+                        "type": "string"
+                      },
+                      "type": "object"
+                    },
+                    "uploadUrl": {
+                      "format": "uri",
+                      "type": "string"
+                    }
+                  },
+                  "required": ["asset", "uploadUrl", "expiresInSeconds", "requiredHeaders"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Created media metadata and a presigned upload URL."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-media"]
+      }
+    },
     "/api/v1/admin/scene-links": {
       "post": {
         "operationId": "createSceneLink",

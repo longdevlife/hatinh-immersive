@@ -8,6 +8,7 @@ import { HealthModule } from '../core/health/health.module';
 import { DatabaseModule } from '../core/database/database.module';
 import { CatalogModule } from '../modules/catalog/catalog.module';
 import { VirtualTourModule } from '../modules/virtual-tour/virtual-tour.module';
+import { MediaModule } from '../modules/media/media.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { VirtualTourModule } from '../modules/virtual-tour/virtual-tour.module';
     DatabaseModule,
     CatalogModule,
     VirtualTourModule,
+    MediaModule,
     HealthModule,
   ],
   providers: [

@@ -17,6 +17,8 @@
     "test:e2e": "vitest run test"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1105.0",
+    "@aws-sdk/s3-request-presigner": "3.1105.0",
     "@fastify/cors": "11.3.0",
     "@fastify/helmet": "13.1.0",
     "@fastify/rate-limit": "10.3.0",

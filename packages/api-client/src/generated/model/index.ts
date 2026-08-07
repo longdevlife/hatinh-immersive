@@ -6,6 +6,9 @@
  * OpenAPI spec version: 1.0
  */
 
+export * from './completeMediaUpload200';
+export * from './completeMediaUpload200MediaKind';
+export * from './completeMediaUpload200Status';
 export * from './createDestination201';
 export * from './createDestination201GeoPoint';
 export * from './createDestination201Status';
@@ -56,6 +59,13 @@ export * from './getSceneNeighbors200ItemScene';
 export * from './getSceneNeighbors200ItemScenePanoramaAssetStatus';
 export * from './getSceneNeighbors200ItemSceneStatus';
 export * from './listDestinations200Item';
+export * from './presignMediaUpload201';
+export * from './presignMediaUpload201Asset';
+export * from './presignMediaUpload201AssetMediaKind';
+export * from './presignMediaUpload201AssetStatus';
+export * from './presignMediaUpload201RequiredHeaders';
+export * from './presignMediaUploadBody';
+export * from './presignMediaUploadBodyMediaKind';
 export * from './publishDestination200';
 export * from './publishDestination200GeoPoint';
 export * from './publishDestination200Status';
