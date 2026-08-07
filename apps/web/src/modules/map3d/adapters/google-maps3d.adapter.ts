@@ -65,6 +65,43 @@ export interface GoogleMaps3DAdapterOptions {
   windowRef?: GoogleMaps3DWindow;
 }
 
+interface GoogleSteadyStateEvent extends Event {
+  isSteady?: boolean;
+}
+
+function waitForMapReady(map: GoogleMap3DElement, signal: AbortSignal): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const cleanup = () => {
+      map.removeEventListener('gmp-error', onError);
+      map.removeEventListener('gmp-steadystate', onSteadyState);
+      signal.removeEventListener('abort', onAbort);
+    };
+    const resolveReady = () => {
+      cleanup();
+      resolve();
+    };
+    const rejectWith = (error: Error) => {
+      cleanup();
+      reject(error);
+    };
+    const onError = () => rejectWith(new Error('GOOGLE_MAPS_3D_ERROR'));
+    const onSteadyState = (event: Event) => {
+      if ((event as GoogleSteadyStateEvent).isSteady === true) {
+        resolveReady();
+      }
+    };
+    const onAbort = () => rejectWith(new Error('GOOGLE_MAPS_3D_MOUNT_CANCELLED'));
+
+    map.addEventListener('gmp-error', onError);
+    map.addEventListener('gmp-steadystate', onSteadyState);
+    signal.addEventListener('abort', onAbort, { once: true });
+
+    if (signal.aborted) {
+      onAbort();
+    }
+  });
+}
+
 const scriptLoads = new WeakMap<Document, Map<string, Promise<void>>>();
 
 function resolveDocument(documentRef?: Document): Document {
@@ -190,6 +227,7 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
   private libraryPromise: Promise<Maps3DLibrary> | null = null;
   private map: GoogleMap3DElement | null = null;
   private mountGeneration = 0;
+  private readinessController: AbortController | null = null;
   private readonly options: GoogleMaps3DAdapterOptions;
 
   constructor(options: GoogleMaps3DAdapterOptions = {}) {
@@ -198,6 +236,7 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
 
   async mount(container: HTMLElement): Promise<void> {
     const generation = ++this.mountGeneration;
+    this.cancelReadinessWait();
     this.destroyMountedMap();
     const library = this.library ?? (await this.loadLibrary());
 
@@ -219,6 +258,25 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
     container.replaceChildren(map);
     this.container = container;
     this.map = map;
+
+    const readinessController = new AbortController();
+    this.readinessController = readinessController;
+    try {
+      await waitForMapReady(map, readinessController.signal);
+    } catch (error) {
+      if (this.map === map) {
+        this.destroyMountedMap();
+      }
+      throw error;
+    } finally {
+      if (this.readinessController === readinessController) {
+        this.readinessController = null;
+      }
+    }
+
+    if (generation !== this.mountGeneration || this.map !== map) {
+      return;
+    }
   }
 
   async flyTo(target: CameraTarget): Promise<void> {
@@ -251,7 +309,13 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
 
   destroy(): void {
     ++this.mountGeneration;
+    this.cancelReadinessWait();
     this.destroyMountedMap();
+  }
+
+  private cancelReadinessWait(): void {
+    this.readinessController?.abort();
+    this.readinessController = null;
   }
 
   private destroyMountedMap(): void {

@@ -68,4 +68,32 @@ describe('Map3DViewport', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Không thể mở không gian 3D');
   });
+
+  it('does not continue stale camera work after the viewport is replaced', async () => {
+    let resolveFlyTo!: () => void;
+    const flyTo = new Promise<void>((resolve) => {
+      resolveFlyTo = resolve;
+    });
+    const oldEngine = {
+      addModel: vi.fn(async () => undefined),
+      destroy: vi.fn(),
+      flyTo: vi.fn(async () => flyTo),
+      mount: vi.fn(async () => undefined),
+    } satisfies Map3DEnginePort;
+    const newEngine = new FakeMap3DEngine();
+    const { rerender } = render(<Map3DViewport engine={oldEngine} target={target} model={model} />);
+
+    await waitFor(() => {
+      expect(oldEngine.flyTo).toHaveBeenCalledTimes(1);
+    });
+
+    rerender(<Map3DViewport engine={newEngine} target={target} model={model} />);
+    resolveFlyTo();
+
+    await waitFor(() => {
+      expect(newEngine.calls).toHaveLength(3);
+    });
+
+    expect(oldEngine.addModel).not.toHaveBeenCalled();
+  });
 });

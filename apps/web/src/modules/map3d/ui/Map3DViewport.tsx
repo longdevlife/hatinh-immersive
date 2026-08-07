@@ -52,9 +52,15 @@ export function Map3DViewport({
 
         if (target) {
           await engine.flyTo(target);
+          if (cancelled) {
+            return;
+          }
         }
         if (model) {
           await engine.addModel(model);
+          if (cancelled) {
+            return;
+          }
         }
 
         reportStatus('ready');

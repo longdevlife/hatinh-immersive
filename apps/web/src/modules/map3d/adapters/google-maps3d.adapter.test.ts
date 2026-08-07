@@ -15,6 +15,11 @@ class FakeMap3DElement extends HTMLElement {
   constructor(options: GoogleMap3DElementOptions) {
     super();
     this.options = options;
+    queueMicrotask(() => {
+      const event = new Event('gmp-steadystate');
+      Object.defineProperty(event, 'isSteady', { value: true });
+      this.dispatchEvent(event);
+    });
   }
 
   flyCameraTo(options: unknown) {
@@ -35,8 +40,24 @@ class FakeModel3DElement extends HTMLElement {
   }
 }
 
+class FailingMap3DElement extends HTMLElement {
+  constructor() {
+    super();
+    queueMicrotask(() => this.dispatchEvent(new Event('gmp-error')));
+  }
+
+  flyCameraTo() {
+    return undefined;
+  }
+
+  stopCameraAnimation() {
+    return undefined;
+  }
+}
+
 customElements.define('gmp-map-3d', FakeMap3DElement);
 customElements.define('gmp-model-3d', FakeModel3DElement);
+customElements.define('gmp-map-3d-error', FailingMap3DElement);
 
 const library = {
   Map3DElement: FakeMap3DElement,
@@ -115,5 +136,24 @@ describe('GoogleMaps3DEngine', () => {
     engine.destroy();
 
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('waits for steady state before mount resolves and reports map errors', async () => {
+    const engine = new GoogleMaps3DEngine({ loadLibrary: vi.fn(async () => library) });
+    const container = document.createElement('div');
+
+    const mount = engine.mount(container);
+    await expect(mount).resolves.toBeUndefined();
+
+    const failingEngine = new GoogleMaps3DEngine({
+      loadLibrary: vi.fn(async () => ({
+        ...library,
+        Map3DElement: FailingMap3DElement,
+      })),
+    });
+    const failingContainer = document.createElement('div');
+
+    await expect(failingEngine.mount(failingContainer)).rejects.toThrow('GOOGLE_MAPS_3D_ERROR');
+    expect(failingContainer).toBeEmptyDOMElement();
   });
 });
