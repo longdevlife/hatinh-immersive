@@ -6,20 +6,24 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint src vite.config.ts vitest.setup.ts",
+    "lint": "eslint src e2e playwright.config.ts vite.config.ts vitest.setup.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run",
-    "test:e2e": "vitest run"
+    "test": "vitest run src",
+    "test:e2e": "playwright test --config=playwright.config.ts"
   },
   "dependencies": {
     "@hatinh/api-client": "workspace:*",
     "@hatinh/ui": "workspace:*",
+    "@hookform/resolvers": "5.7.1",
     "@tanstack/react-query": "5.101.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "react-router-dom": "7.18.2"
+    "react-hook-form": "7.84.0",
+    "react-router-dom": "7.18.2",
+    "zod": "4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@testing-library/jest-dom": "7.0.0",
     "@testing-library/react": "16.3.2",
     "@types/react": "19.2.18",

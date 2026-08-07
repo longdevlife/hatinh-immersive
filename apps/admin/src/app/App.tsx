@@ -1,21 +1,25 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 
 import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
+import { AdminWorkspace } from '../modules/catalog-management/ui/AdminWorkspace';
 import './styles/index.css';
 
 function AdminHome() {
+  const navigate = useNavigate();
+
   return (
     <main className="admin-home" aria-labelledby="admin-title">
       <p className="admin-home__eyebrow">Hà Tĩnh Immersive / Admin</p>
       <h1 id="admin-title">Content workspace</h1>
       <p className="admin-home__description">
-        Destination, panorama scene và hotspot editor sẽ được kết nối ở các task backend/admin tiếp
-        theo.
+        Create destinations, shape panorama scenes and annotate the journey graph before publishing.
       </p>
-      <UiButton type="button">Open workspace</UiButton>
+      <UiButton type="button" onClick={() => navigate('/workspace')}>
+        Open workspace
+      </UiButton>
     </main>
   );
 }
@@ -31,10 +35,14 @@ export function App() {
             <a className="admin-app__brand" href="/">
               Immersive CMS
             </a>
-            <span className="admin-app__status">Foundation preview</span>
+            <nav className="admin-app__nav" aria-label="Admin navigation">
+              <a href="/workspace">Workspace</a>
+              <span className="admin-app__status">Foundation editor</span>
+            </nav>
           </header>
           <Routes>
             <Route path="/" element={<AdminHome />} />
+            <Route path="/workspace" element={<AdminWorkspace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
