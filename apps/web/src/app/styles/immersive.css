@@ -52,6 +52,18 @@
     linear-gradient(90deg, rgb(6 24 20 / 0.7), transparent 30%, rgb(6 24 20 / 0.25));
 }
 
+.explore-shell__renderer-slot {
+  inset: 0;
+  overflow: hidden;
+  position: absolute;
+  z-index: var(--z-index-base);
+}
+
+.explore-shell__renderer-slot > * {
+  height: 100%;
+  width: 100%;
+}
+
 .immersive-topbar,
 .scene-identity,
 .explore-shell__controls,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 
 import type { ImmersiveActions, ImmersiveViewVm } from '../../../shared/contracts';
 
@@ -9,9 +9,10 @@ import { RendererState } from './RendererState';
 export interface ExploreShellProps {
   view: ImmersiveViewVm;
   actions: ImmersiveActions;
+  rendererContent?: ReactNode;
 }
 
-export function ExploreShell({ view, actions }: ExploreShellProps) {
+export function ExploreShell({ view, actions, rendererContent }: ExploreShellProps) {
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d');
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
   const [audioStatus, setAudioStatus] = useState<AudioGuideStatus>('idle');
@@ -57,6 +58,9 @@ export function ExploreShell({ view, actions }: ExploreShellProps) {
         ) : (
           <div className="explore-shell__terrain" aria-hidden="true" />
         )}
+        <div className="explore-shell__renderer-slot" data-testid="immersive-renderer-slot">
+          {rendererContent}
+        </div>
         {isPanorama ? (
           <div className="hotspot-layer" aria-label="Điểm khám phá trong cảnh">
             {view.hotspots.map((hotspot, index) => (

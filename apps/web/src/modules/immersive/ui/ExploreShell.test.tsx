@@ -40,6 +40,26 @@ describe('ExploreShell', () => {
     expect(actions.onNavigateScene).toHaveBeenCalledWith('scene-02');
   });
 
+  it('renders optional presentational renderer content inside the viewport slot', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={readyImmersiveViewFixture}
+        actions={actions}
+        rendererContent={<div data-testid="renderer-content">Renderer host</div>}
+      />,
+    );
+
+    const viewport = screen.getByRole('region', {
+      name: 'Không gian 360 độ tại Lối đi di sản 1',
+    });
+    const rendererSlot = screen.getByTestId('immersive-renderer-slot');
+
+    expect(viewport).toContainElement(rendererSlot);
+    expect(rendererSlot).toContainElement(screen.getByTestId('renderer-content'));
+  });
+
   it('offers retry when the panorama renderer reports an error', () => {
     const actions = createActions();
 
