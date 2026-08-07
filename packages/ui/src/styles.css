@@ -8,8 +8,38 @@
     BlinkMacSystemFont,
     'Segoe UI',
     sans-serif;
-  color: #16251e;
-  background: #f4f0e8;
+  --color-background-canvas: #10221d;
+  --color-background-overlay: rgb(11 27 23 / 0.78);
+  --color-background-panel: #f7f5ef;
+  --color-text-primary: #183029;
+  --color-text-secondary: #597066;
+  --color-text-inverse: #f8f8f4;
+  --color-border-subtle: rgb(221 229 218 / 0.42);
+  --color-accent-primary: #d9803c;
+  --color-state-success: #3c815f;
+  --color-state-warning: #c88a2a;
+  --color-state-error: #bb4a3d;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --radius-sm: 0.75rem;
+  --radius-md: 1.125rem;
+  --radius-lg: 1.5rem;
+  --radius-pill: 999px;
+  --shadow-panel: 0 1.5rem 4rem rgb(8 19 15 / 0.2);
+  --blur-overlay: 1rem;
+  --motion-duration-fast: 160ms;
+  --motion-duration-base: 240ms;
+  --motion-easing-enter: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --z-index-base: 0;
+  --z-index-overlay: 10;
+  --z-index-panel: 20;
+  --z-index-dialog: 30;
+  color: var(--color-text-primary);
+  background: var(--color-background-panel);
 }
 
 * {
@@ -34,25 +64,25 @@ body {
   min-height: 2.75rem;
   padding: 0.7rem 1.05rem;
   transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease;
+    background-color var(--motion-duration-fast) var(--motion-easing-enter),
+    border-color var(--motion-duration-fast) var(--motion-easing-enter),
+    color var(--motion-duration-fast) var(--motion-easing-enter);
 }
 
 .ui-button:focus-visible {
-  outline: 3px solid #f1aa57;
+  outline: 3px solid var(--color-accent-primary);
   outline-offset: 3px;
 }
 
 .ui-button--neutral {
   background: #ffffff;
   border-color: #d3d8d1;
-  color: #1e3026;
+  color: var(--color-text-primary);
 }
 
 .ui-button--primary {
   background: #245b48;
-  color: #ffffff;
+  color: var(--color-text-inverse);
 }
 
 .ui-button:hover {

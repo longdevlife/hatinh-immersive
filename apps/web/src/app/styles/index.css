@@ -1,3 +1,5 @@
+@import './immersive.css';
+
 .public-app {
   min-height: 100vh;
   background: #f4f0e8;
