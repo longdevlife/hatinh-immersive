@@ -19,7 +19,7 @@
     "format:check": "prettier --check .",
     "architecture:check": "depcruise --config .dependency-cruiser.cjs apps packages && node tooling/scripts/architecture-check.mjs --workspace",
     "deadcode": "knip",
-    "api:generate": "pnpm --filter @hatinh/api-client generate",
+    "api:generate": "pnpm --filter @hatinh/api openapi:export && pnpm --filter @hatinh/api-client generate && prettier --write packages/api-client/openapi.json",
     "prepare": "husky"
   },
   "devDependencies": {

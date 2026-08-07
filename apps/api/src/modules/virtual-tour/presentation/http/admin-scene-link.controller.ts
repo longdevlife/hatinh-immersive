@@ -1,5 +1,12 @@
 import { Body, Controller, Delete, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
-import { ApiBody, ApiCreatedResponse, ApiNoContentResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import {
   VirtualTourCommandService,
@@ -7,6 +14,7 @@ import {
 } from '../../application/virtual-tour.commands';
 import { createSceneLinkBodySchema, parseBody } from './virtual-tour.dto';
 import { rethrowVirtualTourHttpError } from './virtual-tour-http.errors';
+import { sceneLinkAdminResponseSchema } from '../../../../core/http/openapi.schemas';
 
 @ApiTags('admin-immersive')
 @Controller('admin/scene-links')
@@ -14,6 +22,7 @@ export class AdminSceneLinkController {
   constructor(private readonly commandService: VirtualTourCommandService) {}
 
   @Post()
+  @ApiOperation({ operationId: 'createSceneLink' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -29,7 +38,10 @@ export class AdminSceneLinkController {
       },
     },
   })
-  @ApiCreatedResponse({ description: 'Created scene graph link.' })
+  @ApiCreatedResponse({
+    description: 'Created scene graph link.',
+    schema: sceneLinkAdminResponseSchema,
+  })
   async create(@Body() body: unknown) {
     try {
       const input = parseBody(createSceneLinkBodySchema, body);
@@ -51,6 +63,8 @@ export class AdminSceneLinkController {
   }
 
   @Delete(':id')
+  @ApiOperation({ operationId: 'deleteSceneLink' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiNoContentResponse({ description: 'Deleted scene graph link.' })
   async remove(@Param('id') id: string) {

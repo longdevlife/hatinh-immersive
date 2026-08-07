@@ -59,6 +59,7 @@ export interface SceneNeighborResponse {
 @Injectable()
 export class VirtualTourQueryService {
   constructor(
+    @Inject(DestinationQueryService)
     private readonly destinationQueryService: DestinationQueryService,
     @Inject(VIRTUAL_TOUR_REPOSITORY) private readonly repository: VirtualTourRepository,
   ) {}

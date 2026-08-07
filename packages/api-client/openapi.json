@@ -1,0 +1,2012 @@
+{
+  "components": {
+    "schemas": {}
+  },
+  "info": {
+    "contact": {},
+    "description": "REST API for the Hà Tĩnh immersive tourism platform foundation.",
+    "title": "Hà Tĩnh Immersive API",
+    "version": "1.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/admin/destinations": {
+      "post": {
+        "operationId": "createDestination",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "categoryId": {
+                    "format": "uuid",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "coverMediaId": {
+                    "format": "uuid",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "defaultSceneId": {
+                    "format": "uuid",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "geoPoint": {
+                    "nullable": true,
+                    "properties": {
+                      "latitude": {
+                        "example": 18.3421,
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "example": 105.9032,
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "slug": {
+                    "example": "son-trang-co-dam",
+                    "type": "string"
+                  },
+                  "translations": {
+                    "items": {
+                      "properties": {
+                        "description": {
+                          "type": "string"
+                        },
+                        "locale": {
+                          "example": "vi",
+                          "type": "string"
+                        },
+                        "name": {
+                          "example": "Sơn Trang Cổ Đạm",
+                          "type": "string"
+                        },
+                        "summary": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["locale", "name", "summary"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["slug", "translations"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "categoryId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "coverMediaId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "defaultSceneId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "geoPoint": {
+                      "nullable": true,
+                      "properties": {
+                        "latitude": {
+                          "example": 18.3421,
+                          "type": "number"
+                        },
+                        "longitude": {
+                          "example": 105.9032,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["latitude", "longitude"],
+                      "type": "object"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["draft", "published", "archived"],
+                      "type": "string"
+                    },
+                    "translations": {
+                      "items": {
+                        "properties": {
+                          "description": {
+                            "type": "string"
+                          },
+                          "locale": {
+                            "example": "vi",
+                            "type": "string"
+                          },
+                          "name": {
+                            "example": "Sơn Trang Cổ Đạm",
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["locale", "name", "summary", "description"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "updatedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "slug",
+                    "status",
+                    "categoryId",
+                    "geoPoint",
+                    "defaultSceneId",
+                    "coverMediaId",
+                    "translations",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Created destination draft."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-destinations"]
+      }
+    },
+    "/api/v1/admin/destinations/{id}": {
+      "patch": {
+        "operationId": "updateDestination",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "categoryId": {
+                    "format": "uuid",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "coverMediaId": {
+                    "format": "uuid",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "defaultSceneId": {
+                    "format": "uuid",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "geoPoint": {
+                    "nullable": true,
+                    "properties": {
+                      "latitude": {
+                        "example": 18.3421,
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "example": 105.9032,
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "slug": {
+                    "example": "son-trang-co-dam",
+                    "type": "string"
+                  },
+                  "translations": {
+                    "items": {
+                      "properties": {
+                        "description": {
+                          "type": "string"
+                        },
+                        "locale": {
+                          "example": "vi",
+                          "type": "string"
+                        },
+                        "name": {
+                          "example": "Sơn Trang Cổ Đạm",
+                          "type": "string"
+                        },
+                        "summary": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["locale", "name", "summary"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "categoryId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "coverMediaId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "defaultSceneId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "geoPoint": {
+                      "nullable": true,
+                      "properties": {
+                        "latitude": {
+                          "example": 18.3421,
+                          "type": "number"
+                        },
+                        "longitude": {
+                          "example": 105.9032,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["latitude", "longitude"],
+                      "type": "object"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["draft", "published", "archived"],
+                      "type": "string"
+                    },
+                    "translations": {
+                      "items": {
+                        "properties": {
+                          "description": {
+                            "type": "string"
+                          },
+                          "locale": {
+                            "example": "vi",
+                            "type": "string"
+                          },
+                          "name": {
+                            "example": "Sơn Trang Cổ Đạm",
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["locale", "name", "summary", "description"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "updatedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "slug",
+                    "status",
+                    "categoryId",
+                    "geoPoint",
+                    "defaultSceneId",
+                    "coverMediaId",
+                    "translations",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Updated destination draft."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-destinations"]
+      }
+    },
+    "/api/v1/admin/destinations/{id}/publish": {
+      "post": {
+        "operationId": "publishDestination",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "categoryId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "coverMediaId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "defaultSceneId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "geoPoint": {
+                      "nullable": true,
+                      "properties": {
+                        "latitude": {
+                          "example": 18.3421,
+                          "type": "number"
+                        },
+                        "longitude": {
+                          "example": 105.9032,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["latitude", "longitude"],
+                      "type": "object"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["draft", "published", "archived"],
+                      "type": "string"
+                    },
+                    "translations": {
+                      "items": {
+                        "properties": {
+                          "description": {
+                            "type": "string"
+                          },
+                          "locale": {
+                            "example": "vi",
+                            "type": "string"
+                          },
+                          "name": {
+                            "example": "Sơn Trang Cổ Đạm",
+                            "type": "string"
+                          },
+                          "summary": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["locale", "name", "summary", "description"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "updatedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "slug",
+                    "status",
+                    "categoryId",
+                    "geoPoint",
+                    "defaultSceneId",
+                    "coverMediaId",
+                    "translations",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Published destination."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-destinations"]
+      }
+    },
+    "/api/v1/admin/hotspots": {
+      "post": {
+        "operationId": "createHotspot",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "payload": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "pitch": {
+                    "example": 0,
+                    "type": "number"
+                  },
+                  "sceneId": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "status": {
+                    "enum": ["draft", "published", "archived"],
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": ["information", "media", "audio", "external"],
+                    "type": "string"
+                  },
+                  "yaw": {
+                    "example": 180,
+                    "type": "number"
+                  }
+                },
+                "required": ["sceneId", "type", "yaw", "pitch", "payload"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "createdAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    },
+                    "pitch": {
+                      "maximum": 90,
+                      "minimum": -90,
+                      "type": "number"
+                    },
+                    "sceneId": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["draft", "published", "archived"],
+                      "type": "string"
+                    },
+                    "type": {
+                      "enum": ["information", "media", "audio", "external"],
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "yaw": {
+                      "exclusiveMaximum": true,
+                      "maximum": 360,
+                      "minimum": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "sceneId",
+                    "type",
+                    "yaw",
+                    "pitch",
+                    "payload",
+                    "status",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Created immersive hotspot."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-immersive"]
+      }
+    },
+    "/api/v1/admin/hotspots/{id}": {
+      "patch": {
+        "operationId": "updateHotspot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "payload": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "pitch": {
+                    "example": 0,
+                    "type": "number"
+                  },
+                  "status": {
+                    "enum": ["draft", "published", "archived"],
+                    "type": "string"
+                  },
+                  "type": {
+                    "enum": ["information", "media", "audio", "external"],
+                    "type": "string"
+                  },
+                  "yaw": {
+                    "example": 180,
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "createdAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "payload": {
+                      "additionalProperties": true,
+                      "type": "object"
+                    },
+                    "pitch": {
+                      "maximum": 90,
+                      "minimum": -90,
+                      "type": "number"
+                    },
+                    "sceneId": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["draft", "published", "archived"],
+                      "type": "string"
+                    },
+                    "type": {
+                      "enum": ["information", "media", "audio", "external"],
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "yaw": {
+                      "exclusiveMaximum": true,
+                      "maximum": 360,
+                      "minimum": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "sceneId",
+                    "type",
+                    "yaw",
+                    "pitch",
+                    "payload",
+                    "status",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Updated immersive hotspot."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-immersive"]
+      }
+    },
+    "/api/v1/admin/scene-links": {
+      "post": {
+        "operationId": "createSceneLink",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "bidirectional": {
+                    "example": true,
+                    "type": "boolean"
+                  },
+                  "fromSceneId": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "pitch": {
+                    "example": 0,
+                    "type": "number"
+                  },
+                  "sortOrder": {
+                    "example": 0,
+                    "type": "integer"
+                  },
+                  "toSceneId": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "yaw": {
+                    "example": 90,
+                    "type": "number"
+                  }
+                },
+                "required": ["fromSceneId", "toSceneId", "yaw", "pitch"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "bidirectional": {
+                      "type": "boolean"
+                    },
+                    "createdAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "fromDestinationId": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "fromSceneId": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "pitch": {
+                      "maximum": 90,
+                      "minimum": -90,
+                      "type": "number"
+                    },
+                    "sortOrder": {
+                      "type": "integer"
+                    },
+                    "toDestinationId": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "toSceneId": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "yaw": {
+                      "exclusiveMaximum": true,
+                      "maximum": 360,
+                      "minimum": 0,
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "fromSceneId",
+                    "toSceneId",
+                    "fromDestinationId",
+                    "toDestinationId",
+                    "yaw",
+                    "pitch",
+                    "bidirectional",
+                    "sortOrder",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Created scene graph link."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-immersive"]
+      }
+    },
+    "/api/v1/admin/scene-links/{id}": {
+      "delete": {
+        "operationId": "deleteSceneLink",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted scene graph link."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-immersive"]
+      }
+    },
+    "/api/v1/admin/scenes": {
+      "post": {
+        "operationId": "createScene",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "altitude": {
+                    "nullable": true,
+                    "type": "number"
+                  },
+                  "destinationId": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "geoPoint": {
+                    "properties": {
+                      "latitude": {
+                        "example": 18.3421,
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "example": 105.9032,
+                        "type": "number"
+                      }
+                    },
+                    "required": ["latitude", "longitude"],
+                    "type": "object"
+                  },
+                  "id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "initialFov": {
+                    "example": 90,
+                    "type": "number"
+                  },
+                  "initialHeading": {
+                    "example": 0,
+                    "type": "number"
+                  },
+                  "initialPitch": {
+                    "example": 0,
+                    "type": "number"
+                  },
+                  "name": {
+                    "example": "Cổng vào khu di tích",
+                    "type": "string"
+                  },
+                  "panoramaAssetId": {
+                    "format": "uuid",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "panoramaAssetStatus": {
+                    "enum": ["pending", "uploaded", "processing", "ready", "failed"],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "example": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["destinationId", "name", "geoPoint"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "altitude": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "createdAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "destinationId": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "geoPoint": {
+                      "properties": {
+                        "latitude": {
+                          "example": 18.3421,
+                          "type": "number"
+                        },
+                        "longitude": {
+                          "example": 105.9032,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["latitude", "longitude"],
+                      "type": "object"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "initialFov": {
+                      "type": "number"
+                    },
+                    "initialHeading": {
+                      "type": "number"
+                    },
+                    "initialPitch": {
+                      "type": "number"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "panoramaAssetId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "panoramaAssetStatus": {
+                      "enum": ["pending", "uploaded", "processing", "ready", "failed"],
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "sortOrder": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "enum": ["draft", "published", "archived"],
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "destinationId",
+                    "name",
+                    "geoPoint",
+                    "altitude",
+                    "panoramaAssetId",
+                    "panoramaAssetStatus",
+                    "initialHeading",
+                    "initialPitch",
+                    "initialFov",
+                    "status",
+                    "sortOrder",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Created immersive scene draft."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-immersive"]
+      }
+    },
+    "/api/v1/admin/scenes/{id}": {
+      "patch": {
+        "operationId": "updateScene",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "altitude": {
+                    "nullable": true,
+                    "type": "number"
+                  },
+                  "destinationId": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "geoPoint": {
+                    "properties": {
+                      "latitude": {
+                        "example": 18.3421,
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "example": 105.9032,
+                        "type": "number"
+                      }
+                    },
+                    "required": ["latitude", "longitude"],
+                    "type": "object"
+                  },
+                  "id": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "initialFov": {
+                    "example": 90,
+                    "type": "number"
+                  },
+                  "initialHeading": {
+                    "example": 0,
+                    "type": "number"
+                  },
+                  "initialPitch": {
+                    "example": 0,
+                    "type": "number"
+                  },
+                  "name": {
+                    "example": "Cổng vào khu di tích",
+                    "type": "string"
+                  },
+                  "panoramaAssetId": {
+                    "format": "uuid",
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "panoramaAssetStatus": {
+                    "enum": ["pending", "uploaded", "processing", "ready", "failed"],
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "sortOrder": {
+                    "example": 0,
+                    "type": "integer"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "altitude": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "createdAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "destinationId": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "geoPoint": {
+                      "properties": {
+                        "latitude": {
+                          "example": 18.3421,
+                          "type": "number"
+                        },
+                        "longitude": {
+                          "example": 105.9032,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["latitude", "longitude"],
+                      "type": "object"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "initialFov": {
+                      "type": "number"
+                    },
+                    "initialHeading": {
+                      "type": "number"
+                    },
+                    "initialPitch": {
+                      "type": "number"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "panoramaAssetId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "panoramaAssetStatus": {
+                      "enum": ["pending", "uploaded", "processing", "ready", "failed"],
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "sortOrder": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "enum": ["draft", "published", "archived"],
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "destinationId",
+                    "name",
+                    "geoPoint",
+                    "altitude",
+                    "panoramaAssetId",
+                    "panoramaAssetStatus",
+                    "initialHeading",
+                    "initialPitch",
+                    "initialFov",
+                    "status",
+                    "sortOrder",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Updated immersive scene draft."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-immersive"]
+      }
+    },
+    "/api/v1/admin/scenes/{id}/publish": {
+      "post": {
+        "operationId": "publishScene",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "altitude": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "createdAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    },
+                    "destinationId": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "geoPoint": {
+                      "properties": {
+                        "latitude": {
+                          "example": 18.3421,
+                          "type": "number"
+                        },
+                        "longitude": {
+                          "example": 105.9032,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["latitude", "longitude"],
+                      "type": "object"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "initialFov": {
+                      "type": "number"
+                    },
+                    "initialHeading": {
+                      "type": "number"
+                    },
+                    "initialPitch": {
+                      "type": "number"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "panoramaAssetId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "panoramaAssetStatus": {
+                      "enum": ["pending", "uploaded", "processing", "ready", "failed"],
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "sortOrder": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "enum": ["draft", "published", "archived"],
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "format": "date-time",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "destinationId",
+                    "name",
+                    "geoPoint",
+                    "altitude",
+                    "panoramaAssetId",
+                    "panoramaAssetStatus",
+                    "initialHeading",
+                    "initialPitch",
+                    "initialFov",
+                    "status",
+                    "sortOrder",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Published immersive scene."
+          }
+        },
+        "summary": "",
+        "tags": ["admin-immersive"]
+      }
+    },
+    "/api/v1/destinations": {
+      "get": {
+        "operationId": "listDestinations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "categoryLabel": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "coverImageUrl": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "id": {
+                        "format": "uuid",
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "slug": {
+                        "type": "string"
+                      },
+                      "summary": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["id", "slug", "name", "summary", "coverImageUrl", "categoryLabel"],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Published destination previews."
+          }
+        },
+        "summary": "",
+        "tags": ["destinations"]
+      }
+    },
+    "/api/v1/destinations/{slug}": {
+      "get": {
+        "operationId": "getDestination",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "categoryId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "categoryLabel": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "coverImageUrl": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "coverMediaId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "defaultSceneId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "geoPoint": {
+                      "nullable": true,
+                      "properties": {
+                        "latitude": {
+                          "example": 18.3421,
+                          "type": "number"
+                        },
+                        "longitude": {
+                          "example": 105.9032,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["latitude", "longitude"],
+                      "type": "object"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["draft", "published", "archived"],
+                      "type": "string"
+                    },
+                    "summary": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "slug",
+                    "name",
+                    "summary",
+                    "coverImageUrl",
+                    "categoryLabel",
+                    "status",
+                    "description",
+                    "categoryId",
+                    "defaultSceneId",
+                    "geoPoint",
+                    "coverMediaId"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Published destination detail."
+          }
+        },
+        "summary": "",
+        "tags": ["destinations"]
+      }
+    },
+    "/api/v1/destinations/{slug}/immersive-manifest": {
+      "get": {
+        "operationId": "getImmersiveManifest",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "defaultSceneId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "destination": {
+                      "properties": {
+                        "categoryId": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "categoryLabel": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "coverImageUrl": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "coverMediaId": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "defaultSceneId": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "geoPoint": {
+                          "nullable": true,
+                          "properties": {
+                            "latitude": {
+                              "example": 18.3421,
+                              "type": "number"
+                            },
+                            "longitude": {
+                              "example": 105.9032,
+                              "type": "number"
+                            }
+                          },
+                          "required": ["latitude", "longitude"],
+                          "type": "object"
+                        },
+                        "id": {
+                          "format": "uuid",
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": ["draft", "published", "archived"],
+                          "type": "string"
+                        },
+                        "summary": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "slug",
+                        "name",
+                        "summary",
+                        "coverImageUrl",
+                        "categoryLabel",
+                        "status",
+                        "description",
+                        "categoryId",
+                        "defaultSceneId",
+                        "geoPoint",
+                        "coverMediaId"
+                      ],
+                      "type": "object"
+                    },
+                    "hotspots": {
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "payload": {
+                            "additionalProperties": true,
+                            "type": "object"
+                          },
+                          "pitch": {
+                            "maximum": 90,
+                            "minimum": -90,
+                            "type": "number"
+                          },
+                          "sceneId": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": ["draft", "published", "archived"],
+                            "type": "string"
+                          },
+                          "type": {
+                            "enum": ["information", "media", "audio", "external"],
+                            "type": "string"
+                          },
+                          "yaw": {
+                            "exclusiveMaximum": true,
+                            "maximum": 360,
+                            "minimum": 0,
+                            "type": "number"
+                          }
+                        },
+                        "required": ["id", "sceneId", "type", "yaw", "pitch", "payload", "status"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "links": {
+                      "items": {
+                        "properties": {
+                          "bidirectional": {
+                            "type": "boolean"
+                          },
+                          "fromSceneId": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "id": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "pitch": {
+                            "maximum": 90,
+                            "minimum": -90,
+                            "type": "number"
+                          },
+                          "sortOrder": {
+                            "type": "integer"
+                          },
+                          "toSceneId": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "yaw": {
+                            "exclusiveMaximum": true,
+                            "maximum": 360,
+                            "minimum": 0,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "fromSceneId",
+                          "toSceneId",
+                          "yaw",
+                          "pitch",
+                          "bidirectional",
+                          "sortOrder"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "nodes": {
+                      "items": {
+                        "properties": {
+                          "altitude": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "destinationId": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "id": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "initialFov": {
+                            "type": "number"
+                          },
+                          "initialHeading": {
+                            "type": "number"
+                          },
+                          "initialPitch": {
+                            "type": "number"
+                          },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "panoramaAssetId": {
+                            "format": "uuid",
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "panoramaAssetStatus": {
+                            "enum": ["pending", "uploaded", "processing", "ready", "failed"],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "sortOrder": {
+                            "type": "integer"
+                          },
+                          "status": {
+                            "enum": ["draft", "published", "archived"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "destinationId",
+                          "name",
+                          "lat",
+                          "lng",
+                          "altitude",
+                          "panoramaAssetId",
+                          "panoramaAssetStatus",
+                          "initialHeading",
+                          "initialPitch",
+                          "initialFov",
+                          "status",
+                          "sortOrder"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["destination", "defaultSceneId", "nodes", "links", "hotspots"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Published immersive scene graph manifest."
+          }
+        },
+        "summary": "",
+        "tags": ["immersive"]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "service": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["ok"],
+                      "type": "string"
+                    }
+                  },
+                  "required": ["service", "status"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "",
+        "tags": ["system"]
+      }
+    },
+    "/api/v1/scenes/{sceneId}": {
+      "get": {
+        "operationId": "getScene",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sceneId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "altitude": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "destinationId": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "id": {
+                      "format": "uuid",
+                      "type": "string"
+                    },
+                    "initialFov": {
+                      "type": "number"
+                    },
+                    "initialHeading": {
+                      "type": "number"
+                    },
+                    "initialPitch": {
+                      "type": "number"
+                    },
+                    "lat": {
+                      "type": "number"
+                    },
+                    "lng": {
+                      "type": "number"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "panoramaAssetId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "panoramaAssetStatus": {
+                      "enum": ["pending", "uploaded", "processing", "ready", "failed"],
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "sortOrder": {
+                      "type": "integer"
+                    },
+                    "status": {
+                      "enum": ["draft", "published", "archived"],
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "destinationId",
+                    "name",
+                    "lat",
+                    "lng",
+                    "altitude",
+                    "panoramaAssetId",
+                    "panoramaAssetStatus",
+                    "initialHeading",
+                    "initialPitch",
+                    "initialFov",
+                    "status",
+                    "sortOrder"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Published immersive scene node."
+          }
+        },
+        "summary": "",
+        "tags": ["immersive"]
+      }
+    },
+    "/api/v1/scenes/{sceneId}/neighbors": {
+      "get": {
+        "operationId": "getSceneNeighbors",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sceneId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "link": {
+                        "properties": {
+                          "bidirectional": {
+                            "type": "boolean"
+                          },
+                          "fromSceneId": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "id": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "pitch": {
+                            "maximum": 90,
+                            "minimum": -90,
+                            "type": "number"
+                          },
+                          "sortOrder": {
+                            "type": "integer"
+                          },
+                          "toSceneId": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "yaw": {
+                            "exclusiveMaximum": true,
+                            "maximum": 360,
+                            "minimum": 0,
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "fromSceneId",
+                          "toSceneId",
+                          "yaw",
+                          "pitch",
+                          "bidirectional",
+                          "sortOrder"
+                        ],
+                        "type": "object"
+                      },
+                      "scene": {
+                        "properties": {
+                          "altitude": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "destinationId": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "id": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "initialFov": {
+                            "type": "number"
+                          },
+                          "initialHeading": {
+                            "type": "number"
+                          },
+                          "initialPitch": {
+                            "type": "number"
+                          },
+                          "lat": {
+                            "type": "number"
+                          },
+                          "lng": {
+                            "type": "number"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "panoramaAssetId": {
+                            "format": "uuid",
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "panoramaAssetStatus": {
+                            "enum": ["pending", "uploaded", "processing", "ready", "failed"],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "sortOrder": {
+                            "type": "integer"
+                          },
+                          "status": {
+                            "enum": ["draft", "published", "archived"],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "destinationId",
+                          "name",
+                          "lat",
+                          "lng",
+                          "altitude",
+                          "panoramaAssetId",
+                          "panoramaAssetStatus",
+                          "initialHeading",
+                          "initialPitch",
+                          "initialFov",
+                          "status",
+                          "sortOrder"
+                        ],
+                        "type": "object"
+                      }
+                    },
+                    "required": ["link", "scene"],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Published neighboring scene nodes."
+          }
+        },
+        "summary": "",
+        "tags": ["immersive"]
+      }
+    }
+  },
+  "servers": [],
+  "tags": []
+}

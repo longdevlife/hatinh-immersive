@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.build.json",
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:migrate": "tsx src/core/database/migrate.ts",
+    "openapi:export": "tsx src/openapi-export.ts",
     "start": "node dist/main.js",
     "lint": "eslint src test",
     "typecheck": "tsc -p tsconfig.json --noEmit",

@@ -37,7 +37,7 @@ module.exports = {
     enhancedResolveOptions: {
       extensions: ['.cjs', '.js', '.mjs', '.ts', '.tsx'],
     },
-    exclude: ['(^|/)node_modules($|/)'],
+    exclude: ['(^|/)(node_modules|dist|build|coverage|.turbo)($|/)'],
     moduleSystems: ['es6', 'cjs'],
     preserveSymlinks: false,
   },

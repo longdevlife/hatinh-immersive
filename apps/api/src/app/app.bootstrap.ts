@@ -3,10 +3,11 @@ import helmet from '@fastify/helmet';
 import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { OpenAPIObject } from '@nestjs/swagger';
 
 import { loadEnvironment } from '../core/config/environment';
 
-export async function configureHttpApplication(app: INestApplication) {
+export async function configureHttpApplication(app: INestApplication): Promise<OpenAPIObject> {
   const environment = loadEnvironment();
   const fastify = app.getHttpAdapter().getInstance();
 
@@ -22,11 +23,16 @@ export async function configureHttpApplication(app: INestApplication) {
     timeWindow: environment.rateLimitWindow,
   });
 
+  const document = createOpenApiDocument(app);
+  SwaggerModule.setup('api/docs', app, document);
+  return document;
+}
+
+export function createOpenApiDocument(app: INestApplication): OpenAPIObject {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Hà Tĩnh Immersive API')
     .setDescription('REST API for the Hà Tĩnh immersive tourism platform foundation.')
     .setVersion('1.0')
     .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api/docs', app, document);
+  return SwaggerModule.createDocument(app, swaggerConfig);
 }

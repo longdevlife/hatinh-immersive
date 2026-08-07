@@ -9,10 +9,18 @@ import {
   Post,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { DestinationCommandService } from '../../application/destination.commands';
 import { DestinationRuleError, type UpdateDestinationInput } from '../../domain/destination';
+import { destinationAdminResponseSchema } from '../../../../core/http/openapi.schemas';
 import {
   createDestinationBodySchema,
   parseBody,
@@ -56,8 +64,12 @@ export class AdminDestinationController {
   constructor(private readonly commandService: DestinationCommandService) {}
 
   @Post()
+  @ApiOperation({ operationId: 'createDestination' })
   @ApiBody({ schema: { ...destinationWriteSchema, required: ['slug', 'translations'] } })
-  @ApiCreatedResponse({ description: 'Created destination draft.' })
+  @ApiCreatedResponse({
+    description: 'Created destination draft.',
+    schema: destinationAdminResponseSchema,
+  })
   async create(@Body() body: unknown) {
     const input = parseBody(createDestinationBodySchema, body);
     const destination = await this.commandService.create({
@@ -72,8 +84,13 @@ export class AdminDestinationController {
   }
 
   @Patch(':id')
+  @ApiOperation({ operationId: 'updateDestination' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ schema: destinationWriteSchema })
-  @ApiOkResponse({ description: 'Updated destination draft.' })
+  @ApiOkResponse({
+    description: 'Updated destination draft.',
+    schema: destinationAdminResponseSchema,
+  })
   async update(@Param('id') id: string, @Body() body: unknown) {
     const input = parseBody(updateDestinationBodySchema, body);
     const updateInput: UpdateDestinationInput = {};
@@ -93,8 +110,10 @@ export class AdminDestinationController {
   }
 
   @Post(':id/publish')
+  @ApiOperation({ operationId: 'publishDestination' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({ description: 'Published destination.' })
+  @ApiOkResponse({ description: 'Published destination.', schema: destinationAdminResponseSchema })
   async publish(@Param('id') id: string) {
     try {
       const destination = await this.commandService.publish(id);

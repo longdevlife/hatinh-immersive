@@ -2,6 +2,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const SOURCE_EXTENSIONS = new Set(['.cjs', '.js', '.mjs', '.ts', '.tsx']);
+const IGNORED_DIRECTORIES = new Set(['.turbo', 'build', 'coverage', 'dist', 'node_modules']);
 const IMPORT_PATTERN =
   /\b(?:import\s+(?:[\s\S]*?\s+from\s+)?|export\s+(?:[\s\S]*?\s+from\s+)?|import\s*\(\s*)['"]([^'"]+)['"]/g;
 
@@ -107,6 +108,10 @@ async function collectSourceFiles(directory) {
 
   const files = [];
   for (const entry of entries) {
+    if (entry.isDirectory() && IGNORED_DIRECTORIES.has(entry.name)) {
+      continue;
+    }
+
     const entryPath = path.join(directory, entry.name);
     if (entry.isDirectory()) {
       files.push(...(await collectSourceFiles(entryPath)));

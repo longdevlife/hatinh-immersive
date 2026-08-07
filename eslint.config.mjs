@@ -13,6 +13,7 @@ export default [
       '**/.turbo/**',
       '**/playwright-report/**',
       '**/test-results/**',
+      '**/src/generated/**',
     ],
   },
   eslint.configs.recommended,

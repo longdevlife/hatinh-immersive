@@ -1,8 +1,16 @@
 import { Body, Controller, HttpCode, HttpStatus, Param, Patch, Post } from '@nestjs/common';
-import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { VirtualTourCommandService } from '../../application/virtual-tour.commands';
 import type { CreateSceneNodeInput, UpdateSceneNodeInput } from '../../domain/scene-node';
+import { sceneNodeAdminResponseSchema } from '../../../../core/http/openapi.schemas';
 import { createSceneBodySchema, parseBody, updateSceneBodySchema } from './virtual-tour.dto';
 import { rethrowVirtualTourHttpError } from './virtual-tour-http.errors';
 
@@ -40,8 +48,12 @@ export class AdminSceneController {
   constructor(private readonly commandService: VirtualTourCommandService) {}
 
   @Post()
+  @ApiOperation({ operationId: 'createScene' })
   @ApiBody({ schema: { ...sceneWriteSchema, required: ['destinationId', 'name', 'geoPoint'] } })
-  @ApiCreatedResponse({ description: 'Created immersive scene draft.' })
+  @ApiCreatedResponse({
+    description: 'Created immersive scene draft.',
+    schema: sceneNodeAdminResponseSchema,
+  })
   async create(@Body() body: unknown) {
     try {
       const input = parseBody(createSceneBodySchema, body);
@@ -67,8 +79,13 @@ export class AdminSceneController {
   }
 
   @Patch(':id')
+  @ApiOperation({ operationId: 'updateScene' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiBody({ schema: sceneWriteSchema })
-  @ApiOkResponse({ description: 'Updated immersive scene draft.' })
+  @ApiOkResponse({
+    description: 'Updated immersive scene draft.',
+    schema: sceneNodeAdminResponseSchema,
+  })
   async update(@Param('id') id: string, @Body() body: unknown) {
     try {
       const input = parseBody(updateSceneBodySchema, body);
@@ -93,8 +110,13 @@ export class AdminSceneController {
   }
 
   @Post(':id/publish')
+  @ApiOperation({ operationId: 'publishScene' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({ description: 'Published immersive scene.' })
+  @ApiOkResponse({
+    description: 'Published immersive scene.',
+    schema: sceneNodeAdminResponseSchema,
+  })
   async publish(@Param('id') id: string) {
     try {
       const scene = await this.commandService.publishScene(id);

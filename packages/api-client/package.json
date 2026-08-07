@@ -1,0 +1,28 @@
+{
+  "name": "@hatinh/api-client",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./generated": "./src/generated/immersive-api.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "generate": "orval --config orval.config.ts",
+    "lint": "eslint src orval.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.101.4"
+  },
+  "devDependencies": {
+    "@types/node": "26.2.0",
+    "@types/react": "19.2.18",
+    "orval": "7.16.0",
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
+  }
+}

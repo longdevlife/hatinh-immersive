@@ -1,8 +1,16 @@
 import { Body, Controller, Param, Patch, Post } from '@nestjs/common';
-import { ApiBody, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { VirtualTourCommandService } from '../../application/virtual-tour.commands';
 import type { CreateHotspotInput, UpdateHotspotInput } from '../../domain/hotspot';
+import { hotspotAdminResponseSchema } from '../../../../core/http/openapi.schemas';
 import { createHotspotBodySchema, parseBody, updateHotspotBodySchema } from './virtual-tour.dto';
 import { rethrowVirtualTourHttpError } from './virtual-tour-http.errors';
 
@@ -20,14 +28,29 @@ const hotspotWriteSchema = {
   },
 };
 
+const hotspotUpdateSchema = {
+  type: 'object',
+  properties: {
+    type: { type: 'string', enum: ['information', 'media', 'audio', 'external'] },
+    yaw: { type: 'number', example: 180 },
+    pitch: { type: 'number', example: 0 },
+    payload: { type: 'object', additionalProperties: true },
+    status: { type: 'string', enum: ['draft', 'published', 'archived'] },
+  },
+};
+
 @ApiTags('admin-immersive')
 @Controller('admin/hotspots')
 export class AdminHotspotController {
   constructor(private readonly commandService: VirtualTourCommandService) {}
 
   @Post()
+  @ApiOperation({ operationId: 'createHotspot' })
   @ApiBody({ schema: hotspotWriteSchema })
-  @ApiCreatedResponse({ description: 'Created immersive hotspot.' })
+  @ApiCreatedResponse({
+    description: 'Created immersive hotspot.',
+    schema: hotspotAdminResponseSchema,
+  })
   async create(@Body() body: unknown) {
     try {
       const input = parseBody(createHotspotBodySchema, body);
@@ -49,8 +72,10 @@ export class AdminHotspotController {
   }
 
   @Patch(':id')
-  @ApiBody({ schema: { ...hotspotWriteSchema, required: [] } })
-  @ApiOkResponse({ description: 'Updated immersive hotspot.' })
+  @ApiOperation({ operationId: 'updateHotspot' })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiBody({ schema: hotspotUpdateSchema })
+  @ApiOkResponse({ description: 'Updated immersive hotspot.', schema: hotspotAdminResponseSchema })
   async update(@Param('id') id: string, @Body() body: unknown) {
     try {
       const input = parseBody(updateHotspotBodySchema, body);
