@@ -114,6 +114,8 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
             className="immersive-button immersive-button--quiet"
             type="button"
             onClick={openInfo}
+            aria-controls="destination-info-panel"
+            aria-expanded={isInfoOpen}
           >
             Thông tin
           </button>
@@ -177,8 +179,12 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
       )}
 
       <aside
+        id="destination-info-panel"
         className={`info-panel ${isInfoOpen ? 'info-panel--open' : ''}`}
         aria-hidden={!isInfoOpen}
+        aria-labelledby="destination-info-title"
+        inert={!isInfoOpen}
+        role="dialog"
       >
         <div className="info-panel__handle" aria-hidden="true" />
         <div className="info-panel__header">
@@ -192,7 +198,7 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
             ×
           </button>
         </div>
-        <h2>{view.destination.name}</h2>
+        <h2 id="destination-info-title">{view.destination.name}</h2>
         <p>{view.destination.summary}</p>
         {!isPanorama ? (
           <button

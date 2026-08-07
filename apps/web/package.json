@@ -6,14 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "check:bundle": "node ../../tooling/scripts/check-web-bundle.mjs",
     "lint": "eslint src e2e playwright.config.ts vite.config.ts vitest.setup.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test --config=playwright.config.ts"
   },
   "dependencies": {
-    "@hatinh/immersive-contracts": "workspace:*",
     "@hatinh/api-client": "workspace:*",
+    "@hatinh/immersive-contracts": "workspace:*",
     "@hatinh/ui": "workspace:*",
     "@photo-sphere-viewer/core": "5.15.1",
     "@photo-sphere-viewer/equirectangular-tiles-adapter": "5.15.1",
@@ -27,6 +28,7 @@
     "zustand": "5.0.14"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
     "@playwright/test": "1.62.1",
     "@testing-library/jest-dom": "7.0.0",
     "@testing-library/react": "16.3.2",
