@@ -4,6 +4,10 @@ const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
   HOST: z.string().min(1).default('0.0.0.0'),
+  DATABASE_URL: z
+    .string()
+    .url()
+    .default('postgresql://hatinh:hatinh@127.0.0.1:55432/hatinh_immersive'),
   CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:5174'),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
   RATE_LIMIT_WINDOW: z.string().min(1).default('1 minute'),
@@ -14,6 +18,7 @@ export interface AppEnvironment {
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
   host: string;
+  databaseUrl: string;
   corsOrigins: string[];
   rateLimitMax: number;
   rateLimitWindow: string;
@@ -27,6 +32,7 @@ export function loadEnvironment(env: NodeJS.ProcessEnv = process.env): AppEnviro
     nodeEnv: parsed.NODE_ENV,
     port: parsed.PORT,
     host: parsed.HOST,
+    databaseUrl: parsed.DATABASE_URL,
     corsOrigins: parsed.CORS_ORIGINS.split(',')
       .map((origin) => origin.trim())
       .filter((origin) => origin.length > 0),

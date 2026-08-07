@@ -5,6 +5,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { ProblemDetailsFilter } from '../core/http/problem-details/problem-details.filter';
 import { TraceIdMiddleware } from '../core/observability/trace-id.middleware';
 import { HealthModule } from '../core/health/health.module';
+import { DatabaseModule } from '../core/database/database.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { HealthModule } from '../core/health/health.module';
         level: process.env.LOG_LEVEL ?? 'info',
       },
     }),
+    DatabaseModule,
     HealthModule,
   ],
   providers: [

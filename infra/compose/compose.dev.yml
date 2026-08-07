@@ -1,0 +1,32 @@
+services:
+  postgis:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hatinh_immersive}
+      POSTGRES_USER: ${POSTGRES_USER:-hatinh}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hatinh}
+    ports:
+      - '${POSTGRES_PORT:-55432}:5432'
+    volumes:
+      - hatinh-postgis-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  minio:
+    image: minio/minio:RELEASE.2024-06-13T22-53-53Z
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-hatinh}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-hatinhminio}
+    ports:
+      - '${MINIO_API_PORT:-59000}:9000'
+      - '${MINIO_CONSOLE_PORT:-59001}:9001'
+    volumes:
+      - hatinh-minio-data:/data
+
+volumes:
+  hatinh-postgis-data:
+  hatinh-minio-data:
