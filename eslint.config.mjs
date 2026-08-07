@@ -1,4 +1,5 @@
 import eslint from '@eslint/js';
+import prettierConfig from 'eslint-config-prettier';
 import globals from 'globals';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
@@ -17,6 +18,7 @@ export default [
     ],
   },
   eslint.configs.recommended,
+  prettierConfig,
   {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {

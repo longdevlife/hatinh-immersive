@@ -1,0 +1,17 @@
+.git
+.github
+.superpowers
+.worktrees
+.turbo
+docs
+*.md
+**/node_modules
+**/dist
+**/build
+coverage
+playwright-report
+test-results
+.env*
+!.env.example
+npm-debug.log*
+pnpm-debug.log*

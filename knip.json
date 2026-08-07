@@ -1,4 +1,10 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["tooling/scripts/architecture-fixture.test.mjs"]
+  "exclude": ["exports", "types", "duplicates"],
+  "ignore": ["tooling/scripts/architecture-fixture.test.mjs"],
+  "workspaces": {
+    "apps/web": {
+      "entry": ["src/modules/minimap/index.ts", "src/shared/api/immersive.ts"]
+    }
+  }
 }

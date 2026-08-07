@@ -19,6 +19,7 @@
     "format:check": "prettier --check .",
     "architecture:check": "depcruise --config .dependency-cruiser.cjs apps packages tooling && node tooling/scripts/architecture-check.mjs --workspace",
     "deadcode": "knip",
+    "repo:smoke": "node tooling/scripts/repo-smoke.mjs",
     "api:generate": "pnpm --filter @hatinh/api openapi:export && pnpm --filter @hatinh/api-client generate && prettier --write packages/api-client/openapi.json",
     "panorama:build": "pnpm --filter @hatinh/panorama-tooling panorama:build",
     "panorama:test": "pnpm --filter @hatinh/panorama-tooling test",
