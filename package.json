@@ -17,7 +17,7 @@
     "test:e2e": "turbo run test:e2e",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "architecture:check": "depcruise --config .dependency-cruiser.cjs apps packages",
+    "architecture:check": "depcruise --config .dependency-cruiser.cjs apps packages && node tooling/scripts/architecture-check.mjs --workspace",
     "deadcode": "knip",
     "api:generate": "pnpm --filter @hatinh/api-client generate",
     "prepare": "husky"
