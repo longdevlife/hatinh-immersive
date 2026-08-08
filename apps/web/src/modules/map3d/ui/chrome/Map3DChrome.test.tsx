@@ -58,22 +58,22 @@ describe('Map3DChrome', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Switch language to English' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' }));
     expect(onLanguageToggle).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Share location' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Chia sẻ địa điểm' }));
     expect(onShare).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'View info' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thông tin' }));
     expect(onShowInfo).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Enter fullscreen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Toàn màn hình' }));
     expect(onToggleFullscreen).toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Khám phá 360°' }));
     expect(onEnter360).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('option', { selected: true }).querySelector('button')!);
+    fireEvent.click(screen.getByRole('option', { selected: true }));
     expect(onLocationSelected).toHaveBeenCalledWith('1');
   });
 

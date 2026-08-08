@@ -131,6 +131,26 @@
   transform: translateY(0);
 }
 
+.map3d-chrome__network {
+  align-self: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(20, 30, 25, 0.7);
+  color: var(--chrome-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.45rem 0.7rem;
+  white-space: nowrap;
+}
+
+.map3d-chrome__network--constrained {
+  color: #ffe0a6;
+}
+
+.map3d-chrome__network--offline {
+  color: #ffc5bb;
+}
+
 /* LEFT NAVIGATION RAIL */
 .map3d-chrome__nav-rail {
   position: absolute;

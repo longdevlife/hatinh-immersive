@@ -14,6 +14,10 @@ export interface Map3DChromeProps {
   language?: 'vi' | 'en';
   /** Is the view currently in fullscreen? */
   isFullscreen?: boolean;
+  /** Is the destination information drawer open? */
+  isInfoOpen?: boolean;
+  /** Current connection quality for a non-blocking status badge. */
+  networkQuality?: 'good' | 'constrained' | 'offline';
 
   /** The title displayed in the top chrome */
   title?: string;
@@ -41,6 +45,8 @@ export function Map3DChrome({
   children,
   language = 'vi',
   isFullscreen = false,
+  isInfoOpen = false,
+  networkQuality = 'good',
   title = 'Khu Di Tích Ngã Ba Đồng Lộc',
   subtitle,
   selectedLocationId = null,
@@ -57,6 +63,32 @@ export function Map3DChrome({
   const filteredLocations = locations.filter((loc) =>
     loc.label.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+  const labels =
+    language === 'vi'
+      ? {
+          emptyLocations: 'Không tìm thấy địa điểm nào.',
+          enter360: 'Khám phá 360°',
+          fullscreen: isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình',
+          info: 'Thông tin',
+          language: 'Đổi ngôn ngữ sang Tiếng Anh',
+          offline: 'Ngoại tuyến',
+          search: 'Tìm kiếm địa điểm',
+          searchPlaceholder: 'Tìm kiếm địa điểm...',
+          share: 'Chia sẻ địa điểm',
+          constrained: 'Kết nối yếu',
+        }
+      : {
+          emptyLocations: 'No locations found.',
+          enter360: 'Explore in 360°',
+          fullscreen: isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen',
+          info: 'View information',
+          language: 'Switch language to Vietnamese',
+          offline: 'Offline',
+          search: 'Search locations',
+          searchPlaceholder: 'Search locations...',
+          share: 'Share location',
+          constrained: 'Weak connection',
+        };
 
   return (
     <div className="map3d-chrome">
@@ -75,7 +107,7 @@ export function Map3DChrome({
             type="button"
             className="map3d-chrome__icon-btn"
             onClick={onLanguageToggle}
-            aria-label={`Switch language to ${language === 'vi' ? 'English' : 'Vietnamese'}`}
+            aria-label={labels.language}
           >
             {language === 'vi' ? 'EN' : 'VI'}
           </button>
@@ -83,7 +115,7 @@ export function Map3DChrome({
             type="button"
             className="map3d-chrome__icon-btn"
             onClick={onShare}
-            aria-label="Share location"
+            aria-label={labels.share}
           >
             <svg
               viewBox="0 0 24 24"
@@ -105,7 +137,9 @@ export function Map3DChrome({
             type="button"
             className="map3d-chrome__icon-btn"
             onClick={onShowInfo}
-            aria-label="View info"
+            aria-controls="destination-info-panel"
+            aria-expanded={isInfoOpen}
+            aria-label={labels.info}
           >
             <svg
               viewBox="0 0 24 24"
@@ -125,7 +159,7 @@ export function Map3DChrome({
             type="button"
             className="map3d-chrome__icon-btn"
             onClick={onToggleFullscreen}
-            aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            aria-label={labels.fullscreen}
           >
             {isFullscreen ? (
               <svg
@@ -153,6 +187,14 @@ export function Map3DChrome({
               </svg>
             )}
           </button>
+          {networkQuality !== 'good' ? (
+            <span
+              className={`map3d-chrome__network map3d-chrome__network--${networkQuality}`}
+              role="status"
+            >
+              {networkQuality === 'offline' ? labels.offline : labels.constrained}
+            </span>
+          ) : null}
         </div>
       </header>
 
@@ -162,10 +204,10 @@ export function Map3DChrome({
           <input
             type="search"
             className="map3d-chrome__search-input"
-            placeholder="Tìm kiếm địa điểm..."
+            placeholder={labels.searchPlaceholder}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label="Tìm kiếm địa điểm"
+            aria-label={labels.search}
           />
           <svg
             className="map3d-chrome__search-icon"
@@ -182,25 +224,32 @@ export function Map3DChrome({
           </svg>
         </div>
 
-        <ul className="map3d-chrome__location-list" role="listbox">
+        <div
+          aria-label={language === 'vi' ? 'Danh sách địa điểm' : 'Location list'}
+          className="map3d-chrome__location-list"
+          role="listbox"
+        >
           {filteredLocations.map((loc) => {
             const isSelected = selectedLocationId === loc.id;
             return (
-              <li key={loc.id} role="option" aria-selected={isSelected}>
-                <button
-                  type="button"
-                  className={`map3d-chrome__location-btn ${isSelected ? 'map3d-chrome__location-btn--selected' : ''}`}
-                  onClick={() => onLocationSelected?.(loc.id)}
-                >
-                  <span className="map3d-chrome__location-name">{loc.label}</span>
-                </button>
-              </li>
+              <button
+                key={loc.id}
+                role="option"
+                aria-selected={isSelected}
+                type="button"
+                className={`map3d-chrome__location-btn ${isSelected ? 'map3d-chrome__location-btn--selected' : ''}`}
+                onClick={() => onLocationSelected?.(loc.id)}
+              >
+                <span className="map3d-chrome__location-name">{loc.label}</span>
+              </button>
             );
           })}
           {filteredLocations.length === 0 && (
-            <li className="map3d-chrome__location-empty">Không tìm thấy địa điểm nào.</li>
+            <p className="map3d-chrome__location-empty" role="status">
+              {labels.emptyLocations}
+            </p>
           )}
-        </ul>
+        </div>
       </aside>
 
       {/* Bottom Area: Handoff / Main Call to action */}
@@ -219,7 +268,7 @@ export function Map3DChrome({
             >
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
             </svg>
-            <span>Khám phá 360°</span>
+            <span>{labels.enter360}</span>
           </button>
         </div>
       )}
