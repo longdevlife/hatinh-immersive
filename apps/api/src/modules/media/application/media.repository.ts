@@ -5,4 +5,5 @@ export const MEDIA_ASSET_REPOSITORY = Symbol('MEDIA_ASSET_REPOSITORY');
 export interface MediaAssetRepository {
   save(asset: MediaAsset): Promise<void>;
   findById(id: string): Promise<MediaAsset | null>;
+  findByIds(ids: string[]): Promise<Map<string, MediaAsset>>;
 }

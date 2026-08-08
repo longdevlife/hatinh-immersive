@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import { DatabaseService } from '../../../core/database/database.module';
 import { mediaAssets, type MediaAssetRow } from '../../../core/database/schema/media';
@@ -46,6 +46,20 @@ export class DrizzleMediaAssetRepository implements MediaAssetRepository {
     const rows = await this.database.db.select().from(mediaAssets).where(eq(mediaAssets.id, id));
     const row = rows[0];
     return row ? MediaAsset.rehydrate(toProps(row)) : null;
+  }
+
+  async findByIds(ids: string[]): Promise<Map<string, MediaAsset>> {
+    const uniqueIds = [...new Set(ids)];
+    if (uniqueIds.length === 0) {
+      return new Map();
+    }
+
+    const rows = await this.database.db
+      .select()
+      .from(mediaAssets)
+      .where(inArray(mediaAssets.id, uniqueIds));
+
+    return new Map(rows.map((row) => [row.id, MediaAsset.rehydrate(toProps(row))]));
   }
 }
 

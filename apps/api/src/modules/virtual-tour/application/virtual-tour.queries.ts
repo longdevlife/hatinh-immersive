@@ -2,6 +2,16 @@ import { Inject, Injectable } from '@nestjs/common';
 
 import { DestinationQueryService } from '../../catalog/application/destination.queries';
 import type { DestinationDetail } from '../../catalog/application/destination.queries';
+import {
+  MEDIA_ASSET_REPOSITORY,
+  type MediaAssetRepository,
+} from '../../media/application/media.repository';
+import {
+  PUBLIC_MEDIA_URL_OPTIONS,
+  resolvePanoramaMediaUrls,
+  type PublicMediaUrlOptions,
+} from '../../media/application/public-media-url';
+import type { MediaAsset } from '../../media/domain/media-asset';
 import { VIRTUAL_TOUR_REPOSITORY, type VirtualTourRepository } from './virtual-tour.repository';
 import type { Hotspot } from '../domain/hotspot';
 import type { SceneLink } from '../domain/scene-link';
@@ -64,6 +74,9 @@ export class VirtualTourQueryService {
     @Inject(DestinationQueryService)
     private readonly destinationQueryService: DestinationQueryService,
     @Inject(VIRTUAL_TOUR_REPOSITORY) private readonly repository: VirtualTourRepository,
+    @Inject(MEDIA_ASSET_REPOSITORY) private readonly mediaAssetRepository: MediaAssetRepository,
+    @Inject(PUBLIC_MEDIA_URL_OPTIONS)
+    private readonly publicMediaUrlOptions: PublicMediaUrlOptions,
   ) {}
 
   async findManifestByDestinationSlug(
@@ -81,6 +94,11 @@ export class VirtualTourQueryService {
       this.repository.findLinksByFromSceneIds(sceneIds),
       this.repository.findHotspotsBySceneIds(sceneIds, 'published'),
     ]);
+    const mediaAssets = await this.mediaAssetRepository.findByIds(
+      scenes
+        .map((scene) => scene.toPrimitives().panoramaAssetId)
+        .filter((assetId): assetId is string => assetId !== null),
+    );
 
     const defaultSceneId =
       destination.defaultSceneId && sceneIds.includes(destination.defaultSceneId)
@@ -90,7 +108,9 @@ export class VirtualTourQueryService {
     return {
       destination,
       defaultSceneId,
-      nodes: scenes.map(toSceneResponse),
+      nodes: scenes.map((scene) =>
+        toSceneResponse(scene, getSceneMediaAsset(scene, mediaAssets), this.publicMediaUrlOptions),
+      ),
       links: links.map(toLinkResponse),
       hotspots: hotspots.map(toHotspotResponse),
     };
@@ -98,7 +118,13 @@ export class VirtualTourQueryService {
 
   async findScene(id: string): Promise<SceneNodeResponse | null> {
     const scene = await this.repository.findSceneById(id);
-    return scene && scene.status === 'published' ? toSceneResponse(scene) : null;
+    if (!scene || scene.status !== 'published') {
+      return null;
+    }
+
+    const mediaAssetId = scene.toPrimitives().panoramaAssetId;
+    const mediaAsset = mediaAssetId ? await this.mediaAssetRepository.findById(mediaAssetId) : null;
+    return toSceneResponse(scene, mediaAsset, this.publicMediaUrlOptions);
   }
 
   async findNeighbors(id: string): Promise<SceneNeighborResponse[] | null> {
@@ -112,16 +138,44 @@ export class VirtualTourQueryService {
       links.map(async (link) => {
         const targetId = link.fromSceneId === id ? link.toSceneId : link.fromSceneId;
         const target = await this.repository.findSceneById(targetId);
-        return target ? { link: toLinkResponse(link), scene: toSceneResponse(target) } : null;
+        return target ? { link, scene: target } : null;
       }),
     );
 
-    return neighbors.filter((neighbor): neighbor is SceneNeighborResponse => neighbor !== null);
+    const resolvedNeighbors = neighbors.filter(
+      (neighbor): neighbor is { link: SceneLink; scene: SceneNode } => neighbor !== null,
+    );
+    const mediaAssets = await this.mediaAssetRepository.findByIds(
+      resolvedNeighbors
+        .map(({ scene }) => scene.toPrimitives().panoramaAssetId)
+        .filter((assetId): assetId is string => assetId !== null),
+    );
+
+    return resolvedNeighbors.map(({ link, scene }) => ({
+      link: toLinkResponse(link),
+      scene: toSceneResponse(
+        scene,
+        getSceneMediaAsset(scene, mediaAssets),
+        this.publicMediaUrlOptions,
+      ),
+    }));
   }
 }
 
-function toSceneResponse(scene: SceneNode): SceneNodeResponse {
+function toSceneResponse(
+  scene: SceneNode,
+  mediaAsset: MediaAsset | null,
+  publicMediaUrlOptions: PublicMediaUrlOptions,
+): SceneNodeResponse {
   const props = scene.toPrimitives();
+  const panoramaUrls =
+    mediaAsset?.status === 'ready'
+      ? resolvePanoramaMediaUrls(
+          { manifestKey: mediaAsset.toPrimitives().storageKey },
+          publicMediaUrlOptions,
+        )
+      : { manifestUrl: null, previewUrl: null };
+
   return {
     id: props.id,
     destinationId: props.destinationId,
@@ -131,14 +185,22 @@ function toSceneResponse(scene: SceneNode): SceneNodeResponse {
     altitude: props.altitude,
     panoramaAssetId: props.panoramaAssetId,
     panoramaAssetStatus: props.panoramaAssetStatus,
-    panoramaManifestUrl: null,
-    panoramaPreviewUrl: null,
+    panoramaManifestUrl: panoramaUrls.manifestUrl,
+    panoramaPreviewUrl: panoramaUrls.previewUrl,
     initialHeading: props.initialHeading,
     initialPitch: props.initialPitch,
     initialFov: props.initialFov,
     status: props.status,
     sortOrder: props.sortOrder,
   };
+}
+
+function getSceneMediaAsset(
+  scene: SceneNode,
+  mediaAssets: Map<string, MediaAsset>,
+): MediaAsset | null {
+  const mediaAssetId = scene.toPrimitives().panoramaAssetId;
+  return mediaAssetId ? (mediaAssets.get(mediaAssetId) ?? null) : null;
 }
 
 function toLinkResponse(link: SceneLink): SceneLinkResponse {

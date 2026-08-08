@@ -25,6 +25,7 @@ const environmentSchema = z.object({
   RATE_LIMIT_WINDOW: z.string().min(1).default('1 minute'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   S3_ENDPOINT: z.string().url().default('http://127.0.0.1:59000'),
+  S3_PUBLIC_ORIGIN: z.string().url().optional(),
   S3_REGION: z.string().min(1).default('us-east-1'),
   S3_ACCESS_KEY_ID: z.string().min(1).default('hatinh'),
   S3_SECRET_ACCESS_KEY: z.string().min(1).default('hatinhminio'),
@@ -83,6 +84,7 @@ export interface AppEnvironment {
   logLevel: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   storage: {
     endpoint: string;
+    publicOrigin?: string;
     region: string;
     accessKeyId: string;
     secretAccessKey: string;
@@ -122,6 +124,7 @@ export function loadEnvironment(env: NodeJS.ProcessEnv = process.env): AppEnviro
     logLevel: parsed.LOG_LEVEL,
     storage: {
       endpoint: parsed.S3_ENDPOINT,
+      ...(parsed.S3_PUBLIC_ORIGIN ? { publicOrigin: parsed.S3_PUBLIC_ORIGIN } : {}),
       region: parsed.S3_REGION,
       accessKeyId: parsed.S3_ACCESS_KEY_ID,
       secretAccessKey: parsed.S3_SECRET_ACCESS_KEY,

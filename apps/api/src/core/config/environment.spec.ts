@@ -45,6 +45,14 @@ describe('database environment configuration', () => {
     });
   });
 
+  it('supports a separate public origin for CDN or object-storage media URLs', () => {
+    const environment = loadEnvironment({
+      S3_PUBLIC_ORIGIN: 'https://media.example.vn/hatinh',
+    });
+
+    expect(environment.storage.publicOrigin).toBe('https://media.example.vn/hatinh');
+  });
+
   it('rejects production without database SSL', () => {
     expect(() =>
       loadEnvironment({
