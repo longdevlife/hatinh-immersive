@@ -65,6 +65,8 @@ function destinationFromResponse(destination: CreateDestination201): WorkspaceDe
   return {
     categoryLabel: null,
     coverImageUrl: null,
+    defaultSceneId: null,
+    geoPoint: null,
     id: destination.id,
     name: translation?.name ?? destination.slug,
     slug: destination.slug,
