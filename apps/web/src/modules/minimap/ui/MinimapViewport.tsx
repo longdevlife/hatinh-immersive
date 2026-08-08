@@ -8,6 +8,8 @@ export interface MinimapViewportProps extends MinimapProps {
   engine: MinimapEnginePort;
   fallback?: ReactNode;
   onStatusChange?: (status: RendererStatus) => void;
+  showToggle?: boolean;
+  variant?: 'minimap' | 'overview';
 }
 
 export function MinimapViewport({
@@ -21,6 +23,8 @@ export function MinimapViewport({
   onNodeSelect,
   onStatusChange,
   onToggle,
+  showToggle = true,
+  variant = 'minimap',
 }: MinimapViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onNodeSelectRef = useRef(onNodeSelect);
@@ -72,8 +76,8 @@ export function MinimapViewport({
 
   return (
     <section
-      aria-label="Bản đồ tuyến tham quan"
-      className={`minimap-viewport ${collapsed ? 'minimap-viewport--collapsed' : ''}`}
+      aria-label={variant === 'overview' ? 'Bản đồ Hà Tĩnh' : 'Bản đồ tuyến tham quan'}
+      className={`minimap-viewport minimap-viewport--${variant} ${collapsed ? 'minimap-viewport--collapsed' : ''}`}
       data-minimap-status={status}
       role="application"
     >
@@ -86,15 +90,17 @@ export function MinimapViewport({
             </strong>
           ) : null}
         </div>
-        <button
-          aria-expanded={!collapsed}
-          aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
-          className="immersive-icon-button"
-          type="button"
-          onClick={onToggle}
-        >
-          {collapsed ? '+' : '−'}
-        </button>
+        {showToggle ? (
+          <button
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
+            className="immersive-icon-button"
+            type="button"
+            onClick={onToggle}
+          >
+            {collapsed ? '+' : '−'}
+          </button>
+        ) : null}
       </header>
       <div
         ref={containerRef}

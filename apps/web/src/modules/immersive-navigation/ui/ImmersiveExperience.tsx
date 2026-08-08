@@ -17,6 +17,7 @@ import {
 } from '../../panorama';
 import {
   createLazyMapLibreMinimapEngine,
+  MinimapViewport,
   resolveMinimapStyle,
   type MinimapEnginePort,
 } from '../../minimap';
@@ -57,14 +58,16 @@ type ActiveEngine = Map3DEnginePort | PanoramaEnginePort;
 
 function createDefaultFactories(): ImmersiveExperienceFactories {
   const usesFakeRenderers = import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake';
-  const usesDeterministicMapLibreMinimap =
-    usesFakeRenderers && import.meta.env.VITE_IMMERSIVE_MINIMAP_MODE === 'maplibre';
+  const usesDeterministicMapLibre =
+    usesFakeRenderers &&
+    (import.meta.env.VITE_IMMERSIVE_MINIMAP_MODE === 'maplibre' ||
+      import.meta.env.VITE_IMMERSIVE_OVERVIEW_MODE === 'maplibre');
 
   if (usesFakeRenderers) {
     return {
       createMap3DEngine: async () => new FakeMap3DEngine(),
       createPanoramaEngine: async () => new FakePanoramaEngine(),
-      createMinimapEngine: usesDeterministicMapLibreMinimap
+      createMinimapEngine: usesDeterministicMapLibre
         ? () =>
             createLazyMapLibreMinimapEngine({
               style: resolveMinimapStyle({
@@ -204,7 +207,11 @@ interface RendererHostProps {
   onViewChange(view: PanoramaView): void;
   panoramaNode: PanoramaNode | null;
   panoramaNodes: PanoramaNode[];
+  overviewMapEngine: MinimapEnginePort | null;
+  overviewLinks: ImmersiveManifestVm['links'];
+  overviewNodes: ImmersiveManifestVm['nodes'];
   overviewTarget: ImmersiveManifestVm['overviewTarget'];
+  onOverviewNodeSelect(sceneId: string): void;
   retryKey: number;
 }
 
@@ -218,9 +225,31 @@ function RendererHost({
   onViewChange,
   panoramaNode,
   panoramaNodes,
+  overviewMapEngine,
+  overviewLinks,
+  overviewNodes,
   overviewTarget,
+  onOverviewNodeSelect,
   retryKey,
 }: RendererHostProps): ReactNode {
+  if (mode === 'overview3d' && overviewMapEngine) {
+    return (
+      <MinimapViewport
+        collapsed={false}
+        currentSceneId={null}
+        engine={overviewMapEngine}
+        heading={overviewTarget.heading ?? 0}
+        links={overviewLinks}
+        nodes={overviewNodes}
+        onNodeSelect={onOverviewNodeSelect}
+        onStatusChange={onStatusChange}
+        onToggle={() => undefined}
+        showToggle={false}
+        variant="overview"
+      />
+    );
+  }
+
   if (!engine || activeRenderer === 'none') {
     return null;
   }
@@ -307,6 +336,7 @@ function useActiveEngine(
 function useActiveMinimapEngine(
   mode: ImmersiveMode,
   createEngine: () => Promise<MinimapEnginePort>,
+  enableOverview: boolean,
 ) {
   const [engine, setEngine] = useState<MinimapEnginePort | null>(null);
 
@@ -314,7 +344,7 @@ function useActiveMinimapEngine(
     let cancelled = false;
     setEngine(null);
 
-    if (mode !== 'panorama') {
+    if (mode !== 'panorama' && !enableOverview) {
       return undefined;
     }
 
@@ -337,7 +367,7 @@ function useActiveMinimapEngine(
     return () => {
       cancelled = true;
     };
-  }, [createEngine, mode]);
+  }, [createEngine, enableOverview, mode]);
 
   return engine;
 }
@@ -448,9 +478,13 @@ export function ImmersiveExperience({
     retryKey,
     onRendererCreateError,
   );
+  const usesMapLibreOverview =
+    import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake' &&
+    import.meta.env.VITE_IMMERSIVE_OVERVIEW_MODE === 'maplibre';
   const activeMinimapEngine = useActiveMinimapEngine(
     navigation.mode,
     resolvedFactories.createMinimapEngine,
+    usesMapLibreOverview && navigation.mode === 'overview3d',
   );
 
   const scheduleUrlSync = useCallback(() => {
@@ -651,6 +685,12 @@ export function ImmersiveExperience({
       }}
       panoramaNode={currentPanoramaNode}
       panoramaNodes={manifest.panoramaNodes}
+      onOverviewNodeSelect={onEnterPanorama}
+      overviewMapEngine={
+        usesMapLibreOverview && navigation.mode === 'overview3d' ? activeMinimapEngine : null
+      }
+      overviewLinks={manifest.links}
+      overviewNodes={view.nodes}
       overviewTarget={manifest.overviewTarget}
       retryKey={retryKey}
     />
@@ -662,7 +702,7 @@ export function ImmersiveExperience({
         actions={actions}
         canEnterPanorama={manifest.panoramaNodes.length > 0}
         isSceneTransitioning={navigation.transition === 'navigating-scene'}
-        minimapEngine={activeMinimapEngine}
+        minimapEngine={navigation.mode === 'panorama' ? activeMinimapEngine : null}
         rendererContent={rendererContent}
         view={view}
       />

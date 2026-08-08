@@ -98,6 +98,25 @@ describe('minimap projection', () => {
     ]);
   });
 
+  it('projects the complete route when the overview has no committed scene', () => {
+    const geoJson = buildMinimapGeoJson(
+      nodes,
+      links.map((link) => ({ ...link, sourceSceneId: 'scene-01' })),
+      null,
+    );
+
+    expect(geoJson.route.features).toHaveLength(2);
+    expect(geoJson.route.features[0]).toMatchObject({
+      geometry: {
+        coordinates: [
+          [105.9, 18.342],
+          [105.902, 18.343],
+        ],
+      },
+      properties: { sourceSceneId: 'scene-01', targetSceneId: 'scene-02' },
+    });
+  });
+
   it('normalizes heading to the map marker range', () => {
     expect(normalizeHeading(-45)).toBe(315);
     expect(normalizeHeading(725)).toBe(5);

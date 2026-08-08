@@ -318,6 +318,34 @@
   width: min(19rem, calc(100vw - 2rem));
 }
 
+.minimap-viewport--overview {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  height: 100%;
+  padding: 0;
+  width: 100%;
+}
+
+.minimap-viewport--overview .minimap-viewport__header {
+  backdrop-filter: blur(var(--blur-overlay));
+  background: rgb(12 31 25 / 0.78);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: var(--radius-pill);
+  left: clamp(1rem, 4vw, 4rem);
+  padding: 0.65rem 0.9rem;
+  position: absolute;
+  top: clamp(5rem, 11vw, 7rem);
+  z-index: 1;
+}
+
+.minimap-viewport--overview .minimap-viewport__map {
+  border-radius: 0;
+  height: 100%;
+  margin: 0;
+}
+
 .minimap-viewport__header {
   align-items: center;
   display: flex;

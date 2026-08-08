@@ -60,6 +60,56 @@ export function buildMinimapGeoJson(
 ): MinimapGeoJson {
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const currentNode = currentSceneId ? nodeById.get(currentSceneId) : undefined;
+  const routeFeatures = currentNode
+    ? links.flatMap((link) => {
+        const targetNode = nodeById.get(link.targetSceneId);
+        if (!targetNode) {
+          return [];
+        }
+
+        return [
+          {
+            geometry: {
+              coordinates: [
+                toMapLibreCoordinate(currentNode),
+                toMapLibreCoordinate(targetNode),
+              ] as [MapLibreCoordinate, MapLibreCoordinate],
+              type: 'LineString' as const,
+            },
+            properties: {
+              id: link.id,
+              sourceSceneId: currentNode.id,
+              targetSceneId: link.targetSceneId,
+            },
+            type: 'Feature' as const,
+          },
+        ];
+      })
+    : links.flatMap((link) => {
+        const sourceNode = link.sourceSceneId ? nodeById.get(link.sourceSceneId) : undefined;
+        const targetNode = nodeById.get(link.targetSceneId);
+        if (!sourceNode || !targetNode) {
+          return [];
+        }
+
+        return [
+          {
+            geometry: {
+              coordinates: [toMapLibreCoordinate(sourceNode), toMapLibreCoordinate(targetNode)] as [
+                MapLibreCoordinate,
+                MapLibreCoordinate,
+              ],
+              type: 'LineString' as const,
+            },
+            properties: {
+              id: link.id,
+              sourceSceneId: sourceNode.id,
+              targetSceneId: targetNode.id,
+            },
+            type: 'Feature' as const,
+          },
+        ];
+      });
 
   return {
     nodes: {
@@ -79,32 +129,7 @@ export function buildMinimapGeoJson(
       type: 'FeatureCollection',
     },
     route: {
-      features: currentNode
-        ? links.flatMap((link) => {
-            const targetNode = nodeById.get(link.targetSceneId);
-            if (!targetNode) {
-              return [];
-            }
-
-            return [
-              {
-                geometry: {
-                  coordinates: [
-                    toMapLibreCoordinate(currentNode),
-                    toMapLibreCoordinate(targetNode),
-                  ] as [MapLibreCoordinate, MapLibreCoordinate],
-                  type: 'LineString' as const,
-                },
-                properties: {
-                  id: link.id,
-                  sourceSceneId: currentNode.id,
-                  targetSceneId: link.targetSceneId,
-                },
-                type: 'Feature' as const,
-              },
-            ];
-          })
-        : [],
+      features: routeFeatures,
       type: 'FeatureCollection',
     },
   };
