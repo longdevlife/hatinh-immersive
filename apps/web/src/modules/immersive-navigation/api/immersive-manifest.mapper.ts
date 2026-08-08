@@ -24,13 +24,14 @@ export function mapImmersiveManifest(dto: GetImmersiveManifest200): ImmersiveMan
     .filter((node) => node.status === 'published')
     .slice()
     .sort((left, right) => left.sortOrder - right.sortOrder);
+  const links = dto.links.flatMap(toSceneLinks);
   const nodes = orderedNodes.map(toSceneNode);
   const panoramaNodes = orderedNodes.flatMap((node) => {
     if (node.panoramaManifestUrl === null) {
       return [];
     }
 
-    return [toPanoramaNode(node)];
+    return [toPanoramaNode(node, links)];
   });
 
   return {
@@ -39,7 +40,7 @@ export function mapImmersiveManifest(dto: GetImmersiveManifest200): ImmersiveMan
     overviewTarget: toOverviewTarget(dto, orderedNodes),
     nodes,
     panoramaNodes,
-    links: dto.links.flatMap(toSceneLinks),
+    links,
     hotspots: dto.hotspots.filter((hotspot) => hotspot.status === 'published').map(toHotspot),
   };
 }
@@ -75,13 +76,17 @@ function toSceneNode(node: GetImmersiveManifest200['nodes'][number]): SceneNodeV
   };
 }
 
-function toPanoramaNode(node: GetImmersiveManifest200['nodes'][number]): PanoramaNode {
+function toPanoramaNode(
+  node: GetImmersiveManifest200['nodes'][number],
+  links: SceneLinkVm[],
+): PanoramaNode {
   if (node.panoramaManifestUrl === null) {
     throw new Error(`PANORAMA_MANIFEST_URL_REQUIRED:${node.id}`);
   }
 
   return {
     id: node.id,
+    name: node.name,
     panoramaUrl: node.panoramaManifestUrl,
     previewUrl: node.panoramaPreviewUrl ?? derivePreviewUrl(node.panoramaManifestUrl),
     lat: node.lat,
@@ -91,6 +96,11 @@ function toPanoramaNode(node: GetImmersiveManifest200['nodes'][number]): Panoram
       pitch: node.initialPitch,
       fov: node.initialFov,
     },
+    links: getSceneLinks(links, node.id).map((link) => ({
+      targetNodeId: link.targetSceneId,
+      yaw: link.yaw,
+      pitch: link.pitch,
+    })),
   };
 }
 

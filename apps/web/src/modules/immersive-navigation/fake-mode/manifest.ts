@@ -9,6 +9,20 @@ import {
 
 export function createFakeImmersiveManifest(): ImmersiveManifestVm {
   const firstNode = sceneNodesFixture[0];
+  const links = sceneLinksFixture.map((link, index) => {
+    const sourceNode = sceneNodesFixture[index];
+    return sourceNode ? { ...link, sourceSceneId: sourceNode.id } : link;
+  });
+  const panoramaNodes = panoramaNodesFixture.map((node) => ({
+    ...node,
+    links: links
+      .filter((link) => link.sourceSceneId === node.id)
+      .map((link) => ({
+        targetNodeId: link.targetSceneId,
+        yaw: link.yaw,
+        pitch: link.pitch,
+      })),
+  }));
 
   return {
     destination: destinationFixture,
@@ -22,11 +36,8 @@ export function createFakeImmersiveManifest(): ImmersiveManifestVm {
       range: 900,
     },
     nodes: sceneNodesFixture,
-    panoramaNodes: panoramaNodesFixture,
-    links: sceneLinksFixture.map((link, index) => {
-      const sourceNode = sceneNodesFixture[index];
-      return sourceNode ? { ...link, sourceSceneId: sourceNode.id } : link;
-    }),
+    panoramaNodes,
+    links,
     hotspots: hotspotsFixture,
   };
 }

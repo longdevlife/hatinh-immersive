@@ -14,6 +14,12 @@ const node = {
   initialView: { heading: 10, pitch: -2, fov: 88 },
 };
 
+const nextNode = {
+  ...node,
+  id: 'scene-02',
+  panoramaUrl: '/panorama/scene-02/manifest.json',
+};
+
 describe('PanoramaViewport', () => {
   it('mounts, loads a node, and destroys the panorama engine', async () => {
     const engine = new FakePanoramaEngine();
@@ -60,6 +66,30 @@ describe('PanoramaViewport', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Không thể tải không gian toàn cảnh',
     );
+  });
+
+  it('keeps one mounted viewer while loading another scene', async () => {
+    const engine = new FakePanoramaEngine();
+    const { rerender, unmount } = render(<PanoramaViewport engine={engine} node={node} />);
+
+    await waitFor(() => {
+      expect(engine.calls).toHaveLength(2);
+    });
+
+    rerender(<PanoramaViewport engine={engine} node={nextNode} />);
+
+    await waitFor(() => {
+      expect(engine.calls).toHaveLength(3);
+    });
+
+    expect(engine.calls[0]?.type).toBe('mount');
+    expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+    expect(engine.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
+    expect(engine.calls.at(-1)).toEqual({ type: 'loadNode', node: nextNode });
+
+    unmount();
+
+    expect(engine.calls.filter((call) => call.type === 'destroy')).toHaveLength(1);
   });
 
   it('forwards camera changes from the engine to the composition layer', async () => {

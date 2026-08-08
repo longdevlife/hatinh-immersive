@@ -73,6 +73,14 @@ describe('ImmersiveExperience', () => {
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
     );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đi tiếp' }));
+
+    await waitFor(() => {
+      expect(panorama.calls.filter((call) => call.type === 'loadNode')).toHaveLength(2);
+    });
+    expect(panorama.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+    expect(panorama.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
   });
 
   it('restores the linked scene and camera after a refresh', async () => {
@@ -93,5 +101,36 @@ describe('ImmersiveExperience', () => {
       sceneId: 'scene-02',
       view: { heading: 123.4, pitch: -7, fov: 82 },
     });
+  });
+
+  it('keeps the current scene when the next panorama fails', async () => {
+    const { factories, panorama } = createFactories();
+    const loadNode = panorama.loadNode.bind(panorama);
+    vi.spyOn(panorama, 'loadNode').mockImplementation(async (node) => {
+      if (node.id === 'scene-02') {
+        throw new Error('tile failed');
+      }
+
+      return loadNode(node);
+    });
+
+    renderExperience(
+      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      factories,
+    );
+
+    await waitFor(() => {
+      expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đi tiếp' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Lối đi di sản 1' })).toBeInTheDocument();
+      expect(useImmersiveNavigation.getState().sceneId).toBe('scene-01');
+    });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+    );
   });
 });

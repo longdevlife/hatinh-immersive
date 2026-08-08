@@ -99,20 +99,30 @@ export interface PanoramaView {
   fov: number;
 }
 
+export interface PanoramaLink {
+  targetNodeId: string;
+  yaw: number;
+  pitch: number;
+}
+
 export interface PanoramaNode {
   id: string;
+  name?: string;
   panoramaUrl: string;
   previewUrl: string | null;
   lat: number;
   lng: number;
   initialView: PanoramaView;
+  links?: PanoramaLink[];
 }
 
 export interface PanoramaEnginePort {
   mount(container: HTMLElement): Promise<void>;
+  setTour?(nodes: PanoramaNode[]): void;
   loadNode(node: PanoramaNode): Promise<void>;
   setView(view: PanoramaView): void;
   subscribeViewChanged(listener: (view: PanoramaView) => void): () => void;
+  subscribeNodeChanged?(listener: (nodeId: string) => void): () => void;
   destroy(): void;
 }
 

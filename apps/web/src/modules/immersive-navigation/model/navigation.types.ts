@@ -37,6 +37,7 @@ export interface ImmersiveNavigationActions {
   enterPanorama(sceneId: string): void;
   updateView(view: Partial<NavigationView>): void;
   navigateToScene(sceneId: string): void;
+  restoreScene(sceneId: string, view: NavigationView): void;
   selectHotspot(hotspotId: string): void;
   closeHotspot(): void;
   toggleMinimap(): void;

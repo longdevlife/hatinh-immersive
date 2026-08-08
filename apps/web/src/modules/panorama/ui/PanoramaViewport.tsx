@@ -14,7 +14,9 @@ export interface PanoramaViewportProps {
   initialView?: PanoramaView;
   node: PanoramaNode;
   onStatusChange?: (status: RendererStatus) => void;
+  onNodeChange?: (nodeId: string) => void;
   onViewChange?: (view: PanoramaView) => void;
+  tourNodes?: PanoramaNode[];
 }
 
 export function PanoramaViewport({
@@ -22,18 +24,27 @@ export function PanoramaViewport({
   fallback = <p role="alert">Không thể tải không gian toàn cảnh.</p>,
   initialView,
   node,
+  onNodeChange,
   onStatusChange,
   onViewChange,
+  tourNodes,
 }: PanoramaViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const initialViewRef = useRef(initialView);
+  const nodeRef = useRef(node);
   const onStatusChangeRef = useRef(onStatusChange);
+  const onNodeChangeRef = useRef(onNodeChange);
   const onViewChangeRef = useRef(onViewChange);
+  const tourNodesRef = useRef(tourNodes);
+  const mountPromiseRef = useRef<Promise<void> | null>(null);
   const [status, setStatus] = useState<RendererStatus>('loading');
 
   onStatusChangeRef.current = onStatusChange;
+  onNodeChangeRef.current = onNodeChange;
   initialViewRef.current = initialView;
+  nodeRef.current = node;
   onViewChangeRef.current = onViewChange;
+  tourNodesRef.current = tourNodes;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -47,6 +58,38 @@ export function PanoramaViewport({
         onViewChangeRef.current?.(view);
       }
     });
+    const unsubscribeNodeChanged = engine.subscribeNodeChanged?.((nodeId) => {
+      if (!cancelled) {
+        onNodeChangeRef.current?.(nodeId);
+      }
+    });
+    const reportStatus = (nextStatus: RendererStatus) => {
+      if (cancelled) {
+        return;
+      }
+
+      setStatus(nextStatus);
+      onStatusChangeRef.current?.(nextStatus);
+    };
+
+    engine.setTour?.(tourNodesRef.current ?? [nodeRef.current]);
+    const mountPromise = engine.mount(container);
+    mountPromiseRef.current = mountPromise;
+    void mountPromise.catch(() => {
+      reportStatus('error');
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribeViewChanged();
+      unsubscribeNodeChanged?.();
+      engine.destroy();
+      mountPromiseRef.current = null;
+    };
+  }, [engine]);
+
+  useEffect(() => {
+    let cancelled = false;
     const reportStatus = (nextStatus: RendererStatus) => {
       if (cancelled) {
         return;
@@ -60,7 +103,7 @@ export function PanoramaViewport({
 
     void (async () => {
       try {
-        await engine.mount(container);
+        await mountPromiseRef.current;
         if (cancelled) {
           return;
         }
@@ -82,8 +125,6 @@ export function PanoramaViewport({
 
     return () => {
       cancelled = true;
-      unsubscribeViewChanged();
-      engine.destroy();
     };
   }, [engine, node]);
 

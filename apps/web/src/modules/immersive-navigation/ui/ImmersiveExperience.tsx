@@ -31,7 +31,11 @@ import {
   type ImmersiveDeepLinkState,
 } from '../lib/deep-link';
 import { useImmersiveNavigation } from '../model/navigation.store';
-import type { ActiveRenderer, ImmersiveNavigationState } from '../model/navigation.types';
+import type {
+  ActiveRenderer,
+  ImmersiveNavigationState,
+  NavigationView,
+} from '../model/navigation.types';
 
 export interface ImmersiveExperienceFactories {
   createMap3DEngine(): Promise<Map3DEnginePort>;
@@ -143,9 +147,11 @@ interface RendererHostProps {
   engine: ActiveEngine | null;
   initialView: PanoramaView;
   mode: ImmersiveMode;
+  onNodeChange(nodeId: string): void;
   onStatusChange(status: RendererStatus): void;
   onViewChange(view: PanoramaView): void;
   panoramaNode: PanoramaNode | null;
+  panoramaNodes: PanoramaNode[];
   overviewTarget: ImmersiveManifestVm['overviewTarget'];
   retryKey: number;
 }
@@ -155,9 +161,11 @@ function RendererHost({
   engine,
   initialView,
   mode,
+  onNodeChange,
   onStatusChange,
   onViewChange,
   panoramaNode,
+  panoramaNodes,
   overviewTarget,
   retryKey,
 }: RendererHostProps): ReactNode {
@@ -182,12 +190,14 @@ function RendererHost({
     return (
       <Suspense fallback={null}>
         <LazyPanoramaViewport
-          key={`panorama-${panoramaNode.id}-${retryKey}`}
+          key={`panorama-${retryKey}`}
           engine={engine as PanoramaEnginePort}
           initialView={initialView}
           node={panoramaNode}
+          onNodeChange={onNodeChange}
           onStatusChange={onStatusChange}
           onViewChange={onViewChange}
+          tourNodes={panoramaNodes}
         />
       </Suspense>
     );
@@ -272,6 +282,11 @@ export function ImmersiveExperience({
   const resolvedFactories = factories ?? defaultFactories;
   const [retryKey, setRetryKey] = useState(0);
   const pendingUrlFrame = useRef<number | null>(null);
+  const pendingSceneTransitionRef = useRef<{
+    fromSceneId: string;
+    fromView: NavigationView;
+    targetSceneId: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!manifest) {
@@ -381,6 +396,13 @@ export function ImmersiveExperience({
       }
 
       const state = useImmersiveNavigation.getState();
+      if (state.sceneId && state.sceneId !== sceneId) {
+        pendingSceneTransitionRef.current = {
+          fromSceneId: state.sceneId,
+          fromView: state.view,
+          targetSceneId: sceneId,
+        };
+      }
       state.navigateToScene(sceneId);
       writeDeepLink(navigate, destinationSlug, false);
     },
@@ -428,8 +450,21 @@ export function ImmersiveExperience({
       engine={activeEngine}
       initialView={navigation.view}
       mode={navigation.mode}
+      onNodeChange={onNavigateScene}
       onStatusChange={(status) => {
         const state = useImmersiveNavigation.getState();
+        const pendingSceneTransition = pendingSceneTransitionRef.current;
+        if (
+          status === 'error' &&
+          state.activeRenderer === 'panorama' &&
+          pendingSceneTransition?.targetSceneId === state.sceneId
+        ) {
+          state.restoreScene(pendingSceneTransition.fromSceneId, pendingSceneTransition.fromView);
+          pendingSceneTransitionRef.current = null;
+          writeDeepLink(navigate, destinationSlug, true);
+        } else if (status === 'ready' && pendingSceneTransition?.targetSceneId === state.sceneId) {
+          pendingSceneTransitionRef.current = null;
+        }
         if (state.activeRenderer !== 'none') {
           state.setRendererStatus(state.activeRenderer, status);
         }
@@ -439,6 +474,7 @@ export function ImmersiveExperience({
         scheduleUrlSync();
       }}
       panoramaNode={currentPanoramaNode}
+      panoramaNodes={manifest.panoramaNodes}
       overviewTarget={manifest.overviewTarget}
       retryKey={retryKey}
     />

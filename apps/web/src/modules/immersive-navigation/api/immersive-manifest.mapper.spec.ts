@@ -146,6 +146,11 @@ describe('mapImmersiveManifest', () => {
     ]);
     expect(view.panoramaNodes.map((node) => node.id)).toEqual(['scene-01', 'scene-02', 'scene-04']);
     expect(view.panoramaNodes[0]?.previewUrl).toBe('https://cdn.example.vn/scene-01/preview.webp');
+    expect(view.panoramaNodes[1]?.links).toEqual([
+      { targetNodeId: 'scene-01', yaw: 198, pitch: -2 },
+      { targetNodeId: 'scene-03', yaw: 120, pitch: 1 },
+      { targetNodeId: 'scene-04', yaw: 240, pitch: 4 },
+    ]);
     expect(getSceneLinks(view.links, 'scene-02').map((link) => link.targetSceneId)).toEqual([
       'scene-01',
       'scene-03',

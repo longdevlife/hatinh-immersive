@@ -10,6 +10,7 @@ export type {
   ModelPlacement,
   NetworkQuality,
   PanoramaEnginePort,
+  PanoramaLink,
   PanoramaNode,
   PanoramaView,
   RendererStatus,

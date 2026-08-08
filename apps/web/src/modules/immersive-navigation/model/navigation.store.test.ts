@@ -72,6 +72,22 @@ describe('immersive navigation state machine', () => {
     });
   });
 
+  it('restores the previous panorama when a next scene fails to load', () => {
+    const navigation = useImmersiveNavigation.getState();
+
+    navigation.enterOverview('destination-1');
+    navigation.enterPanorama('scene-a');
+    navigation.updateView({ heading: 42, pitch: -4, fov: 82 });
+    navigation.navigateToScene('scene-b');
+    navigation.restoreScene('scene-a', { heading: 42, pitch: -4, fov: 82 });
+
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      sceneId: 'scene-a',
+      transition: 'idle',
+      view: { heading: 42, pitch: -4, fov: 82 },
+    });
+  });
+
   it('normalizes heading and clamps pitch and field of view', () => {
     const navigation = useImmersiveNavigation.getState();
 

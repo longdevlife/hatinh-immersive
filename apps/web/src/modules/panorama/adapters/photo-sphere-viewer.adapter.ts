@@ -10,6 +10,7 @@ import {
 
 import type {
   PanoramaEnginePort,
+  PanoramaLink,
   PanoramaNode,
   PanoramaView,
 } from '../domain/panorama-engine.port';
@@ -40,14 +41,20 @@ export interface PhotoSphereViewerInstance {
 }
 
 export interface PhotoSphereVirtualTourPlugin {
+  addEventListener?(type: string, listener: PhotoSphereViewerEventListener): void;
+  removeEventListener?(type: string, listener: PhotoSphereViewerEventListener): void;
   setCurrentNode(nodeId: string, options?: unknown): Promise<boolean>;
-  setNodes(nodes: PhotoSphereVirtualTourNode[]): void;
+}
+
+export interface PhotoSphereVirtualTourLink {
+  nodeId: string;
+  position: { pitch: number; yaw: number };
 }
 
 export interface PhotoSphereVirtualTourNode {
   gps: [number, number];
   id: string;
-  links: [];
+  links: PhotoSphereVirtualTourLink[];
   name: string;
   panorama: unknown;
   thumbnail?: string;
@@ -98,10 +105,20 @@ function toVirtualTourNode(node: PanoramaNode, panorama: unknown): PhotoSphereVi
   return {
     gps: [node.lng, node.lat],
     id: node.id,
-    links: [],
-    name: node.id,
+    links: (node.links ?? []).map(toVirtualTourLink),
+    name: node.name ?? node.id,
     panorama,
     ...(node.previewUrl === null ? {} : { thumbnail: node.previewUrl }),
+  };
+}
+
+function toVirtualTourLink(link: PanoramaLink): PhotoSphereVirtualTourLink {
+  return {
+    nodeId: link.targetNodeId,
+    position: {
+      yaw: degreesToRadians(normalizeHeading(link.yaw)),
+      pitch: degreesToRadians(clamp(link.pitch, -90, 90)),
+    },
   };
 }
 
@@ -175,11 +192,16 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   private runtimePromise: Promise<PhotoSphereViewerRuntime> | null = null;
   private viewer: PhotoSphereViewerInstance | null = null;
   private virtualTour: PhotoSphereVirtualTourPlugin | null = null;
-  private readonly nodes = new Map<string, PhotoSphereVirtualTourNode>();
+  private readonly tourNodes = new Map<string, PanoramaNode>();
+  private readonly virtualNodes = new Map<string, PhotoSphereVirtualTourNode>();
+  private readonly panoramaCache = new Map<string, unknown>();
   private readonly viewListeners = new Set<(view: PanoramaView) => void>();
   private readonly options: PhotoSphereViewerAdapterOptions;
+  private readonly nodeListeners = new Set<(nodeId: string) => void>();
   private readonly handlePositionUpdated = () => this.emitView();
   private readonly handleZoomUpdated = () => this.emitView();
+  private readonly handleNodeChanged = (event?: unknown) => this.emitNodeChanged(event);
+  private suppressNodeChanged = false;
   private mountGeneration = 0;
   private loadGeneration = 0;
 
@@ -190,7 +212,16 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   async mount(container: HTMLElement): Promise<void> {
     ++this.mountGeneration;
     this.destroyViewer();
+    this.virtualNodes.clear();
+    this.panoramaCache.clear();
     this.container = container;
+  }
+
+  setTour(nodes: PanoramaNode[]): void {
+    this.tourNodes.clear();
+    for (const node of nodes) {
+      this.tourNodes.set(node.id, node);
+    }
   }
 
   async loadNode(node: PanoramaNode): Promise<void> {
@@ -199,13 +230,13 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
       throw new Error('PHOTO_SPHERE_VIEWER_NOT_MOUNTED');
     }
 
+    this.tourNodes.set(node.id, node);
     const generation = this.mountGeneration;
     const loadGeneration = ++this.loadGeneration;
-    const [runtime, loadedPanorama] = await Promise.all([
+    const [runtime, panorama] = await Promise.all([
       this.getRuntime(),
-      (this.options.loadPanorama ?? loadPanoramaManifest)(node),
+      this.loadPanoramaForNode(node),
     ]);
-    const panorama = hydratePanoramaManifest(loadedPanorama, node.panoramaUrl);
 
     if (
       generation !== this.mountGeneration ||
@@ -215,29 +246,33 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
       return;
     }
 
-    this.nodes.set(node.id, toVirtualTourNode(node, panorama));
-
     if (!this.viewer) {
-      this.createViewer(container, runtime, panorama, node.id);
+      this.createViewer(container, runtime, panorama);
     }
 
-    this.virtualTour?.setNodes([...this.nodes.values()]);
-
-    const viewer = this.viewer;
-    if (!viewer) {
+    const virtualTour = this.virtualTour;
+    if (!virtualTour) {
       throw new Error('PHOTO_SPHERE_VIEWER_NOT_MOUNTED');
     }
 
-    await viewer.setPanorama(panorama, { transition: false });
+    this.suppressNodeChanged = true;
+    let completed: boolean;
+    try {
+      completed = await virtualTour.setCurrentNode(node.id, {
+        effect: 'none',
+        rotation: false,
+        showLoader: false,
+      });
+    } finally {
+      this.suppressNodeChanged = false;
+    }
+    if (!completed) {
+      throw new Error(`PHOTO_SPHERE_VIEWER_NODE_LOAD_ABORTED:${node.id}`);
+    }
     if (loadGeneration !== this.loadGeneration || generation !== this.mountGeneration) {
       return;
     }
 
-    await this.virtualTour?.setCurrentNode(node.id, {
-      effect: 'none',
-      rotation: false,
-      showLoader: false,
-    });
     this.setView(node.initialView);
   }
 
@@ -258,27 +293,33 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     return () => this.viewListeners.delete(listener);
   }
 
+  subscribeNodeChanged(listener: (nodeId: string) => void): () => void {
+    this.nodeListeners.add(listener);
+    return () => this.nodeListeners.delete(listener);
+  }
+
   destroy(): void {
     ++this.mountGeneration;
     this.destroyViewer();
     this.container = null;
-    this.nodes.clear();
+    this.tourNodes.clear();
+    this.virtualNodes.clear();
+    this.panoramaCache.clear();
     this.viewListeners.clear();
+    this.nodeListeners.clear();
   }
 
   private createViewer(
     container: HTMLElement,
     runtime: PhotoSphereViewerRuntime,
     panorama: unknown,
-    startNodeId: string,
   ): void {
     const virtualTourConfig = runtime.VirtualTourPlugin.withConfig({
-      dataMode: 'client',
-      nodes: [...this.nodes.values()],
-      positionMode: 'gps',
+      dataMode: 'server',
+      getNode: (nodeId: string) => this.loadVirtualTourNode(nodeId),
+      positionMode: 'manual',
       preload: true,
       renderMode: '3d',
-      startNodeId,
       transitionOptions: {
         effect: 'fade',
         rotation: true,
@@ -294,8 +335,38 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
 
     this.viewer = viewer;
     this.virtualTour = viewer.getPlugin<PhotoSphereVirtualTourPlugin>('virtual-tour');
+    this.virtualTour.addEventListener?.('node-changed', this.handleNodeChanged);
     viewer.addEventListener('position-updated', this.handlePositionUpdated);
     viewer.addEventListener('zoom-updated', this.handleZoomUpdated);
+  }
+
+  private async loadVirtualTourNode(nodeId: string): Promise<PhotoSphereVirtualTourNode> {
+    const cachedNode = this.virtualNodes.get(nodeId);
+    if (cachedNode) {
+      return cachedNode;
+    }
+
+    const node = this.tourNodes.get(nodeId);
+    if (!node) {
+      throw new Error(`PHOTO_SPHERE_VIEWER_NODE_NOT_REGISTERED:${nodeId}`);
+    }
+
+    const panorama = await this.loadPanoramaForNode(node);
+    const virtualNode = toVirtualTourNode(node, panorama);
+    this.virtualNodes.set(node.id, virtualNode);
+    return virtualNode;
+  }
+
+  private async loadPanoramaForNode(node: PanoramaNode): Promise<unknown> {
+    const cachedPanorama = this.panoramaCache.get(node.id);
+    if (cachedPanorama !== undefined) {
+      return cachedPanorama;
+    }
+
+    const loadedPanorama = await (this.options.loadPanorama ?? loadPanoramaManifest)(node);
+    const panorama = hydratePanoramaManifest(loadedPanorama, node.panoramaUrl);
+    this.panoramaCache.set(node.id, panorama);
+    return panorama;
   }
 
   private emitView(): void {
@@ -315,8 +386,28 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     }
   }
 
+  private emitNodeChanged(event: unknown): void {
+    if (this.suppressNodeChanged || typeof event !== 'object' || event === null) {
+      return;
+    }
+
+    const node = 'node' in event ? event.node : null;
+    const nodeId =
+      typeof node === 'object' && node !== null && 'id' in node && typeof node.id === 'string'
+        ? node.id
+        : null;
+    if (!nodeId) {
+      return;
+    }
+
+    for (const listener of this.nodeListeners) {
+      listener(nodeId);
+    }
+  }
+
   private destroyViewer(): void {
     if (this.viewer) {
+      this.virtualTour?.removeEventListener?.('node-changed', this.handleNodeChanged);
       this.viewer.removeEventListener('position-updated', this.handlePositionUpdated);
       this.viewer.removeEventListener('zoom-updated', this.handleZoomUpdated);
       this.viewer.destroy();

@@ -7,8 +7,19 @@ import {
 } from './photo-sphere-viewer.adapter';
 
 class FakeVirtualTourPlugin {
+  readonly listeners = new Map<string, Set<(event?: unknown) => void>>();
   readonly setCurrentNodeCalls: string[] = [];
   nodes: unknown[] = [];
+
+  addEventListener(type: string, listener: (event?: unknown) => void) {
+    const listeners = this.listeners.get(type) ?? new Set();
+    listeners.add(listener);
+    this.listeners.set(type, listeners);
+  }
+
+  removeEventListener(type: string, listener: (event?: unknown) => void) {
+    this.listeners.get(type)?.delete(listener);
+  }
 
   setNodes(nodes: unknown[]) {
     this.nodes = nodes;
@@ -17,6 +28,12 @@ class FakeVirtualTourPlugin {
   async setCurrentNode(nodeId: string) {
     this.setCurrentNodeCalls.push(nodeId);
     return true;
+  }
+
+  emit(type: string, event?: unknown) {
+    for (const listener of this.listeners.get(type) ?? []) {
+      listener(event);
+    }
   }
 }
 
@@ -108,11 +125,21 @@ const runtime = {
 
 const node: PanoramaNode = {
   id: 'scene-01',
+  links: [{ targetNodeId: 'scene-02', yaw: 725, pitch: -12 }],
   panoramaUrl: 'https://cdn.example.test/scene-01/manifest.json',
   previewUrl: 'https://cdn.example.test/scene-01/preview.webp',
   lat: 18.342,
   lng: 105.9,
   initialView: { heading: 10, pitch: -2, fov: 88 },
+};
+
+const targetNode: PanoramaNode = {
+  id: 'scene-02',
+  panoramaUrl: 'https://cdn.example.test/scene-02/manifest.json',
+  previewUrl: 'https://cdn.example.test/scene-02/preview.webp',
+  lat: 18.343,
+  lng: 105.901,
+  initialView: { heading: 180, pitch: 0, fov: 90 },
 };
 
 describe('PhotoSphereViewerEngine', () => {
@@ -131,8 +158,11 @@ describe('PhotoSphereViewerEngine', () => {
     const engine = new PhotoSphereViewerEngine({ loadPanorama, loadRuntime });
     const container = document.createElement('div');
     const received: PanoramaView[] = [];
+    const receivedNodeIds: string[] = [];
 
     await engine.mount(container);
+    engine.setTour?.([node, targetNode]);
+    engine.subscribeNodeChanged?.((nodeId) => receivedNodeIds.push(nodeId));
     expect(loadRuntime).not.toHaveBeenCalled();
 
     const unsubscribe = engine.subscribeViewChanged((view) => received.push(view));
@@ -141,17 +171,47 @@ describe('PhotoSphereViewerEngine', () => {
     expect(loadRuntime).toHaveBeenCalledTimes(1);
     expect(loadPanorama).toHaveBeenCalledWith(node);
     expect(runtime.Viewer).toHaveBeenCalledTimes(1);
-    expect(fakeViewer.setPanoramaCalls).toHaveLength(1);
-    const panorama = fakeViewer.setPanoramaCalls[0] as {
-      baseUrl: string;
-      levels: unknown[];
-      tileUrl: (column: number, row: number, level: number) => string;
-    };
+    expect(fakeViewer.setPanoramaCalls).toHaveLength(0);
+    const panorama = (
+      vi.mocked(runtime.Viewer).mock.calls.at(-1)?.[0] as {
+        panorama: {
+          baseUrl: string;
+          levels: unknown[];
+          tileUrl: (column: number, row: number, level: number) => string;
+        };
+      }
+    ).panorama;
     expect(panorama.baseUrl).toBe('https://cdn.example.test/scene-01/preview.webp');
     expect(panorama.levels).toHaveLength(2);
     expect(panorama.tileUrl(1, 0, 1)).toBe('https://cdn.example.test/scene-01/tiles/1/1-0.webp');
-    expect(virtualTourPlugin.nodes).toHaveLength(1);
     expect(virtualTourPlugin.setCurrentNodeCalls).toEqual(['scene-01']);
+
+    const virtualTourConfig = vi
+      .mocked(runtime.VirtualTourPlugin.withConfig)
+      .mock.calls.at(-1)?.[0] as {
+      dataMode: string;
+      getNode: (nodeId: string) => Promise<{ links: unknown[] }>;
+      positionMode: string;
+      preload: boolean;
+    };
+    expect(virtualTourConfig).toMatchObject({
+      dataMode: 'server',
+      positionMode: 'manual',
+      preload: true,
+    });
+    await expect(virtualTourConfig.getNode('scene-01')).resolves.toMatchObject({
+      links: [
+        {
+          nodeId: 'scene-02',
+          position: {
+            yaw: expect.closeTo((5 * Math.PI) / 180),
+            pitch: expect.closeTo((-12 * Math.PI) / 180),
+          },
+        },
+      ],
+    });
+    virtualTourPlugin.emit('node-changed', { node: { id: 'scene-02' } });
+    expect(receivedNodeIds).toEqual(['scene-02']);
 
     fakeViewer.position = { pitch: -Math.PI / 18, yaw: Math.PI };
     fakeViewer.zoomLevel = 60;
