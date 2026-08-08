@@ -424,7 +424,8 @@ export function ImmersiveExperience({
   const [locale, setLocale] = useState<ImmersiveLocale>('vi');
   const [destinationSearchQuery, setDestinationSearchQuery] = useState('');
   const manifestQuery = useImmersiveManifest(destinationSlug, locale, !manifestOverride);
-  const destinationsQuery = useImmersiveDestinations(locale, !manifestOverride);
+  const shouldFetchDestinations = !manifestOverride || destinationSearchQuery.trim().length >= 2;
+  const destinationsQuery = useImmersiveDestinations(locale, shouldFetchDestinations);
   const manifest = manifestOverride ?? manifestQuery.data;
   const mapLocations = useMemo(
     () => (manifest ? mergeMapLocations(manifest, destinationsQuery.data) : []),

@@ -82,7 +82,7 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
   const manifestLocales: string[] = [];
 
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
-  await page.route('**/api/v1/destinations/**', async (route) => {
+  await page.route(/\/api\/v1\/destinations\/[^/?]+(?:\?.*)?$/, async (route) => {
     const requestUrl = new URL(route.request().url());
 
     const locale = requestUrl.searchParams.get('locale') ?? 'vi';
@@ -93,13 +93,15 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
       status: 200,
     });
   });
-  await page.route('**/api/v1/destinations*', async (route) => {
+  await page.route(/\/api\/v1\/destinations(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       contentType: 'application/json',
       body: JSON.stringify([
         {
           categoryLabel: 'Biển đảo',
           coverImageUrl: null,
+          defaultSceneId: null,
+          geoPoint: { latitude: 18.2231, longitude: 106.3321 },
           id: 'destination-02',
           name: 'Đảo Sơn Dương',
           slug: 'dao-son-duong',
