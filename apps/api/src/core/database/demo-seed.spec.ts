@@ -13,7 +13,8 @@ describe('demo immersive route records', () => {
     expect(route.links).toHaveLength(13);
     expect(route.hotspots).toHaveLength(3);
     expect(route.scenes.every((scene) => scene.status === 'published')).toBe(true);
-    expect(route.mediaAssets.every((asset) => asset.status === 'ready')).toBe(true);
+    expect(route.mediaAssets.every((asset) => asset.status === 'processing')).toBe(true);
+    expect(route.scenes.every((scene) => scene.panoramaAssetStatus === 'processing')).toBe(true);
     expect(
       route.links.some(
         (link) =>

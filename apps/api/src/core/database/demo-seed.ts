@@ -1,4 +1,4 @@
-import { eq, inArray, or } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 
 import type { Db } from './db';
 import { catalogDestinationTranslations, catalogDestinations } from './schema/catalog';
@@ -41,13 +41,13 @@ export function buildDemoImmersiveRouteRecords(now = new Date()) {
     contentType: 'application/json',
     sizeBytes: 1,
     storageKey: `processed/${DEMO_IMMERSIVE_ROUTE.slug}/scene-${String(index + 1).padStart(2, '0')}/manifest.json`,
-    status: 'ready' as const,
+    status: 'processing' as const,
     etag: `demo-panorama-${index + 1}`,
     failureCode: null,
     createdAt: timestamp,
     updatedAt: timestamp,
-    uploadedAt: timestamp,
-    readyAt: timestamp,
+    uploadedAt: null,
+    readyAt: null,
   }));
 
   const scenes = sceneNames.map((name, index) => ({
@@ -60,7 +60,7 @@ export function buildDemoImmersiveRouteRecords(now = new Date()) {
     },
     altitude: 12 + (index % 3) * 4,
     panoramaAssetId: media[index]!.id,
-    panoramaAssetStatus: 'ready' as const,
+    panoramaAssetStatus: 'processing' as const,
     initialHeading: (index * 31) % 360,
     initialPitch: 2 + (index % 3),
     initialFov: 88,
@@ -191,9 +191,12 @@ export async function seedDemoImmersiveRoute(db: Db): Promise<void> {
         },
       });
 
-    await transaction
-      .delete(catalogDestinationTranslations)
-      .where(eq(catalogDestinationTranslations.destinationId, route.destination.id));
+    await transaction.delete(catalogDestinationTranslations).where(
+      inArray(
+        catalogDestinationTranslations.id,
+        route.translations.map((item) => item.id),
+      ),
+    );
     await transaction.insert(catalogDestinationTranslations).values(route.translations);
 
     for (const asset of route.mediaAssets) {
@@ -241,15 +244,12 @@ export async function seedDemoImmersiveRoute(db: Db): Promise<void> {
         });
     }
 
-    const routeSceneIds = route.scenes.map((scene) => scene.id);
-    await transaction
-      .delete(virtualTourSceneLinks)
-      .where(
-        or(
-          inArray(virtualTourSceneLinks.fromSceneId, routeSceneIds),
-          inArray(virtualTourSceneLinks.toSceneId, routeSceneIds),
-        ),
-      );
+    await transaction.delete(virtualTourSceneLinks).where(
+      inArray(
+        virtualTourSceneLinks.id,
+        route.links.map((link) => link.id),
+      ),
+    );
     for (const link of route.links) {
       await transaction
         .insert(virtualTourSceneLinks)
@@ -268,9 +268,12 @@ export async function seedDemoImmersiveRoute(db: Db): Promise<void> {
         });
     }
 
-    await transaction
-      .delete(virtualTourHotspots)
-      .where(inArray(virtualTourHotspots.sceneId, routeSceneIds));
+    await transaction.delete(virtualTourHotspots).where(
+      inArray(
+        virtualTourHotspots.id,
+        route.hotspots.map((hotspot) => hotspot.id),
+      ),
+    );
     for (const hotspot of route.hotspots) {
       await transaction
         .insert(virtualTourHotspots)

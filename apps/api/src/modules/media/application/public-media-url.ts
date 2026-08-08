@@ -48,9 +48,18 @@ export function resolvePublicMediaUrl(
     return null;
   }
 
-  const origin = new URL(publicOrigin);
-  const base = origin.toString().endsWith('/') ? origin.toString() : `${origin.toString()}/`;
-  return new URL(normalizedKey.replace(/^\/+/, ''), base).toString();
+  if (hasPathTraversal(normalizedKey)) {
+    return null;
+  }
+
+  try {
+    const origin = new URL(publicOrigin);
+    const base = origin.toString().endsWith('/') ? origin.toString() : `${origin.toString()}/`;
+    const resolved = new URL(normalizedKey.replace(/^\/+/, ''), base);
+    return isHttpUrl(resolved.toString()) ? resolved.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function derivePreviewKey(manifestKey: string): string {
@@ -70,4 +79,8 @@ function isHttpUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+function hasPathTraversal(value: string): boolean {
+  return value.split('/').some((segment) => segment === '..');
 }

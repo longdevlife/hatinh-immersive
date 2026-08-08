@@ -44,4 +44,19 @@ describe('resolvePanoramaMediaUrls', () => {
       previewUrl: null,
     });
   });
+
+  it('rejects storage keys that escape the configured public origin', () => {
+    expect(
+      resolvePanoramaMediaUrls(
+        { manifestKey: '../private/manifest.json' },
+        { publicOrigin: 'https://media.example.vn/hatinh' },
+      ),
+    ).toEqual({ manifestUrl: null, previewUrl: null });
+    expect(
+      resolvePanoramaMediaUrls(
+        { manifestKey: 'javascript:alert(1)' },
+        { publicOrigin: 'https://media.example.vn/hatinh' },
+      ),
+    ).toEqual({ manifestUrl: null, previewUrl: null });
+  });
 });
