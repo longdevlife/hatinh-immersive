@@ -108,6 +108,21 @@ describe('ExploreShell', () => {
     expect(actions.onEnterPanorama).toHaveBeenCalledWith();
   });
 
+  it('does not advertise a 360 entry while panorama media is unavailable', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+        canEnterPanorama={false}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(2);
+  });
+
   it('keeps panorama controls available while loading on a constrained network', () => {
     const actions = createActions();
 

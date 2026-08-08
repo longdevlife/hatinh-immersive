@@ -5,9 +5,16 @@ interface RendererStateProps {
   status: RendererStatus;
   onRetry(): void;
   onFallback(): void;
+  showFallback?: boolean;
 }
 
-export function RendererState({ mode, status, onRetry, onFallback }: RendererStateProps) {
+export function RendererState({
+  mode,
+  status,
+  onRetry,
+  onFallback,
+  showFallback = true,
+}: RendererStateProps) {
   if (status === 'ready' || status === 'idle') {
     return null;
   }
@@ -56,13 +63,15 @@ export function RendererState({ mode, status, onRetry, onFallback }: RendererSta
         </strong>
         <p>Hãy tiếp tục bằng chế độ còn lại để không ngắt quãng hành trình.</p>
       </div>
-      <button
-        className="immersive-button immersive-button--light"
-        type="button"
-        onClick={onFallback}
-      >
-        {mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại không gian 3D'}
-      </button>
+      {showFallback ? (
+        <button
+          className="immersive-button immersive-button--light"
+          type="button"
+          onClick={onFallback}
+        >
+          {mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại không gian 3D'}
+        </button>
+      ) : null}
     </div>
   );
 }

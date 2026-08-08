@@ -9,6 +9,7 @@ import { RendererState } from './RendererState';
 export interface ExploreShellProps {
   view: ImmersiveViewVm;
   actions: ImmersiveActions;
+  canEnterPanorama?: boolean;
   minimapEngine?: MinimapEnginePort | null;
   rendererContent?: ReactNode;
 }
@@ -43,6 +44,7 @@ function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; o
 export function ExploreShell({
   view,
   actions,
+  canEnterPanorama = true,
   minimapEngine = null,
   rendererContent,
 }: ExploreShellProps) {
@@ -133,6 +135,7 @@ export function ExploreShell({
           status={view.rendererStatus}
           onRetry={actions.onRetryRenderer}
           onFallback={isPanorama ? actions.onEnter3D : () => actions.onEnterPanorama()}
+          showFallback={isPanorama || canEnterPanorama}
         />
       </section>
 
@@ -210,13 +213,17 @@ export function ExploreShell({
         </div>
       ) : (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
-          <button
-            className="immersive-button immersive-button--primary"
-            type="button"
-            onClick={() => actions.onEnterPanorama()}
-          >
-            Khám phá 360°
-          </button>
+          {canEnterPanorama ? (
+            <button
+              className="immersive-button immersive-button--primary"
+              type="button"
+              onClick={() => actions.onEnterPanorama()}
+            >
+              Khám phá 360°
+            </button>
+          ) : (
+            <p className="immersive-readiness-note">360° đang được chuẩn bị</p>
+          )}
         </div>
       )}
 
@@ -242,7 +249,7 @@ export function ExploreShell({
         </div>
         <h2 id="destination-info-title">{view.destination.name}</h2>
         <p>{view.destination.summary}</p>
-        {!isPanorama ? (
+        {!isPanorama && canEnterPanorama ? (
           <button
             className="immersive-button immersive-button--primary"
             type="button"
@@ -250,6 +257,9 @@ export function ExploreShell({
           >
             Khám phá 360°
           </button>
+        ) : null}
+        {!isPanorama && !canEnterPanorama ? (
+          <p className="immersive-readiness-note">360° đang được chuẩn bị</p>
         ) : null}
       </aside>
     </main>

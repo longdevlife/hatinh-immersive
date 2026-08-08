@@ -15,7 +15,11 @@ function LocationProbe() {
   return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
 }
 
-function renderExperience(initialEntry: string, factories: ImmersiveExperienceFactories) {
+function renderExperience(
+  initialEntry: string,
+  factories: ImmersiveExperienceFactories,
+  manifest = createFakeImmersiveManifest(),
+) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -26,9 +30,7 @@ function renderExperience(initialEntry: string, factories: ImmersiveExperienceFa
         <Routes>
           <Route
             path="/explore/:destinationSlug"
-            element={
-              <ImmersiveExperience factories={factories} manifest={createFakeImmersiveManifest()} />
-            }
+            element={<ImmersiveExperience factories={factories} manifest={manifest} />}
           />
         </Routes>
         <LocationProbe />
@@ -129,6 +131,19 @@ describe('ImmersiveExperience', () => {
     });
     expect(panorama.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
     expect(panorama.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
+  });
+
+  it('keeps the 3D overview available when no panorama media is ready yet', async () => {
+    const { factories, map3d } = createFactories();
+    const manifest = { ...createFakeImmersiveManifest(), panoramaNodes: [] };
+
+    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories, manifest);
+
+    await waitFor(() => {
+      expect(map3d.calls.some((call) => call.type === 'mount')).toBe(true);
+    });
+    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(2);
   });
 
   it('restores the linked scene and camera after a refresh', async () => {

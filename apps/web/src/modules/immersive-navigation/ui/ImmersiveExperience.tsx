@@ -346,7 +346,7 @@ function ManifestState({ kind }: { kind: 'loading' | 'error' | 'empty' }) {
   const messages = {
     loading: 'Đang tải hành trình immersive…',
     error: 'Không thể tải dữ liệu hành trình. Hãy thử lại sau.',
-    empty: 'Điểm đến chưa có cảnh 360° sẵn sàng.',
+    empty: 'Điểm đến chưa có dữ liệu hành trình.',
   } as const;
   const role = kind === 'loading' ? 'status' : 'alert';
 
@@ -593,7 +593,7 @@ export function ImmersiveExperience({
     return <ManifestState kind={manifestQuery.isPending ? 'loading' : 'error'} />;
   }
 
-  if (manifest.nodes.length === 0 || manifest.panoramaNodes.length === 0) {
+  if (manifest.nodes.length === 0) {
     return <ManifestState kind="empty" />;
   }
 
@@ -660,6 +660,7 @@ export function ImmersiveExperience({
     <>
       <ExploreShell
         actions={actions}
+        canEnterPanorama={manifest.panoramaNodes.length > 0}
         minimapEngine={activeMinimapEngine}
         rendererContent={rendererContent}
         view={view}
