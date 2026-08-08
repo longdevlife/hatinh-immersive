@@ -1,5 +1,5 @@
 import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { DestinationQueryService } from '../../application/destination.queries';
 import {
@@ -14,6 +14,7 @@ export class DestinationController {
 
   @Get()
   @ApiOperation({ operationId: 'listDestinations' })
+  @ApiQuery({ name: 'locale', required: false, enum: ['vi', 'en'], example: 'vi' })
   @ApiOkResponse({
     description: 'Published destination previews.',
     schema: { type: 'array', items: destinationPreviewResponseSchema },

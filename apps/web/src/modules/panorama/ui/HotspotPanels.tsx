@@ -6,8 +6,8 @@ export interface HotspotPanelProps {
   onClose: () => void;
   title: string;
   type: 'information' | 'media' | 'audio';
-  content?: string;
-  mediaUrl?: string;
+  content?: string | null | undefined;
+  mediaUrl?: string | null | undefined;
 }
 
 export function HotspotPanel({
@@ -37,7 +37,7 @@ export function HotspotPanel({
           <img src={mediaUrl} alt={title} className="hotspot-panel__media" />
         )}
         {type === 'audio' && (
-          <audio controls src={mediaUrl} className="hotspot-panel__audio">
+          <audio controls src={mediaUrl ?? undefined} className="hotspot-panel__audio">
             Trình duyệt của bạn không hỗ trợ thẻ audio.
           </audio>
         )}

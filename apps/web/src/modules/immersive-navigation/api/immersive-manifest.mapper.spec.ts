@@ -122,7 +122,11 @@ function createManifestDto(): GetImmersiveManifest200 {
     hotspots: [
       {
         id: 'hotspot-01',
-        payload: { title: 'Câu chuyện cổng vào' },
+        payload: {
+          mediaUrl: 'https://cdn.example.vn/hotspots/story.webp',
+          text: 'Lịch sử cổng vào.',
+          title: 'Câu chuyện cổng vào',
+        },
         pitch: -3,
         sceneId: 'scene-01',
         status: 'published',
@@ -161,6 +165,8 @@ describe('mapImmersiveManifest', () => {
       expect.objectContaining({
         id: 'hotspot-01',
         label: 'Câu chuyện cổng vào',
+        content: 'Lịch sử cổng vào.',
+        mediaUrl: 'https://cdn.example.vn/hotspots/story.webp',
       }),
     );
   });

@@ -19,6 +19,14 @@ describe('generated API contract', () => {
         expect.objectContaining({ name: 'locale', in: 'query', required: false }),
       ]),
     );
+    const destinationsPath = openApi.paths['/api/v1/destinations'] as {
+      get?: { parameters?: Array<Record<string, unknown>> };
+    };
+    expect(destinationsPath.get?.parameters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'locale', in: 'query', required: false }),
+      ]),
+    );
     expect(openApi.paths['/api/v1/scenes/{sceneId}/neighbors']).toBeDefined();
     expect(openApi.paths['/api/v1/admin/scenes']).toBeDefined();
   });
@@ -35,6 +43,10 @@ describe('generated API contract', () => {
     expect(getManifestUrl('son-trang', { locale: 'en' })).toBe(
       '/api/v1/destinations/son-trang/immersive-manifest?locale=en',
     );
+    const getDestinationsUrl = generated.getListDestinationsUrl as unknown as (parameters?: {
+      locale?: string;
+    }) => string;
+    expect(getDestinationsUrl({ locale: 'en' })).toBe('/api/v1/destinations?locale=en');
     expect(generated.createScene).toBeTypeOf('function');
     expect(generated.useCreateScene).toBeTypeOf('function');
   });

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import type { ImmersiveActions, ImmersiveViewVm } from '../../../shared/contracts';
 import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
@@ -52,6 +52,10 @@ export function ExploreShell({
   const [audioTime, setAudioTime] = useState(0);
   const isPanorama = view.mode === 'panorama';
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
+
+  useEffect(() => {
+    setIsInfoOpen(view.mode === 'overview3d');
+  }, [view.mode]);
 
   function openInfo() {
     setIsInfoOpen(true);
@@ -107,7 +111,6 @@ export function ExploreShell({
                 type="button"
                 onClick={() => {
                   actions.onSelectHotspot(hotspot.id);
-                  openInfo();
                 }}
                 aria-haspopup="dialog"
                 aria-label={hotspot.label ?? 'Mở điểm khám phá'}

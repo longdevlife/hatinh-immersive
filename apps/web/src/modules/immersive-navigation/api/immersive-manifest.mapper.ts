@@ -134,6 +134,14 @@ function toSceneLinks(link: GetImmersiveManifest200['links'][number]): SceneLink
 function toHotspot(hotspot: GetImmersiveManifest200['hotspots'][number]): HotspotVm {
   const title = hotspot.payload.title;
   const label = hotspot.payload.label;
+  const content = firstString(
+    hotspot.payload.content,
+    hotspot.payload.text,
+    hotspot.payload.description,
+  );
+  const mediaUrl = safeMediaUrl(
+    firstString(hotspot.payload.mediaUrl, hotspot.payload.audioUrl, hotspot.payload.url),
+  );
 
   return {
     id: hotspot.id,
@@ -142,7 +150,29 @@ function toHotspot(hotspot: GetImmersiveManifest200['hotspots'][number]): Hotspo
     yaw: hotspot.yaw,
     pitch: hotspot.pitch,
     label: typeof title === 'string' ? title : typeof label === 'string' ? label : null,
+    content,
+    mediaUrl,
   };
+}
+
+function firstString(...values: unknown[]): string | null {
+  return (
+    values.find((value): value is string => typeof value === 'string' && value.trim() !== '') ??
+    null
+  );
+}
+
+function safeMediaUrl(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 function toOverviewTarget(

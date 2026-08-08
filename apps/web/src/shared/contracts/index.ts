@@ -3,6 +3,7 @@ export type {
   DestinationPreviewVm,
   HotspotVm,
   ImmersiveActions,
+  ImmersiveLocale,
   ImmersiveMode,
   ImmersiveViewVm,
   Map3DEnginePort,

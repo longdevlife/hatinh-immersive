@@ -41,6 +41,7 @@ import type {
   GetScene200,
   GetSceneNeighbors200Item,
   ListDestinations200Item,
+  ListDestinationsParams,
   PresignMediaUpload201,
   PresignMediaUploadBody,
   PublishDestination200,
@@ -1459,36 +1460,52 @@ export type listDestinationsResponseSuccess = listDestinationsResponse200 & {
 };
 export type listDestinationsResponse = listDestinationsResponseSuccess;
 
-export const getListDestinationsUrl = () => {
-  return `/api/v1/destinations`;
+export const getListDestinationsUrl = (params?: ListDestinationsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/destinations?${stringifiedParams}`
+    : `/api/v1/destinations`;
 };
 
 export const listDestinations = async (
+  params?: ListDestinationsParams,
   options?: RequestInit,
 ): Promise<listDestinationsResponse> => {
-  return customFetch<listDestinationsResponse>(getListDestinationsUrl(), {
+  return customFetch<listDestinationsResponse>(getListDestinationsUrl(params), {
     ...options,
     method: 'GET',
   });
 };
 
-export const getListDestinationsQueryKey = () => {
-  return [`/api/v1/destinations`] as const;
+export const getListDestinationsQueryKey = (params?: ListDestinationsParams) => {
+  return [`/api/v1/destinations`, ...(params ? [params] : [])] as const;
 };
 
 export const getListDestinationsQueryOptions = <
   TData = Awaited<ReturnType<typeof listDestinations>>,
   TError = unknown,
->(options?: {
-  query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>>;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: ListDestinationsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>>;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getListDestinationsQueryKey();
+  const queryKey = queryOptions?.queryKey ?? getListDestinationsQueryKey(params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof listDestinations>>> = ({ signal }) =>
-    listDestinations({ signal, ...requestOptions });
+    listDestinations(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof listDestinations>>,
@@ -1504,6 +1521,7 @@ export function useListDestinations<
   TData = Awaited<ReturnType<typeof listDestinations>>,
   TError = unknown,
 >(
+  params: undefined | ListDestinationsParams,
   options: {
     query: Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>> &
       Pick<
@@ -1522,6 +1540,7 @@ export function useListDestinations<
   TData = Awaited<ReturnType<typeof listDestinations>>,
   TError = unknown,
 >(
+  params?: ListDestinationsParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>> &
       Pick<
@@ -1540,6 +1559,7 @@ export function useListDestinations<
   TData = Awaited<ReturnType<typeof listDestinations>>,
   TError = unknown,
 >(
+  params?: ListDestinationsParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>>;
     request?: SecondParameter<typeof customFetch>;
@@ -1551,13 +1571,14 @@ export function useListDestinations<
   TData = Awaited<ReturnType<typeof listDestinations>>,
   TError = unknown,
 >(
+  params?: ListDestinationsParams,
   options?: {
     query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listDestinations>>, TError, TData>>;
     request?: SecondParameter<typeof customFetch>;
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getListDestinationsQueryOptions(options);
+  const queryOptions = getListDestinationsQueryOptions(params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

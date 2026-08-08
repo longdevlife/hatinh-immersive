@@ -11,13 +11,16 @@ import {
 import {
   createLazyPhotoSphereViewerEngine,
   FakePanoramaEngine,
+  HotspotPanel,
   LazyPanoramaViewport,
   type PanoramaEnginePort,
 } from '../../panorama';
 import { createLazyMapLibreMinimapEngine, type MinimapEnginePort } from '../../minimap';
-import { useImmersiveManifest } from '../../../shared/api/immersive';
+import { ImmersiveControlsGroup } from './ImmersiveControls';
+import { useImmersiveDestinations, useImmersiveManifest } from '../../../shared/api/immersive';
 import type {
   ImmersiveActions,
+  ImmersiveLocale,
   ImmersiveMode,
   ImmersiveViewVm,
   PanoramaNode,
@@ -321,7 +324,13 @@ export function ImmersiveExperience({
   const navigate = useNavigate();
   const destinationSlug = routeDestinationSlug ?? 'son-trang-co-dam';
   const navigation = useImmersiveNavigation();
-  const manifestQuery = useImmersiveManifest(destinationSlug, 'vi', !manifestOverride);
+  const [locale, setLocale] = useState<ImmersiveLocale>('vi');
+  const [destinationSearchQuery, setDestinationSearchQuery] = useState('');
+  const manifestQuery = useImmersiveManifest(destinationSlug, locale, !manifestOverride);
+  const destinationsQuery = useImmersiveDestinations(
+    locale,
+    destinationSearchQuery.trim().length >= 2,
+  );
   const manifest = manifestOverride ?? manifestQuery.data;
   const defaultFactories = useMemo(createDefaultFactories, []);
   const resolvedFactories = factories ?? defaultFactories;
@@ -481,6 +490,29 @@ export function ImmersiveExperience({
     }),
     [onEnter3D, onEnterPanorama, onNavigateScene, onRetryRenderer],
   );
+  const destinationSearchResults = useMemo(() => {
+    const query = destinationSearchQuery.trim().toLocaleLowerCase('vi');
+    if (query.length < 2) {
+      return [];
+    }
+
+    return destinationsQuery.data.filter((destination) =>
+      [destination.name, destination.summary, destination.categoryLabel ?? '']
+        .join(' ')
+        .toLocaleLowerCase('vi')
+        .includes(query),
+    );
+  }, [destinationSearchQuery, destinationsQuery.data]);
+  const onSelectDestination = useCallback(
+    (slug: string) => {
+      setDestinationSearchQuery('');
+      navigate(`/explore/${encodeURIComponent(slug)}?mode=overview3d`);
+    },
+    [navigate],
+  );
+  const onLocaleChange = useCallback((nextLocale: ImmersiveLocale) => {
+    setLocale(nextLocale);
+  }, []);
 
   if (!manifest) {
     return <ManifestState kind={manifestQuery.isPending ? 'loading' : 'error'} />;
@@ -493,6 +525,15 @@ export function ImmersiveExperience({
   const currentPanoramaNode =
     manifest.panoramaNodes.find((node) => node.id === navigation.sceneId) ?? null;
   const view = buildImmersiveView(manifest, destinationSlug, navigation);
+  const selectedHotspot = view.hotspots.find(
+    (hotspot) => hotspot.id === navigation.selectedHotspotId,
+  );
+  const selectedHotspotType =
+    selectedHotspot?.type === 'information' ||
+    selectedHotspot?.type === 'media' ||
+    selectedHotspot?.type === 'audio'
+      ? selectedHotspot.type
+      : null;
   const rendererContent = (
     <RendererHost
       activeRenderer={navigation.activeRenderer}
@@ -530,12 +571,35 @@ export function ImmersiveExperience({
   );
 
   return (
-    <ExploreShell
-      actions={actions}
-      minimapEngine={activeMinimapEngine}
-      rendererContent={rendererContent}
-      view={view}
-    />
+    <>
+      <ExploreShell
+        actions={actions}
+        minimapEngine={activeMinimapEngine}
+        rendererContent={rendererContent}
+        view={view}
+      />
+      <ImmersiveControlsGroup
+        currentSceneId={navigation.sceneId}
+        destinations={destinationSearchResults}
+        locale={locale}
+        nodes={view.nodes}
+        searchLoading={destinationsQuery.isPending}
+        onLocaleChange={onLocaleChange}
+        onNavigateScene={actions.onNavigateScene}
+        onSearchDestination={setDestinationSearchQuery}
+        onSelectDestination={onSelectDestination}
+      />
+      {selectedHotspot && selectedHotspotType ? (
+        <HotspotPanel
+          content={selectedHotspot.content ?? selectedHotspot.label}
+          isOpen
+          mediaUrl={selectedHotspot.mediaUrl ?? undefined}
+          onClose={actions.onCloseHotspot}
+          title={selectedHotspot.label ?? 'Điểm khám phá'}
+          type={selectedHotspotType}
+        />
+      ) : null}
+    </>
   );
 }
 

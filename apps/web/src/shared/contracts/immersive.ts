@@ -1,5 +1,7 @@
 export type ImmersiveMode = 'overview3d' | 'panorama';
 
+export type ImmersiveLocale = 'vi' | 'en';
+
 export type RendererStatus = 'idle' | 'loading' | 'ready' | 'error' | 'unavailable';
 
 export type NetworkQuality = 'good' | 'constrained' | 'offline';
@@ -39,6 +41,8 @@ export interface HotspotVm {
   yaw: number;
   pitch: number;
   label: string | null;
+  content?: string | null;
+  mediaUrl?: string | null;
 }
 
 export interface ImmersiveViewVm {

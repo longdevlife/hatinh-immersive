@@ -1,12 +1,11 @@
-import { useGetImmersiveManifest } from '@hatinh/api-client';
+import { useGetImmersiveManifest, useListDestinations } from '@hatinh/api-client';
 import { useMemo } from 'react';
 
+import type { DestinationPreviewVm, ImmersiveLocale } from '../contracts';
 import {
   mapImmersiveManifest,
   type ImmersiveManifestVm,
 } from '../../modules/immersive-navigation/api/immersive-manifest.mapper';
-
-export type ImmersiveLocale = 'vi' | 'en';
 
 export function useImmersiveManifest(slug: string, locale: ImmersiveLocale = 'vi', enabled = true) {
   const query = useGetImmersiveManifest(
@@ -31,6 +30,37 @@ export function useImmersiveManifest(slug: string, locale: ImmersiveLocale = 'vi
     ...query,
     data,
   } as typeof query & { data: ImmersiveManifestVm | undefined };
+}
+
+export function useImmersiveDestinations(locale: ImmersiveLocale = 'vi', enabled = true) {
+  const query = useListDestinations(
+    { locale },
+    {
+      query: {
+        enabled,
+        staleTime: 60_000,
+      },
+    },
+  );
+  const data = useMemo<DestinationPreviewVm[]>(
+    () =>
+      query.data?.status === 200
+        ? query.data.data.map((destination) => ({
+            id: destination.id,
+            name: destination.name,
+            slug: destination.slug,
+            summary: destination.summary,
+            coverImageUrl: destination.coverImageUrl,
+            categoryLabel: destination.categoryLabel,
+          }))
+        : [],
+    [query.data],
+  );
+
+  return {
+    ...query,
+    data,
+  };
 }
 
 export {

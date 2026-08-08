@@ -1707,7 +1707,17 @@
     "/api/v1/destinations": {
       "get": {
         "operationId": "listDestinations",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "locale",
+            "required": false,
+            "schema": {
+              "enum": ["vi", "en"],
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
