@@ -241,6 +241,37 @@ describe('PhotoSphereViewerEngine', () => {
     await loadC;
   });
 
+  it('delivers native node changes after remounting with an unresolved old transition', async () => {
+    const oldScene = { ...targetNode, id: 'old-scene' };
+    const pendingOldTransition = createDeferred<boolean>();
+    const receivedNodeIds: string[] = [];
+    const engine = new PhotoSphereViewerEngine({
+      loadPanorama: async (candidate) => ({ id: candidate.id }),
+      loadRuntime: async () => runtime,
+    });
+
+    await engine.mount(document.createElement('div'));
+    await engine.loadNode(node);
+    virtualTourPlugin.setCurrentNodeResults.set(oldScene.id, pendingOldTransition.promise);
+
+    const oldLoad = engine.loadNode(oldScene);
+    await vi.waitFor(() => {
+      expect(virtualTourPlugin.setCurrentNodeCalls).toEqual([node.id, oldScene.id]);
+    });
+
+    engine.destroy();
+    await engine.mount(document.createElement('div'));
+    await engine.loadNode(node);
+    engine.subscribeNodeChanged?.((nodeId) => receivedNodeIds.push(nodeId));
+
+    virtualTourPlugin.emit('node-changed', { node: { id: targetNode.id } });
+
+    expect(receivedNodeIds).toEqual([targetNode.id]);
+
+    pendingOldTransition.resolve(true);
+    await oldLoad;
+  });
+
   it('normalizes server-provided virtual-tour links without adding an absent thumbnail', async () => {
     const linkedNode: PanoramaNode = {
       ...node,

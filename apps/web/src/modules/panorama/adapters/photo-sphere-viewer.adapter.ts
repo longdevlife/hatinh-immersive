@@ -212,6 +212,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   async mount(container: HTMLElement): Promise<void> {
     ++this.mountGeneration;
     this.destroyViewer();
+    this.suppressedNodeChangeLoads.clear();
     this.virtualNodes.clear();
     this.panoramaCache.clear();
     this.container = container;
@@ -301,6 +302,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   destroy(): void {
     ++this.mountGeneration;
     this.destroyViewer();
+    this.suppressedNodeChangeLoads.clear();
     this.container = null;
     this.tourNodes.clear();
     this.virtualNodes.clear();
