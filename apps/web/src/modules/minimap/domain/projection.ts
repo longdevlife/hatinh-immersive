@@ -11,6 +11,7 @@ export interface MinimapNodeProperties {
 
 export interface MinimapRouteProperties {
   id: string;
+  sourceSceneId: string;
   targetSceneId: string;
 }
 
@@ -96,6 +97,7 @@ export function buildMinimapGeoJson(
                 },
                 properties: {
                   id: link.id,
+                  sourceSceneId: currentNode.id,
                   targetSceneId: link.targetSceneId,
                 },
                 type: 'Feature' as const,

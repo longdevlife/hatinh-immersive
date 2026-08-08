@@ -12,6 +12,7 @@ import {
 const NODES_SOURCE_ID = 'minimap-nodes';
 const ROUTE_SOURCE_ID = 'minimap-route';
 const NODES_LAYER_ID = 'minimap-nodes';
+const ROUTE_LAYER_ID = 'minimap-route-line';
 const DEFAULT_ZOOM = 16;
 const DEFAULT_TRANSITION_DURATION = 240;
 const HA_TINH_CENTER: MapLibreCoordinate = [105.9, 18.342];
@@ -36,6 +37,10 @@ export interface MapLibrePoint {
   y: number;
 }
 
+export interface MapLibreRenderedFeature {
+  properties?: Record<string, unknown> | null;
+}
+
 export interface MapLibreMapInstance {
   addLayer(layer: unknown): void;
   addSource(id: string, source: { data: unknown; type: 'geojson' }): void;
@@ -51,8 +56,11 @@ export interface MapLibreMapInstance {
     layerOrListener: string | MapLibreMapEventListener,
     listener?: MapLibreMapEventListener,
   ): this;
-  once(event: string, listener: MapLibreMapEventListener): this;
   project(coordinates: MapLibreCoordinate): MapLibrePoint;
+  queryRenderedFeatures(
+    geometry?: unknown,
+    options?: { layers?: string[] },
+  ): MapLibreRenderedFeature[];
   remove(): void;
 }
 
@@ -140,6 +148,8 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
   private lastPositionedSceneId: string | null = null;
   private mountGeneration = 0;
   private projectionGeneration = 0;
+  private renderedRouteIdleListener: MapLibreMapEventListener | null = null;
+  private renderedRouteIdleMap: MapLibreMapInstance | null = null;
 
   constructor(options: MapLibreMinimapEngineOptions) {
     requireMinimapStyle(options?.style);
@@ -182,7 +192,7 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
     map.addSource(NODES_SOURCE_ID, { data: emptyGeoJson().nodes, type: 'geojson' });
     map.addSource(ROUTE_SOURCE_ID, { data: emptyGeoJson().route, type: 'geojson' });
     map.addLayer({
-      id: 'minimap-route-line',
+      id: ROUTE_LAYER_ID,
       layout: {},
       paint: {
         'line-color': '#f5b866',
@@ -287,17 +297,12 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
       return;
     }
 
-    const currentSceneId = this.state.currentSceneId;
-    container.dataset.minimapRouteBranches = geoJson.route.features
-      .map((feature) =>
-        currentSceneId ? `${currentSceneId}->${feature.properties.targetSceneId}` : '',
-      )
-      .filter(Boolean)
-      .join(',');
+    this.clearRenderedRouteIdleListener();
+    container.removeAttribute('data-minimap-route-branches');
     container.removeAttribute('data-minimap-interaction-ready');
 
     const projectionGeneration = ++this.projectionGeneration;
-    map.once('idle', () => {
+    const onIdle = () => {
       if (
         projectionGeneration !== this.projectionGeneration ||
         this.map !== map ||
@@ -306,6 +311,16 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
         return;
       }
 
+      container.dataset.minimapRouteBranches = map
+        .queryRenderedFeatures(undefined, { layers: [ROUTE_LAYER_ID] })
+        .flatMap((feature) => {
+          const sourceSceneId = feature.properties?.sourceSceneId;
+          const targetSceneId = feature.properties?.targetSceneId;
+          return typeof sourceSceneId === 'string' && typeof targetSceneId === 'string'
+            ? [`${sourceSceneId}->${targetSceneId}`]
+            : [];
+        })
+        .join(',');
       container.dataset.minimapNodePoints = JSON.stringify(
         Object.fromEntries(
           geoJson.nodes.features.map((feature) => [
@@ -315,10 +330,23 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
         ),
       );
       container.dataset.minimapInteractionReady = 'true';
-    });
+      this.clearRenderedRouteIdleListener();
+    };
+    this.renderedRouteIdleMap = map;
+    this.renderedRouteIdleListener = onIdle;
+    map.on('idle', onIdle);
+  }
+
+  private clearRenderedRouteIdleListener(): void {
+    if (this.renderedRouteIdleMap && this.renderedRouteIdleListener) {
+      this.renderedRouteIdleMap.off('idle', this.renderedRouteIdleListener);
+    }
+    this.renderedRouteIdleMap = null;
+    this.renderedRouteIdleListener = null;
   }
 
   private destroyMountedMap(): void {
+    this.clearRenderedRouteIdleListener();
     if (this.map) {
       this.map.off('click', NODES_LAYER_ID, this.handleNodeClick);
       this.marker?.remove();

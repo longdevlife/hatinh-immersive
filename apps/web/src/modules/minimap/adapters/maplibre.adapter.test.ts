@@ -30,6 +30,7 @@ class FakeMap {
   readonly easeToCalls: unknown[] = [];
   readonly listeners = new Map<string, Set<Listener>>();
   readonly layerListeners = new Map<string, Set<Listener>>();
+  readonly queryRenderedFeaturesCalls: unknown[] = [];
   removed = false;
 
   static latest: FakeMap | null = null;
@@ -76,13 +77,19 @@ class FakeMap {
     }
   }
 
-  once(_event: string, listener: Listener) {
-    listener();
-    return this;
-  }
-
   project(coordinates: [number, number]) {
     return { x: coordinates[0] * 10, y: coordinates[1] * 10 };
+  }
+
+  queryRenderedFeatures(_geometry?: unknown, options?: { layers?: string[] }) {
+    this.queryRenderedFeaturesCalls.push(options);
+    if (!options?.layers?.includes('minimap-route-line')) {
+      return [];
+    }
+
+    const route = this.sources.get('minimap-route')?.data as
+      { features: Array<{ properties: Record<string, unknown> }> } | undefined;
+    return route?.features.map((feature) => ({ properties: feature.properties })) ?? [];
   }
 
   addSource(id: string, source: { data: unknown }) {
@@ -229,9 +236,12 @@ describe('MapLibreMinimapEngine', () => {
               [105.902, 18.343],
             ],
           }),
+          properties: expect.objectContaining({ sourceSceneId: 'scene-01' }),
         }),
       ],
     });
+    map.emit('idle');
+    expect(map.queryRenderedFeaturesCalls).toEqual([{ layers: ['minimap-route-line'] }]);
     expect(container).toHaveAttribute('data-minimap-route-branches', 'scene-01->scene-02');
     expect(container).toHaveAttribute('data-minimap-interaction-ready', 'true');
     expect(container).toHaveAttribute(
@@ -255,5 +265,6 @@ describe('MapLibreMinimapEngine', () => {
     engine.destroy();
     expect(map.removed).toBe(true);
     expect(FakeMarker.latest?.removed).toBe(true);
+    expect(map.listeners.get('idle')?.size ?? 0).toBe(0);
   });
 });
