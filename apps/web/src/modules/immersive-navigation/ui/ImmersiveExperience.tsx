@@ -771,21 +771,28 @@ export function ImmersiveExperience({
         actions={actions}
         canEnterPanorama={manifest.panoramaNodes.length > 0}
         isSceneTransitioning={navigation.transition === 'navigating-scene'}
+        locale={locale}
+        map3dLocations={mapLocations}
         minimapEngine={navigation.mode === 'panorama' ? activeMinimapEngine : null}
+        onLanguageToggle={() => onLocaleChange(locale === 'vi' ? 'en' : 'vi')}
+        onLocationSelected={selectLocation}
         rendererContent={rendererContent}
+        selectedLocationId={navigation.selectedLocationId}
         view={view}
       />
-      <ImmersiveControlsGroup
-        currentSceneId={navigation.committedSceneId}
-        destinations={destinationSearchResults}
-        locale={locale}
-        nodes={view.nodes}
-        searchLoading={destinationsQuery.isPending}
-        onLocaleChange={onLocaleChange}
-        onNavigateScene={actions.onNavigateScene}
-        onSearchDestination={setDestinationSearchQuery}
-        onSelectDestination={onSelectDestination}
-      />
+      {navigation.mode === 'panorama' ? (
+        <ImmersiveControlsGroup
+          currentSceneId={navigation.committedSceneId}
+          destinations={destinationSearchResults}
+          locale={locale}
+          nodes={view.nodes}
+          searchLoading={destinationsQuery.isPending}
+          onLocaleChange={onLocaleChange}
+          onNavigateScene={actions.onNavigateScene}
+          onSearchDestination={setDestinationSearchQuery}
+          onSelectDestination={onSelectDestination}
+        />
+      ) : null}
       {selectedHotspot && selectedHotspotType ? (
         <HotspotPanel
           content={selectedHotspot.content ?? selectedHotspot.label}

@@ -21,3 +21,5 @@ export type {
 export { LazyMap3DViewport as Map3DViewport } from './ui/lazy-map3d-viewport';
 export { LazyMap3DViewport } from './ui/lazy-map3d-viewport';
 export type { Map3DViewportProps } from './ui/Map3DViewport';
+export { Map3DChrome } from './ui/chrome';
+export type { Map3DChromeLocation, Map3DChromeProps } from './ui/chrome';
