@@ -108,7 +108,7 @@ describe('ExploreShell', () => {
     );
 
     expect(screen.getByRole('heading', { level: 1, name: 'Sơn Trang Cổ Đạm' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Đảo Sơn Dương' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Đảo Sơn Dương' }));
     fireEvent.click(screen.getAllByRole('button', { name: 'Khám phá 360°' })[0]!);
 
     expect(onLocationSelected).toHaveBeenCalledWith('destination-02');

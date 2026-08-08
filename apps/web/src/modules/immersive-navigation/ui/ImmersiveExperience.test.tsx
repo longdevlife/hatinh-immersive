@@ -143,7 +143,7 @@ describe('ImmersiveExperience', () => {
       expect(map3d.calls.some((call) => call.type === 'mount')).toBe(true);
     });
     expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
-    expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(2);
+    expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(1);
   });
 
   it('routes a Google 3D marker selection through the location selection state', async () => {
