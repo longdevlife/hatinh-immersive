@@ -366,6 +366,7 @@
   box-shadow: 0 0 0 0.32rem rgb(217 128 60 / 0.22);
   height: 1.15rem;
   width: 1.15rem;
+  animation: minimap-pulse 2.5s infinite cubic-bezier(0.66, 0, 0, 1);
 }
 
 .minimap-frame__heading {
@@ -596,8 +597,7 @@
 }
 
 @media (max-width: 700px) {
-  .immersive-topbar__actions .mode-badge,
-  .immersive-topbar__actions .immersive-button--quiet {
+  .immersive-topbar__actions .mode-badge {
     display: none;
   }
 
@@ -660,8 +660,24 @@
     animation: none;
   }
 
+  .minimap-frame__node--current {
+    animation: none;
+  }
+
   .info-panel,
   .hotspot-marker__label {
     transition: none;
+  }
+}
+
+@keyframes minimap-pulse {
+  0% {
+    box-shadow: 0 0 0 0.1rem rgb(217 128 60 / 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 0.6rem rgb(217 128 60 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(217 128 60 / 0);
   }
 }

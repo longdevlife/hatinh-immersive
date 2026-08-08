@@ -76,6 +76,7 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
                   actions.onSelectHotspot(hotspot.id);
                   openInfo();
                 }}
+                aria-haspopup="dialog"
                 aria-label={hotspot.label ?? 'Mở điểm khám phá'}
               >
                 <span aria-hidden="true">+</span>
@@ -145,7 +146,7 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
       ) : null}
 
       {isPanorama ? (
-        <div className="explore-shell__controls" aria-label="Điều khiển trải nghiệm">
+        <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
           {view.links.slice(0, 2).map((link) => (
             <button
               key={link.id}
@@ -167,7 +168,7 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
           />
         </div>
       ) : (
-        <div className="explore-shell__controls">
+        <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
           <button
             className="immersive-button immersive-button--primary"
             type="button"
