@@ -15,8 +15,6 @@ import {
   type PanoramaEnginePort,
 } from '../../panorama';
 import { createLazyMapLibreMinimapEngine, type MinimapEnginePort } from '../../minimap';
-import { ImmersiveControlsGroup } from './ImmersiveControls';
-import { HotspotPanel } from '../../panorama/ui/HotspotPanels';
 import { useImmersiveManifest } from '../../../shared/api/immersive';
 import type {
   ImmersiveActions,
@@ -308,34 +306,8 @@ function ManifestState({ kind }: { kind: 'loading' | 'error' | 'empty' }) {
   const role = kind === 'loading' ? 'status' : 'alert';
 
   return (
-    <main
-      className="immersive-manifest-state"
-      aria-live="polite"
-      role={role}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        backgroundColor: '#111',
-        color: '#fff',
-        flexDirection: 'column',
-      }}
-    >
-      <div
-        className={`spinner ${kind === 'loading' ? 'spin' : ''}`}
-        style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #333',
-          borderTopColor: kind === 'loading' ? '#3b82f6' : 'transparent',
-          borderRadius: '50%',
-          marginBottom: '1rem',
-          animation: kind === 'loading' ? 'spin 1s linear infinite' : 'none',
-        }}
-      ></div>
-      <p style={{ fontSize: '1.2rem', fontWeight: 500 }}>{messages[kind]}</p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <main className="immersive-manifest-state" aria-live="polite" role={role}>
+      <p>{messages[kind]}</p>
     </main>
   );
 }
@@ -558,25 +530,12 @@ export function ImmersiveExperience({
   );
 
   return (
-    <>
-      <ExploreShell
-        actions={actions}
-        minimapEngine={activeMinimapEngine}
-        rendererContent={rendererContent}
-        view={view}
-      />
-      <ImmersiveControlsGroup
-        nodes={manifest.panoramaNodes.map((n) => ({ id: n.id, name: n.name || 'Cảnh quan' }))}
-        currentSceneId={navigation.sceneId}
-        onNavigateScene={actions.onNavigateScene}
-      />
-      <HotspotPanel
-        isOpen={false}
-        onClose={() => {}}
-        title="Thông tin điểm nhấn"
-        type="information"
-      />
-    </>
+    <ExploreShell
+      actions={actions}
+      minimapEngine={activeMinimapEngine}
+      rendererContent={rendererContent}
+      view={view}
+    />
   );
 }
 
