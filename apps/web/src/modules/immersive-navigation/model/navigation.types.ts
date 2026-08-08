@@ -16,14 +16,23 @@ export interface NavigationView {
   fov: number;
 }
 
-export interface ImmersiveNavigationState {
+export interface SceneTransitionState {
+  committedSceneId: string | null;
+  committedView: NavigationView;
+  requestedSceneId: string | null;
+  transitionId: number;
+}
+
+export interface ImmersiveNavigationState extends SceneTransitionState {
   destinationId: string | null;
   mode: ImmersiveMode;
   activeRenderer: ActiveRenderer;
   transition: NavigationTransition;
+  /** @deprecated Read the committed scene through `committedSceneId`. */
   sceneId: string | null;
   selectedHotspotId: string | null;
   visitedSceneIds: string[];
+  /** @deprecated Read the committed view through `committedView`. */
   view: NavigationView;
   minimapOpen: boolean;
   map3dStatus: RendererStatus;
@@ -36,7 +45,10 @@ export interface ImmersiveNavigationActions {
   enterOverview(destinationId: string): void;
   enterPanorama(sceneId: string): void;
   updateView(view: Partial<NavigationView>): void;
-  navigateToScene(sceneId: string): void;
+  navigateToScene(sceneId: string): number;
+  commitSceneTransition(transitionId: number, view: NavigationView): void;
+  rollbackSceneTransition(transitionId: number): void;
+  commitRendererScene(sceneId: string, view: NavigationView): void;
   restoreScene(sceneId: string, view: NavigationView): void;
   selectHotspot(hotspotId: string): void;
   closeHotspot(): void;

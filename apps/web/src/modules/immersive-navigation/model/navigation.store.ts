@@ -14,6 +14,10 @@ export function createInitialNavigationState(): ImmersiveNavigationState {
     mode: 'overview3d',
     activeRenderer: 'none',
     transition: 'idle',
+    committedSceneId: null,
+    committedView: { ...DEFAULT_NAVIGATION_VIEW },
+    requestedSceneId: null,
+    transitionId: 0,
     sceneId: null,
     selectedHotspotId: null,
     visitedSceneIds: [],
@@ -32,6 +36,15 @@ function withVisitedScene(visitedSceneIds: string[], sceneId: string): string[] 
 
 function resetView(): NavigationView {
   return { ...DEFAULT_NAVIGATION_VIEW };
+}
+
+function withCommittedScene(sceneId: string | null, view: NavigationView) {
+  return {
+    committedSceneId: sceneId,
+    committedView: view,
+    sceneId,
+    view,
+  };
 }
 
 export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => ({
@@ -53,10 +66,10 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
       mode: 'panorama',
       activeRenderer: 'panorama',
       transition: 'entering-panorama',
-      sceneId,
+      ...withCommittedScene(sceneId, resetView()),
+      requestedSceneId: null,
       selectedHotspotId: null,
       visitedSceneIds: withVisitedScene(state.visitedSceneIds, sceneId),
-      view: resetView(),
       map3dStatus: 'idle',
       panoramaStatus: 'loading',
       error: null,
@@ -64,10 +77,15 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
 
   updateView: (view) =>
     set((state) => ({
-      view: normalizeNavigationView(state.view, view),
+      ...withCommittedScene(
+        state.committedSceneId,
+        normalizeNavigationView(state.committedView, view),
+      ),
     })),
 
-  navigateToScene: (sceneId) =>
+  navigateToScene: (sceneId) => {
+    let transitionId = 0;
+
     set((state) => {
       if (state.mode !== 'panorama') {
         return {
@@ -75,15 +93,61 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
         };
       }
 
+      transitionId = state.transitionId + 1;
       return {
         activeRenderer: 'panorama' as const,
         transition: 'navigating-scene' as const,
-        sceneId,
+        requestedSceneId: sceneId,
+        transitionId,
         selectedHotspotId: null,
-        visitedSceneIds: withVisitedScene(state.visitedSceneIds, sceneId),
-        view: resetView(),
         panoramaStatus: 'loading' as const,
         error: null,
+      };
+    });
+
+    return transitionId;
+  },
+
+  commitSceneTransition: (transitionId, view) =>
+    set((state) => {
+      if (state.transitionId !== transitionId || !state.requestedSceneId) {
+        return state;
+      }
+
+      const sceneId = state.requestedSceneId;
+      const committedView = normalizeNavigationView(state.committedView, view);
+
+      return {
+        ...withCommittedScene(sceneId, committedView),
+        requestedSceneId: null,
+        transition: 'idle' as const,
+        visitedSceneIds: withVisitedScene(state.visitedSceneIds, sceneId),
+      };
+    }),
+
+  rollbackSceneTransition: (transitionId) =>
+    set((state) =>
+      state.transitionId === transitionId && state.requestedSceneId
+        ? {
+            requestedSceneId: null,
+            transition: 'idle' as const,
+          }
+        : state,
+    ),
+
+  commitRendererScene: (sceneId, view) =>
+    set((state) => {
+      if (state.requestedSceneId && state.requestedSceneId !== sceneId) {
+        return state;
+      }
+
+      const committedView = normalizeNavigationView(state.committedView, view);
+
+      return {
+        ...withCommittedScene(sceneId, committedView),
+        requestedSceneId: null,
+        transition: 'idle' as const,
+        visitedSceneIds: withVisitedScene(state.visitedSceneIds, sceneId),
       };
     }),
 
@@ -91,10 +155,10 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
     set((state) =>
       state.mode === 'panorama'
         ? {
-            sceneId,
+            ...withCommittedScene(sceneId, normalizeNavigationView(state.committedView, view)),
+            requestedSceneId: null,
             transition: 'idle' as const,
             selectedHotspotId: null,
-            view: normalizeNavigationView(state.view, view),
           }
         : state,
     ),
