@@ -15,7 +15,11 @@ import {
   LazyPanoramaViewport,
   type PanoramaEnginePort,
 } from '../../panorama';
-import { createLazyMapLibreMinimapEngine, type MinimapEnginePort } from '../../minimap';
+import {
+  createLazyMapLibreMinimapEngine,
+  resolveMinimapStyle,
+  type MinimapEnginePort,
+} from '../../minimap';
 import { ImmersiveControlsGroup } from './ImmersiveControls';
 import { useImmersiveDestinations, useImmersiveManifest } from '../../../shared/api/immersive';
 import type {
@@ -73,7 +77,13 @@ function createDefaultFactories(): ImmersiveExperienceFactories {
         ...(mapId ? { mapId } : {}),
       }),
     createPanoramaEngine: () => createLazyPhotoSphereViewerEngine(),
-    createMinimapEngine: () => createLazyMapLibreMinimapEngine(),
+    createMinimapEngine: () =>
+      createLazyMapLibreMinimapEngine({
+        style: resolveMinimapStyle({
+          isProduction: import.meta.env.PROD,
+          styleUrl: import.meta.env.VITE_MINIMAP_STYLE_URL,
+        }),
+      }),
   };
 }
 

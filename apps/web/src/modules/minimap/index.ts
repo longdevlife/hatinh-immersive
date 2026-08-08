@@ -1,6 +1,7 @@
 export { FakeMinimapEngine } from './adapters/fake-minimap.adapter';
 export type { FakeMinimapCall } from './adapters/fake-minimap.adapter';
 export { createLazyMapLibreMinimapEngine } from './adapters/lazy-maplibre.adapter';
+export { DEFAULT_HA_TINH_MINIMAP_STYLE, resolveMinimapStyle } from './config/minimap-style';
 export type {
   MapLibreGeoJsonSource,
   MapLibreMapEventListener,

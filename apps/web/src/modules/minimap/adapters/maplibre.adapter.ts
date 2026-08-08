@@ -1,5 +1,6 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
+import { requireMinimapStyle, type MinimapStyle } from '../config/minimap-style';
 import type { MinimapEnginePort, MinimapState } from '../domain/minimap-engine.port';
 import {
   buildMinimapGeoJson,
@@ -13,13 +14,14 @@ const ROUTE_SOURCE_ID = 'minimap-route';
 const NODES_LAYER_ID = 'minimap-nodes';
 const DEFAULT_ZOOM = 16;
 const DEFAULT_TRANSITION_DURATION = 240;
+const HA_TINH_CENTER: MapLibreCoordinate = [105.9, 18.342];
 
 export interface MapLibreMapOptions {
   attributionControl: boolean;
   center: MapLibreCoordinate;
   container: HTMLElement;
   interactive: boolean;
-  style: unknown;
+  style: MinimapStyle;
   zoom: number;
 }
 
@@ -61,22 +63,10 @@ export interface MapLibreRuntime {
 
 export interface MapLibreMinimapEngineOptions {
   loadRuntime?: () => Promise<MapLibreRuntime>;
-  style?: unknown;
+  style: MinimapStyle;
   transitionDurationMs?: number;
   zoom?: number;
 }
-
-export const DEFAULT_MINIMAP_STYLE = {
-  layers: [
-    {
-      id: 'minimap-background',
-      paint: { 'background-color': '#173c31' },
-      type: 'background',
-    },
-  ],
-  sources: {},
-  version: 8,
-} as const;
 
 async function loadMapLibreRuntime(): Promise<MapLibreRuntime> {
   const maplibre = await import('maplibre-gl');
@@ -143,7 +133,8 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
   private lastPositionedSceneId: string | null = null;
   private mountGeneration = 0;
 
-  constructor(options: MapLibreMinimapEngineOptions = {}) {
+  constructor(options: MapLibreMinimapEngineOptions) {
+    requireMinimapStyle(options?.style);
     this.options = options;
   }
 
@@ -157,13 +148,12 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
       return;
     }
 
-    const currentNode = this.getCurrentNode();
     const map = new runtime.Map({
-      attributionControl: false,
-      center: currentNode ? [currentNode.lng, currentNode.lat] : [0, 0],
+      attributionControl: true,
+      center: HA_TINH_CENTER,
       container,
       interactive: true,
-      style: this.options.style ?? DEFAULT_MINIMAP_STYLE,
+      style: this.options.style,
       zoom: this.options.zoom ?? DEFAULT_ZOOM,
     });
     this.map = map;

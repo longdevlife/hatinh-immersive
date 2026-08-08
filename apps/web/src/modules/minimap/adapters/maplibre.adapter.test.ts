@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { SceneLinkVm, SceneNodeVm } from '../../../shared/contracts';
 
-import { MapLibreMinimapEngine, type MapLibreRuntime } from './maplibre.adapter';
+import { resolveMinimapStyle } from '../config/minimap-style';
+import {
+  MapLibreMinimapEngine,
+  type MapLibreMinimapEngineOptions,
+  type MapLibreRuntime,
+} from './maplibre.adapter';
 
 type Listener = (event?: unknown) => void;
 
@@ -155,9 +160,38 @@ const links: SceneLinkVm[] = [
 ];
 
 describe('MapLibreMinimapEngine', () => {
-  it('mounts the map lazily, syncs geojson/heading, emits node clicks, and cleans up', async () => {
+  it('rejects a missing style before loading the MapLibre runtime', () => {
     const loadRuntime = vi.fn(async () => runtime);
-    const engine = new MapLibreMinimapEngine({ loadRuntime });
+
+    expect(
+      () => new MapLibreMinimapEngine({ loadRuntime } as unknown as MapLibreMinimapEngineOptions),
+    ).toThrow('MINIMAP_STYLE_REQUIRED');
+    expect(loadRuntime).not.toHaveBeenCalled();
+  });
+
+  it('mounts the resolved style with attribution at the Ha Tinh center', async () => {
+    const resolvedStyle = resolveMinimapStyle({ isProduction: false });
+    const loadRuntime = vi.fn(async () => runtime);
+    const engine = new MapLibreMinimapEngine({ loadRuntime, style: resolvedStyle });
+    const container = document.createElement('div');
+
+    await engine.mount(container);
+
+    expect(FakeMap.latest?.options).toMatchObject({
+      attributionControl: true,
+      center: [105.9, 18.342],
+      style: resolvedStyle,
+    });
+
+    engine.destroy();
+  });
+
+  it('mounts the map lazily, syncs route geojson and heading, emits node clicks, and cleans up', async () => {
+    const loadRuntime = vi.fn(async () => runtime);
+    const engine = new MapLibreMinimapEngine({
+      loadRuntime,
+      style: resolveMinimapStyle({ isProduction: false }),
+    });
     const container = document.createElement('div');
     const selected: string[] = [];
     const unsubscribe = engine.subscribeNodeSelected((sceneId) => selected.push(sceneId));
@@ -177,6 +211,18 @@ describe('MapLibreMinimapEngine', () => {
         }),
       ]),
     });
+    expect(map.sources.get('minimap-route')?.data).toMatchObject({
+      features: [
+        expect.objectContaining({
+          geometry: expect.objectContaining({
+            coordinates: [
+              [105.9, 18.342],
+              [105.902, 18.343],
+            ],
+          }),
+        }),
+      ],
+    });
 
     map.emitNodeClick('scene-02');
     expect(selected).toEqual(['scene-02']);
@@ -190,5 +236,6 @@ describe('MapLibreMinimapEngine', () => {
     unsubscribe();
     engine.destroy();
     expect(map.removed).toBe(true);
+    expect(FakeMarker.latest?.removed).toBe(true);
   });
 });
