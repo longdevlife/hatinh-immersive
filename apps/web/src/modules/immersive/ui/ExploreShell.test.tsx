@@ -142,6 +142,17 @@ describe('ExploreShell', () => {
 
     expect(actions.onToggleMinimap).toHaveBeenCalledTimes(1);
   });
+
+  it('keeps the committed panorama visible during a requested scene transition', () => {
+    const actions = createActions();
+
+    render(<ExploreShell view={panoramaLoadingFixture} actions={actions} isSceneTransitioning />);
+
+    const transitionState = screen.getByRole('status');
+    expect(transitionState).toHaveAttribute('data-renderer-transition', 'scene');
+    expect(transitionState).toHaveClass('immersive-renderer-state--transitioning');
+    expect(transitionState).toHaveTextContent('Đang chuyển cảnh');
+  });
   it('exposes aria-haspopup="dialog" on panorama hotspot buttons', () => {
     const actions = createActions();
     render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);

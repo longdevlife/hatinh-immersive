@@ -661,6 +661,7 @@ export function ImmersiveExperience({
       <ExploreShell
         actions={actions}
         canEnterPanorama={manifest.panoramaNodes.length > 0}
+        isSceneTransitioning={navigation.transition === 'navigating-scene'}
         minimapEngine={activeMinimapEngine}
         rendererContent={rendererContent}
         view={view}

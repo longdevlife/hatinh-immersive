@@ -10,6 +10,7 @@ export interface ExploreShellProps {
   view: ImmersiveViewVm;
   actions: ImmersiveActions;
   canEnterPanorama?: boolean;
+  isSceneTransitioning?: boolean;
   minimapEngine?: MinimapEnginePort | null;
   rendererContent?: ReactNode;
 }
@@ -45,6 +46,7 @@ export function ExploreShell({
   view,
   actions,
   canEnterPanorama = true,
+  isSceneTransitioning = false,
   minimapEngine = null,
   rendererContent,
 }: ExploreShellProps) {
@@ -135,6 +137,7 @@ export function ExploreShell({
           status={view.rendererStatus}
           onRetry={actions.onRetryRenderer}
           onFallback={isPanorama ? actions.onEnter3D : () => actions.onEnterPanorama()}
+          isTransitioning={isPanorama && isSceneTransitioning}
           showFallback={isPanorama || canEnterPanorama}
         />
       </section>

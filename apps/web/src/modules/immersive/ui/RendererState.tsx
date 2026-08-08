@@ -5,6 +5,7 @@ interface RendererStateProps {
   status: RendererStatus;
   onRetry(): void;
   onFallback(): void;
+  isTransitioning?: boolean;
   showFallback?: boolean;
 }
 
@@ -13,6 +14,7 @@ export function RendererState({
   status,
   onRetry,
   onFallback,
+  isTransitioning = false,
   showFallback = true,
 }: RendererStateProps) {
   if (status === 'ready' || status === 'idle') {
@@ -20,8 +22,27 @@ export function RendererState({
   }
 
   if (status === 'loading') {
+    if (isTransitioning) {
+      return (
+        <div
+          aria-live="polite"
+          className="immersive-renderer-state immersive-renderer-state--transitioning"
+          data-renderer-transition="scene"
+          role="status"
+        >
+          <span className="immersive-renderer-state__spinner" aria-hidden="true" />
+          <strong>Đang chuyển cảnh</strong>
+        </div>
+      );
+    }
+
     return (
-      <div className="immersive-renderer-state" aria-live="polite" role="status">
+      <div
+        aria-live="polite"
+        className="immersive-renderer-state"
+        data-renderer-transition="initial"
+        role="status"
+      >
         <span className="immersive-renderer-state__spinner" aria-hidden="true" />
         <div>
           <strong>

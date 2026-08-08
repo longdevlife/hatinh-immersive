@@ -556,6 +556,30 @@
   width: 100%;
 }
 
+.immersive-renderer-state--transitioning {
+  background: rgb(9 27 22 / 0.68);
+  bottom: auto;
+  gap: 0.55rem;
+  left: auto;
+  max-width: none;
+  padding: 0.55rem 0.75rem;
+  right: clamp(1rem, 4vw, 4rem);
+  top: clamp(4.5rem, 10vw, 6rem);
+  transform: none;
+  width: auto;
+}
+
+.immersive-renderer-state--transitioning .immersive-renderer-state__spinner {
+  border-width: 2px;
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+.immersive-renderer-state--transitioning strong {
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
 .immersive-renderer-state strong {
   display: block;
   font-size: 1rem;
