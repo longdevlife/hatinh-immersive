@@ -113,6 +113,9 @@ jobs:
       - name: Critical-path end-to-end tests
         run: pnpm test:e2e
 
+      - name: Production manifest end-to-end smoke tests
+        run: pnpm --filter @hatinh/web exec playwright test --config=playwright.production.config.ts
+
       - name: Upload Playwright reports
         if: always()
         uses: actions/upload-artifact@v4

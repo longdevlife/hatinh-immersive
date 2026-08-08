@@ -10,8 +10,23 @@ import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fak
 import './styles/index.css';
 
 const DEFAULT_PUBLIC_DESTINATION_SLUG = 'son-trang-co-dam';
+const e2eFailure =
+  typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('e2eFailure')
+    : null;
+
+if (import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake' && e2eFailure) {
+  try {
+    window.sessionStorage.setItem('hatinh-e2e-failure', e2eFailure);
+  } catch {
+    // Session storage is optional in privacy-restricted browsers.
+  }
+}
+
 const fakeManifest =
-  import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake' ? createFakeImmersiveManifest() : undefined;
+  import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake' && e2eFailure !== 'manifest'
+    ? createFakeImmersiveManifest()
+    : undefined;
 
 function PublicHome() {
   const navigate = useNavigate();

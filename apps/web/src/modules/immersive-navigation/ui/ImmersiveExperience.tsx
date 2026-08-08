@@ -23,6 +23,7 @@ import type {
   ImmersiveLocale,
   ImmersiveMode,
   ImmersiveViewVm,
+  NetworkQuality,
   PanoramaNode,
   PanoramaView,
   RendererStatus,
@@ -150,6 +151,24 @@ function writeDeepLink(
   });
 
   navigate(href, { replace });
+}
+
+interface NetworkInformationLike extends EventTarget {
+  effectiveType?: string;
+  saveData?: boolean;
+}
+
+function resolveNetworkQuality(): NetworkQuality {
+  if (typeof navigator === 'undefined' || navigator.onLine === false) {
+    return 'offline';
+  }
+
+  const connection = (navigator as Navigator & { connection?: NetworkInformationLike }).connection;
+  return connection?.saveData ||
+    connection?.effectiveType === 'slow-2g' ||
+    connection?.effectiveType === '2g'
+    ? 'constrained'
+    : 'good';
 }
 
 interface RendererHostProps {
@@ -332,6 +351,26 @@ export function ImmersiveExperience({
     destinationSearchQuery.trim().length >= 2,
   );
   const manifest = manifestOverride ?? manifestQuery.data;
+
+  useEffect(() => {
+    const syncNetworkQuality = () => {
+      useImmersiveNavigation.getState().setNetworkQuality(resolveNetworkQuality());
+    };
+    const connection = (navigator as Navigator & { connection?: NetworkInformationLike })
+      .connection;
+
+    syncNetworkQuality();
+    window.addEventListener('online', syncNetworkQuality);
+    window.addEventListener('offline', syncNetworkQuality);
+    connection?.addEventListener('change', syncNetworkQuality);
+
+    return () => {
+      window.removeEventListener('online', syncNetworkQuality);
+      window.removeEventListener('offline', syncNetworkQuality);
+      connection?.removeEventListener('change', syncNetworkQuality);
+    };
+  }, []);
+
   const defaultFactories = useMemo(createDefaultFactories, []);
   const resolvedFactories = factories ?? defaultFactories;
   const [retryKey, setRetryKey] = useState(0);

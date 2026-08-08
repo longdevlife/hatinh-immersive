@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: /immersive-(production|parity)\.spec\.ts/,
+  testMatch: /immersive-(production|parity|failure-modes)\.spec\.ts/,
   fullyParallel: false,
   reporter: 'list',
   use: {
