@@ -13,6 +13,8 @@ export interface DestinationPreviewVm {
   summary: string;
   coverImageUrl: string | null;
   categoryLabel: string | null;
+  defaultSceneId: string | null;
+  geoPoint: { latitude: number; longitude: number } | null;
 }
 
 export interface SceneNodeVm {
@@ -80,6 +82,17 @@ export interface CameraTarget {
   range?: number;
 }
 
+export interface Map3DLocation {
+  id: string;
+  label: string;
+  position: {
+    lat: number;
+    lng: number;
+    altitude?: number;
+  };
+  target: CameraTarget;
+}
+
 export interface ModelPlacement {
   id: string;
   url: string;
@@ -92,6 +105,8 @@ export interface ModelPlacement {
 
 export interface Map3DEnginePort {
   mount(container: HTMLElement): Promise<void>;
+  setLocations(locations: Map3DLocation[]): Promise<void>;
+  subscribeLocationSelected(listener: (locationId: string) => void): () => void;
   flyTo(target: CameraTarget): Promise<void>;
   addModel(model: ModelPlacement): Promise<void>;
   destroy(): void;

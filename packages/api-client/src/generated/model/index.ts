@@ -68,6 +68,7 @@ export * from './getSceneNeighbors200ItemScene';
 export * from './getSceneNeighbors200ItemScenePanoramaAssetStatus';
 export * from './getSceneNeighbors200ItemSceneStatus';
 export * from './listDestinations200Item';
+export * from './listDestinations200ItemGeoPoint';
 export * from './listDestinationsLocale';
 export * from './listDestinationsParams';
 export * from './presignMediaUpload201';

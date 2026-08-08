@@ -61,6 +61,8 @@ function toDestination(dto: GetImmersiveManifest200): DestinationPreviewVm {
     summary: dto.destination.summary || dto.destination.description,
     coverImageUrl: dto.destination.coverImageUrl,
     categoryLabel: dto.destination.categoryLabel,
+    defaultSceneId: dto.destination.defaultSceneId,
+    geoPoint: dto.destination.geoPoint,
   };
 }
 

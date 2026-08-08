@@ -70,7 +70,16 @@ const geoPointSchema = {
 
 export const destinationPreviewResponseSchema = {
   type: 'object',
-  required: ['id', 'slug', 'name', 'summary', 'coverImageUrl', 'categoryLabel'],
+  required: [
+    'id',
+    'slug',
+    'name',
+    'summary',
+    'coverImageUrl',
+    'categoryLabel',
+    'defaultSceneId',
+    'geoPoint',
+  ],
   properties: {
     id: uuidSchema,
     slug: { type: 'string' },
@@ -78,6 +87,8 @@ export const destinationPreviewResponseSchema = {
     summary: { type: 'string' },
     coverImageUrl: { type: 'string', nullable: true },
     categoryLabel: { type: 'string', nullable: true },
+    defaultSceneId: { ...uuidSchema, nullable: true },
+    geoPoint: { ...geoPointSchema, nullable: true },
   },
 };
 
