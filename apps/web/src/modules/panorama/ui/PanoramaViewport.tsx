@@ -37,6 +37,7 @@ export function PanoramaViewport({
   const onViewChangeRef = useRef(onViewChange);
   const tourNodesRef = useRef(tourNodes);
   const mountPromiseRef = useRef<Promise<void> | null>(null);
+  const lastNodeReportedByEngineRef = useRef<string | null>(null);
   const [status, setStatus] = useState<RendererStatus>('loading');
 
   onStatusChangeRef.current = onStatusChange;
@@ -53,6 +54,7 @@ export function PanoramaViewport({
     }
 
     let cancelled = false;
+    lastNodeReportedByEngineRef.current = null;
     const unsubscribeViewChanged = engine.subscribeViewChanged((view) => {
       if (!cancelled) {
         onViewChangeRef.current?.(view);
@@ -60,6 +62,7 @@ export function PanoramaViewport({
     });
     const unsubscribeNodeChanged = engine.subscribeNodeChanged?.((nodeId) => {
       if (!cancelled) {
+        lastNodeReportedByEngineRef.current = nodeId;
         onNodeChangeRef.current?.(nodeId);
       }
     });
@@ -100,6 +103,11 @@ export function PanoramaViewport({
     };
 
     reportStatus('loading');
+
+    if (lastNodeReportedByEngineRef.current === node.id) {
+      reportStatus('ready');
+      return undefined;
+    }
 
     void (async () => {
       try {

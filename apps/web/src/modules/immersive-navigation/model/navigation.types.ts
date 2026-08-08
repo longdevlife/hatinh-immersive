@@ -49,7 +49,6 @@ export interface ImmersiveNavigationActions {
   commitSceneTransition(transitionId: number, view: NavigationView): void;
   rollbackSceneTransition(transitionId: number): void;
   commitRendererScene(sceneId: string, view: NavigationView): void;
-  restoreScene(sceneId: string, view: NavigationView): void;
   selectHotspot(hotspotId: string): void;
   closeHotspot(): void;
   toggleMinimap(): void;

@@ -155,18 +155,6 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
       };
     }),
 
-  restoreScene: (sceneId, view) =>
-    set((state) =>
-      state.mode === 'panorama'
-        ? {
-            ...withCommittedScene(sceneId, normalizeNavigationView(state.committedView, view)),
-            requestedSceneId: null,
-            transition: 'idle' as const,
-            selectedHotspotId: null,
-          }
-        : state,
-    ),
-
   selectHotspot: (hotspotId) =>
     set({
       selectedHotspotId: hotspotId,

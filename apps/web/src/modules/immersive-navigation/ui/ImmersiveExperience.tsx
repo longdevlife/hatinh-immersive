@@ -36,11 +36,7 @@ import {
   type ImmersiveDeepLinkState,
 } from '../lib/deep-link';
 import { useImmersiveNavigation } from '../model/navigation.store';
-import type {
-  ActiveRenderer,
-  ImmersiveNavigationState,
-  NavigationView,
-} from '../model/navigation.types';
+import type { ActiveRenderer, ImmersiveNavigationState } from '../model/navigation.types';
 
 export interface ImmersiveExperienceFactories {
   createMap3DEngine(): Promise<Map3DEnginePort>;
@@ -102,10 +98,11 @@ function buildImmersiveView(
   destinationSlug: string,
   navigation: ImmersiveNavigationState,
 ): ImmersiveViewVm {
-  const currentScene = manifest.nodes.find((node) => node.id === navigation.sceneId) ?? null;
+  const currentScene =
+    manifest.nodes.find((node) => node.id === navigation.committedSceneId) ?? null;
   const nodes = manifest.nodes.map((node) => ({
     ...node,
-    isCurrent: node.id === navigation.sceneId,
+    isCurrent: node.id === navigation.committedSceneId,
     isVisited: navigation.visitedSceneIds.includes(node.id),
   }));
 
@@ -117,16 +114,20 @@ function buildImmersiveView(
     },
     currentScene: navigation.mode === 'panorama' ? currentScene : null,
     nodes,
-    links: navigation.mode === 'panorama' ? getSceneLinks(manifest.links, navigation.sceneId) : [],
+    links:
+      navigation.mode === 'panorama'
+        ? getSceneLinks(manifest.links, navigation.committedSceneId)
+        : [],
     hotspots:
       navigation.mode === 'panorama'
         ? manifest.hotspots.filter(
-            (hotspot) => hotspot.sceneId === undefined || hotspot.sceneId === navigation.sceneId,
+            (hotspot) =>
+              hotspot.sceneId === undefined || hotspot.sceneId === navigation.committedSceneId,
           )
         : [],
-    heading: navigation.view.heading,
-    pitch: navigation.view.pitch,
-    fov: navigation.view.fov,
+    heading: navigation.committedView.heading,
+    pitch: navigation.committedView.pitch,
+    fov: navigation.committedView.fov,
     rendererStatus:
       navigation.activeRenderer === 'map3d'
         ? navigation.map3dStatus
@@ -146,8 +147,8 @@ function writeDeepLink(
   const href = encodeImmersiveDeepLink({
     destinationSlug,
     mode: state.mode,
-    sceneId: state.sceneId,
-    view: state.view,
+    sceneId: state.committedSceneId,
+    view: state.committedView,
   });
 
   navigate(href, { replace });
@@ -375,11 +376,6 @@ export function ImmersiveExperience({
   const resolvedFactories = factories ?? defaultFactories;
   const [retryKey, setRetryKey] = useState(0);
   const pendingUrlFrame = useRef<number | null>(null);
-  const pendingSceneTransitionRef = useRef<{
-    fromSceneId: string;
-    fromView: NavigationView;
-    targetSceneId: string;
-  } | null>(null);
 
   useEffect(() => {
     if (!manifest) {
@@ -410,7 +406,7 @@ export function ImmersiveExperience({
     }
 
     const afterOverview = useImmersiveNavigation.getState();
-    if (afterOverview.sceneId !== sceneId || afterOverview.mode !== 'panorama') {
+    if (afterOverview.committedSceneId !== sceneId || afterOverview.mode !== 'panorama') {
       afterOverview.enterPanorama(sceneId);
     }
 
@@ -473,7 +469,7 @@ export function ImmersiveExperience({
 
       const resolvedSceneId = resolveSceneId(
         manifest,
-        sceneId ?? useImmersiveNavigation.getState().sceneId,
+        sceneId ?? useImmersiveNavigation.getState().committedSceneId,
       );
       if (!resolvedSceneId) {
         return;
@@ -493,15 +489,29 @@ export function ImmersiveExperience({
       }
 
       const state = useImmersiveNavigation.getState();
-      if (state.sceneId && state.sceneId !== sceneId) {
-        pendingSceneTransitionRef.current = {
-          fromSceneId: state.sceneId,
-          fromView: state.view,
-          targetSceneId: sceneId,
-        };
-      }
       state.navigateToScene(sceneId);
-      writeDeepLink(navigate, destinationSlug, false);
+    },
+    [manifest],
+  );
+
+  const onRendererNodeChange = useCallback(
+    (sceneId: string) => {
+      if (!manifest || !manifest.panoramaNodes.some((node) => node.id === sceneId)) {
+        return;
+      }
+
+      const state = useImmersiveNavigation.getState();
+      if (
+        (state.requestedSceneId && state.requestedSceneId !== sceneId) ||
+        (!state.requestedSceneId && state.committedSceneId === sceneId)
+      ) {
+        return;
+      }
+
+      state.commitRendererScene(sceneId, state.committedView);
+      if (useImmersiveNavigation.getState().committedSceneId === sceneId) {
+        writeDeepLink(navigate, destinationSlug, true);
+      }
     },
     [destinationSlug, manifest, navigate],
   );
@@ -562,7 +572,9 @@ export function ImmersiveExperience({
   }
 
   const currentPanoramaNode =
-    manifest.panoramaNodes.find((node) => node.id === navigation.sceneId) ?? null;
+    manifest.panoramaNodes.find(
+      (node) => node.id === (navigation.requestedSceneId ?? navigation.committedSceneId),
+    ) ?? null;
   const view = buildImmersiveView(manifest, destinationSlug, navigation);
   const selectedHotspot = view.hotspots.find(
     (hotspot) => hotspot.id === navigation.selectedHotspotId,
@@ -577,22 +589,28 @@ export function ImmersiveExperience({
     <RendererHost
       activeRenderer={navigation.activeRenderer}
       engine={activeEngine}
-      initialView={navigation.view}
+      initialView={navigation.committedView}
       mode={navigation.mode}
-      onNodeChange={onNavigateScene}
+      onNodeChange={onRendererNodeChange}
       onStatusChange={(status) => {
         const state = useImmersiveNavigation.getState();
-        const pendingSceneTransition = pendingSceneTransitionRef.current;
-        if (
-          status === 'error' &&
-          state.activeRenderer === 'panorama' &&
-          pendingSceneTransition?.targetSceneId === state.sceneId
-        ) {
-          state.restoreScene(pendingSceneTransition.fromSceneId, pendingSceneTransition.fromView);
-          pendingSceneTransitionRef.current = null;
-          writeDeepLink(navigate, destinationSlug, true);
-        } else if (status === 'ready' && pendingSceneTransition?.targetSceneId === state.sceneId) {
-          pendingSceneTransitionRef.current = null;
+        const transitionId = state.transitionId;
+        const requestedSceneId = state.requestedSceneId;
+        if (state.activeRenderer === 'panorama' && requestedSceneId) {
+          if (status === 'ready') {
+            const requestedNode = manifest.panoramaNodes.find(
+              (node) => node.id === requestedSceneId,
+            );
+            if (requestedNode) {
+              state.commitSceneTransition(transitionId, requestedNode.initialView);
+              if (useImmersiveNavigation.getState().committedSceneId === requestedSceneId) {
+                writeDeepLink(navigate, destinationSlug, true);
+              }
+            }
+          } else if (status === 'error') {
+            state.rollbackSceneTransition(transitionId);
+            writeDeepLink(navigate, destinationSlug, true);
+          }
         }
         if (state.activeRenderer !== 'none') {
           state.setRendererStatus(state.activeRenderer, status);
@@ -618,7 +636,7 @@ export function ImmersiveExperience({
         view={view}
       />
       <ImmersiveControlsGroup
-        currentSceneId={navigation.sceneId}
+        currentSceneId={navigation.committedSceneId}
         destinations={destinationSearchResults}
         locale={locale}
         nodes={view.nodes}

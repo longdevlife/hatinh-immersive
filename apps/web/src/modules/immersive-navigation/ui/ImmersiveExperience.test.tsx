@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FakeMap3DEngine } from '../../map3d';
 import { FakeMinimapEngine } from '../../minimap';
-import { FakePanoramaEngine } from '../../panorama';
+import { FakePanoramaEngine, type PanoramaNode } from '../../panorama';
 import { createFakeImmersiveManifest } from '../fake-mode/manifest';
 import { useImmersiveNavigation } from '../index';
 import { ImmersiveExperience, type ImmersiveExperienceFactories } from './ImmersiveExperience';
@@ -37,10 +37,9 @@ function renderExperience(initialEntry: string, factories: ImmersiveExperienceFa
   );
 }
 
-function createFactories() {
+function createFactories(panorama = new FakePanoramaEngine()) {
   const map3d = new FakeMap3DEngine();
   const minimap = new FakeMinimapEngine();
-  const panorama = new FakePanoramaEngine();
 
   const factories: ImmersiveExperienceFactories = {
     createMap3DEngine: vi.fn(async () => map3d),
@@ -49,6 +48,29 @@ function createFactories() {
   };
 
   return { factories, map3d, minimap, panorama };
+}
+
+class DeferredPanoramaEngine extends FakePanoramaEngine {
+  readonly loadRequests = new Map<
+    string,
+    { node: PanoramaNode; reject(): void; resolve(): void }
+  >();
+
+  override loadNode(node: PanoramaNode) {
+    this.calls.push({ type: 'loadNode', node });
+
+    return new Promise<void>((resolve, reject) => {
+      this.loadRequests.set(node.id, {
+        node,
+        reject: () => reject(new Error(`Unable to load ${node.id}`)),
+        resolve: () => {
+          this.loadedNode = node;
+          this.currentView = node.initialView;
+          resolve();
+        },
+      });
+    });
+  }
 }
 
 describe('ImmersiveExperience', () => {
@@ -139,6 +161,75 @@ describe('ImmersiveExperience', () => {
     await waitFor(() => {
       expect(screen.getByTestId('location')).toHaveTextContent(
         '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      );
+    });
+  });
+
+  it('keeps A committed when B resolves after C is requested and C fails', async () => {
+    const panorama = new DeferredPanoramaEngine();
+    const { factories } = createFactories(panorama);
+    renderExperience(
+      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      factories,
+    );
+
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-01')).toBeDefined();
+    });
+    panorama.loadRequests.get('scene-01')?.resolve();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-02')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 3' }));
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-03')).toBeDefined();
+    });
+
+    panorama.loadRequests.get('scene-02')?.resolve();
+    panorama.loadRequests.get('scene-03')?.reject();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Lối đi di sản 1' })).toBeInTheDocument();
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        committedSceneId: 'scene-01',
+        requestedSceneId: null,
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      );
+    });
+  });
+
+  it('keeps the committed URL while a requested panorama is pending', async () => {
+    const panorama = new DeferredPanoramaEngine();
+    const { factories } = createFactories(panorama);
+    renderExperience(
+      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      factories,
+    );
+
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-01')).toBeDefined();
+    });
+    panorama.loadRequests.get('scene-01')?.resolve();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-02')).toBeDefined();
+    });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+    );
+
+    panorama.loadRequests.get('scene-02')?.resolve();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam?mode=panorama&scene=scene-02&h=31&p=-2&fov=88',
       );
     });
   });

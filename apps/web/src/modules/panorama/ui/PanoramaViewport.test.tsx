@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { FakePanoramaEngine } from '../adapters/fake-panorama.adapter';
@@ -19,6 +19,36 @@ const nextNode = {
   id: 'scene-02',
   panoramaUrl: '/panorama/scene-02/manifest.json',
 };
+
+class NativeNavigatingPanoramaEngine implements PanoramaEnginePort {
+  readonly loadedNodeIds: string[] = [];
+  private readonly nodeListeners = new Set<(nodeId: string) => void>();
+
+  async mount() {}
+
+  async loadNode(nextNode: typeof node) {
+    this.loadedNodeIds.push(nextNode.id);
+  }
+
+  setView() {}
+
+  subscribeViewChanged() {
+    return () => undefined;
+  }
+
+  subscribeNodeChanged(listener: (nodeId: string) => void) {
+    this.nodeListeners.add(listener);
+    return () => this.nodeListeners.delete(listener);
+  }
+
+  destroy() {}
+
+  emitNativeNodeChange(nodeId: string) {
+    for (const listener of this.nodeListeners) {
+      listener(nodeId);
+    }
+  }
+}
 
 describe('PanoramaViewport', () => {
   it('mounts, loads a node, and destroys the panorama engine', async () => {
@@ -119,5 +149,28 @@ describe('PanoramaViewport', () => {
     });
 
     expect(engine.calls.at(-1)).toEqual({ type: 'setView', view: initialView });
+  });
+
+  it('does not load a node again after native tour navigation already changed it', async () => {
+    const engine = new NativeNavigatingPanoramaEngine();
+    const onNodeChange = vi.fn();
+    const { rerender } = render(
+      <PanoramaViewport engine={engine} node={node} onNodeChange={onNodeChange} />,
+    );
+
+    await waitFor(() => {
+      expect(engine.loadedNodeIds).toEqual(['scene-01']);
+    });
+
+    engine.emitNativeNodeChange('scene-02');
+    expect(onNodeChange).toHaveBeenCalledWith('scene-02');
+
+    rerender(<PanoramaViewport engine={engine} node={nextNode} onNodeChange={onNodeChange} />);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(engine.loadedNodeIds).toEqual(['scene-01']);
   });
 });
