@@ -76,6 +76,15 @@ class FakeMap {
     }
   }
 
+  once(_event: string, listener: Listener) {
+    listener();
+    return this;
+  }
+
+  project(coordinates: [number, number]) {
+    return { x: coordinates[0] * 10, y: coordinates[1] * 10 };
+  }
+
   addSource(id: string, source: { data: unknown }) {
     this.sources.set(id, new FakeGeoJsonSource(source.data));
   }
@@ -223,6 +232,15 @@ describe('MapLibreMinimapEngine', () => {
         }),
       ],
     });
+    expect(container).toHaveAttribute('data-minimap-route-branches', 'scene-01->scene-02');
+    expect(container).toHaveAttribute('data-minimap-interaction-ready', 'true');
+    expect(container).toHaveAttribute(
+      'data-minimap-node-points',
+      JSON.stringify({
+        'scene-01': { x: 1059, y: 183.42 },
+        'scene-02': { x: 1059.02, y: 183.43 },
+      }),
+    );
 
     map.emitNodeClick('scene-02');
     expect(selected).toEqual(['scene-02']);

@@ -10,9 +10,14 @@ test('runs the real MapLibre minimap against only locally fulfilled Ha Tinh tile
 }) => {
   let styleRequests = 0;
   let tileRequests = 0;
+  const osmAttempts: string[] = [];
   const requestedUrls: string[] = [];
 
   page.on('request', (request) => requestedUrls.push(request.url()));
+  await page.route('https://tile.openstreetmap.org/**', async (route) => {
+    osmAttempts.push(route.request().url());
+    await route.abort();
+  });
   await page.route('**/test/minimap-style.json', async (route) => {
     styleRequests += 1;
     await route.fulfill({
@@ -38,8 +43,10 @@ test('runs the real MapLibre minimap against only locally fulfilled Ha Tinh tile
   await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90');
 
   const minimap = page.getByRole('application', { name: 'Bản đồ tuyến tham quan' });
+  const map = minimap.getByRole('group', { name: 'Các điểm của tuyến tham quan' });
   await expect(minimap).toBeVisible();
   await expect(minimap).toHaveAttribute('data-minimap-status', 'ready');
+  await expect(map).toHaveAttribute('data-minimap-route-branches', 'scene-01->scene-02');
   await expect.poll(() => styleRequests).toBeGreaterThan(0);
   await expect.poll(() => tileRequests).toBeGreaterThan(0);
   expect(requestedUrls).toEqual(
@@ -51,15 +58,18 @@ test('runs the real MapLibre minimap against only locally fulfilled Ha Tinh tile
   await page.getByRole('button', { name: 'Mở rộng bản đồ' }).click();
   await expect(page.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeVisible();
 
-  const markerBounds = await page.locator('.minimap-heading-marker').boundingBox();
-  expect(markerBounds).not.toBeNull();
-  if (!markerBounds) {
-    throw new Error('MINIMAP_MARKER_MISSING');
+  await expect(map).toHaveAttribute('data-minimap-interaction-ready', 'true');
+  const nodePoints = await map.getAttribute('data-minimap-node-points');
+  expect(nodePoints).not.toBeNull();
+  const sceneTwoPoint = JSON.parse(nodePoints ?? '{}')['scene-02'] as { x: number; y: number };
+  expect(sceneTwoPoint).toEqual({ x: expect.any(Number), y: expect.any(Number) });
+
+  const mapBounds = await map.boundingBox();
+  expect(mapBounds).not.toBeNull();
+  if (!mapBounds) {
+    throw new Error('MINIMAP_CONTAINER_MISSING');
   }
-  await page.mouse.click(
-    markerBounds.x + markerBounds.width / 2 + 26,
-    markerBounds.y + markerBounds.height / 2 - 31,
-  );
+  await page.mouse.click(mapBounds.x + sceneTwoPoint.x, mapBounds.y + sceneTwoPoint.y);
   await expect(page.getByRole('heading', { name: 'Lối đi di sản 2' })).toBeVisible();
-  expect(requestedUrls.filter((url) => url.includes('tile.openstreetmap.org'))).toEqual([]);
+  expect(osmAttempts).toEqual([]);
 });

@@ -31,6 +31,11 @@ export interface MapLibreGeoJsonSource {
 
 export type MapLibreMapEventListener = (event?: unknown) => void;
 
+export interface MapLibrePoint {
+  x: number;
+  y: number;
+}
+
 export interface MapLibreMapInstance {
   addLayer(layer: unknown): void;
   addSource(id: string, source: { data: unknown; type: 'geojson' }): void;
@@ -46,6 +51,8 @@ export interface MapLibreMapInstance {
     layerOrListener: string | MapLibreMapEventListener,
     listener?: MapLibreMapEventListener,
   ): this;
+  once(event: string, listener: MapLibreMapEventListener): this;
+  project(coordinates: MapLibreCoordinate): MapLibrePoint;
   remove(): void;
 }
 
@@ -132,6 +139,7 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
   };
   private lastPositionedSceneId: string | null = null;
   private mountGeneration = 0;
+  private projectionGeneration = 0;
 
   constructor(options: MapLibreMinimapEngineOptions) {
     requireMinimapStyle(options?.style);
@@ -249,6 +257,7 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
     );
     this.map.getSource(NODES_SOURCE_ID)?.setData(geoJson.nodes);
     this.map.getSource(ROUTE_SOURCE_ID)?.setData(geoJson.route);
+    this.syncMapTestHooks(geoJson);
 
     const currentNode = this.getCurrentNode();
     if (!currentNode) {
@@ -271,6 +280,44 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
     return this.state.nodes.find((node) => node.id === this.state.currentSceneId) ?? null;
   }
 
+  private syncMapTestHooks(geoJson: MinimapGeoJson): void {
+    const container = this.container;
+    const map = this.map;
+    if (!container || !map) {
+      return;
+    }
+
+    const currentSceneId = this.state.currentSceneId;
+    container.dataset.minimapRouteBranches = geoJson.route.features
+      .map((feature) =>
+        currentSceneId ? `${currentSceneId}->${feature.properties.targetSceneId}` : '',
+      )
+      .filter(Boolean)
+      .join(',');
+    container.removeAttribute('data-minimap-interaction-ready');
+
+    const projectionGeneration = ++this.projectionGeneration;
+    map.once('idle', () => {
+      if (
+        projectionGeneration !== this.projectionGeneration ||
+        this.map !== map ||
+        this.container !== container
+      ) {
+        return;
+      }
+
+      container.dataset.minimapNodePoints = JSON.stringify(
+        Object.fromEntries(
+          geoJson.nodes.features.map((feature) => [
+            feature.properties.id,
+            map.project(feature.geometry.coordinates),
+          ]),
+        ),
+      );
+      container.dataset.minimapInteractionReady = 'true';
+    });
+  }
+
   private destroyMountedMap(): void {
     if (this.map) {
       this.map.off('click', NODES_LAYER_ID, this.handleNodeClick);
@@ -284,6 +331,7 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
     this.marker = null;
     this.container = null;
     this.lastPositionedSceneId = null;
+    ++this.projectionGeneration;
   }
 
   private async getRuntime(): Promise<MapLibreRuntime> {
