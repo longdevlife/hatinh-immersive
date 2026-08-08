@@ -169,6 +169,7 @@ describe('MapLibreMinimapEngine', () => {
 
     expect(loadRuntime).toHaveBeenCalledTimes(1);
     const map = FakeMap.latest!;
+    expect(map.options).toMatchObject({ interactive: true });
     expect(map.sources.get('minimap-nodes')?.data).toMatchObject({
       features: expect.arrayContaining([
         expect.objectContaining({

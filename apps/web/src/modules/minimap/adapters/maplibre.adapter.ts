@@ -162,7 +162,7 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
       attributionControl: false,
       center: currentNode ? [currentNode.lng, currentNode.lat] : [0, 0],
       container,
-      interactive: false,
+      interactive: true,
       style: this.options.style ?? DEFAULT_MINIMAP_STYLE,
       zoom: this.options.zoom ?? DEFAULT_ZOOM,
     });

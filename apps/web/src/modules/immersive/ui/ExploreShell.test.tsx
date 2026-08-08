@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 
 import {
@@ -9,6 +9,7 @@ import {
   threeDUnavailableFixture,
 } from '../../../shared/fixtures';
 import type { ImmersiveActions } from '../../../shared/contracts';
+import { FakeMinimapEngine } from '../../minimap';
 
 import { ExploreShell } from './ExploreShell';
 
@@ -27,6 +28,35 @@ function createActions(): ImmersiveActions {
 }
 
 describe('ExploreShell', () => {
+  it('mounts the production minimap viewport and forwards map node selection', async () => {
+    const actions = createActions();
+    const minimapEngine = new FakeMinimapEngine();
+
+    render(
+      <ExploreShell
+        view={readyImmersiveViewFixture}
+        actions={actions}
+        minimapEngine={minimapEngine}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(true),
+    );
+    expect(minimapEngine.calls).toContainEqual(
+      expect.objectContaining({
+        type: 'setState',
+        state: expect.objectContaining({
+          currentSceneId: 'scene-01',
+          heading: 42,
+        }),
+      }),
+    );
+
+    minimapEngine.emitNodeSelected('scene-02');
+    expect(actions.onNavigateScene).toHaveBeenCalledWith('scene-02');
+  });
+
   it('exposes panorama navigation and hotspot selection through the immersive callbacks', () => {
     const actions = createActions();
 

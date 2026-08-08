@@ -1,18 +1,51 @@
 import { useState, type ReactNode } from 'react';
 
 import type { ImmersiveActions, ImmersiveViewVm } from '../../../shared/contracts';
+import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
 
 import { AudioGuideControl, type AudioGuideStatus } from './AudioGuideControl';
-import { MinimapFrame } from './MinimapFrame';
 import { RendererState } from './RendererState';
 
 export interface ExploreShellProps {
   view: ImmersiveViewVm;
   actions: ImmersiveActions;
+  minimapEngine?: MinimapEnginePort | null;
   rendererContent?: ReactNode;
 }
 
-export function ExploreShell({ view, actions, rendererContent }: ExploreShellProps) {
+function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; onToggle(): void }) {
+  return (
+    <section
+      aria-label="Bản đồ tuyến tham quan"
+      className={`minimap-viewport ${collapsed ? 'minimap-viewport--collapsed' : ''}`}
+      data-minimap-status="loading"
+      role="application"
+    >
+      <header className="minimap-viewport__header">
+        <div>
+          <p className="immersive-kicker">Bản đồ hành trình</p>
+          {!collapsed ? <strong>Đang tải bản đồ…</strong> : null}
+        </div>
+        <button
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
+          className="immersive-icon-button"
+          type="button"
+          onClick={onToggle}
+        >
+          {collapsed ? '+' : '−'}
+        </button>
+      </header>
+    </section>
+  );
+}
+
+export function ExploreShell({
+  view,
+  actions,
+  minimapEngine = null,
+  rendererContent,
+}: ExploreShellProps) {
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d');
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
   const [audioStatus, setAudioStatus] = useState<AudioGuideStatus>('idle');
@@ -133,15 +166,20 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
 
       {isPanorama ? (
         <div className="explore-shell__minimap">
-          <MinimapFrame
-            currentSceneId={view.currentScene?.id ?? null}
-            heading={view.heading}
-            nodes={view.nodes}
-            links={view.links}
-            collapsed={isMinimapCollapsed}
-            onToggle={toggleMinimap}
-            onNodeSelect={actions.onNavigateScene}
-          />
+          {minimapEngine ? (
+            <MinimapViewport
+              currentSceneId={view.currentScene?.id ?? null}
+              heading={view.heading}
+              nodes={view.nodes}
+              links={view.links}
+              collapsed={isMinimapCollapsed}
+              engine={minimapEngine}
+              onToggle={toggleMinimap}
+              onNodeSelect={actions.onNavigateScene}
+            />
+          ) : (
+            <MinimapLoadingBoundary collapsed={isMinimapCollapsed} onToggle={toggleMinimap} />
+          )}
         </div>
       ) : null}
 

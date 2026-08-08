@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FakeMap3DEngine } from '../../map3d';
+import { FakeMinimapEngine } from '../../minimap';
 import { FakePanoramaEngine } from '../../panorama';
 import { createFakeImmersiveManifest } from '../fake-mode/manifest';
 import { useImmersiveNavigation } from '../index';
@@ -38,14 +39,16 @@ function renderExperience(initialEntry: string, factories: ImmersiveExperienceFa
 
 function createFactories() {
   const map3d = new FakeMap3DEngine();
+  const minimap = new FakeMinimapEngine();
   const panorama = new FakePanoramaEngine();
 
   const factories: ImmersiveExperienceFactories = {
     createMap3DEngine: vi.fn(async () => map3d),
+    createMinimapEngine: vi.fn(async () => minimap),
     createPanoramaEngine: vi.fn(async () => panorama),
   };
 
-  return { factories, map3d, panorama };
+  return { factories, map3d, minimap, panorama };
 }
 
 describe('ImmersiveExperience', () => {
@@ -54,7 +57,7 @@ describe('ImmersiveExperience', () => {
   });
 
   it('mounts the overview renderer, then hands off to one panorama renderer', async () => {
-    const { factories, map3d, panorama } = createFactories();
+    const { factories, map3d, minimap, panorama } = createFactories();
     renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories);
 
     await waitFor(() => {
@@ -68,7 +71,11 @@ describe('ImmersiveExperience', () => {
     await waitFor(() => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
     });
+    await waitFor(() => {
+      expect(minimap.calls.some((call) => call.type === 'mount')).toBe(true);
+    });
     expect(factories.createPanoramaEngine).toHaveBeenCalledTimes(1);
+    expect(factories.createMinimapEngine).toHaveBeenCalledTimes(1);
     expect(map3d.calls.at(-1)).toEqual({ type: 'destroy' });
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',

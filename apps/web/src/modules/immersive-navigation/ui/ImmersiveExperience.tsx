@@ -14,6 +14,7 @@ import {
   LazyPanoramaViewport,
   type PanoramaEnginePort,
 } from '../../panorama';
+import { createLazyMapLibreMinimapEngine, type MinimapEnginePort } from '../../minimap';
 import { useImmersiveManifest } from '../../../shared/api/immersive';
 import type {
   ImmersiveActions,
@@ -40,6 +41,7 @@ import type {
 export interface ImmersiveExperienceFactories {
   createMap3DEngine(): Promise<Map3DEnginePort>;
   createPanoramaEngine(): Promise<PanoramaEnginePort>;
+  createMinimapEngine(): Promise<MinimapEnginePort>;
 }
 
 export interface ImmersiveExperienceProps {
@@ -54,6 +56,10 @@ function createDefaultFactories(): ImmersiveExperienceFactories {
     return {
       createMap3DEngine: async () => new FakeMap3DEngine(),
       createPanoramaEngine: async () => new FakePanoramaEngine(),
+      createMinimapEngine: async () => {
+        const { FakeMinimapEngine } = await import('../../minimap');
+        return new FakeMinimapEngine();
+      },
     };
   }
 
@@ -67,6 +73,7 @@ function createDefaultFactories(): ImmersiveExperienceFactories {
         ...(mapId ? { mapId } : {}),
       }),
     createPanoramaEngine: () => createLazyPhotoSphereViewerEngine(),
+    createMinimapEngine: () => createLazyMapLibreMinimapEngine(),
   };
 }
 
@@ -252,6 +259,44 @@ function useActiveEngine(
   return engineRenderer === activeRenderer ? engine : null;
 }
 
+function useActiveMinimapEngine(
+  mode: ImmersiveMode,
+  createEngine: () => Promise<MinimapEnginePort>,
+) {
+  const [engine, setEngine] = useState<MinimapEnginePort | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setEngine(null);
+
+    if (mode !== 'panorama') {
+      return undefined;
+    }
+
+    void createEngine().then(
+      (nextEngine) => {
+        if (cancelled) {
+          nextEngine.destroy();
+          return;
+        }
+
+        setEngine(nextEngine);
+      },
+      () => {
+        if (!cancelled) {
+          setEngine(null);
+        }
+      },
+    );
+
+    return () => {
+      cancelled = true;
+    };
+  }, [createEngine, mode]);
+
+  return engine;
+}
+
 function ManifestState({ kind }: { kind: 'loading' | 'error' | 'empty' }) {
   const messages = {
     loading: 'Đang tải hành trình immersive…',
@@ -336,6 +381,10 @@ export function ImmersiveExperience({
     resolvedFactories,
     retryKey,
     onRendererCreateError,
+  );
+  const activeMinimapEngine = useActiveMinimapEngine(
+    navigation.mode,
+    resolvedFactories.createMinimapEngine,
   );
 
   const scheduleUrlSync = useCallback(() => {
@@ -480,7 +529,14 @@ export function ImmersiveExperience({
     />
   );
 
-  return <ExploreShell actions={actions} rendererContent={rendererContent} view={view} />;
+  return (
+    <ExploreShell
+      actions={actions}
+      minimapEngine={activeMinimapEngine}
+      rendererContent={rendererContent}
+      view={view}
+    />
+  );
 }
 
 export type { ImmersiveDeepLinkState };
