@@ -97,4 +97,30 @@ describe('ExploreShell', () => {
 
     expect(actions.onToggleMinimap).toHaveBeenCalledTimes(1);
   });
+  it('exposes aria-haspopup="dialog" on panorama hotspot buttons', () => {
+    const actions = createActions();
+    render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
+
+    const hotspotButton = screen.getByRole('button', { name: 'Câu chuyện địa danh' });
+    expect(hotspotButton).toHaveAttribute('aria-haspopup', 'dialog');
+  });
+
+  it('exposes role="region" with accessible name on the control groups', () => {
+    const actions = createActions();
+    const { rerender } = render(
+      <ExploreShell view={readyImmersiveViewFixture} actions={actions} />,
+    );
+
+    // In panorama mode
+    expect(screen.getByRole('region', { name: 'Điều khiển trải nghiệm' })).toBeInTheDocument();
+
+    // In 3D overview mode
+    rerender(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Điều khiển trải nghiệm' })).toBeInTheDocument();
+  });
 });
