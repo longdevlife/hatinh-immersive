@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PanoramaNode, PanoramaView } from '../domain/panorama-engine.port';
 import {
@@ -9,6 +9,7 @@ import {
 class FakeVirtualTourPlugin {
   readonly listeners = new Map<string, Set<(event?: unknown) => void>>();
   readonly setCurrentNodeCalls: string[] = [];
+  readonly setCurrentNodeResults = new Map<string, Promise<boolean>>();
   nodes: unknown[] = [];
 
   addEventListener(type: string, listener: (event?: unknown) => void) {
@@ -27,7 +28,7 @@ class FakeVirtualTourPlugin {
 
   async setCurrentNode(nodeId: string) {
     this.setCurrentNodeCalls.push(nodeId);
-    return true;
+    return this.setCurrentNodeResults.get(nodeId) ?? true;
   }
 
   emit(type: string, event?: unknown) {
@@ -142,7 +143,143 @@ const targetNode: PanoramaNode = {
   initialView: { heading: 180, pitch: 0, fov: 90 },
 };
 
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+
+  return { promise, resolve };
+}
+
 describe('PhotoSphereViewerEngine', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    virtualTourPlugin.listeners.clear();
+    virtualTourPlugin.nodes = [];
+    virtualTourPlugin.setCurrentNodeCalls.length = 0;
+    virtualTourPlugin.setCurrentNodeResults.clear();
+    fakeViewer.destroyed = false;
+    fakeViewer.listeners.clear();
+    fakeViewer.rotateCalls.length = 0;
+    fakeViewer.setPanoramaCalls.length = 0;
+    fakeViewer.zoomCalls.length = 0;
+    fakeViewer.position = { pitch: 0, yaw: Math.PI / 2 };
+    fakeViewer.zoomLevel = 50;
+  });
+
+  it('leaves the viewer on the newest scene when an older panorama resolves late', async () => {
+    const sceneB = { ...targetNode, id: 'scene-b' };
+    const sceneC = { ...targetNode, id: 'scene-c' };
+    const panoramaB = createDeferred<unknown>();
+    const panoramaC = createDeferred<unknown>();
+    const loadPanorama = vi.fn((candidate: PanoramaNode) => {
+      if (candidate.id === sceneB.id) {
+        return panoramaB.promise;
+      }
+      if (candidate.id === sceneC.id) {
+        return panoramaC.promise;
+      }
+      return Promise.resolve({ id: candidate.id });
+    });
+    const engine = new PhotoSphereViewerEngine({
+      loadPanorama,
+      loadRuntime: async () => runtime,
+    });
+
+    await engine.mount(document.createElement('div'));
+    await engine.loadNode(node);
+
+    const loadB = engine.loadNode(sceneB);
+    const loadC = engine.loadNode(sceneC);
+    panoramaB.resolve({ id: sceneB.id });
+    await loadB;
+
+    expect(virtualTourPlugin.setCurrentNodeCalls).toEqual([node.id]);
+    expect(runtime.Viewer).toHaveBeenCalledTimes(1);
+    expect(fakeViewer.setPanoramaCalls).toHaveLength(0);
+
+    panoramaC.resolve({ id: sceneC.id });
+    await loadC;
+
+    expect(virtualTourPlugin.setCurrentNodeCalls).toEqual([node.id, sceneC.id]);
+  });
+
+  it('keeps native node-change events suppressed while a newer load is pending', async () => {
+    const sceneB = { ...targetNode, id: 'scene-b' };
+    const sceneC = { ...targetNode, id: 'scene-c' };
+    const nodeChangeB = createDeferred<boolean>();
+    const nodeChangeC = createDeferred<boolean>();
+    const receivedNodeIds: string[] = [];
+    const engine = new PhotoSphereViewerEngine({
+      loadPanorama: async (candidate) => ({ id: candidate.id }),
+      loadRuntime: async () => runtime,
+    });
+
+    await engine.mount(document.createElement('div'));
+    await engine.loadNode(node);
+    engine.subscribeNodeChanged?.((nodeId) => receivedNodeIds.push(nodeId));
+    virtualTourPlugin.setCurrentNodeResults.set(sceneB.id, nodeChangeB.promise);
+    virtualTourPlugin.setCurrentNodeResults.set(sceneC.id, nodeChangeC.promise);
+
+    const loadB = engine.loadNode(sceneB);
+    await vi.waitFor(() => {
+      expect(virtualTourPlugin.setCurrentNodeCalls).toEqual([node.id, sceneB.id]);
+    });
+    const loadC = engine.loadNode(sceneC);
+    await vi.waitFor(() => {
+      expect(virtualTourPlugin.setCurrentNodeCalls).toEqual([node.id, sceneB.id, sceneC.id]);
+    });
+
+    nodeChangeB.resolve(true);
+    await loadB;
+    virtualTourPlugin.emit('node-changed', { node: { id: sceneC.id } });
+
+    expect(receivedNodeIds).toEqual([]);
+
+    nodeChangeC.resolve(true);
+    await loadC;
+  });
+
+  it('normalizes server-provided virtual-tour links without adding an absent thumbnail', async () => {
+    const linkedNode: PanoramaNode = {
+      ...node,
+      links: [{ targetNodeId: targetNode.id, yaw: -725, pitch: 120 }],
+      name: 'Normalized scene',
+      previewUrl: null,
+    };
+    const engine = new PhotoSphereViewerEngine({
+      loadPanorama: async () => ({ panorama: 'linked-node' }),
+      loadRuntime: async () => runtime,
+    });
+
+    await engine.mount(document.createElement('div'));
+    await engine.loadNode(linkedNode);
+
+    const virtualTourConfig = vi
+      .mocked(runtime.VirtualTourPlugin.withConfig)
+      .mock.calls.at(-1)?.[0] as {
+      getNode: (nodeId: string) => Promise<{
+        gps: [number, number];
+        links: Array<{ nodeId: string; position: { pitch: number; yaw: number } }>;
+        thumbnail?: string;
+      }>;
+    };
+    const virtualNode = await virtualTourConfig.getNode(linkedNode.id);
+
+    expect(virtualNode.gps).toEqual([105.9, 18.342]);
+    expect(virtualNode.links).toEqual([
+      {
+        nodeId: targetNode.id,
+        position: {
+          yaw: (355 * Math.PI) / 180,
+          pitch: Math.PI / 2,
+        },
+      },
+    ]);
+    expect(virtualNode).not.toHaveProperty('thumbnail');
+  });
+
   it('loads the tiled runtime lazily, subscribes view changes, navigates nodes, and cleans up', async () => {
     const loadRuntime = vi.fn(async () => runtime);
     const loadPanorama = vi.fn(async () => ({

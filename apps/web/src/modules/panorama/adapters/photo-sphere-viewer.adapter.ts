@@ -201,7 +201,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   private readonly handlePositionUpdated = () => this.emitView();
   private readonly handleZoomUpdated = () => this.emitView();
   private readonly handleNodeChanged = (event?: unknown) => this.emitNodeChanged(event);
-  private suppressNodeChanged = false;
+  private readonly suppressedNodeChangeLoads = new Set<number>();
   private mountGeneration = 0;
   private loadGeneration = 0;
 
@@ -255,7 +255,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
       throw new Error('PHOTO_SPHERE_VIEWER_NOT_MOUNTED');
     }
 
-    this.suppressNodeChanged = true;
+    this.suppressedNodeChangeLoads.add(loadGeneration);
     let completed: boolean;
     try {
       completed = await virtualTour.setCurrentNode(node.id, {
@@ -264,7 +264,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
         showLoader: false,
       });
     } finally {
-      this.suppressNodeChanged = false;
+      this.suppressedNodeChangeLoads.delete(loadGeneration);
     }
     if (!completed) {
       throw new Error(`PHOTO_SPHERE_VIEWER_NODE_LOAD_ABORTED:${node.id}`);
@@ -387,7 +387,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   }
 
   private emitNodeChanged(event: unknown): void {
-    if (this.suppressNodeChanged || typeof event !== 'object' || event === null) {
+    if (this.suppressedNodeChangeLoads.size > 0 || typeof event !== 'object' || event === null) {
       return;
     }
 
