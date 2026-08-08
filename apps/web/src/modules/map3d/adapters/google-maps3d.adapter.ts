@@ -1,4 +1,9 @@
-import type { CameraTarget, Map3DEnginePort, ModelPlacement } from '../domain/map3d-engine.port';
+import type {
+  CameraTarget,
+  Map3DEnginePort,
+  Map3DLocation,
+  ModelPlacement,
+} from '../domain/map3d-engine.port';
 
 export interface GoogleLatLngAltitudeLiteral {
   lat: number;
@@ -33,6 +38,12 @@ export interface GoogleModel3DElementOptions {
   src: string;
 }
 
+export interface GoogleMarker3DInteractiveElementOptions {
+  altitudeMode?: 'ABSOLUTE' | 'CLAMP_TO_GROUND';
+  label?: string;
+  position: GoogleLatLngAltitudeLiteral;
+}
+
 export interface GoogleMap3DElement extends HTMLElement {
   flyCameraTo(options: { endCamera: GoogleCameraOptions }): void;
   stopCameraAnimation(): void;
@@ -40,8 +51,13 @@ export interface GoogleMap3DElement extends HTMLElement {
 
 export type GoogleModel3DElement = HTMLElement;
 
+export type GoogleMarker3DInteractiveElement = HTMLElement;
+
 export interface Maps3DLibrary {
   Map3DElement: new (options: GoogleMap3DElementOptions) => GoogleMap3DElement;
+  Marker3DInteractiveElement: new (
+    options: GoogleMarker3DInteractiveElementOptions,
+  ) => GoogleMarker3DInteractiveElement;
   Model3DElement: new (options: GoogleModel3DElementOptions) => GoogleModel3DElement;
 }
 
@@ -145,6 +161,13 @@ function toCamera(target: CameraTarget): GoogleCameraOptions {
   };
 }
 
+function toMarkerOptions(location: Map3DLocation): GoogleMarker3DInteractiveElementOptions {
+  return {
+    position: location.position,
+    label: location.label,
+  };
+}
+
 function scriptLoadKey(apiKey: string, version: string): string {
   return `${apiKey}:${version}`;
 }
@@ -226,6 +249,11 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
   private library: Maps3DLibrary | null = null;
   private libraryPromise: Promise<Maps3DLibrary> | null = null;
   private map: GoogleMap3DElement | null = null;
+  private readonly locationListeners = new Set<(locationId: string) => void>();
+  private readonly markers = new Map<
+    string,
+    { element: GoogleMarker3DInteractiveElement; onClick: EventListener }
+  >();
   private mountGeneration = 0;
   private readinessController: AbortController | null = null;
   private readonly options: GoogleMaps3DAdapterOptions;
@@ -287,6 +315,35 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
     this.map.flyCameraTo({ endCamera: toCamera(target) });
   }
 
+  async setLocations(locations: Map3DLocation[]): Promise<void> {
+    if (!this.map || !this.library) {
+      throw new Error('GOOGLE_MAPS_3D_NOT_MOUNTED');
+    }
+
+    this.clearMarkers();
+
+    for (const location of locations) {
+      const marker = new this.library.Marker3DInteractiveElement(toMarkerOptions(location));
+      const onClick: EventListener = () => {
+        for (const listener of this.locationListeners) {
+          listener(location.id);
+        }
+      };
+
+      marker.dataset.locationId = location.id;
+      marker.addEventListener('gmp-click', onClick);
+      this.map.append(marker);
+      this.markers.set(location.id, { element: marker, onClick });
+    }
+  }
+
+  subscribeLocationSelected(listener: (locationId: string) => void): () => void {
+    this.locationListeners.add(listener);
+    return () => {
+      this.locationListeners.delete(listener);
+    };
+  }
+
   async addModel(model: ModelPlacement): Promise<void> {
     if (!this.map || !this.library) {
       throw new Error('GOOGLE_MAPS_3D_NOT_MOUNTED');
@@ -319,6 +376,8 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
   }
 
   private destroyMountedMap(): void {
+    this.clearMarkers();
+
     if (this.map) {
       this.map.stopCameraAnimation();
       this.map.remove();
@@ -328,6 +387,15 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
 
     this.map = null;
     this.container = null;
+  }
+
+  private clearMarkers(): void {
+    for (const { element, onClick } of this.markers.values()) {
+      element.removeEventListener('gmp-click', onClick);
+      element.remove();
+    }
+
+    this.markers.clear();
   }
 
   private async loadLibrary(): Promise<Maps3DLibrary> {
