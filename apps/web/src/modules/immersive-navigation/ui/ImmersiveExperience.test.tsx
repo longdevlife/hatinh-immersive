@@ -136,8 +136,10 @@ describe('ImmersiveExperience', () => {
       expect(screen.getByRole('heading', { name: 'Lối đi di sản 1' })).toBeInTheDocument();
       expect(useImmersiveNavigation.getState().sceneId).toBe('scene-01');
     });
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      );
+    });
   });
 });
