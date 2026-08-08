@@ -76,6 +76,7 @@ describe('immersive navigation state machine', () => {
     navigation.enterPanorama('scene-a');
     navigation.updateView({ heading: 42, pitch: -4, fov: 82 });
     const transitionId = navigation.navigateToScene('scene-b');
+    navigation.updateView({ heading: 270 });
 
     expect(useImmersiveNavigation.getState()).toMatchObject({
       committedSceneId: 'scene-a',

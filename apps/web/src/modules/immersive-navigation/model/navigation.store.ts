@@ -76,12 +76,16 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
     })),
 
   updateView: (view) =>
-    set((state) => ({
-      ...withCommittedScene(
-        state.committedSceneId,
-        normalizeNavigationView(state.committedView, view),
-      ),
-    })),
+    set((state) =>
+      state.requestedSceneId
+        ? state
+        : {
+            ...withCommittedScene(
+              state.committedSceneId,
+              normalizeNavigationView(state.committedView, view),
+            ),
+          },
+    ),
 
   navigateToScene: (sceneId) => {
     let transitionId = 0;
