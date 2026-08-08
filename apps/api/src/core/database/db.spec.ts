@@ -1,7 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import postgres from 'postgres';
+import { describe, expect, it, vi } from 'vitest';
 
 import { loadEnvironment } from '../config/environment';
-import { createDatabaseClientOptions } from './db';
+import { createDatabaseClientOptions, createDatabaseFromUrl } from './db';
+
+vi.mock('postgres', () => ({
+  default: vi.fn(() => ({ end: vi.fn() })),
+}));
+
+vi.mock('drizzle-orm/postgres-js', () => ({
+  drizzle: vi.fn(() => ({ mockedDb: true })),
+}));
 
 describe('database client options', () => {
   it('maps Supabase environment settings to postgres.js options', () => {
@@ -51,6 +60,24 @@ describe('database client options', () => {
     expect(createDatabaseClientOptions(environment)).toEqual({
       max: 10,
       prepare: true,
+    });
+  });
+
+  it('passes Supabase connection options to postgres.js', () => {
+    const environment = loadEnvironment({
+      NODE_ENV: 'production',
+      DATABASE_URL: 'postgresql://postgres.example:5432/postgres',
+      DATABASE_SSL: 'true',
+      DATABASE_PREPARE: 'false',
+      DATABASE_MAX_CONNECTIONS: '4',
+    });
+
+    createDatabaseFromUrl(undefined, environment);
+
+    expect(postgres).toHaveBeenCalledWith(environment.database.url, {
+      max: 4,
+      prepare: false,
+      ssl: 'require',
     });
   });
 });
