@@ -17,7 +17,6 @@ import {
 } from '../../panorama';
 import {
   createLazyMapLibreMinimapEngine,
-  MinimapViewport,
   resolveMinimapStyle,
   type MinimapEnginePort,
 } from '../../minimap';
@@ -28,6 +27,9 @@ import type {
   ImmersiveLocale,
   ImmersiveMode,
   ImmersiveViewVm,
+  CameraTarget,
+  DestinationPreviewVm,
+  Map3DLocation,
   NetworkQuality,
   PanoramaNode,
   PanoramaView,
@@ -59,9 +61,7 @@ type ActiveEngine = Map3DEnginePort | PanoramaEnginePort;
 function createDefaultFactories(): ImmersiveExperienceFactories {
   const usesFakeRenderers = import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake';
   const usesDeterministicMapLibre =
-    usesFakeRenderers &&
-    (import.meta.env.VITE_IMMERSIVE_MINIMAP_MODE === 'maplibre' ||
-      import.meta.env.VITE_IMMERSIVE_OVERVIEW_MODE === 'maplibre');
+    usesFakeRenderers && import.meta.env.VITE_IMMERSIVE_MINIMAP_MODE === 'maplibre';
 
   if (usesFakeRenderers) {
     return {
@@ -108,6 +108,51 @@ function getInitialSceneId(manifest: ImmersiveManifestVm): string | null {
     : undefined;
 
   return defaultScene?.id ?? manifest.panoramaNodes[0]?.id ?? null;
+}
+
+function toMap3DLocation(destination: DestinationPreviewVm): Map3DLocation | null {
+  if (!destination.geoPoint) {
+    return null;
+  }
+
+  return {
+    id: destination.id,
+    label: destination.name,
+    position: {
+      lat: destination.geoPoint.latitude,
+      lng: destination.geoPoint.longitude,
+      altitude: 0,
+    },
+    target: {
+      lat: destination.geoPoint.latitude,
+      lng: destination.geoPoint.longitude,
+      altitude: 120,
+      heading: 0,
+      tilt: 55,
+      range: 900,
+    },
+  };
+}
+
+function mergeMapLocations(
+  manifest: ImmersiveManifestVm,
+  destinations: DestinationPreviewVm[],
+): Map3DLocation[] {
+  const locations = new Map<string, Map3DLocation>();
+
+  for (const destination of destinations) {
+    const location = toMap3DLocation(destination);
+    if (location) {
+      locations.set(location.id, location);
+    }
+  }
+
+  const manifestLocation = toMap3DLocation(manifest.destination);
+  if (manifestLocation) {
+    locations.set(manifestLocation.id, manifestLocation);
+  }
+
+  return [...locations.values()];
 }
 
 function resolveSceneId(manifest: ImmersiveManifestVm, sceneId: string | null): string | null {
@@ -172,6 +217,7 @@ function writeDeepLink(
   const href = encodeImmersiveDeepLink({
     destinationSlug,
     mode: state.mode,
+    locationId: state.selectedLocationId,
     sceneId: state.committedSceneId,
     view: state.committedView,
   });
@@ -201,17 +247,15 @@ interface RendererHostProps {
   activeRenderer: ActiveRenderer;
   engine: ActiveEngine | null;
   initialView: PanoramaView;
+  locations: Map3DLocation[];
   mode: ImmersiveMode;
+  onLocationSelected(locationId: string): void;
   onNodeChange(nodeId: string, view: PanoramaView): void;
   onStatusChange(status: RendererStatus): void;
   onViewChange(view: PanoramaView): void;
   panoramaNode: PanoramaNode | null;
   panoramaNodes: PanoramaNode[];
-  overviewMapEngine: MinimapEnginePort | null;
-  overviewLinks: ImmersiveManifestVm['links'];
-  overviewNodes: ImmersiveManifestVm['nodes'];
-  overviewTarget: ImmersiveManifestVm['overviewTarget'];
-  onOverviewNodeSelect(sceneId: string): void;
+  overviewTarget: CameraTarget;
   retryKey: number;
 }
 
@@ -219,37 +263,17 @@ function RendererHost({
   activeRenderer,
   engine,
   initialView,
+  locations,
   mode,
+  onLocationSelected,
   onNodeChange,
   onStatusChange,
   onViewChange,
   panoramaNode,
   panoramaNodes,
-  overviewMapEngine,
-  overviewLinks,
-  overviewNodes,
   overviewTarget,
-  onOverviewNodeSelect,
   retryKey,
 }: RendererHostProps): ReactNode {
-  if (mode === 'overview3d' && overviewMapEngine) {
-    return (
-      <MinimapViewport
-        collapsed={false}
-        currentSceneId={null}
-        engine={overviewMapEngine}
-        heading={overviewTarget.heading ?? 0}
-        links={overviewLinks}
-        nodes={overviewNodes}
-        onNodeSelect={onOverviewNodeSelect}
-        onStatusChange={onStatusChange}
-        onToggle={() => undefined}
-        showToggle={false}
-        variant="overview"
-      />
-    );
-  }
-
   if (!engine || activeRenderer === 'none') {
     return null;
   }
@@ -260,6 +284,8 @@ function RendererHost({
         <LazyMap3DViewport
           key={`map3d-${retryKey}`}
           engine={engine as Map3DEnginePort}
+          locations={locations}
+          onLocationSelected={onLocationSelected}
           onStatusChange={onStatusChange}
           target={overviewTarget}
         />
@@ -336,7 +362,6 @@ function useActiveEngine(
 function useActiveMinimapEngine(
   mode: ImmersiveMode,
   createEngine: () => Promise<MinimapEnginePort>,
-  enableOverview: boolean,
 ) {
   const [engine, setEngine] = useState<MinimapEnginePort | null>(null);
 
@@ -344,7 +369,7 @@ function useActiveMinimapEngine(
     let cancelled = false;
     setEngine(null);
 
-    if (mode !== 'panorama' && !enableOverview) {
+    if (mode !== 'panorama') {
       return undefined;
     }
 
@@ -367,7 +392,7 @@ function useActiveMinimapEngine(
     return () => {
       cancelled = true;
     };
-  }, [createEngine, enableOverview, mode]);
+  }, [createEngine, mode]);
 
   return engine;
 }
@@ -399,11 +424,18 @@ export function ImmersiveExperience({
   const [locale, setLocale] = useState<ImmersiveLocale>('vi');
   const [destinationSearchQuery, setDestinationSearchQuery] = useState('');
   const manifestQuery = useImmersiveManifest(destinationSlug, locale, !manifestOverride);
-  const destinationsQuery = useImmersiveDestinations(
-    locale,
-    destinationSearchQuery.trim().length >= 2,
-  );
+  const destinationsQuery = useImmersiveDestinations(locale, !manifestOverride);
   const manifest = manifestOverride ?? manifestQuery.data;
+  const mapLocations = useMemo(
+    () => (manifest ? mergeMapLocations(manifest, destinationsQuery.data) : []),
+    [destinationsQuery.data, manifest],
+  );
+  const routeLocation = useMemo(
+    () =>
+      mapLocations.find((location) => location.id === manifest?.destination.id) ??
+      (manifest ? toMap3DLocation(manifest.destination) : null),
+    [manifest, mapLocations],
+  );
 
   useEffect(() => {
     const syncNetworkQuality = () => {
@@ -440,10 +472,19 @@ export function ImmersiveExperience({
     }
 
     const current = useImmersiveNavigation.getState();
+    const selectedLocation =
+      mapLocations.find((candidate) => candidate.id === deepLink.locationId) ?? routeLocation;
     const sceneId = resolveSceneId(manifest, deepLink.sceneId);
 
     if (deepLink.mode === 'overview3d') {
-      if (current.destinationId !== manifest.destination.id || current.mode !== 'overview3d') {
+      if (selectedLocation) {
+        if (current.selectedLocationId !== selectedLocation.id || current.mode !== 'overview3d') {
+          current.selectLocation(selectedLocation);
+        }
+      } else if (
+        current.destinationId !== manifest.destination.id ||
+        current.mode !== 'overview3d'
+      ) {
         current.enterOverview(manifest.destination.id);
       }
       return;
@@ -453,8 +494,10 @@ export function ImmersiveExperience({
       return;
     }
 
-    if (current.destinationId !== manifest.destination.id || current.mode !== 'panorama') {
-      current.enterOverview(manifest.destination.id);
+    if (selectedLocation && current.selectedLocationId !== selectedLocation.id) {
+      current.selectLocation(selectedLocation);
+    } else if (current.destinationId !== manifest.destination.id || current.mode !== 'panorama') {
+      current.enterOverview(manifest.destination.id, selectedLocation ?? undefined);
     }
 
     const afterOverview = useImmersiveNavigation.getState();
@@ -463,7 +506,7 @@ export function ImmersiveExperience({
     }
 
     useImmersiveNavigation.getState().updateView(deepLink.view);
-  }, [destinationSlug, location.pathname, location.search, manifest]);
+  }, [destinationSlug, location.pathname, location.search, manifest, mapLocations, routeLocation]);
 
   const onRendererCreateError = useCallback(() => {
     const state = useImmersiveNavigation.getState();
@@ -478,13 +521,9 @@ export function ImmersiveExperience({
     retryKey,
     onRendererCreateError,
   );
-  const usesMapLibreOverview =
-    import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake' &&
-    import.meta.env.VITE_IMMERSIVE_OVERVIEW_MODE === 'maplibre';
   const activeMinimapEngine = useActiveMinimapEngine(
     navigation.mode,
     resolvedFactories.createMinimapEngine,
-    usesMapLibreOverview && navigation.mode === 'overview3d',
   );
 
   const scheduleUrlSync = useCallback(() => {
@@ -507,20 +546,50 @@ export function ImmersiveExperience({
     [],
   );
 
+  const selectLocation = useCallback(
+    (locationId: string) => {
+      const locationToSelect = mapLocations.find((candidate) => candidate.id === locationId);
+      const destination =
+        destinationsQuery.data.find((candidate) => candidate.id === locationId) ??
+        (manifest?.destination.id === locationId ? manifest.destination : undefined);
+
+      if (!locationToSelect || !destination) {
+        return;
+      }
+
+      useImmersiveNavigation.getState().selectLocation(locationToSelect);
+      navigate(
+        `/explore/${encodeURIComponent(destination.slug)}?mode=overview3d&location=${encodeURIComponent(locationId)}`,
+      );
+    },
+    [destinationsQuery.data, manifest, mapLocations, navigate],
+  );
+
   const onEnter3D = useCallback(() => {
     if (!manifest) {
       return;
     }
 
     const state = useImmersiveNavigation.getState();
-    state.enterOverview(manifest.destination.id);
+    const locationToRestore =
+      mapLocations.find((candidate) => candidate.id === state.selectedLocationId) ?? routeLocation;
+    if (locationToRestore) {
+      state.selectLocation(locationToRestore);
+    } else {
+      state.enterOverview(manifest.destination.id);
+    }
     writeDeepLink(navigate, destinationSlug, false);
-  }, [destinationSlug, manifest, navigate]);
+  }, [destinationSlug, manifest, mapLocations, navigate, routeLocation]);
 
   const onEnterPanorama = useCallback(
     (sceneId?: string) => {
       if (!manifest) {
         return;
+      }
+
+      const state = useImmersiveNavigation.getState();
+      if (!state.selectedLocationId && routeLocation) {
+        state.selectLocation(routeLocation);
       }
 
       const resolvedSceneId = resolveSceneId(
@@ -531,11 +600,10 @@ export function ImmersiveExperience({
         return;
       }
 
-      const state = useImmersiveNavigation.getState();
-      state.enterPanorama(resolvedSceneId);
+      useImmersiveNavigation.getState().enterPanorama(resolvedSceneId);
       writeDeepLink(navigate, destinationSlug, false);
     },
-    [destinationSlug, manifest, navigate],
+    [destinationSlug, manifest, navigate, routeLocation],
   );
 
   const onNavigateScene = useCallback(
@@ -613,11 +681,11 @@ export function ImmersiveExperience({
     );
   }, [destinationSearchQuery, destinationsQuery.data]);
   const onSelectDestination = useCallback(
-    (slug: string) => {
+    (destination: DestinationPreviewVm) => {
       setDestinationSearchQuery('');
-      navigate(`/explore/${encodeURIComponent(slug)}?mode=overview3d`);
+      selectLocation(destination.id);
     },
-    [navigate],
+    [selectLocation],
   );
   const onLocaleChange = useCallback((nextLocale: ImmersiveLocale) => {
     setLocale(nextLocale);
@@ -627,10 +695,6 @@ export function ImmersiveExperience({
     return <ManifestState kind={manifestQuery.isPending ? 'loading' : 'error'} />;
   }
 
-  if (manifest.nodes.length === 0) {
-    return <ManifestState kind="empty" />;
-  }
-
   const currentPanoramaNode =
     manifest.panoramaNodes.find(
       (node) => node.id === (navigation.requestedSceneId ?? navigation.committedSceneId),
@@ -638,6 +702,11 @@ export function ImmersiveExperience({
   const panoramaTargetView = navigation.requestedSceneId
     ? (currentPanoramaNode?.initialView ?? navigation.committedView)
     : navigation.committedView;
+  const overviewTarget =
+    navigation.selectedLocationTarget ??
+    mapLocations.find((candidate) => candidate.id === navigation.selectedLocationId)?.target ??
+    routeLocation?.target ??
+    manifest.overviewTarget;
   const view = buildImmersiveView(manifest, destinationSlug, navigation);
   const selectedHotspot = view.hotspots.find(
     (hotspot) => hotspot.id === navigation.selectedHotspotId,
@@ -653,7 +722,9 @@ export function ImmersiveExperience({
       activeRenderer={navigation.activeRenderer}
       engine={activeEngine}
       initialView={panoramaTargetView}
+      locations={mapLocations}
       mode={navigation.mode}
+      onLocationSelected={selectLocation}
       onNodeChange={onRendererNodeChange}
       onStatusChange={(status) => {
         const state = useImmersiveNavigation.getState();
@@ -675,7 +746,10 @@ export function ImmersiveExperience({
             writeDeepLink(navigate, destinationSlug, true);
           }
         }
-        if (state.activeRenderer !== 'none') {
+        if (
+          state.activeRenderer !== 'none' &&
+          !(state.activeRenderer === 'panorama' && requestedSceneId && status === 'error')
+        ) {
           state.setRendererStatus(state.activeRenderer, status);
         }
       }}
@@ -685,13 +759,7 @@ export function ImmersiveExperience({
       }}
       panoramaNode={currentPanoramaNode}
       panoramaNodes={manifest.panoramaNodes}
-      onOverviewNodeSelect={onEnterPanorama}
-      overviewMapEngine={
-        usesMapLibreOverview && navigation.mode === 'overview3d' ? activeMinimapEngine : null
-      }
-      overviewLinks={manifest.links}
-      overviewNodes={view.nodes}
-      overviewTarget={manifest.overviewTarget}
+      overviewTarget={overviewTarget}
       retryKey={retryKey}
     />
   );

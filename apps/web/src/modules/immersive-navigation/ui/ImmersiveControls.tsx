@@ -12,7 +12,7 @@ export interface ImmersiveControlsProps {
   searchLoading?: boolean | undefined;
   onNavigateScene?: ((id: string) => void) | undefined;
   onSearchDestination?: ((query: string) => void) | undefined;
-  onSelectDestination?: ((slug: string) => void) | undefined;
+  onSelectDestination?: ((destination: DestinationPreviewVm) => void) | undefined;
   onLocaleChange?: ((locale: ImmersiveLocale) => void) | undefined;
 }
 
@@ -20,7 +20,7 @@ export interface DestinationSearchProps {
   destinations?: DestinationPreviewVm[] | undefined;
   isLoading?: boolean | undefined;
   onSearch?: ((query: string) => void) | undefined;
-  onSelectDestination?: ((slug: string) => void) | undefined;
+  onSelectDestination?: ((destination: DestinationPreviewVm) => void) | undefined;
 }
 
 export function DestinationSearch({
@@ -86,7 +86,7 @@ export function DestinationSearch({
             <ul aria-label="Kết quả điểm đến">
               {results.map((destination) => (
                 <li key={destination.id}>
-                  <button type="button" onClick={() => onSelectDestination?.(destination.slug)}>
+                  <button type="button" onClick={() => onSelectDestination?.(destination)}>
                     <span>{destination.categoryLabel}</span>
                     <strong>{destination.name}</strong>
                   </button>

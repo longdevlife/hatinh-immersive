@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import type { Map3DLocation } from '../../../shared/contracts';
+
 import { selectMap3d, selectMinimap, selectPanorama } from './navigation.selectors';
 import { useImmersiveNavigation } from './navigation.store';
 
@@ -14,6 +16,8 @@ describe('immersive navigation state machine', () => {
       committedView: { heading: 0, pitch: 0, fov: 90 },
       requestedSceneId: null,
       transitionId: 0,
+      selectedLocationId: null,
+      selectedLocationTarget: null,
       visitedSceneIds: [],
     });
   });
@@ -47,7 +51,7 @@ describe('immersive navigation state machine', () => {
     navigation.enterPanorama('scene-a');
     navigation.setRendererStatus('panorama', 'ready');
     const transitionId = navigation.navigateToScene('scene-b');
-    navigation.commitSceneTransition(transitionId, { heading: 15, pitch: -4, fov: 82 });
+    navigation.commitSceneTransition(transitionId!, { heading: 15, pitch: -4, fov: 82 });
 
     const state = useImmersiveNavigation.getState();
 
@@ -58,13 +62,13 @@ describe('immersive navigation state machine', () => {
       committedSceneId: 'scene-b',
       requestedSceneId: null,
       map3dStatus: 'idle',
-      panoramaStatus: 'loading',
+      panoramaStatus: 'ready',
     });
     expect(state.visitedSceneIds).toEqual(['scene-a', 'scene-b']);
     expect(selectPanorama(state)).toEqual({
       active: true,
       sceneId: 'scene-b',
-      status: 'loading',
+      status: 'ready',
       transition: 'idle',
       view: { heading: 15, pitch: -4, fov: 82 },
     });
@@ -97,7 +101,7 @@ describe('immersive navigation state machine', () => {
     const committedState = useImmersiveNavigation.getState();
     const committedTransitionId = committedState.navigateToScene('scene-a');
 
-    expect(committedTransitionId).toBe(0);
+    expect(committedTransitionId).toBeNull();
     expect(useImmersiveNavigation.getState()).toBe(committedState);
 
     const transitionToB = committedState.navigateToScene('scene-b');
@@ -111,10 +115,10 @@ describe('immersive navigation state machine', () => {
       transitionId: transitionToB,
     });
 
-    expect(pendingState.navigateToScene('scene-b')).toBe(transitionToB);
+    expect(pendingState.navigateToScene('scene-b')).toBeNull();
     expect(useImmersiveNavigation.getState()).toBe(pendingState);
 
-    expect(pendingState.navigateToScene('scene-a')).toBe(transitionToB);
+    expect(pendingState.navigateToScene('scene-a')).toBeNull();
     expect(useImmersiveNavigation.getState()).toBe(pendingState);
   });
 
@@ -122,7 +126,7 @@ describe('immersive navigation state machine', () => {
     const navigation = useImmersiveNavigation.getState();
 
     navigation.enterOverview('destination-1');
-    navigation.navigateToScene('scene-a');
+    expect(navigation.navigateToScene('scene-a')).toBeNull();
 
     expect(useImmersiveNavigation.getState()).toMatchObject({
       sceneId: null,
@@ -138,13 +142,16 @@ describe('immersive navigation state machine', () => {
     navigation.enterPanorama('scene-a');
     navigation.updateView({ heading: 42, pitch: -4, fov: 82 });
     const transitionId = navigation.navigateToScene('scene-b');
-    navigation.rollbackSceneTransition(transitionId);
+    navigation.setRendererStatus('panorama', 'error');
+    navigation.rollbackSceneTransition(transitionId!);
 
     expect(useImmersiveNavigation.getState()).toMatchObject({
       committedSceneId: 'scene-a',
       requestedSceneId: null,
       transition: 'idle',
       committedView: { heading: 42, pitch: -4, fov: 82 },
+      panoramaStatus: 'ready',
+      error: null,
       visitedSceneIds: ['scene-a'],
     });
   });
@@ -156,8 +163,8 @@ describe('immersive navigation state machine', () => {
     navigation.updateView({ heading: 42, pitch: -4, fov: 82 });
     const transitionToB = navigation.navigateToScene('scene-b');
     const transitionToC = navigation.navigateToScene('scene-c');
-    navigation.commitSceneTransition(transitionToB, { heading: 120, pitch: 2, fov: 75 });
-    navigation.rollbackSceneTransition(transitionToC);
+    navigation.commitSceneTransition(transitionToB!, { heading: 120, pitch: 2, fov: 75 });
+    navigation.rollbackSceneTransition(transitionToC!);
 
     expect(useImmersiveNavigation.getState()).toMatchObject({
       committedSceneId: 'scene-a',
@@ -196,6 +203,55 @@ describe('immersive navigation state machine', () => {
       committedView: { heading: 24, pitch: -2, fov: 78 },
       requestedSceneId: null,
       visitedSceneIds: ['scene-a', 'scene-b', 'scene-c'],
+    });
+  });
+
+  it('ignores delayed panorama commits after returning to the 3D overview', () => {
+    const navigation = useImmersiveNavigation.getState();
+    const location: Map3DLocation = {
+      id: 'destination-1',
+      label: 'Điểm đến 1',
+      position: { lat: 18.3421, lng: 105.9032, altitude: 0 },
+      target: { lat: 18.3421, lng: 105.9032, altitude: 0 },
+    };
+
+    navigation.selectLocation(location);
+    navigation.enterPanorama('scene-a');
+    navigation.enterOverview(location.id, location);
+    navigation.commitRendererScene('scene-b', { heading: 10, pitch: 1, fov: 80 });
+
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      mode: 'overview3d',
+      selectedLocationId: 'destination-1',
+      committedSceneId: null,
+      visitedSceneIds: [],
+    });
+  });
+
+  it('keeps the selected 3D location when entering and leaving panorama', () => {
+    const navigation = useImmersiveNavigation.getState();
+    const location: Map3DLocation = {
+      id: 'destination-1',
+      label: 'Điểm đến 1',
+      position: { lat: 18.3421, lng: 105.9032, altitude: 0 },
+      target: { lat: 18.3421, lng: 105.9032, altitude: 140, range: 900 },
+    };
+
+    navigation.selectLocation(location);
+    navigation.enterPanorama('scene-a');
+
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      mode: 'panorama',
+      selectedLocationId: location.id,
+      selectedLocationTarget: location.target,
+    });
+
+    navigation.enterOverview(location.id, location);
+
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      mode: 'overview3d',
+      selectedLocationId: location.id,
+      selectedLocationTarget: location.target,
     });
   });
 

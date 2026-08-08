@@ -1,5 +1,7 @@
 import type {
+  CameraTarget,
   ImmersiveMode,
+  Map3DLocation,
   NetworkQuality,
   RendererStatus,
 } from '../../../shared/contracts/immersive';
@@ -25,6 +27,8 @@ export interface SceneTransitionState {
 
 export interface ImmersiveNavigationState extends SceneTransitionState {
   destinationId: string | null;
+  selectedLocationId: string | null;
+  selectedLocationTarget: CameraTarget | null;
   mode: ImmersiveMode;
   activeRenderer: ActiveRenderer;
   transition: NavigationTransition;
@@ -42,10 +46,11 @@ export interface ImmersiveNavigationState extends SceneTransitionState {
 }
 
 export interface ImmersiveNavigationActions {
-  enterOverview(destinationId: string): void;
+  enterOverview(destinationId: string, location?: Map3DLocation): void;
+  selectLocation(location: Map3DLocation): void;
   enterPanorama(sceneId: string): void;
   updateView(view: Partial<NavigationView>): void;
-  navigateToScene(sceneId: string): number;
+  navigateToScene(sceneId: string): number | null;
   commitSceneTransition(transitionId: number, view: NavigationView): void;
   rollbackSceneTransition(transitionId: number): void;
   commitRendererScene(sceneId: string, view: NavigationView): void;
