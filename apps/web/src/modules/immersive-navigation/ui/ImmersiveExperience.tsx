@@ -199,7 +199,7 @@ interface RendererHostProps {
   engine: ActiveEngine | null;
   initialView: PanoramaView;
   mode: ImmersiveMode;
-  onNodeChange(nodeId: string): void;
+  onNodeChange(nodeId: string, view: PanoramaView): void;
   onStatusChange(status: RendererStatus): void;
   onViewChange(view: PanoramaView): void;
   panoramaNode: PanoramaNode | null;
@@ -511,13 +511,17 @@ export function ImmersiveExperience({
       }
 
       const state = useImmersiveNavigation.getState();
+      if (sceneId === state.committedSceneId || sceneId === state.requestedSceneId) {
+        return;
+      }
+
       state.navigateToScene(sceneId);
     },
     [manifest],
   );
 
   const onRendererNodeChange = useCallback(
-    (sceneId: string) => {
+    (sceneId: string, rendererView: PanoramaView) => {
       if (!manifest || !manifest.panoramaNodes.some((node) => node.id === sceneId)) {
         return;
       }
@@ -530,7 +534,7 @@ export function ImmersiveExperience({
         return;
       }
 
-      state.commitRendererScene(sceneId, state.committedView);
+      state.commitRendererScene(sceneId, rendererView);
       if (useImmersiveNavigation.getState().committedSceneId === sceneId) {
         writeDeepLink(navigate, destinationSlug, true);
       }
@@ -597,6 +601,9 @@ export function ImmersiveExperience({
     manifest.panoramaNodes.find(
       (node) => node.id === (navigation.requestedSceneId ?? navigation.committedSceneId),
     ) ?? null;
+  const panoramaTargetView = navigation.requestedSceneId
+    ? (currentPanoramaNode?.initialView ?? navigation.committedView)
+    : navigation.committedView;
   const view = buildImmersiveView(manifest, destinationSlug, navigation);
   const selectedHotspot = view.hotspots.find(
     (hotspot) => hotspot.id === navigation.selectedHotspotId,
@@ -611,7 +618,7 @@ export function ImmersiveExperience({
     <RendererHost
       activeRenderer={navigation.activeRenderer}
       engine={activeEngine}
-      initialView={navigation.committedView}
+      initialView={panoramaTargetView}
       mode={navigation.mode}
       onNodeChange={onRendererNodeChange}
       onStatusChange={(status) => {

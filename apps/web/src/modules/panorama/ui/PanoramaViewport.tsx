@@ -14,7 +14,7 @@ export interface PanoramaViewportProps {
   initialView?: PanoramaView;
   node: PanoramaNode;
   onStatusChange?: (status: RendererStatus) => void;
-  onNodeChange?: (nodeId: string) => void;
+  onNodeChange?: (nodeId: string, view: PanoramaView) => void;
   onViewChange?: (view: PanoramaView) => void;
   tourNodes?: PanoramaNode[];
 }
@@ -60,10 +60,17 @@ export function PanoramaViewport({
         onViewChangeRef.current?.(view);
       }
     });
-    const unsubscribeNodeChanged = engine.subscribeNodeChanged?.((nodeId) => {
+    const unsubscribeNodeChanged = engine.subscribeNodeChanged?.((nodeId, view) => {
       if (!cancelled) {
         lastNodeReportedByEngineRef.current = nodeId;
-        onNodeChangeRef.current?.(nodeId);
+        const reportedNode = tourNodesRef.current?.find((tourNode) => tourNode.id === nodeId);
+        const reportedView =
+          view ??
+          reportedNode?.initialView ??
+          (nodeRef.current.id === nodeId ? nodeRef.current.initialView : undefined);
+        if (reportedView) {
+          onNodeChangeRef.current?.(nodeId, reportedView);
+        }
       }
     });
     const reportStatus = (nextStatus: RendererStatus) => {

@@ -1,11 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FakeMap3DEngine } from '../../map3d';
 import { FakeMinimapEngine } from '../../minimap';
-import { FakePanoramaEngine, type PanoramaNode } from '../../panorama';
+import { FakePanoramaEngine, type PanoramaNode, type PanoramaView } from '../../panorama';
 import { createFakeImmersiveManifest } from '../fake-mode/manifest';
 import { useImmersiveNavigation } from '../index';
 import { ImmersiveExperience, type ImmersiveExperienceFactories } from './ImmersiveExperience';
@@ -70,6 +70,25 @@ class DeferredPanoramaEngine extends FakePanoramaEngine {
         },
       });
     });
+  }
+}
+
+class NativeNavigatingPanoramaEngine extends FakePanoramaEngine {
+  private readonly nodeListeners = new Set<(nodeId: string, view?: PanoramaView) => void>();
+
+  subscribeNodeChanged(listener: (nodeId: string, view?: PanoramaView) => void) {
+    this.nodeListeners.add(listener);
+    return () => {
+      this.nodeListeners.delete(listener);
+    };
+  }
+
+  emitNativeNodeChange(node: PanoramaNode, view: PanoramaView) {
+    this.loadedNode = node;
+    this.currentView = view;
+    for (const listener of this.nodeListeners) {
+      listener(node.id, view);
+    }
   }
 }
 
@@ -165,6 +184,56 @@ describe('ImmersiveExperience', () => {
     });
   });
 
+  it('keeps current and duplicate pending scene selections idempotent', async () => {
+    const panorama = new DeferredPanoramaEngine();
+    const { factories } = createFactories(panorama);
+    renderExperience(
+      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=12&p=-3&fov=84',
+      factories,
+    );
+
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-01')).toBeDefined();
+    });
+    panorama.loadRequests.get('scene-01')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState().panoramaStatus).toBe('ready');
+    });
+
+    const committedState = useImmersiveNavigation.getState();
+    const committedLoadCount = panorama.calls.filter((call) => call.type === 'loadNode').length;
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 1' }));
+
+    expect(useImmersiveNavigation.getState()).toBe(committedState);
+    expect(panorama.calls.filter((call) => call.type === 'loadNode')).toHaveLength(
+      committedLoadCount,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-02')).toBeDefined();
+    });
+    const pendingState = useImmersiveNavigation.getState();
+    const pendingLoadCount = panorama.calls.filter((call) => call.type === 'loadNode').length;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+
+    expect(useImmersiveNavigation.getState()).toBe(pendingState);
+    expect(panorama.calls.filter((call) => call.type === 'loadNode')).toHaveLength(
+      pendingLoadCount,
+    );
+
+    panorama.loadRequests.get('scene-02')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        committedSceneId: 'scene-02',
+        panoramaStatus: 'ready',
+        requestedSceneId: null,
+        transitionId: pendingState.transitionId,
+      });
+    });
+  });
+
   it('keeps A committed when B resolves after C is requested and C fails', async () => {
     const panorama = new DeferredPanoramaEngine();
     const { factories } = createFactories(panorama);
@@ -232,5 +301,48 @@ describe('ImmersiveExperience', () => {
         '/explore/son-trang-co-dam?mode=panorama&scene=scene-02&h=31&p=-2&fov=88',
       );
     });
+    expect(panorama.currentView).toEqual({ heading: 31, pitch: -2, fov: 88 });
+    expect(useImmersiveNavigation.getState().committedView).toEqual({
+      heading: 31,
+      pitch: -2,
+      fov: 88,
+    });
+  });
+
+  it('commits a native tour scene with the renderer camera before syncing the URL', async () => {
+    const panorama = new NativeNavigatingPanoramaEngine();
+    const manifest = createFakeImmersiveManifest();
+    const { factories } = createFactories(panorama);
+    renderExperience(
+      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=12&p=-3&fov=84',
+      factories,
+    );
+
+    await waitFor(() => {
+      expect(panorama.loadedNode?.id).toBe('scene-01');
+    });
+
+    const targetNode = manifest.panoramaNodes.find((node) => node.id === 'scene-02');
+    expect(targetNode).toBeDefined();
+    const rendererView = { heading: 214, pitch: -6, fov: 73 };
+
+    await act(async () => {
+      panorama.emitNativeNodeChange(targetNode!, rendererView);
+    });
+
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        committedSceneId: 'scene-02',
+        committedView: rendererView,
+        requestedSceneId: null,
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam?mode=panorama&scene=scene-02&h=214&p=-6&fov=73',
+      );
+    });
+    expect(panorama.currentView).toEqual(rendererView);
+    expect(
+      panorama.calls.filter((call) => call.type === 'loadNode' && call.node.id === targetNode!.id),
+    ).toHaveLength(0);
   });
 });

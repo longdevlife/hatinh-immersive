@@ -73,7 +73,11 @@ describe('minimap projection', () => {
           ],
           type: 'LineString',
         },
-        properties: { id: 'link-01-02', targetSceneId: 'scene-02' },
+        properties: {
+          id: 'link-01-02',
+          sourceSceneId: 'scene-01',
+          targetSceneId: 'scene-02',
+        },
         type: 'Feature',
       }),
       expect.objectContaining({
@@ -84,7 +88,11 @@ describe('minimap projection', () => {
           ],
           type: 'LineString',
         },
-        properties: { id: 'link-01-03', targetSceneId: 'scene-03' },
+        properties: {
+          id: 'link-01-03',
+          sourceSceneId: 'scene-01',
+          targetSceneId: 'scene-03',
+        },
         type: 'Feature',
       }),
     ]);

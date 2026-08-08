@@ -197,7 +197,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   private readonly panoramaCache = new Map<string, unknown>();
   private readonly viewListeners = new Set<(view: PanoramaView) => void>();
   private readonly options: PhotoSphereViewerAdapterOptions;
-  private readonly nodeListeners = new Set<(nodeId: string) => void>();
+  private readonly nodeListeners = new Set<(nodeId: string, view?: PanoramaView) => void>();
   private readonly handlePositionUpdated = () => this.emitView();
   private readonly handleZoomUpdated = () => this.emitView();
   private readonly handleNodeChanged = (event?: unknown) => this.emitNodeChanged(event);
@@ -294,7 +294,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     return () => this.viewListeners.delete(listener);
   }
 
-  subscribeNodeChanged(listener: (nodeId: string) => void): () => void {
+  subscribeNodeChanged(listener: (nodeId: string, view?: PanoramaView) => void): () => void {
     this.nodeListeners.add(listener);
     return () => this.nodeListeners.delete(listener);
   }
@@ -372,20 +372,27 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   }
 
   private emitView(): void {
-    if (!this.viewer) {
+    const view = this.readView();
+    if (!view) {
       return;
     }
-
-    const position = this.viewer.getPosition();
-    const view: PanoramaView = {
-      fov: zoomToFov(this.viewer.getZoomLevel()),
-      heading: normalizeHeading(radiansToDegrees(position.yaw)),
-      pitch: clamp(radiansToDegrees(position.pitch), -90, 90),
-    };
 
     for (const listener of this.viewListeners) {
       listener(view);
     }
+  }
+
+  private readView(): PanoramaView | null {
+    if (!this.viewer) {
+      return null;
+    }
+
+    const position = this.viewer.getPosition();
+    return {
+      fov: zoomToFov(this.viewer.getZoomLevel()),
+      heading: normalizeHeading(radiansToDegrees(position.yaw)),
+      pitch: clamp(radiansToDegrees(position.pitch), -90, 90),
+    };
   }
 
   private emitNodeChanged(event: unknown): void {
@@ -402,8 +409,13 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
       return;
     }
 
+    const view = this.readView();
+    if (!view) {
+      return;
+    }
+
     for (const listener of this.nodeListeners) {
-      listener(nodeId);
+      listener(nodeId, view);
     }
   }
 

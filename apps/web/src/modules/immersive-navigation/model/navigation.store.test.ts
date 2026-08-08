@@ -88,6 +88,36 @@ describe('immersive navigation state machine', () => {
     });
   });
 
+  it('treats committed and duplicate pending scene selections as no-ops', () => {
+    const navigation = useImmersiveNavigation.getState();
+
+    navigation.enterPanorama('scene-a');
+    navigation.setRendererStatus('panorama', 'ready');
+
+    const committedState = useImmersiveNavigation.getState();
+    const committedTransitionId = committedState.navigateToScene('scene-a');
+
+    expect(committedTransitionId).toBe(0);
+    expect(useImmersiveNavigation.getState()).toBe(committedState);
+
+    const transitionToB = committedState.navigateToScene('scene-b');
+    const pendingState = useImmersiveNavigation.getState();
+
+    expect(transitionToB).toBe(1);
+    expect(pendingState).toMatchObject({
+      committedSceneId: 'scene-a',
+      panoramaStatus: 'loading',
+      requestedSceneId: 'scene-b',
+      transitionId: transitionToB,
+    });
+
+    expect(pendingState.navigateToScene('scene-b')).toBe(transitionToB);
+    expect(useImmersiveNavigation.getState()).toBe(pendingState);
+
+    expect(pendingState.navigateToScene('scene-a')).toBe(transitionToB);
+    expect(useImmersiveNavigation.getState()).toBe(pendingState);
+  });
+
   it('rejects scene navigation while outside panorama mode', () => {
     const navigation = useImmersiveNavigation.getState();
 
@@ -212,5 +242,27 @@ describe('immersive navigation state machine', () => {
 
     expect(state.selectedHotspotId).toBeNull();
     expect(selectMinimap(state).open).toBe(false);
+  });
+
+  it('derives panorama and minimap selections from committed state', () => {
+    const navigation = useImmersiveNavigation.getState();
+
+    navigation.enterPanorama('scene-a');
+    navigation.updateView({ heading: 45, pitch: -3, fov: 80 });
+    useImmersiveNavigation.setState({
+      sceneId: 'legacy-scene',
+      view: { heading: 270, pitch: 12, fov: 110 },
+    });
+
+    const state = useImmersiveNavigation.getState();
+
+    expect(selectPanorama(state)).toMatchObject({
+      sceneId: 'scene-a',
+      view: { heading: 45, pitch: -3, fov: 80 },
+    });
+    expect(selectMinimap(state)).toMatchObject({
+      currentSceneId: 'scene-a',
+      heading: 45,
+    });
   });
 });

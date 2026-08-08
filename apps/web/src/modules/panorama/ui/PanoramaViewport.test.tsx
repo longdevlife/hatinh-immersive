@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { FakePanoramaEngine } from '../adapters/fake-panorama.adapter';
-import type { PanoramaEnginePort } from '../domain/panorama-engine.port';
+import type { PanoramaEnginePort, PanoramaView } from '../domain/panorama-engine.port';
 import { PanoramaViewport } from './PanoramaViewport';
 
 const node = {
@@ -22,7 +22,7 @@ const nextNode = {
 
 class NativeNavigatingPanoramaEngine implements PanoramaEnginePort {
   readonly loadedNodeIds: string[] = [];
-  private readonly nodeListeners = new Set<(nodeId: string) => void>();
+  private readonly nodeListeners = new Set<(nodeId: string, view?: PanoramaView) => void>();
 
   async mount() {}
 
@@ -36,16 +36,18 @@ class NativeNavigatingPanoramaEngine implements PanoramaEnginePort {
     return () => undefined;
   }
 
-  subscribeNodeChanged(listener: (nodeId: string) => void) {
+  subscribeNodeChanged(listener: (nodeId: string, view?: PanoramaView) => void) {
     this.nodeListeners.add(listener);
-    return () => this.nodeListeners.delete(listener);
+    return () => {
+      this.nodeListeners.delete(listener);
+    };
   }
 
   destroy() {}
 
-  emitNativeNodeChange(nodeId: string) {
+  emitNativeNodeChange(nodeId: string, view: PanoramaView) {
     for (const listener of this.nodeListeners) {
-      listener(nodeId);
+      listener(nodeId, view);
     }
   }
 }
@@ -154,18 +156,31 @@ describe('PanoramaViewport', () => {
   it('does not load a node again after native tour navigation already changed it', async () => {
     const engine = new NativeNavigatingPanoramaEngine();
     const onNodeChange = vi.fn();
+    const rendererView = { heading: 210, pitch: -6, fov: 74 };
     const { rerender } = render(
-      <PanoramaViewport engine={engine} node={node} onNodeChange={onNodeChange} />,
+      <PanoramaViewport
+        engine={engine}
+        node={node}
+        onNodeChange={onNodeChange}
+        tourNodes={[node, nextNode]}
+      />,
     );
 
     await waitFor(() => {
       expect(engine.loadedNodeIds).toEqual(['scene-01']);
     });
 
-    engine.emitNativeNodeChange('scene-02');
-    expect(onNodeChange).toHaveBeenCalledWith('scene-02');
+    engine.emitNativeNodeChange('scene-02', rendererView);
+    expect(onNodeChange).toHaveBeenCalledWith('scene-02', rendererView);
 
-    rerender(<PanoramaViewport engine={engine} node={nextNode} onNodeChange={onNodeChange} />);
+    rerender(
+      <PanoramaViewport
+        engine={engine}
+        node={nextNode}
+        onNodeChange={onNodeChange}
+        tourNodes={[node, nextNode]}
+      />,
+    );
 
     await act(async () => {
       await Promise.resolve();

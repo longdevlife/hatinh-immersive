@@ -91,13 +91,19 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
     let transitionId = 0;
 
     set((state) => {
+      transitionId = state.transitionId;
+
       if (state.mode !== 'panorama') {
         return {
           error: 'PANORAMA_REQUIRED',
         };
       }
 
-      transitionId = state.transitionId + 1;
+      if (sceneId === state.committedSceneId || sceneId === state.requestedSceneId) {
+        return state;
+      }
+
+      transitionId += 1;
       return {
         activeRenderer: 'panorama' as const,
         transition: 'navigating-scene' as const,

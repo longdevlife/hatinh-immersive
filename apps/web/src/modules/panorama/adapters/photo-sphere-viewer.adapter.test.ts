@@ -326,11 +326,15 @@ describe('PhotoSphereViewerEngine', () => {
     const engine = new PhotoSphereViewerEngine({ loadPanorama, loadRuntime });
     const container = document.createElement('div');
     const received: PanoramaView[] = [];
-    const receivedNodeIds: string[] = [];
+    const receivedNodes: Array<{ nodeId: string; view: PanoramaView }> = [];
 
     await engine.mount(container);
     engine.setTour?.([node, targetNode]);
-    engine.subscribeNodeChanged?.((nodeId) => receivedNodeIds.push(nodeId));
+    engine.subscribeNodeChanged?.((nodeId, view) => {
+      if (view) {
+        receivedNodes.push({ nodeId, view });
+      }
+    });
     expect(loadRuntime).not.toHaveBeenCalled();
 
     const unsubscribe = engine.subscribeViewChanged((view) => received.push(view));
@@ -378,11 +382,16 @@ describe('PhotoSphereViewerEngine', () => {
         },
       ],
     });
-    virtualTourPlugin.emit('node-changed', { node: { id: 'scene-02' } });
-    expect(receivedNodeIds).toEqual(['scene-02']);
-
     fakeViewer.position = { pitch: -Math.PI / 18, yaw: Math.PI };
     fakeViewer.zoomLevel = 60;
+    virtualTourPlugin.emit('node-changed', { node: { id: 'scene-02' } });
+    expect(receivedNodes).toEqual([
+      {
+        nodeId: 'scene-02',
+        view: { heading: 180, pitch: -10, fov: 66 },
+      },
+    ]);
+
     fakeViewer.emit('position-updated');
 
     expect(received.at(-1)).toMatchObject({
