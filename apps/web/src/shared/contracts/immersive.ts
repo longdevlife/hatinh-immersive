@@ -25,6 +25,7 @@ export interface SceneNodeVm {
 
 export interface SceneLinkVm {
   id: string;
+  sourceSceneId?: string;
   targetSceneId: string;
   label: string | null;
   yaw: number;
@@ -33,6 +34,7 @@ export interface SceneLinkVm {
 
 export interface HotspotVm {
   id: string;
+  sceneId?: string;
   type: 'information' | 'media' | 'audio' | 'external';
   yaw: number;
   pitch: number;

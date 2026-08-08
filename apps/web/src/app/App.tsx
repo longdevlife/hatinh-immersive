@@ -5,9 +5,13 @@ import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-route
 import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
 
-import { destinationFixture } from '../shared/fixtures';
 import { ImmersiveExperience } from '../modules/immersive-navigation';
+import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
 import './styles/index.css';
+
+const DEFAULT_PUBLIC_DESTINATION_SLUG = 'son-trang-co-dam';
+const fakeManifest =
+  import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake' ? createFakeImmersiveManifest() : undefined;
 
 function PublicHome() {
   const navigate = useNavigate();
@@ -24,7 +28,7 @@ function PublicHome() {
         <UiButton
           tone="primary"
           type="button"
-          onClick={() => navigate(`/explore/${destinationFixture.slug}?mode=overview3d`)}
+          onClick={() => navigate(`/explore/${DEFAULT_PUBLIC_DESTINATION_SLUG}?mode=overview3d`)}
         >
           Bắt đầu khám phá
         </UiButton>
@@ -48,7 +52,16 @@ export function App() {
           </header>
           <Routes>
             <Route path="/" element={<PublicHome />} />
-            <Route path="/explore/:destinationSlug" element={<ImmersiveExperience />} />
+            <Route
+              path="/explore/:destinationSlug"
+              element={
+                fakeManifest ? (
+                  <ImmersiveExperience manifest={fakeManifest} />
+                ) : (
+                  <ImmersiveExperience />
+                )
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
