@@ -99,7 +99,7 @@ function hotspotFromResponse(hotspot: CreateHotspot201): EditorHotspot {
 
 export function AdminWorkspace() {
   const queryClient = useQueryClient();
-  const destinationsQuery = useListDestinations({
+  const destinationsQuery = useListDestinations(undefined, {
     query: { staleTime: 30_000 },
   });
   const createDestination = useCreateDestination();
