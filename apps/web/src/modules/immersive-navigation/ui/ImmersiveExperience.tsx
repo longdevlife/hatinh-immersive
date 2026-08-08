@@ -56,14 +56,26 @@ export interface ImmersiveExperienceProps {
 type ActiveEngine = Map3DEnginePort | PanoramaEnginePort;
 
 function createDefaultFactories(): ImmersiveExperienceFactories {
-  if (import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake') {
+  const usesFakeRenderers = import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake';
+  const usesDeterministicMapLibreMinimap =
+    usesFakeRenderers && import.meta.env.VITE_IMMERSIVE_MINIMAP_MODE === 'maplibre';
+
+  if (usesFakeRenderers) {
     return {
       createMap3DEngine: async () => new FakeMap3DEngine(),
       createPanoramaEngine: async () => new FakePanoramaEngine(),
-      createMinimapEngine: async () => {
-        const { FakeMinimapEngine } = await import('../../minimap');
-        return new FakeMinimapEngine();
-      },
+      createMinimapEngine: usesDeterministicMapLibreMinimap
+        ? () =>
+            createLazyMapLibreMinimapEngine({
+              style: resolveMinimapStyle({
+                isProduction: true,
+                styleUrl: import.meta.env.VITE_MINIMAP_STYLE_URL,
+              }),
+            })
+        : async () => {
+            const { FakeMinimapEngine } = await import('../../minimap');
+            return new FakeMinimapEngine();
+          },
     };
   }
 

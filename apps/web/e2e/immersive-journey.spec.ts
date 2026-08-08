@@ -18,13 +18,13 @@ test('explores overview to 360, follows a scene, and restores it after refresh',
 
   await page.getByRole('button', { name: 'Đi tiếp' }).click();
   await expect(page).toHaveURL(
-    /\/explore\/son-trang-co-dam\?mode=panorama&scene=scene-02&h=0&p=0&fov=90$/,
+    /\/explore\/son-trang-co-dam\?mode=panorama&scene=scene-02&h=31&p=-2&fov=88$/,
   );
   await expect(page.getByRole('heading', { name: 'Lối đi di sản 2' })).toBeVisible();
 
   await page.reload();
   await expect(page).toHaveURL(
-    /\/explore\/son-trang-co-dam\?mode=panorama&scene=scene-02&h=0&p=0&fov=90$/,
+    /\/explore\/son-trang-co-dam\?mode=panorama&scene=scene-02&h=31&p=-2&fov=88$/,
   );
   await expect(page.getByRole('heading', { name: 'Lối đi di sản 2' })).toBeVisible();
 });

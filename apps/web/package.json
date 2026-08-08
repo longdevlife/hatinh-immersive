@@ -7,10 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "check:bundle": "node ../../tooling/scripts/check-web-bundle.mjs",
-    "lint": "eslint src e2e playwright.config.ts playwright.production.config.ts vite.config.ts vitest.setup.ts",
+    "lint": "eslint src e2e playwright.config.ts playwright.minimap.config.ts playwright.production.config.ts vite.config.ts vitest.setup.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test --config=playwright.config.ts"
+    "test:e2e": "playwright test --config=playwright.config.ts",
+    "test:e2e:minimap": "playwright test --config=playwright.minimap.config.ts"
   },
   "dependencies": {
     "@hatinh/api-client": "workspace:*",

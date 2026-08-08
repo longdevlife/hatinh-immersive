@@ -211,7 +211,7 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
     element.style.height = '2rem';
     element.style.transformOrigin = '50% 50%';
     element.style.width = '2rem';
-    this.marker = new runtime.Marker({ element }).addTo(map);
+    this.marker = new runtime.Marker({ element }).setLngLat(HA_TINH_CENTER).addTo(map);
     this.lastPositionedSceneId = null;
     this.applyState();
   }
