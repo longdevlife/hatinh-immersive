@@ -16,6 +16,8 @@ export interface SceneNodeResponse {
   altitude: number | null;
   panoramaAssetId: string | null;
   panoramaAssetStatus: string | null;
+  panoramaManifestUrl: string | null;
+  panoramaPreviewUrl: string | null;
   initialHeading: number;
   initialPitch: number;
   initialFov: number;
@@ -129,6 +131,8 @@ function toSceneResponse(scene: SceneNode): SceneNodeResponse {
     altitude: props.altitude,
     panoramaAssetId: props.panoramaAssetId,
     panoramaAssetStatus: props.panoramaAssetStatus,
+    panoramaManifestUrl: null,
+    panoramaPreviewUrl: null,
     initialHeading: props.initialHeading,
     initialPitch: props.initialPitch,
     initialFov: props.initialFov,

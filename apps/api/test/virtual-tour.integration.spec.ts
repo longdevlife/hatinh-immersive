@@ -167,7 +167,12 @@ describe('Virtual tour HTTP API', () => {
       expect.objectContaining({
         defaultSceneId: firstSceneId,
         nodes: expect.arrayContaining([
-          expect.objectContaining({ id: firstSceneId, status: 'published' }),
+          expect.objectContaining({
+            id: firstSceneId,
+            status: 'published',
+            panoramaManifestUrl: null,
+            panoramaPreviewUrl: null,
+          }),
           expect.objectContaining({ id: secondSceneId, status: 'published' }),
         ]),
         links: [expect.objectContaining({ fromSceneId: firstSceneId, toSceneId: secondSceneId })],

@@ -1,5 +1,5 @@
 import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 
 import { VirtualTourQueryService } from '../../application/virtual-tour.queries';
 import {
@@ -16,6 +16,7 @@ export class VirtualTourController {
   @Get('destinations/:slug/immersive-manifest')
   @ApiOperation({ operationId: 'getImmersiveManifest' })
   @ApiParam({ name: 'slug', type: 'string' })
+  @ApiQuery({ name: 'locale', required: false, enum: ['vi', 'en'], example: 'vi' })
   @ApiOkResponse({
     description: 'Published immersive scene graph manifest.',
     schema: immersiveManifestResponseSchema,

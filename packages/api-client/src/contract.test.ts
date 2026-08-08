@@ -10,7 +10,15 @@ describe('generated API contract', () => {
     };
 
     expect(openApi.openapi).toMatch(/^3\.0\./);
-    expect(openApi.paths['/api/v1/destinations/{slug}/immersive-manifest']).toBeDefined();
+    const manifestPath = openApi.paths['/api/v1/destinations/{slug}/immersive-manifest'] as {
+      get?: { parameters?: Array<Record<string, unknown>> };
+    };
+    expect(manifestPath).toBeDefined();
+    expect(manifestPath.get?.parameters).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'locale', in: 'query', required: false }),
+      ]),
+    );
     expect(openApi.paths['/api/v1/scenes/{sceneId}/neighbors']).toBeDefined();
     expect(openApi.paths['/api/v1/admin/scenes']).toBeDefined();
   });
@@ -20,6 +28,13 @@ describe('generated API contract', () => {
 
     expect(generated.getImmersiveManifest).toBeTypeOf('function');
     expect(generated.useGetImmersiveManifest).toBeTypeOf('function');
+    const getManifestUrl = generated.getGetImmersiveManifestUrl as unknown as (
+      slug: string,
+      parameters?: { locale?: string },
+    ) => string;
+    expect(getManifestUrl('son-trang', { locale: 'en' })).toBe(
+      '/api/v1/destinations/son-trang/immersive-manifest?locale=en',
+    );
     expect(generated.createScene).toBeTypeOf('function');
     expect(generated.useCreateScene).toBeTypeOf('function');
   });

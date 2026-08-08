@@ -23,6 +23,10 @@ export type GetScene200 = {
   panoramaAssetId: string | null;
   /** @nullable */
   panoramaAssetStatus: GetScene200PanoramaAssetStatus;
+  /** @nullable */
+  panoramaManifestUrl: string | null;
+  /** @nullable */
+  panoramaPreviewUrl: string | null;
   sortOrder: number;
   status: GetScene200Status;
 };

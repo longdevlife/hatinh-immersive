@@ -1859,6 +1859,15 @@
         "operationId": "getImmersiveManifest",
         "parameters": [
           {
+            "in": "query",
+            "name": "locale",
+            "required": false,
+            "schema": {
+              "enum": ["vi", "en"],
+              "type": "string"
+            }
+          },
+          {
             "in": "path",
             "name": "slug",
             "required": true,
@@ -2084,6 +2093,16 @@
                             "nullable": true,
                             "type": "string"
                           },
+                          "panoramaManifestUrl": {
+                            "format": "uri",
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "panoramaPreviewUrl": {
+                            "format": "uri",
+                            "nullable": true,
+                            "type": "string"
+                          },
                           "sortOrder": {
                             "type": "integer"
                           },
@@ -2101,6 +2120,8 @@
                           "altitude",
                           "panoramaAssetId",
                           "panoramaAssetStatus",
+                          "panoramaManifestUrl",
+                          "panoramaPreviewUrl",
                           "initialHeading",
                           "initialPitch",
                           "initialFov",
@@ -2214,6 +2235,16 @@
                       "nullable": true,
                       "type": "string"
                     },
+                    "panoramaManifestUrl": {
+                      "format": "uri",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "panoramaPreviewUrl": {
+                      "format": "uri",
+                      "nullable": true,
+                      "type": "string"
+                    },
                     "sortOrder": {
                       "type": "integer"
                     },
@@ -2231,6 +2262,8 @@
                     "altitude",
                     "panoramaAssetId",
                     "panoramaAssetStatus",
+                    "panoramaManifestUrl",
+                    "panoramaPreviewUrl",
                     "initialHeading",
                     "initialPitch",
                     "initialFov",
@@ -2354,6 +2387,16 @@
                             "nullable": true,
                             "type": "string"
                           },
+                          "panoramaManifestUrl": {
+                            "format": "uri",
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "panoramaPreviewUrl": {
+                            "format": "uri",
+                            "nullable": true,
+                            "type": "string"
+                          },
                           "sortOrder": {
                             "type": "integer"
                           },
@@ -2371,6 +2414,8 @@
                           "altitude",
                           "panoramaAssetId",
                           "panoramaAssetStatus",
+                          "panoramaManifestUrl",
+                          "panoramaPreviewUrl",
                           "initialHeading",
                           "initialPitch",
                           "initialFov",

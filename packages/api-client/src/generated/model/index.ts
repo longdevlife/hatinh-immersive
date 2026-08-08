@@ -57,6 +57,8 @@ export * from './getImmersiveManifest200LinksItem';
 export * from './getImmersiveManifest200NodesItem';
 export * from './getImmersiveManifest200NodesItemPanoramaAssetStatus';
 export * from './getImmersiveManifest200NodesItemStatus';
+export * from './getImmersiveManifestLocale';
+export * from './getImmersiveManifestParams';
 export * from './getScene200';
 export * from './getScene200PanoramaAssetStatus';
 export * from './getScene200Status';

@@ -37,6 +37,7 @@ import type {
   GetDestination200,
   GetHealth200,
   GetImmersiveManifest200,
+  GetImmersiveManifestParams,
   GetScene200,
   GetSceneNeighbors200Item,
   ListDestinations200Item,
@@ -1704,22 +1705,38 @@ export type getImmersiveManifestResponseSuccess = getImmersiveManifestResponse20
 };
 export type getImmersiveManifestResponse = getImmersiveManifestResponseSuccess;
 
-export const getGetImmersiveManifestUrl = (slug: string) => {
-  return `/api/v1/destinations/${slug}/immersive-manifest`;
+export const getGetImmersiveManifestUrl = (slug: string, params?: GetImmersiveManifestParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/v1/destinations/${slug}/immersive-manifest?${stringifiedParams}`
+    : `/api/v1/destinations/${slug}/immersive-manifest`;
 };
 
 export const getImmersiveManifest = async (
   slug: string,
+  params?: GetImmersiveManifestParams,
   options?: RequestInit,
 ): Promise<getImmersiveManifestResponse> => {
-  return customFetch<getImmersiveManifestResponse>(getGetImmersiveManifestUrl(slug), {
+  return customFetch<getImmersiveManifestResponse>(getGetImmersiveManifestUrl(slug, params), {
     ...options,
     method: 'GET',
   });
 };
 
-export const getGetImmersiveManifestQueryKey = (slug?: string) => {
-  return [`/api/v1/destinations/${slug}/immersive-manifest`] as const;
+export const getGetImmersiveManifestQueryKey = (
+  slug?: string,
+  params?: GetImmersiveManifestParams,
+) => {
+  return [`/api/v1/destinations/${slug}/immersive-manifest`, ...(params ? [params] : [])] as const;
 };
 
 export const getGetImmersiveManifestQueryOptions = <
@@ -1727,6 +1744,7 @@ export const getGetImmersiveManifestQueryOptions = <
   TError = unknown,
 >(
   slug: string,
+  params?: GetImmersiveManifestParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getImmersiveManifest>>, TError, TData>
@@ -1736,10 +1754,10 @@ export const getGetImmersiveManifestQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetImmersiveManifestQueryKey(slug);
+  const queryKey = queryOptions?.queryKey ?? getGetImmersiveManifestQueryKey(slug, params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getImmersiveManifest>>> = ({ signal }) =>
-    getImmersiveManifest(slug, { signal, ...requestOptions });
+    getImmersiveManifest(slug, params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, enabled: !!slug, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getImmersiveManifest>>,
@@ -1758,6 +1776,7 @@ export function useGetImmersiveManifest<
   TError = unknown,
 >(
   slug: string,
+  params: undefined | GetImmersiveManifestParams,
   options: {
     query: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getImmersiveManifest>>, TError, TData>
@@ -1779,6 +1798,7 @@ export function useGetImmersiveManifest<
   TError = unknown,
 >(
   slug: string,
+  params?: GetImmersiveManifestParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getImmersiveManifest>>, TError, TData>
@@ -1800,6 +1820,7 @@ export function useGetImmersiveManifest<
   TError = unknown,
 >(
   slug: string,
+  params?: GetImmersiveManifestParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getImmersiveManifest>>, TError, TData>
@@ -1814,6 +1835,7 @@ export function useGetImmersiveManifest<
   TError = unknown,
 >(
   slug: string,
+  params?: GetImmersiveManifestParams,
   options?: {
     query?: Partial<
       UseQueryOptions<Awaited<ReturnType<typeof getImmersiveManifest>>, TError, TData>
@@ -1822,7 +1844,7 @@ export function useGetImmersiveManifest<
   },
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-  const queryOptions = getGetImmersiveManifestQueryOptions(slug, options);
+  const queryOptions = getGetImmersiveManifestQueryOptions(slug, params, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
