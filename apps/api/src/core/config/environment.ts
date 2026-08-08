@@ -1,5 +1,14 @@
 import { z } from 'zod';
 
+function parseEnvironmentBoolean(value: unknown) {
+  if (typeof value !== 'string') {
+    return value;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === 'true' || normalized === 'false' ? normalized === 'true' : value;
+}
+
 const environmentSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
@@ -8,6 +17,9 @@ const environmentSchema = z.object({
     .string()
     .url()
     .default('postgresql://hatinh:hatinh@127.0.0.1:55432/hatinh_immersive'),
+  DATABASE_SSL: z.preprocess(parseEnvironmentBoolean, z.boolean()).default(false),
+  DATABASE_PREPARE: z.preprocess(parseEnvironmentBoolean, z.boolean()).default(true),
+  DATABASE_MAX_CONNECTIONS: z.coerce.number().int().positive().max(100).default(10),
   CORS_ORIGINS: z.string().default('http://localhost:5173,http://localhost:5174'),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(120),
   RATE_LIMIT_WINDOW: z.string().min(1).default('1 minute'),
@@ -44,11 +56,27 @@ const environmentSchema = z.object({
     .default(60 * 60 * 24 * 30),
 });
 
+const validatedEnvironmentSchema = environmentSchema.superRefine((value, context) => {
+  if (value.NODE_ENV === 'production' && !value.DATABASE_SSL) {
+    context.addIssue({
+      code: 'custom',
+      path: ['DATABASE_SSL'],
+      message: 'DATABASE_SSL must be true in production',
+    });
+  }
+});
+
 export interface AppEnvironment {
   nodeEnv: 'development' | 'test' | 'production';
   port: number;
   host: string;
   databaseUrl: string;
+  database: {
+    url: string;
+    ssl: boolean;
+    prepare: boolean;
+    maxConnections: number;
+  };
   corsOrigins: string[];
   rateLimitMax: number;
   rateLimitWindow: string;
@@ -73,13 +101,19 @@ export interface AppEnvironment {
 }
 
 export function loadEnvironment(env: NodeJS.ProcessEnv = process.env): AppEnvironment {
-  const parsed = environmentSchema.parse(env);
+  const parsed = validatedEnvironmentSchema.parse(env);
 
   return {
     nodeEnv: parsed.NODE_ENV,
     port: parsed.PORT,
     host: parsed.HOST,
     databaseUrl: parsed.DATABASE_URL,
+    database: {
+      url: parsed.DATABASE_URL,
+      ssl: parsed.DATABASE_SSL,
+      prepare: parsed.DATABASE_PREPARE,
+      maxConnections: parsed.DATABASE_MAX_CONNECTIONS,
+    },
     corsOrigins: parsed.CORS_ORIGINS.split(',')
       .map((origin) => origin.trim())
       .filter((origin) => origin.length > 0),
