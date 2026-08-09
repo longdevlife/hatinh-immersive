@@ -262,7 +262,7 @@ describe('ImmersiveExperience', () => {
 
     await waitFor(() => {
       expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
-        target: { lat: 18.4, lng: 105.9 },
+        preset: { center: { lat: 18.4, lng: 105.9 } },
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
         '/explore/son-trang-co-dam?mode=overview3d&location=destination-b',
@@ -275,7 +275,7 @@ describe('ImmersiveExperience', () => {
       expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
       expect(map3d.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
       expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
-        target: { lat: 18.5, lng: 106 },
+        preset: { center: { lat: 18.5, lng: 106 } },
       });
       expect(screen.getByRole('heading', { name: 'Điểm C' })).toBeInTheDocument();
       expect(screen.getByTestId('location')).toHaveTextContent(
@@ -362,7 +362,7 @@ describe('ImmersiveExperience', () => {
         selectedLocationId: destinationB.id,
       });
       expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
-        target: { lat: 18.4, lng: 105.9 },
+        preset: { center: { lat: 18.4, lng: 105.9 } },
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
         '/explore/location-b?mode=overview3d&location=destination-b',

@@ -1,5 +1,6 @@
 import type {
   CameraTarget,
+  LocationCameraPreset,
   Map3DEnginePort,
   Map3DLocation,
   ModelPlacement,
@@ -153,12 +154,21 @@ function toPosition(target: CameraTarget): GoogleLatLngAltitudeLiteral {
   };
 }
 
-function toCamera(target: CameraTarget): GoogleCameraOptions {
+function toInitialCamera(target: CameraTarget): GoogleCameraOptions {
   return {
     center: toPosition(target),
     ...(target.heading === undefined ? {} : { heading: target.heading }),
     ...(target.tilt === undefined ? {} : { tilt: target.tilt }),
     ...(target.range === undefined ? {} : { range: target.range }),
+  };
+}
+
+function toCamera(preset: LocationCameraPreset): GoogleCameraOptions {
+  return {
+    center: preset.center,
+    heading: preset.heading,
+    tilt: preset.tilt,
+    range: preset.range,
   };
 }
 
@@ -285,7 +295,7 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
     this.library = library;
     const initialTarget = this.options.initialTarget ?? { lat: 0, lng: 0, altitude: 0 };
     const map = new library.Map3DElement({
-      ...toCamera(initialTarget),
+      ...toInitialCamera(initialTarget),
       defaultUIHidden: true,
       mode: 'SATELLITE',
       ...(this.options.language === undefined ? {} : { language: this.options.language }),
@@ -317,12 +327,12 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
     }
   }
 
-  async flyTo(target: CameraTarget): Promise<void> {
+  async flyTo(preset: LocationCameraPreset): Promise<void> {
     if (!this.map) {
       throw new Error('GOOGLE_MAPS_3D_NOT_MOUNTED');
     }
 
-    this.map.flyCameraTo({ endCamera: toCamera(target) });
+    this.map.flyCameraTo({ endCamera: toCamera(preset) });
   }
 
   async setLocations(locations: Map3DLocation[]): Promise<void> {

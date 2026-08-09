@@ -131,13 +131,23 @@ describe('GoogleMaps3DEngine', () => {
         id: 'destination-a',
         label: 'Điểm A',
         position: { lat: 18.3421, lng: 105.9032, altitude: 0 },
-        target: { lat: 18.3421, lng: 105.9032, altitude: 0 },
+        cameraPreset: {
+          center: { lat: 18.3421, lng: 105.9032, altitude: 180 },
+          heading: 32,
+          tilt: 58,
+          range: 1250,
+        },
       },
       {
         id: 'destination-b',
         label: 'Điểm B',
         position: { lat: 18.401, lng: 105.91, altitude: 0 },
-        target: { lat: 18.401, lng: 105.91, altitude: 0 },
+        cameraPreset: {
+          center: { lat: 18.401, lng: 105.91, altitude: 180 },
+          heading: 32,
+          tilt: 58,
+          range: 1250,
+        },
       },
     ];
 
@@ -150,8 +160,8 @@ describe('GoogleMaps3DEngine', () => {
 
     expect(markers).toHaveLength(2);
     expect(markers[1]?.options).toEqual({
-      position: { lat: 18.401, lng: 105.91, altitude: 0 },
       label: 'Điểm B',
+      position: { lat: 18.401, lng: 105.91, altitude: 0 },
     });
 
     markers[1]?.dispatchEvent(new Event('gmp-click'));
@@ -187,9 +197,7 @@ describe('GoogleMaps3DEngine', () => {
 
     await engine.mount(container);
     await engine.flyTo({
-      lat: 18.3552,
-      lng: 105.8877,
-      altitude: 420,
+      center: { lat: 18.3552, lng: 105.8877, altitude: 420 },
       heading: 32,
       tilt: 48,
       range: 1800,

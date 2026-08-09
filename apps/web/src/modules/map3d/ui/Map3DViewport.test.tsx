@@ -5,10 +5,8 @@ import { FakeMap3DEngine } from '../adapters/fake-map3d.adapter';
 import type { Map3DEnginePort } from '../domain/map3d-engine.port';
 import { Map3DViewport } from './Map3DViewport';
 
-const target = {
-  lat: 18.3552,
-  lng: 105.8877,
-  altitude: 420,
+const cameraPreset = {
+  center: { lat: 18.3552, lng: 105.8877, altitude: 420 },
   heading: 32,
   tilt: 48,
   range: 1800,
@@ -17,8 +15,8 @@ const target = {
 const model = {
   id: 'son-trang-landmark',
   url: 'https://cdn.example.test/son-trang.glb',
-  lat: target.lat,
-  lng: target.lng,
+  lat: cameraPreset.center.lat,
+  lng: cameraPreset.center.lng,
   altitude: 450,
   heading: 12,
   scale: 0.8,
@@ -31,7 +29,7 @@ describe('Map3DViewport', () => {
     const { unmount } = render(
       <Map3DViewport
         engine={engine}
-        target={target}
+        cameraPreset={cameraPreset}
         model={model}
         onStatusChange={(status) => statuses.push(status)}
       />,
@@ -43,7 +41,7 @@ describe('Map3DViewport', () => {
 
     expect(engine.calls).toEqual([
       { type: 'mount', container: expect.any(HTMLElement) },
-      { type: 'flyTo', target },
+      { type: 'flyTo', preset: cameraPreset },
       { type: 'addModel', model },
     ]);
     expect(screen.getByRole('application', { name: 'Không gian bản đồ 3D' })).toBeInTheDocument();
@@ -74,13 +72,13 @@ describe('Map3DViewport', () => {
   it('keeps one mounted map element while the selected location changes', async () => {
     const engine = new FakeMap3DEngine();
     const onLocationSelected = vi.fn();
-    const firstTarget = { ...target, lat: 18.3421, lng: 105.9032 };
-    const secondTarget = { ...target, lat: 18.401, lng: 105.91 };
+    const firstPreset = { ...cameraPreset, center: { lat: 18.3421, lng: 105.9032 } };
+    const secondPreset = { ...cameraPreset, center: { lat: 18.401, lng: 105.91 } };
     const { rerender, unmount } = render(
       <Map3DViewport
         engine={engine}
         onLocationSelected={onLocationSelected}
-        target={firstTarget}
+        cameraPreset={firstPreset}
       />,
     );
 
@@ -92,7 +90,7 @@ describe('Map3DViewport', () => {
       <Map3DViewport
         engine={engine}
         onLocationSelected={onLocationSelected}
-        target={secondTarget}
+        cameraPreset={secondPreset}
       />,
     );
 
@@ -124,13 +122,15 @@ describe('Map3DViewport', () => {
       subscribeLocationSelected: vi.fn(() => () => undefined),
     } satisfies Map3DEnginePort;
     const newEngine = new FakeMap3DEngine();
-    const { rerender } = render(<Map3DViewport engine={oldEngine} target={target} model={model} />);
+    const { rerender } = render(
+      <Map3DViewport engine={oldEngine} cameraPreset={cameraPreset} model={model} />,
+    );
 
     await waitFor(() => {
       expect(oldEngine.flyTo).toHaveBeenCalledTimes(1);
     });
 
-    rerender(<Map3DViewport engine={newEngine} target={target} model={model} />);
+    rerender(<Map3DViewport engine={newEngine} cameraPreset={cameraPreset} model={model} />);
     resolveFlyTo();
 
     await waitFor(() => {

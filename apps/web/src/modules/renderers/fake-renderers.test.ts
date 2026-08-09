@@ -1,5 +1,5 @@
 import { FakeMap3DEngine } from '../map3d/adapters/fake-map3d.adapter';
-import type { CameraTarget, ModelPlacement } from '../map3d/domain/map3d-engine.port';
+import type { LocationCameraPreset, ModelPlacement } from '../map3d/domain/map3d-engine.port';
 import { FakePanoramaEngine } from '../panorama/adapters/fake-panorama.adapter';
 import type { PanoramaNode, PanoramaView } from '../panorama/domain/panorama-engine.port';
 
@@ -7,17 +7,22 @@ describe('fake renderer adapters', () => {
   it('records the Map3D lifecycle without loading a vendor SDK', async () => {
     const engine = new FakeMap3DEngine();
     const container = document.createElement('div');
-    const target: CameraTarget = { lat: 18.342, lng: 105.9, range: 900 };
+    const preset: LocationCameraPreset = {
+      center: { lat: 18.342, lng: 105.9 },
+      heading: 32,
+      tilt: 58,
+      range: 900,
+    };
     const model: ModelPlacement = { id: 'temple', url: '/temple.glb', lat: 18.342, lng: 105.9 };
 
     await engine.mount(container);
-    await engine.flyTo(target);
+    await engine.flyTo(preset);
     await engine.addModel(model);
     engine.destroy();
 
     expect(engine.calls).toEqual([
       { type: 'mount', container },
-      { type: 'flyTo', target },
+      { type: 'flyTo', preset },
       { type: 'addModel', model },
       { type: 'destroy' },
     ]);

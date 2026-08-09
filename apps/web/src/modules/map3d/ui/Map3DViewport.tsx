@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { RendererStatus } from '../../../shared/contracts';
 
 import type {
-  CameraTarget,
+  LocationCameraPreset,
   Map3DEnginePort,
   Map3DLocation,
   ModelPlacement,
@@ -16,7 +16,7 @@ export interface Map3DViewportProps {
   onLocationSelected?: (locationId: string) => void;
   onStatusChange?: (status: RendererStatus) => void;
   model?: ModelPlacement;
-  target?: CameraTarget;
+  cameraPreset?: LocationCameraPreset;
 }
 
 export function Map3DViewport({
@@ -26,7 +26,7 @@ export function Map3DViewport({
   onLocationSelected,
   onStatusChange,
   model,
-  target,
+  cameraPreset,
 }: Map3DViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onLocationSelectedRef = useRef(onLocationSelected);
@@ -130,7 +130,7 @@ export function Map3DViewport({
   }, [engine, locations]);
 
   useEffect(() => {
-    if (!target) {
+    if (!cameraPreset) {
       return undefined;
     }
 
@@ -147,7 +147,7 @@ export function Map3DViewport({
           return;
         }
 
-        return engine.flyTo(target);
+        return engine.flyTo(cameraPreset);
       })
       .catch(() => {
         if (!cancelled) {
@@ -160,7 +160,7 @@ export function Map3DViewport({
     return () => {
       cancelled = true;
     };
-  }, [engine, target]);
+  }, [cameraPreset, engine]);
 
   useEffect(() => {
     if (!model) {

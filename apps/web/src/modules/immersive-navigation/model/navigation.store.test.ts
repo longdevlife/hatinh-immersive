@@ -17,7 +17,7 @@ describe('immersive navigation state machine', () => {
       requestedSceneId: null,
       transitionId: 0,
       selectedLocationId: null,
-      selectedLocationTarget: null,
+      selectedLocationPreset: null,
       visitedSceneIds: [],
     });
   });
@@ -49,7 +49,12 @@ describe('immersive navigation state machine', () => {
       id: 'destination-2',
       label: 'Điểm đến 2',
       position: { lat: 18.4, lng: 105.9, altitude: 0 },
-      target: { lat: 18.4, lng: 105.9, altitude: 120, range: 900 },
+      cameraPreset: {
+        center: { lat: 18.4, lng: 105.9, altitude: 120 },
+        heading: 31,
+        tilt: 58,
+        range: 900,
+      },
     };
     const navigation = useImmersiveNavigation.getState();
 
@@ -60,7 +65,7 @@ describe('immersive navigation state machine', () => {
     expect(useImmersiveNavigation.getState()).toMatchObject({
       destinationId: location.id,
       selectedLocationId: location.id,
-      selectedLocationTarget: location.target,
+      selectedLocationPreset: location.cameraPreset,
       mode: 'overview3d',
       activeRenderer: 'map3d',
       map3dStatus: 'ready',
@@ -236,7 +241,12 @@ describe('immersive navigation state machine', () => {
       id: 'destination-1',
       label: 'Điểm đến 1',
       position: { lat: 18.3421, lng: 105.9032, altitude: 0 },
-      target: { lat: 18.3421, lng: 105.9032, altitude: 0 },
+      cameraPreset: {
+        center: { lat: 18.3421, lng: 105.9032, altitude: 180 },
+        heading: 32,
+        tilt: 58,
+        range: 1250,
+      },
     };
 
     navigation.selectLocation(location);
@@ -258,7 +268,12 @@ describe('immersive navigation state machine', () => {
       id: 'destination-1',
       label: 'Điểm đến 1',
       position: { lat: 18.3421, lng: 105.9032, altitude: 0 },
-      target: { lat: 18.3421, lng: 105.9032, altitude: 140, range: 900 },
+      cameraPreset: {
+        center: { lat: 18.3421, lng: 105.9032, altitude: 140 },
+        heading: 32,
+        tilt: 58,
+        range: 900,
+      },
     };
 
     navigation.selectLocation(location);
@@ -267,7 +282,7 @@ describe('immersive navigation state machine', () => {
     expect(useImmersiveNavigation.getState()).toMatchObject({
       mode: 'panorama',
       selectedLocationId: location.id,
-      selectedLocationTarget: location.target,
+      selectedLocationPreset: location.cameraPreset,
     });
 
     navigation.enterOverview(location.id, location);
@@ -275,7 +290,7 @@ describe('immersive navigation state machine', () => {
     expect(useImmersiveNavigation.getState()).toMatchObject({
       mode: 'overview3d',
       selectedLocationId: location.id,
-      selectedLocationTarget: location.target,
+      selectedLocationPreset: location.cameraPreset,
     });
   });
 

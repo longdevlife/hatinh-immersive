@@ -14,6 +14,7 @@ export type {
 } from './adapters/google-maps3d.adapter';
 export type {
   CameraTarget,
+  LocationCameraPreset,
   Map3DEnginePort,
   Map3DLocation,
   ModelPlacement,
