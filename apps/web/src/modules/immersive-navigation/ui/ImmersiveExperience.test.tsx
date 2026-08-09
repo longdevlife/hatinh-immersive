@@ -154,7 +154,9 @@ describe('ImmersiveExperience', () => {
       expect(map3d.calls.some((call) => call.type === 'setLocations')).toBe(true);
     });
 
-    map3d.emitLocationSelected('destination-son-trang-co-dam');
+    act(() => {
+      map3d.emitLocationSelected('destination-son-trang-co-dam');
+    });
 
     await waitFor(() => {
       expect(useImmersiveNavigation.getState()).toMatchObject({
