@@ -1,12 +1,14 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FakeMap3DEngine } from '../../map3d';
 import { FakeMinimapEngine } from '../../minimap';
 import { FakePanoramaEngine, type PanoramaNode, type PanoramaView } from '../../panorama';
+import type { DestinationPreviewVm } from '../../../shared/contracts';
 import { createFakeImmersiveManifest } from '../fake-mode/manifest';
+import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
 import { useImmersiveNavigation } from '../index';
 import { ImmersiveExperience, type ImmersiveExperienceFactories } from './ImmersiveExperience';
 
@@ -15,10 +17,57 @@ function LocationProbe() {
   return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
 }
 
+function RoutedExperience({
+  destinations,
+  factories,
+  manifests,
+}: {
+  destinations: DestinationPreviewVm[];
+  factories: ImmersiveExperienceFactories;
+  manifests: Record<string, ImmersiveManifestVm>;
+}) {
+  const { destinationSlug = '' } = useParams<{ destinationSlug: string }>();
+  const manifest = manifests[destinationSlug];
+
+  return manifest ? (
+    <ImmersiveExperience destinations={destinations} factories={factories} manifest={manifest} />
+  ) : null;
+}
+
+function renderRoutedExperience(
+  initialEntry: string,
+  factories: ImmersiveExperienceFactories,
+  manifests: Record<string, ImmersiveManifestVm>,
+  destinations: DestinationPreviewVm[],
+) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={[initialEntry]}>
+        <Routes>
+          <Route
+            path="/explore/:destinationSlug"
+            element={
+              <RoutedExperience
+                destinations={destinations}
+                factories={factories}
+                manifests={manifests}
+              />
+            }
+          />
+        </Routes>
+        <LocationProbe />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
+
 function renderExperience(
   initialEntry: string,
   factories: ImmersiveExperienceFactories,
   manifest = createFakeImmersiveManifest(),
+  destinations?: DestinationPreviewVm[],
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -30,7 +79,13 @@ function renderExperience(
         <Routes>
           <Route
             path="/explore/:destinationSlug"
-            element={<ImmersiveExperience factories={factories} manifest={manifest} />}
+            element={
+              <ImmersiveExperience
+                factories={factories}
+                manifest={manifest}
+                {...(destinations === undefined ? {} : { destinations })}
+              />
+            }
           />
         </Routes>
         <LocationProbe />
@@ -165,6 +220,152 @@ describe('ImmersiveExperience', () => {
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
         '/explore/son-trang-co-dam?mode=overview3d&location=destination-son-trang-co-dam',
+      );
+    });
+  });
+
+  it('flies one persistent 3D map through marker selections without changing destination route', async () => {
+    const { factories, map3d } = createFactories();
+    const manifest = createFakeImmersiveManifest();
+    const locations: DestinationPreviewVm[] = [
+      manifest.destination,
+      {
+        id: 'destination-b',
+        slug: 'location-b',
+        name: 'Điểm B',
+        summary: 'Điểm B tại Hà Tĩnh.',
+        coverImageUrl: null,
+        categoryLabel: 'Thiên nhiên',
+        defaultSceneId: 'scene-b',
+        geoPoint: { latitude: 18.4, longitude: 105.9 },
+      },
+      {
+        id: 'destination-c',
+        slug: 'location-c',
+        name: 'Điểm C',
+        summary: 'Điểm C tại Hà Tĩnh.',
+        coverImageUrl: null,
+        categoryLabel: 'Văn hóa',
+        defaultSceneId: 'scene-c',
+        geoPoint: { latitude: 18.5, longitude: 106 },
+      },
+    ];
+
+    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories, manifest, locations);
+
+    await waitFor(() => {
+      expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+      expect(map3d.calls.some((call) => call.type === 'setLocations')).toBe(true);
+    });
+
+    act(() => map3d.emitLocationSelected('destination-b'));
+
+    await waitFor(() => {
+      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
+        target: { lat: 18.4, lng: 105.9 },
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam?mode=overview3d&location=destination-b',
+      );
+    });
+
+    act(() => map3d.emitLocationSelected('destination-c'));
+
+    await waitFor(() => {
+      expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+      expect(map3d.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
+      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
+        target: { lat: 18.5, lng: 106 },
+      });
+      expect(screen.getByRole('heading', { name: 'Điểm C' })).toBeInTheDocument();
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam?mode=overview3d&location=destination-c',
+      );
+    });
+  });
+
+  it('enters the selected destination tour and returns to its 3D camera', async () => {
+    const { factories, map3d, panorama } = createFactories();
+    const manifestA = createFakeImmersiveManifest();
+    const destinationB: DestinationPreviewVm = {
+      id: 'destination-b',
+      slug: 'location-b',
+      name: 'Điểm B',
+      summary: 'Điểm B tại Hà Tĩnh.',
+      coverImageUrl: null,
+      categoryLabel: 'Thiên nhiên',
+      defaultSceneId: 'scene-b',
+      geoPoint: { latitude: 18.4, longitude: 105.9 },
+    };
+    const sourceScene = manifestA.nodes[0]!;
+    const sourcePanorama = manifestA.panoramaNodes[0]!;
+    const destinationBEntryView = { heading: 137, pitch: -8, fov: 76 };
+    const manifestB: ImmersiveManifestVm = {
+      destination: destinationB,
+      defaultSceneId: 'scene-b',
+      overviewTarget: {
+        lat: 18.4,
+        lng: 105.9,
+        altitude: 120,
+        heading: 0,
+        tilt: 55,
+        range: 900,
+      },
+      nodes: [{ ...sourceScene, id: 'scene-b', name: 'Toàn cảnh Điểm B', lat: 18.4, lng: 105.9 }],
+      panoramaNodes: [
+        {
+          ...sourcePanorama,
+          id: 'scene-b',
+          name: 'Toàn cảnh Điểm B',
+          lat: 18.4,
+          lng: 105.9,
+          initialView: destinationBEntryView,
+          links: [],
+        },
+      ],
+      links: [],
+      hotspots: [],
+    };
+    const destinations = [manifestA.destination, destinationB];
+
+    renderRoutedExperience(
+      '/explore/son-trang-co-dam?mode=overview3d',
+      factories,
+      {
+        'son-trang-co-dam': manifestA,
+        'location-b': manifestB,
+      },
+      destinations,
+    );
+
+    await waitFor(() => expect(map3d.calls.some((call) => call.type === 'mount')).toBe(true));
+    act(() => map3d.emitLocationSelected(destinationB.id));
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: destinationB.name })).toBeVisible(),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Khám phá 360°' }));
+
+    await waitFor(() => {
+      expect(panorama.loadedNode?.id).toBe('scene-b');
+      expect(panorama.currentView).toEqual(destinationBEntryView);
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/location-b?mode=panorama&location=destination-b&scene=scene-b&h=137&p=-8&fov=76',
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại không gian 3D' }));
+
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        mode: 'overview3d',
+        selectedLocationId: destinationB.id,
+      });
+      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
+        target: { lat: 18.4, lng: 105.9 },
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/location-b?mode=overview3d&location=destination-b',
       );
     });
   });

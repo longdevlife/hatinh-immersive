@@ -164,7 +164,7 @@ export function ExploreShell({
               onShare={() => void shareLocation()}
               onShowInfo={openInfo}
               onToggleFullscreen={() => void toggleFullscreen()}
-              {...(canEnterPanorama ? { onEnter360: actions.onEnterPanorama } : {})}
+              {...(canEnterPanorama ? { onEnter360: () => actions.onEnterPanorama() } : {})}
               {...(onLanguageToggle ? { onLanguageToggle } : {})}
               {...(onLocationSelected ? { onLocationSelected } : {})}
             >
@@ -270,6 +270,13 @@ export function ExploreShell({
 
       {isPanorama ? (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
+          <button
+            className="immersive-button immersive-button--quiet"
+            type="button"
+            onClick={actions.onEnter3D}
+          >
+            Quay lại không gian 3D
+          </button>
           {view.links.slice(0, 2).map((link) => (
             <button
               key={link.id}

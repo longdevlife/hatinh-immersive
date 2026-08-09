@@ -148,5 +148,8 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
   await searchInput.fill('Đảo');
   await expect(page.getByRole('button', { name: 'Đảo Sơn Dương' })).toBeVisible();
   await page.getByRole('button', { name: 'Đảo Sơn Dương' }).click();
-  await expect(page).toHaveURL(/\/explore\/dao-son-duong\?mode=overview3d/);
+  await expect(page).toHaveURL(
+    /\/explore\/son-trang-co-dam\?mode=overview3d&location=destination-02$/,
+  );
+  await expect(page.getByRole('heading', { name: 'Đảo Sơn Dương' })).toBeVisible();
 });

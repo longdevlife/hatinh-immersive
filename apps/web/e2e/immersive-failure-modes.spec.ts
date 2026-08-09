@@ -100,7 +100,20 @@ test('keeps a fallback action when the 3D renderer fails', async ({ page }) => {
   await expect(page.locator('.immersive-renderer-state[role="alert"]')).toContainText(
     'Không thể mở không gian 3D',
   );
-  await expect(page.getByRole('button', { name: 'Thử lại' })).toBeVisible();
+  const retry = page.getByRole('button', { name: 'Thử lại' });
+  await expect(retry).toBeVisible();
+
+  await page.evaluate(() => {
+    window.sessionStorage.removeItem('hatinh-e2e-failure');
+    window.history.replaceState(null, '', '/explore/son-trang-co-dam?mode=overview3d');
+  });
+  await retry.click();
+
+  await expect(page.getByRole('application', { name: 'Không gian bản đồ 3D' })).toHaveAttribute(
+    'data-renderer-status',
+    'ready',
+  );
+  await expect(page.locator('.immersive-renderer-state[role="alert"]')).toHaveCount(0);
 });
 
 test('keeps the current panorama usable when its tile manifest fails', async ({ page }) => {
