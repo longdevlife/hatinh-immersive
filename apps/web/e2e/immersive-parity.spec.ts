@@ -82,17 +82,20 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
   const manifestLocales: string[] = [];
 
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
-  await page.route(/\/api\/v1\/destinations\/[^/?]+(?:\?.*)?$/, async (route) => {
-    const requestUrl = new URL(route.request().url());
+  await page.route(
+    /\/api\/v1\/destinations\/[^/?]+\/immersive-manifest(?:\?.*)?$/,
+    async (route) => {
+      const requestUrl = new URL(route.request().url());
 
-    const locale = requestUrl.searchParams.get('locale') ?? 'vi';
-    manifestLocales.push(locale);
-    await route.fulfill({
-      contentType: 'application/json',
-      body: JSON.stringify(manifest(locale)),
-      status: 200,
-    });
-  });
+      const locale = requestUrl.searchParams.get('locale') ?? 'vi';
+      manifestLocales.push(locale);
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify(manifest(locale)),
+        status: 200,
+      });
+    },
+  );
   await page.route(/\/api\/v1\/destinations(?:\?.*)?$/, async (route) => {
     await route.fulfill({
       contentType: 'application/json',
