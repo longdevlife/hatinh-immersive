@@ -15,6 +15,7 @@ export interface DestinationPreviewVm {
   categoryLabel: string | null;
   defaultSceneId: string | null;
   geoPoint: { latitude: number; longitude: number } | null;
+  cameraPreset?: LocationCameraPreset;
 }
 
 export interface SceneNodeVm {

@@ -1,8 +1,13 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { FakeMap3DEngine } from '../adapters/fake-map3d.adapter';
-import type { Map3DEnginePort } from '../domain/map3d-engine.port';
+import type {
+  LocationCameraPreset,
+  Map3DEnginePort,
+  Map3DLocation,
+} from '../domain/map3d-engine.port';
 import { Map3DViewport } from './Map3DViewport';
 
 const cameraPreset = {
@@ -21,6 +26,44 @@ const model = {
   heading: 12,
   scale: 0.8,
 };
+
+const location = {
+  id: 'son-trang-co-dam',
+  label: 'Sơn Trang Cổ Đạm',
+  position: { lat: 18.3421, lng: 105.9032 },
+  cameraPreset,
+};
+
+class PendingLocationsFakeMap3DEngine extends FakeMap3DEngine {
+  private resolveLocationsStarted!: () => void;
+  private resolveLocationsReleased!: () => void;
+  readonly locationsStarted = new Promise<void>((resolve) => {
+    this.resolveLocationsStarted = resolve;
+  });
+  readonly locationsReleased = new Promise<void>((resolve) => {
+    this.resolveLocationsReleased = resolve;
+  });
+  flightAt: number | null = null;
+
+  override async setLocations(locations: Map3DLocation[]) {
+    await super.setLocations(locations);
+    this.resolveLocationsStarted();
+    await this.locationsReleased;
+  }
+
+  override async flyTo(preset: LocationCameraPreset) {
+    this.flightAt = Date.now();
+    await super.flyTo(preset);
+  }
+
+  releaseLocations() {
+    this.resolveLocationsReleased();
+  }
+}
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('Map3DViewport', () => {
   it('mounts, flies to the destination, adds its model, and destroys the engine', async () => {
@@ -106,6 +149,40 @@ describe('Map3DViewport', () => {
 
     unmount();
     expect(engine.calls.filter((call) => call.type === 'destroy')).toHaveLength(1);
+  });
+
+  it('flies within 100ms of a selection while locations are pending and mounts once', async () => {
+    vi.useFakeTimers();
+    const engine = new PendingLocationsFakeMap3DEngine();
+
+    function SelectionHarness() {
+      const [selectedPreset, setSelectedPreset] = useState<typeof cameraPreset>();
+
+      return (
+        <Map3DViewport
+          engine={engine}
+          locations={[location]}
+          onLocationSelected={() => setSelectedPreset(cameraPreset)}
+          {...(selectedPreset ? { cameraPreset: selectedPreset } : {})}
+        />
+      );
+    }
+
+    render(<SelectionHarness />);
+
+    await engine.locationsStarted;
+    const selectedAt = Date.now();
+    act(() => engine.emitLocationSelected(location.id));
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+
+    expect(engine.flightAt).not.toBeNull();
+    expect(engine.flightAt! - selectedAt).toBeLessThanOrEqual(100);
+    expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+
+    engine.releaseLocations();
   });
 
   it('does not continue stale camera work after the viewport is replaced', async () => {

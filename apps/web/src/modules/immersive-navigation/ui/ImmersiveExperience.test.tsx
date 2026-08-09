@@ -224,6 +224,55 @@ describe('ImmersiveExperience', () => {
     });
   });
 
+  it('excludes destinations without a curated camera preset from map markers and flights', async () => {
+    const { factories, map3d } = createFactories();
+    const manifest = createFakeImmersiveManifest();
+    const destinationWithoutPreset: DestinationPreviewVm = {
+      id: 'destination-without-preset',
+      slug: 'without-preset',
+      name: 'Điểm không có góc máy',
+      summary: 'Không được hiện trên bản đồ 3D.',
+      coverImageUrl: null,
+      categoryLabel: 'Thiên nhiên',
+      defaultSceneId: null,
+      geoPoint: { latitude: 18.4, longitude: 105.9 },
+    };
+
+    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories, manifest, [
+      manifest.destination,
+      destinationWithoutPreset,
+    ]);
+
+    await waitFor(() => {
+      expect(map3d.calls.filter((call) => call.type === 'setLocations')).toHaveLength(1);
+    });
+
+    expect(map3d.calls.filter((call) => call.type === 'setLocations').at(-1)).toEqual({
+      type: 'setLocations',
+      locations: [
+        expect.objectContaining({
+          id: manifest.destination.id,
+          cameraPreset: {
+            center: { lat: 18.3421, lng: 105.9032, altitude: 420 },
+            heading: 32,
+            tilt: 48,
+            range: 1800,
+          },
+        }),
+      ],
+    });
+    const flightCount = map3d.calls.filter((call) => call.type === 'flyTo').length;
+
+    act(() => map3d.emitLocationSelected(destinationWithoutPreset.id));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(useImmersiveNavigation.getState().selectedLocationId).toBe(manifest.destination.id);
+    expect(map3d.calls.filter((call) => call.type === 'flyTo')).toHaveLength(flightCount);
+  });
+
   it('flies one persistent 3D map through marker selections without changing destination route', async () => {
     const { factories, map3d } = createFactories();
     const manifest = createFakeImmersiveManifest();
@@ -238,6 +287,12 @@ describe('ImmersiveExperience', () => {
         categoryLabel: 'Thiên nhiên',
         defaultSceneId: 'scene-b',
         geoPoint: { latitude: 18.4, longitude: 105.9 },
+        cameraPreset: {
+          center: { lat: 18.4, lng: 105.9, altitude: 240 },
+          heading: 110,
+          tilt: 50,
+          range: 1200,
+        },
       },
       {
         id: 'destination-c',
@@ -248,6 +303,12 @@ describe('ImmersiveExperience', () => {
         categoryLabel: 'Văn hóa',
         defaultSceneId: 'scene-c',
         geoPoint: { latitude: 18.5, longitude: 106 },
+        cameraPreset: {
+          center: { lat: 18.5, lng: 106, altitude: 260 },
+          heading: 205,
+          tilt: 46,
+          range: 1300,
+        },
       },
     ];
 
@@ -296,6 +357,12 @@ describe('ImmersiveExperience', () => {
       categoryLabel: 'Thiên nhiên',
       defaultSceneId: 'scene-b',
       geoPoint: { latitude: 18.4, longitude: 105.9 },
+      cameraPreset: {
+        center: { lat: 18.4, lng: 105.9, altitude: 240 },
+        heading: 110,
+        tilt: 50,
+        range: 1200,
+      },
     };
     const sourceScene = manifestA.nodes[0]!;
     const sourcePanorama = manifestA.panoramaNodes[0]!;

@@ -119,7 +119,7 @@ function getInitialSceneId(manifest: ImmersiveManifestVm): string | null {
 }
 
 function toMap3DLocation(destination: DestinationPreviewVm): Map3DLocation | null {
-  if (!destination.geoPoint) {
+  if (!destination.geoPoint || !destination.cameraPreset) {
     return null;
   }
 
@@ -132,14 +132,8 @@ function toMap3DLocation(destination: DestinationPreviewVm): Map3DLocation | nul
       altitude: 0,
     },
     cameraPreset: {
-      center: {
-        lat: destination.geoPoint.latitude,
-        lng: destination.geoPoint.longitude,
-        altitude: 120,
-      },
-      heading: 0,
-      tilt: 55,
-      range: 900,
+      ...destination.cameraPreset,
+      center: { ...destination.cameraPreset.center },
     },
   };
 }

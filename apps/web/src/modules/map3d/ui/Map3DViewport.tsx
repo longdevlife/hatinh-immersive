@@ -107,8 +107,7 @@ export function Map3DViewport({
       return undefined;
     }
 
-    const previousOperation = operationQueueRef.current ?? mountPromise;
-    const operation = previousOperation
+    void mountPromise
       .then(() => {
         if (cancelled || mountedEngineRef.current !== engine) {
           return;
@@ -122,7 +121,6 @@ export function Map3DViewport({
           onStatusChangeRef.current?.('error');
         }
       });
-    operationQueueRef.current = operation.catch(() => undefined);
 
     return () => {
       cancelled = true;
