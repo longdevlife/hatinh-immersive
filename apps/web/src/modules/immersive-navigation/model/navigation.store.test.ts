@@ -44,6 +44,30 @@ describe('immersive navigation state machine', () => {
     expect(selectPanorama(state).active).toBe(false);
   });
 
+  it('selects another 3D location without resetting the ready map renderer', () => {
+    const location: Map3DLocation = {
+      id: 'destination-2',
+      label: 'Điểm đến 2',
+      position: { lat: 18.4, lng: 105.9, altitude: 0 },
+      target: { lat: 18.4, lng: 105.9, altitude: 120, range: 900 },
+    };
+    const navigation = useImmersiveNavigation.getState();
+
+    navigation.enterOverview('destination-1');
+    navigation.setRendererStatus('map3d', 'ready');
+    navigation.selectLocation(location);
+
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      destinationId: location.id,
+      selectedLocationId: location.id,
+      selectedLocationTarget: location.target,
+      mode: 'overview3d',
+      activeRenderer: 'map3d',
+      map3dStatus: 'ready',
+      panoramaStatus: 'idle',
+    });
+  });
+
   it('transitions to panorama and tracks unique visited scenes', () => {
     const navigation = useImmersiveNavigation.getState();
 

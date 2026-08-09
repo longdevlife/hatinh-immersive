@@ -73,14 +73,23 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
     })),
 
   selectLocation: (location) =>
-    set((state) => ({
-      ...createInitialNavigationState(),
-      ...withSelectedLocation(location),
-      minimapOpen: state.minimapOpen,
-      networkQuality: state.networkQuality,
-      activeRenderer: 'map3d',
-      map3dStatus: 'loading',
-    })),
+    set((state) =>
+      state.mode === 'overview3d' && state.activeRenderer === 'map3d'
+        ? {
+            ...withSelectedLocation(location),
+            transition: 'idle' as const,
+            selectedHotspotId: null,
+            error: null,
+          }
+        : {
+            ...createInitialNavigationState(),
+            ...withSelectedLocation(location),
+            minimapOpen: state.minimapOpen,
+            networkQuality: state.networkQuality,
+            activeRenderer: 'map3d' as const,
+            map3dStatus: 'loading' as const,
+          },
+    ),
 
   enterPanorama: (sceneId) =>
     set((state) => ({
