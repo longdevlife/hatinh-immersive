@@ -109,7 +109,7 @@ describe('ImmersiveExperience', () => {
     expect(factories.createMap3DEngine).toHaveBeenCalledTimes(1);
     expect(factories.createPanoramaEngine).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Khám phá 360°' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: /Khám phá 360°/ }));
 
     await waitFor(() => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
