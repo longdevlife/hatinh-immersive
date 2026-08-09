@@ -119,6 +119,7 @@ function waitForMapReady(map: GoogleMap3DElement, signal: AbortSignal): Promise<
 }
 
 const scriptLoads = new WeakMap<Document, Map<string, Promise<void>>>();
+let nextGoogleMapsCallbackId = 0;
 
 function resolveDocument(documentRef?: Document): Document {
   if (documentRef) {
@@ -174,6 +175,7 @@ function scriptLoadKey(apiKey: string, version: string): string {
 
 function loadGoogleMapsScript(
   documentRef: Document,
+  windowRef: GoogleMaps3DWindow,
   apiKey: string,
   version: string,
 ): Promise<void> {
@@ -192,18 +194,25 @@ function loadGoogleMapsScript(
 
   const script = documentRef.createElement('script');
   const url = new URL('https://maps.googleapis.com/maps/api/js');
+  const callbackName = `__hatinhGoogleMapsReady${++nextGoogleMapsCallbackId}`;
+  const callbackWindow = windowRef as GoogleMaps3DWindow & Record<string, unknown>;
   url.searchParams.set('key', apiKey);
   url.searchParams.set('v', version);
   url.searchParams.set('loading', 'async');
+  url.searchParams.set('callback', callbackName);
   script.async = true;
   script.dataset.hatinhGoogleMaps = '3d';
   script.src = url.toString();
 
   const load = new Promise<void>((resolve, reject) => {
-    script.addEventListener('load', () => resolve(), { once: true });
+    callbackWindow[callbackName] = () => {
+      delete callbackWindow[callbackName];
+      resolve();
+    };
     script.addEventListener(
       'error',
       () => {
+        delete callbackWindow[callbackName];
         documentLoads?.delete(key);
         reject(new Error('GOOGLE_MAPS_SCRIPT_LOAD_FAILED'));
       },
@@ -232,6 +241,7 @@ async function loadGoogleMaps3DLibrary(
 
   await loadGoogleMapsScript(
     resolveDocument(options.documentRef),
+    browserWindow,
     options.apiKey,
     options.version ?? 'weekly',
   );

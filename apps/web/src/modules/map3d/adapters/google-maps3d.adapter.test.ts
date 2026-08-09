@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Map3DLocation, ModelPlacement } from '../domain/map3d-engine.port';
 import {
   GoogleMaps3DEngine,
+  type GoogleMaps3DWindow,
   type Maps3DLibrary,
   type GoogleMap3DElementOptions,
   type GoogleMarker3DInteractiveElementOptions,
@@ -87,6 +88,40 @@ const model: ModelPlacement = {
 };
 
 describe('GoogleMaps3DEngine', () => {
+  it('waits for the async loader callback before importing the maps3d library', async () => {
+    const importLibrary = vi.fn(async () => library);
+    const windowRef: GoogleMaps3DWindow = {};
+    const engine = new GoogleMaps3DEngine({
+      apiKey: 'test-key',
+      documentRef: document,
+      windowRef,
+    });
+    const container = document.createElement('div');
+    const mount = engine.mount(container);
+    void mount.catch(() => undefined);
+
+    await vi.waitFor(() => {
+      expect(document.querySelector('script[data-hatinh-google-maps="3d"]')).not.toBeNull();
+    });
+
+    const script = document.querySelector<HTMLScriptElement>(
+      'script[data-hatinh-google-maps="3d"]',
+    )!;
+    const callbackName = new URL(script.src).searchParams.get('callback');
+
+    expect(callbackName).toBeTruthy();
+    script.dispatchEvent(new Event('load'));
+    await Promise.resolve();
+    expect(importLibrary).not.toHaveBeenCalled();
+
+    windowRef.google = { maps: { importLibrary } };
+    (windowRef as unknown as Record<string, () => void>)[callbackName!]!();
+
+    await expect(mount).resolves.toBeUndefined();
+    expect(importLibrary).toHaveBeenCalledWith('maps3d');
+    engine.destroy();
+  });
+
   it('mounts interactive destination markers and emits the selected location id', async () => {
     const engine = new GoogleMaps3DEngine({ loadLibrary: vi.fn(async () => library) });
     const container = document.createElement('div');
