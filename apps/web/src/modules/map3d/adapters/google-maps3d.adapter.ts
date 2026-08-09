@@ -81,7 +81,7 @@ export interface GoogleMaps3DAdapterOptions {
   windowRef?: GoogleMaps3DWindow;
 }
 
-interface GoogleSteadyStateEvent extends Event {
+interface GoogleSteadyChangeEvent extends Event {
   isSteady?: boolean;
 }
 
@@ -89,7 +89,7 @@ function waitForMapReady(map: GoogleMap3DElement, signal: AbortSignal): Promise<
   return new Promise<void>((resolve, reject) => {
     const cleanup = () => {
       map.removeEventListener('gmp-error', onError);
-      map.removeEventListener('gmp-steadystate', onSteadyState);
+      map.removeEventListener('gmp-steadychange', onSteadyChange);
       signal.removeEventListener('abort', onAbort);
     };
     const resolveReady = () => {
@@ -101,15 +101,15 @@ function waitForMapReady(map: GoogleMap3DElement, signal: AbortSignal): Promise<
       reject(error);
     };
     const onError = () => rejectWith(new Error('GOOGLE_MAPS_3D_ERROR'));
-    const onSteadyState = (event: Event) => {
-      if ((event as GoogleSteadyStateEvent).isSteady === true) {
+    const onSteadyChange = (event: Event) => {
+      if ((event as GoogleSteadyChangeEvent).isSteady === true) {
         resolveReady();
       }
     };
     const onAbort = () => rejectWith(new Error('GOOGLE_MAPS_3D_MOUNT_CANCELLED'));
 
     map.addEventListener('gmp-error', onError);
-    map.addEventListener('gmp-steadystate', onSteadyState);
+    map.addEventListener('gmp-steadychange', onSteadyChange);
     signal.addEventListener('abort', onAbort, { once: true });
 
     if (signal.aborted) {

@@ -17,7 +17,7 @@ class FakeMap3DElement extends HTMLElement {
     super();
     this.options = options;
     queueMicrotask(() => {
-      const event = new Event('gmp-steadystate');
+      const event = new Event('gmp-steadychange');
       Object.defineProperty(event, 'isSteady', { value: true });
       this.dispatchEvent(event);
     });
