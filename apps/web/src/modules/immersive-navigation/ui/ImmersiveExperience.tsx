@@ -43,6 +43,7 @@ import {
   type ImmersiveDeepLinkState,
 } from '../lib/deep-link';
 import { useImmersiveNavigation } from '../model/navigation.store';
+import { DEFAULT_NAVIGATION_VIEW } from '../model/navigation.view';
 import type { ActiveRenderer, ImmersiveNavigationState } from '../model/navigation.types';
 
 export interface ImmersiveExperienceFactories {
@@ -58,6 +59,10 @@ export interface ImmersiveExperienceProps {
 }
 
 type ActiveEngine = Map3DEnginePort | PanoramaEnginePort;
+
+interface PanoramaEntryRouteState {
+  entrySceneId: string;
+}
 
 function createDefaultFactories(): ImmersiveExperienceFactories {
   const usesFakeRenderers = import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake';
@@ -515,8 +520,24 @@ export function ImmersiveExperience({
       afterOverview.enterPanorama(sceneId);
     }
 
-    useImmersiveNavigation.getState().updateView(deepLink.view);
-  }, [destinationSlug, location.pathname, location.search, manifest, mapLocations, routeLocation]);
+    const entrySceneView =
+      (location.state as PanoramaEntryRouteState | null)?.entrySceneId === sceneId
+        ? manifest.panoramaNodes.find((node) => node.id === sceneId)?.initialView
+        : undefined;
+    useImmersiveNavigation.getState().updateView(entrySceneView ?? deepLink.view);
+    if (entrySceneView) {
+      writeDeepLink(navigate, destinationSlug, true);
+    }
+  }, [
+    destinationSlug,
+    location.pathname,
+    location.search,
+    location.state,
+    manifest,
+    mapLocations,
+    navigate,
+    routeLocation,
+  ]);
 
   const onRendererCreateError = useCallback(() => {
     const state = useImmersiveNavigation.getState();
@@ -619,8 +640,9 @@ export function ImmersiveExperience({
             mode: 'panorama',
             locationId: selectedDestination.id,
             sceneId: destinationSceneId,
-            view: useImmersiveNavigation.getState().committedView,
+            view: DEFAULT_NAVIGATION_VIEW,
           }),
+          { state: { entrySceneId: destinationSceneId } satisfies PanoramaEntryRouteState },
         );
         return;
       }

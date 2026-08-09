@@ -299,6 +299,7 @@ describe('ImmersiveExperience', () => {
     };
     const sourceScene = manifestA.nodes[0]!;
     const sourcePanorama = manifestA.panoramaNodes[0]!;
+    const destinationBEntryView = { heading: 137, pitch: -8, fov: 76 };
     const manifestB: ImmersiveManifestVm = {
       destination: destinationB,
       defaultSceneId: 'scene-b',
@@ -318,6 +319,7 @@ describe('ImmersiveExperience', () => {
           name: 'Toàn cảnh Điểm B',
           lat: 18.4,
           lng: 105.9,
+          initialView: destinationBEntryView,
           links: [],
         },
       ],
@@ -346,8 +348,9 @@ describe('ImmersiveExperience', () => {
 
     await waitFor(() => {
       expect(panorama.loadedNode?.id).toBe('scene-b');
+      expect(panorama.currentView).toEqual(destinationBEntryView);
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/location-b?mode=panorama&location=destination-b&scene=scene-b&h=0&p=0&fov=90',
+        '/explore/location-b?mode=panorama&location=destination-b&scene=scene-b&h=137&p=-8&fov=76',
       );
     });
 
