@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import './Map3DChrome.css';
 
 export interface Map3DChromeLocation {
@@ -59,10 +59,15 @@ export function Map3DChrome({
   onEnter360,
 }: Map3DChromeProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isListOpen, setIsListOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const filteredLocations = locations.filter((loc) =>
     loc.label.toLowerCase().includes(searchQuery.toLowerCase()),
   );
+
+  const selectedLocation = locations.find((loc) => loc.id === selectedLocationId);
+
   const labels =
     language === 'vi'
       ? {
@@ -73,7 +78,7 @@ export function Map3DChrome({
           language: 'Đổi ngôn ngữ sang Tiếng Anh',
           offline: 'Ngoại tuyến',
           search: 'Tìm kiếm địa điểm',
-          searchPlaceholder: 'Tìm kiếm địa điểm...',
+          searchPlaceholder: 'Nhập tên địa điểm...',
           share: 'Chia sẻ địa điểm',
           constrained: 'Kết nối yếu',
         }
@@ -85,21 +90,35 @@ export function Map3DChrome({
           language: 'Switch language to Vietnamese',
           offline: 'Offline',
           search: 'Search locations',
-          searchPlaceholder: 'Search locations...',
+          searchPlaceholder: 'Type a location...',
           share: 'Share location',
           constrained: 'Weak connection',
         };
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsListOpen(false);
+      }
+    }
+    if (isListOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isListOpen]);
 
   return (
     <div className="map3d-chrome">
       {/* Background/Viewport Layer */}
       <div className="map3d-chrome__viewport">{children}</div>
 
-      {/* Top Chrome: Brand, Title, Actions */}
+      {/* Top Chrome: Brand, Title, Actions (Compact) */}
       <header className="map3d-chrome__topbar">
         <div className="map3d-chrome__brand-title">
           <h1 className="map3d-chrome__title">{title}</h1>
-          {subtitle && <p className="map3d-chrome__subtitle">{subtitle}</p>}
         </div>
 
         <div className="map3d-chrome__actions">
@@ -198,19 +217,16 @@ export function Map3DChrome({
         </div>
       </header>
 
-      {/* Left Navigation Rail: Search & Locations list */}
-      <aside className="map3d-chrome__nav-rail">
-        <div className="map3d-chrome__search-container">
-          <input
-            type="search"
-            className="map3d-chrome__search-input"
-            placeholder={labels.searchPlaceholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            aria-label={labels.search}
-          />
+      {/* Floating Launcher (Search & List) */}
+      <aside className="map3d-chrome__launcher" ref={dropdownRef}>
+        <button
+          type="button"
+          className="map3d-chrome__launcher-toggle"
+          onClick={() => setIsListOpen(!isListOpen)}
+          aria-expanded={isListOpen}
+          aria-label={labels.search}
+        >
           <svg
-            className="map3d-chrome__search-icon"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -222,53 +238,86 @@ export function Map3DChrome({
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-        </div>
+          <span className="map3d-chrome__launcher-text">
+            {selectedLocation ? selectedLocation.label : labels.search}
+          </span>
+          <svg
+            className={`map3d-chrome__chevron ${isListOpen ? 'map3d-chrome__chevron--open' : ''}`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
 
-        <div
-          aria-label={language === 'vi' ? 'Danh sách địa điểm' : 'Location list'}
-          className="map3d-chrome__location-list"
-          role="listbox"
-        >
-          {filteredLocations.map((loc) => {
-            const isSelected = selectedLocationId === loc.id;
-            return (
-              <button
-                key={loc.id}
-                role="option"
-                aria-selected={isSelected}
-                type="button"
-                className={`map3d-chrome__location-btn ${isSelected ? 'map3d-chrome__location-btn--selected' : ''}`}
-                onClick={() => onLocationSelected?.(loc.id)}
-              >
-                <span className="map3d-chrome__location-name">{loc.label}</span>
-              </button>
-            );
-          })}
-          {filteredLocations.length === 0 && (
-            <p className="map3d-chrome__location-empty" role="status">
-              {labels.emptyLocations}
-            </p>
-          )}
-        </div>
+        {isListOpen && (
+          <div className="map3d-chrome__launcher-dropdown">
+            <div className="map3d-chrome__search-container">
+              <input
+                type="search"
+                className="map3d-chrome__search-input"
+                placeholder={labels.searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label={labels.search}
+                autoFocus
+              />
+            </div>
+            <div aria-label={labels.search} className="map3d-chrome__location-list" role="listbox">
+              {filteredLocations.map((loc) => {
+                const isSelected = selectedLocationId === loc.id;
+                return (
+                  <button
+                    key={loc.id}
+                    role="option"
+                    aria-selected={isSelected}
+                    type="button"
+                    className={`map3d-chrome__location-btn ${isSelected ? 'map3d-chrome__location-btn--selected' : ''}`}
+                    onClick={() => {
+                      onLocationSelected?.(loc.id);
+                      setIsListOpen(false);
+                    }}
+                  >
+                    {loc.label}
+                  </button>
+                );
+              })}
+              {filteredLocations.length === 0 && (
+                <p className="map3d-chrome__location-empty" role="status">
+                  {labels.emptyLocations}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
       </aside>
 
-      {/* Bottom Area: Handoff / Main Call to action */}
+      {/* Bottom Area: Handoff CTA */}
       {selectedLocationId && onEnter360 && (
         <div className="map3d-chrome__handoff">
           <button type="button" className="map3d-chrome__enter-360-btn" onClick={onEnter360}>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="map3d-chrome__handoff-icon"
-            >
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-            </svg>
-            <span>{labels.enter360}</span>
+            <span className="map3d-chrome__handoff-label">
+              {selectedLocation?.label || subtitle}
+            </span>
+            <span className="map3d-chrome__handoff-action">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              {labels.enter360}
+            </span>
           </button>
         </div>
       )}

@@ -3,25 +3,28 @@ import { describe, expect, it, vi } from 'vitest';
 import { Map3DChrome } from './Map3DChrome';
 
 describe('Map3DChrome', () => {
-  it('renders chrome with title and subtitle', () => {
+  it('renders chrome with title', () => {
     render(
-      <Map3DChrome title="Ngã Ba Đồng Lộc" subtitle="Hà Tĩnh">
+      <Map3DChrome title="Ngã Ba Đồng Lộc">
         <div data-testid="viewport" />
       </Map3DChrome>,
     );
 
     expect(screen.getByText('Ngã Ba Đồng Lộc')).toBeInTheDocument();
-    expect(screen.getByText('Hà Tĩnh')).toBeInTheDocument();
     expect(screen.getByTestId('viewport')).toBeInTheDocument();
   });
 
-  it('filters locations by search query', () => {
+  it('filters locations by search query after opening launcher', () => {
     const locations = [
       { id: '1', label: 'Tượng đài Chiến thắng' },
       { id: '2', label: 'Tháp chuông' },
     ];
 
     render(<Map3DChrome locations={locations} />);
+
+    // Open launcher
+    const toggle = screen.getByRole('button', { name: 'Tìm kiếm địa điểm' });
+    fireEvent.click(toggle);
 
     const searchInput = screen.getByRole('searchbox', { name: 'Tìm kiếm địa điểm' });
 
@@ -70,9 +73,12 @@ describe('Map3DChrome', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Toàn màn hình' }));
     expect(onToggleFullscreen).toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Khám phá 360°' }));
+    // Test the 360 CTA
+    fireEvent.click(screen.getByRole('button', { name: /Khám phá 360°/i }));
     expect(onEnter360).toHaveBeenCalled();
 
+    // Open launcher to click location
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm kiếm địa điểm' }));
     fireEvent.click(screen.getByRole('option', { selected: true }));
     expect(onLocationSelected).toHaveBeenCalledWith('1');
   });
@@ -80,6 +86,6 @@ describe('Map3DChrome', () => {
   it('hides 360 handoff button if no location is selected', () => {
     render(<Map3DChrome selectedLocationId={null} onEnter360={vi.fn()} />);
 
-    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Khám phá 360°/i })).not.toBeInTheDocument();
   });
 });
