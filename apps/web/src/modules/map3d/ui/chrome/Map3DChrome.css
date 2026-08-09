@@ -1,0 +1,411 @@
+.map3d-chrome {
+  --chrome-bg: rgba(10, 20, 16, 0.65);
+  --chrome-border: rgba(255, 255, 255, 0.15);
+  --chrome-blur: 24px;
+  --chrome-text-primary: #ffffff;
+  --chrome-text-secondary: rgba(255, 255, 255, 0.7);
+  --chrome-accent: #e5a95f;
+  --chrome-accent-hover: #f3b971;
+  --chrome-transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --chrome-z-index: 100;
+
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  color: var(--chrome-text-primary);
+  pointer-events: none; /* Let clicks pass through to 3D world */
+}
+
+.map3d-chrome * {
+  box-sizing: border-box;
+}
+
+.map3d-chrome__viewport {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: auto;
+}
+
+/* TOP BAR (COMPACT) */
+.map3d-chrome__topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.5rem 2rem;
+  z-index: var(--chrome-z-index);
+  pointer-events: none;
+}
+
+.map3d-chrome__brand-title {
+  background: var(--chrome-bg);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  border: 1px solid var(--chrome-border);
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  pointer-events: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.map3d-chrome__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+.map3d-chrome__subtitle {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.8rem;
+  color: var(--chrome-text-secondary);
+}
+
+/* ACTIONS */
+.map3d-chrome__actions {
+  display: flex;
+  gap: 0.5rem;
+  pointer-events: auto;
+  background: var(--chrome-bg);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  padding: 0.5rem;
+  border-radius: 50px;
+  border: 1px solid var(--chrome-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.map3d-chrome__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--chrome-text-primary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: all var(--chrome-transition);
+}
+
+.map3d-chrome__icon-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.map3d-chrome__icon-btn:hover,
+.map3d-chrome__icon-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+.map3d-chrome__network {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 20px;
+  margin-left: 0.25rem;
+}
+
+.map3d-chrome__network--constrained {
+  background: rgba(229, 169, 95, 0.2);
+  color: #ffdfa6;
+}
+
+.map3d-chrome__network--offline {
+  background: rgba(239, 83, 80, 0.2);
+  color: #ffb4b2;
+}
+
+/* LAUNCHER (Compact Search/List) */
+.map3d-chrome__launcher {
+  position: absolute;
+  top: 6.5rem;
+  left: 2rem;
+  z-index: var(--chrome-z-index);
+  pointer-events: auto;
+}
+
+.map3d-chrome__launcher-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--chrome-bg);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  border: 1px solid var(--chrome-border);
+  padding: 0.85rem 1.25rem;
+  border-radius: 24px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: all var(--chrome-transition);
+}
+
+.map3d-chrome__launcher-toggle svg:not(.map3d-chrome__chevron) {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--chrome-text-secondary);
+}
+
+.map3d-chrome__chevron {
+  width: 1rem;
+  height: 1rem;
+  color: var(--chrome-text-secondary);
+  transition: transform var(--chrome-transition);
+}
+
+.map3d-chrome__chevron--open {
+  transform: rotate(180deg);
+}
+
+.map3d-chrome__launcher-toggle:hover,
+.map3d-chrome__launcher-toggle:focus-visible {
+  background: rgba(20, 30, 25, 0.85);
+  border-color: rgba(255, 255, 255, 0.3);
+  outline: none;
+}
+
+.map3d-chrome__launcher-dropdown {
+  margin-top: 0.75rem;
+  width: 22rem;
+  background: var(--chrome-bg);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  border: 1px solid var(--chrome-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  animation: slideDownFade 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.map3d-chrome__search-container {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.map3d-chrome__search-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.map3d-chrome__search-input:focus {
+  outline: none;
+  border-color: var(--chrome-accent);
+}
+
+.map3d-chrome__location-list {
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: 0.5rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.map3d-chrome__location-list::-webkit-scrollbar {
+  width: 6px;
+}
+.map3d-chrome__location-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+}
+
+.map3d-chrome__location-btn {
+  width: 100%;
+  display: block;
+  padding: 0.85rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--chrome-text-primary);
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--chrome-transition);
+}
+
+.map3d-chrome__location-btn:hover,
+.map3d-chrome__location-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+}
+
+.map3d-chrome__location-btn--selected {
+  background: rgba(229, 169, 95, 0.15);
+  color: var(--chrome-accent);
+  font-weight: 600;
+}
+
+.map3d-chrome__location-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--chrome-text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* HANDOFF AFFORDANCE */
+.map3d-chrome__handoff {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--chrome-z-index);
+  pointer-events: auto;
+  animation: slideUpFade 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.map3d-chrome__enter-360-btn {
+  display: flex;
+  align-items: center;
+  background: var(--chrome-bg);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  border: 1px solid var(--chrome-border);
+  padding: 0.5rem 0.5rem 0.5rem 1.5rem;
+  border-radius: 50px;
+  cursor: pointer;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  transition: all var(--chrome-transition);
+  color: #fff;
+}
+
+.map3d-chrome__handoff-label {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-right: 1.25rem;
+}
+
+.map3d-chrome__handoff-action {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--chrome-accent);
+  color: #1a1a1a;
+  padding: 0.75rem 1.5rem;
+  border-radius: 40px;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.map3d-chrome__handoff-action svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.map3d-chrome__handoff-status {
+  background: var(--chrome-bg);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  border: 1px solid var(--chrome-border);
+  padding: 0.75rem 1.5rem;
+  border-radius: 40px;
+  color: var(--chrome-text-secondary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.map3d-chrome__enter-360-btn:hover,
+.map3d-chrome__enter-360-btn:focus-visible {
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-4px) scale(1.02);
+  outline: none;
+}
+
+.map3d-chrome__enter-360-btn:hover .map3d-chrome__handoff-action {
+  background: var(--chrome-accent-hover);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .map3d-chrome__topbar {
+    padding: 1rem;
+  }
+
+  .map3d-chrome__brand-title {
+    padding: 0.6rem 1rem;
+  }
+
+  .map3d-chrome__title {
+    font-size: 1rem;
+  }
+
+  .map3d-chrome__launcher {
+    top: 5rem;
+    left: 1rem;
+    right: 1rem;
+  }
+
+  .map3d-chrome__launcher-dropdown {
+    width: 100%;
+  }
+
+  .map3d-chrome__handoff {
+    bottom: 2rem;
+    width: 90%;
+  }
+
+  .map3d-chrome__enter-360-btn {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+  }
+
+  .map3d-chrome__handoff-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 0.5rem;
+  }
+}

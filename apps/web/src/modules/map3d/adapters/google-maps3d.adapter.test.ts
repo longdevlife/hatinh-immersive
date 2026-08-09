@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ModelPlacement } from '../domain/map3d-engine.port';
+import type { Map3DLocation, ModelPlacement } from '../domain/map3d-engine.port';
 import {
   GoogleMaps3DEngine,
+  type GoogleMaps3DWindow,
   type Maps3DLibrary,
   type GoogleMap3DElementOptions,
+  type GoogleMarker3DInteractiveElementOptions,
   type GoogleModel3DElementOptions,
 } from './google-maps3d.adapter';
 
@@ -16,7 +18,7 @@ class FakeMap3DElement extends HTMLElement {
     super();
     this.options = options;
     queueMicrotask(() => {
-      const event = new Event('gmp-steadystate');
+      const event = new Event('gmp-steadychange');
       Object.defineProperty(event, 'isSteady', { value: true });
       this.dispatchEvent(event);
     });
@@ -40,6 +42,15 @@ class FakeModel3DElement extends HTMLElement {
   }
 }
 
+class FakeMarker3DInteractiveElement extends HTMLElement {
+  readonly options: GoogleMarker3DInteractiveElementOptions;
+
+  constructor(options: GoogleMarker3DInteractiveElementOptions) {
+    super();
+    this.options = options;
+  }
+}
+
 class FailingMap3DElement extends HTMLElement {
   constructor() {
     super();
@@ -57,11 +68,13 @@ class FailingMap3DElement extends HTMLElement {
 
 customElements.define('gmp-map-3d', FakeMap3DElement);
 customElements.define('gmp-model-3d', FakeModel3DElement);
+customElements.define('gmp-marker-3d-interactive', FakeMarker3DInteractiveElement);
 customElements.define('gmp-map-3d-error', FailingMap3DElement);
 
 const library = {
   Map3DElement: FakeMap3DElement,
   Model3DElement: FakeModel3DElement,
+  Marker3DInteractiveElement: FakeMarker3DInteractiveElement,
 } as unknown as Maps3DLibrary;
 
 const model: ModelPlacement = {
@@ -75,6 +88,84 @@ const model: ModelPlacement = {
 };
 
 describe('GoogleMaps3DEngine', () => {
+  it('waits for the async loader callback before importing the maps3d library', async () => {
+    const importLibrary = vi.fn(async () => library);
+    const windowRef: GoogleMaps3DWindow = {};
+    const engine = new GoogleMaps3DEngine({
+      apiKey: 'test-key',
+      documentRef: document,
+      windowRef,
+    });
+    const container = document.createElement('div');
+    const mount = engine.mount(container);
+    void mount.catch(() => undefined);
+
+    await vi.waitFor(() => {
+      expect(document.querySelector('script[data-hatinh-google-maps="3d"]')).not.toBeNull();
+    });
+
+    const script = document.querySelector<HTMLScriptElement>(
+      'script[data-hatinh-google-maps="3d"]',
+    )!;
+    const callbackName = new URL(script.src).searchParams.get('callback');
+
+    expect(callbackName).toBeTruthy();
+    script.dispatchEvent(new Event('load'));
+    await Promise.resolve();
+    expect(importLibrary).not.toHaveBeenCalled();
+
+    windowRef.google = { maps: { importLibrary } };
+    (windowRef as unknown as Record<string, () => void>)[callbackName!]!();
+
+    await expect(mount).resolves.toBeUndefined();
+    expect(importLibrary).toHaveBeenCalledWith('maps3d');
+    engine.destroy();
+  });
+
+  it('mounts interactive destination markers and emits the selected location id', async () => {
+    const engine = new GoogleMaps3DEngine({ loadLibrary: vi.fn(async () => library) });
+    const container = document.createElement('div');
+    const onLocationSelected = vi.fn();
+    const locations: Map3DLocation[] = [
+      {
+        id: 'destination-a',
+        label: 'Điểm A',
+        position: { lat: 18.3421, lng: 105.9032, altitude: 0 },
+        target: { lat: 18.3421, lng: 105.9032, altitude: 0 },
+      },
+      {
+        id: 'destination-b',
+        label: 'Điểm B',
+        position: { lat: 18.401, lng: 105.91, altitude: 0 },
+        target: { lat: 18.401, lng: 105.91, altitude: 0 },
+      },
+    ];
+
+    await engine.mount(container);
+    const unsubscribe = engine.subscribeLocationSelected(onLocationSelected);
+    await engine.setLocations(locations);
+
+    const map = container.firstElementChild as FakeMap3DElement;
+    const markers = [...map.children] as FakeMarker3DInteractiveElement[];
+
+    expect(markers).toHaveLength(2);
+    expect(markers[1]?.options).toEqual({
+      position: { lat: 18.401, lng: 105.91, altitude: 0 },
+      label: 'Điểm B',
+    });
+
+    markers[1]?.dispatchEvent(new Event('gmp-click'));
+    expect(onLocationSelected).toHaveBeenCalledWith('destination-b');
+
+    unsubscribe();
+    markers[0]?.dispatchEvent(new Event('gmp-click'));
+    expect(onLocationSelected).toHaveBeenCalledTimes(1);
+
+    await engine.setLocations([locations[0]!]);
+    expect(map.children).toHaveLength(1);
+    engine.destroy();
+  });
+
   it('lazily creates the map, flies the camera, mounts models, and cleans up', async () => {
     const loadLibrary = vi.fn(async () => library);
     const engine = new GoogleMaps3DEngine({

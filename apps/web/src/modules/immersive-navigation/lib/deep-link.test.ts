@@ -11,6 +11,7 @@ describe('immersive deep link codec', () => {
     const state: ImmersiveDeepLinkState = {
       destinationSlug: 'son-trang-co-dam',
       mode: 'panorama',
+      locationId: 'destination-01',
       sceneId: 'scene-02',
       view: {
         heading: 483.4,
@@ -22,11 +23,12 @@ describe('immersive deep link codec', () => {
     const encoded = encodeImmersiveDeepLink(state);
 
     expect(encoded).toBe(
-      '/explore/son-trang-co-dam?mode=panorama&scene=scene-02&h=123.4&p=-90&fov=120',
+      '/explore/son-trang-co-dam?mode=panorama&location=destination-01&scene=scene-02&h=123.4&p=-90&fov=120',
     );
     expect(decodeImmersiveDeepLink(encoded)).toEqual({
       destinationSlug: 'son-trang-co-dam',
       mode: 'panorama',
+      locationId: 'destination-01',
       sceneId: 'scene-02',
       view: {
         heading: 123.4,
@@ -44,6 +46,7 @@ describe('immersive deep link codec', () => {
     ).toEqual({
       destinationSlug: 'son-trang-co-dam',
       mode: 'overview3d',
+      locationId: null,
       sceneId: null,
       view: {
         heading: 0,
@@ -57,6 +60,7 @@ describe('immersive deep link codec', () => {
     const state: ImmersiveDeepLinkState = {
       destinationSlug: 'son-trang-co-dam',
       mode: 'overview3d',
+      locationId: null,
       sceneId: 'scene-01',
       view: {
         heading: 25,
@@ -69,6 +73,7 @@ describe('immersive deep link codec', () => {
     expect(decodeImmersiveDeepLink('/explore/son-trang-co-dam')).toEqual({
       destinationSlug: 'son-trang-co-dam',
       mode: 'overview3d',
+      locationId: null,
       sceneId: null,
       view: {
         heading: 0,
@@ -76,6 +81,21 @@ describe('immersive deep link codec', () => {
         fov: 90,
       },
     });
+  });
+
+  it('round-trips an overview location selection', () => {
+    const state: ImmersiveDeepLinkState = {
+      destinationSlug: 'cau-ba-son',
+      mode: 'overview3d',
+      locationId: 'destination-ba-son',
+      sceneId: null,
+      view: { heading: 0, pitch: 0, fov: 90 },
+    };
+
+    const encoded = encodeImmersiveDeepLink(state);
+
+    expect(encoded).toBe('/explore/cau-ba-son?mode=overview3d&location=destination-ba-son');
+    expect(decodeImmersiveDeepLink(encoded)).toEqual(state);
   });
 
   it('returns null for a URL outside the public explore route', () => {

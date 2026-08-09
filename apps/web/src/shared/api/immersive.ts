@@ -52,6 +52,8 @@ export function useImmersiveDestinations(locale: ImmersiveLocale = 'vi', enabled
             summary: destination.summary,
             coverImageUrl: destination.coverImageUrl,
             categoryLabel: destination.categoryLabel,
+            defaultSceneId: destination.defaultSceneId,
+            geoPoint: destination.geoPoint,
           }))
         : [],
     [query.data],

@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+import type { Map3DLocation } from '../../../shared/contracts/immersive';
+
 import { DEFAULT_NAVIGATION_VIEW, normalizeNavigationView } from './navigation.view';
 import type {
   ImmersiveNavigationState,
@@ -11,6 +13,8 @@ import type {
 export function createInitialNavigationState(): ImmersiveNavigationState {
   return {
     destinationId: null,
+    selectedLocationId: null,
+    selectedLocationTarget: null,
     mode: 'overview3d',
     activeRenderer: 'none',
     transition: 'idle',
@@ -47,13 +51,31 @@ function withCommittedScene(sceneId: string | null, view: NavigationView) {
   };
 }
 
+function withSelectedLocation(location: Map3DLocation) {
+  return {
+    destinationId: location.id,
+    selectedLocationId: location.id,
+    selectedLocationTarget: { ...location.target },
+  };
+}
+
 export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => ({
   ...createInitialNavigationState(),
 
-  enterOverview: (destinationId) =>
+  enterOverview: (destinationId, location) =>
     set((state) => ({
       ...createInitialNavigationState(),
-      destinationId,
+      ...(location ? withSelectedLocation(location) : { destinationId }),
+      minimapOpen: state.minimapOpen,
+      networkQuality: state.networkQuality,
+      activeRenderer: 'map3d',
+      map3dStatus: 'loading',
+    })),
+
+  selectLocation: (location) =>
+    set((state) => ({
+      ...createInitialNavigationState(),
+      ...withSelectedLocation(location),
       minimapOpen: state.minimapOpen,
       networkQuality: state.networkQuality,
       activeRenderer: 'map3d',
@@ -63,6 +85,8 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
   enterPanorama: (sceneId) =>
     set((state) => ({
       destinationId: state.destinationId,
+      selectedLocationId: state.selectedLocationId,
+      selectedLocationTarget: state.selectedLocationTarget,
       mode: 'panorama',
       activeRenderer: 'panorama',
       transition: 'entering-panorama',
@@ -88,11 +112,9 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
     ),
 
   navigateToScene: (sceneId) => {
-    let transitionId = 0;
+    let transitionId: number | null = null;
 
     set((state) => {
-      transitionId = state.transitionId;
-
       if (state.mode !== 'panorama') {
         return {
           error: 'PANORAMA_REQUIRED',
@@ -103,7 +125,7 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
         return state;
       }
 
-      transitionId += 1;
+      transitionId = state.transitionId + 1;
       return {
         activeRenderer: 'panorama' as const,
         transition: 'navigating-scene' as const,
@@ -120,7 +142,11 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
 
   commitSceneTransition: (transitionId, view) =>
     set((state) => {
-      if (state.transitionId !== transitionId || !state.requestedSceneId) {
+      if (
+        state.mode !== 'panorama' ||
+        state.transitionId !== transitionId ||
+        !state.requestedSceneId
+      ) {
         return state;
       }
 
@@ -131,22 +157,30 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
         ...withCommittedScene(sceneId, committedView),
         requestedSceneId: null,
         transition: 'idle' as const,
+        panoramaStatus: 'ready' as const,
+        error: null,
         visitedSceneIds: withVisitedScene(state.visitedSceneIds, sceneId),
       };
     }),
 
   rollbackSceneTransition: (transitionId) =>
     set((state) =>
-      state.transitionId === transitionId && state.requestedSceneId
+      state.mode === 'panorama' && state.transitionId === transitionId && state.requestedSceneId
         ? {
             requestedSceneId: null,
             transition: 'idle' as const,
+            panoramaStatus: 'ready' as const,
+            error: null,
           }
         : state,
     ),
 
   commitRendererScene: (sceneId, view) =>
     set((state) => {
+      if (state.mode !== 'panorama') {
+        return state;
+      }
+
       if (state.requestedSceneId && state.requestedSceneId !== sceneId) {
         return state;
       }
@@ -157,6 +191,8 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
         ...withCommittedScene(sceneId, committedView),
         requestedSceneId: null,
         transition: 'idle' as const,
+        panoramaStatus: 'ready' as const,
+        error: null,
         visitedSceneIds: withVisitedScene(state.visitedSceneIds, sceneId),
       };
     }),

@@ -109,7 +109,7 @@ describe('ImmersiveExperience', () => {
     expect(factories.createMap3DEngine).toHaveBeenCalledTimes(1);
     expect(factories.createPanoramaEngine).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Khám phá 360°' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: /Khám phá 360°/ }));
 
     await waitFor(() => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
@@ -121,7 +121,7 @@ describe('ImmersiveExperience', () => {
     expect(factories.createMinimapEngine).toHaveBeenCalledTimes(1);
     expect(map3d.calls.at(-1)).toEqual({ type: 'destroy' });
     expect(screen.getByTestId('location')).toHaveTextContent(
-      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Đi tiếp' }));
@@ -143,7 +143,30 @@ describe('ImmersiveExperience', () => {
       expect(map3d.calls.some((call) => call.type === 'mount')).toBe(true);
     });
     expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
-    expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(2);
+    expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(1);
+  });
+
+  it('routes a Google 3D marker selection through the location selection state', async () => {
+    const { factories, map3d } = createFactories();
+    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories);
+
+    await waitFor(() => {
+      expect(map3d.calls.some((call) => call.type === 'setLocations')).toBe(true);
+    });
+
+    act(() => {
+      map3d.emitLocationSelected('destination-son-trang-co-dam');
+    });
+
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        mode: 'overview3d',
+        selectedLocationId: 'destination-son-trang-co-dam',
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam?mode=overview3d&location=destination-son-trang-co-dam',
+      );
+    });
   });
 
   it('restores the linked scene and camera after a refresh', async () => {
@@ -194,7 +217,7 @@ describe('ImmersiveExperience', () => {
     });
     await waitFor(() => {
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+        '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
       );
     });
   });
@@ -282,7 +305,7 @@ describe('ImmersiveExperience', () => {
         requestedSceneId: null,
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+        '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
       );
     });
   });
@@ -313,7 +336,7 @@ describe('ImmersiveExperience', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=panorama&scene=scene-02&h=31&p=-2&fov=88',
+        '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-02&h=31&p=-2&fov=88',
       );
     });
     expect(panorama.currentView).toEqual({ heading: 31, pitch: -2, fov: 88 });
@@ -352,7 +375,7 @@ describe('ImmersiveExperience', () => {
         requestedSceneId: null,
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=panorama&scene=scene-02&h=214&p=-6&fov=73',
+        '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-02&h=214&p=-6&fov=73',
       );
     });
     expect(panorama.currentView).toEqual(rendererView);

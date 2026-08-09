@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 
-import type { ImmersiveActions, ImmersiveViewVm } from '../../../shared/contracts';
+import type { ImmersiveActions, ImmersiveLocale, ImmersiveViewVm } from '../../../shared/contracts';
+import { Map3DChrome, type Map3DChromeLocation } from '../../map3d';
 import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
 
 import { AudioGuideControl, type AudioGuideStatus } from './AudioGuideControl';
@@ -11,8 +12,13 @@ export interface ExploreShellProps {
   actions: ImmersiveActions;
   canEnterPanorama?: boolean;
   isSceneTransitioning?: boolean;
+  locale?: ImmersiveLocale;
+  map3dLocations?: Map3DChromeLocation[];
   minimapEngine?: MinimapEnginePort | null;
+  onLanguageToggle?: () => void;
+  onLocationSelected?: (locationId: string) => void;
   rendererContent?: ReactNode;
+  selectedLocationId?: string | null;
 }
 
 function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; onToggle(): void }) {
@@ -47,19 +53,32 @@ export function ExploreShell({
   actions,
   canEnterPanorama = true,
   isSceneTransitioning = false,
+  locale = 'vi',
+  map3dLocations,
   minimapEngine = null,
   rendererContent,
+  onLanguageToggle,
+  onLocationSelected,
+  selectedLocationId = null,
 }: ExploreShellProps) {
-  const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d');
+  const isPanorama = view.mode === 'panorama';
+  const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
+  const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [audioStatus, setAudioStatus] = useState<AudioGuideStatus>('idle');
   const [audioTime, setAudioTime] = useState(0);
-  const isPanorama = view.mode === 'panorama';
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
 
   useEffect(() => {
-    setIsInfoOpen(view.mode === 'overview3d');
-  }, [view.mode]);
+    setIsInfoOpen(view.mode === 'overview3d' && !hasMap3DChrome);
+  }, [hasMap3DChrome, view.mode]);
+
+  useEffect(() => {
+    const syncFullscreenState = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener('fullscreenchange', syncFullscreenState);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
+  }, []);
 
   function openInfo() {
     setIsInfoOpen(true);
@@ -74,6 +93,38 @@ export function ExploreShell({
   function toggleMinimap() {
     setIsMinimapCollapsed((collapsed) => !collapsed);
     actions.onToggleMinimap();
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (!document.fullscreenElement) {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        } else {
+          setIsFullscreen(true);
+        }
+      } else if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      }
+    } catch {
+      setIsFullscreen(false);
+    }
+  }
+
+  async function shareLocation() {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: view.destination.name,
+          text: view.destination.summary,
+          url: window.location.href,
+        });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(window.location.href);
+      }
+    } catch {
+      // Sharing is optional; the immersive journey remains usable.
+    }
   }
 
   return (
@@ -100,7 +151,28 @@ export function ExploreShell({
           <div className="explore-shell__terrain" aria-hidden="true" />
         )}
         <div className="explore-shell__renderer-slot" data-testid="immersive-renderer-slot">
-          {rendererContent}
+          {hasMap3DChrome ? (
+            <Map3DChrome
+              isFullscreen={isFullscreen}
+              isInfoOpen={isInfoOpen}
+              language={locale}
+              locations={map3dLocations ?? []}
+              networkQuality={view.networkQuality}
+              selectedLocationId={selectedLocationId}
+              subtitle={view.destination.categoryLabel ?? 'Hà Tĩnh'}
+              title={view.destination.name}
+              onShare={() => void shareLocation()}
+              onShowInfo={openInfo}
+              onToggleFullscreen={() => void toggleFullscreen()}
+              {...(canEnterPanorama ? { onEnter360: actions.onEnterPanorama } : {})}
+              {...(onLanguageToggle ? { onLanguageToggle } : {})}
+              {...(onLocationSelected ? { onLocationSelected } : {})}
+            >
+              {rendererContent}
+            </Map3DChrome>
+          ) : (
+            rendererContent
+          )}
         </div>
         {isPanorama ? (
           <div className="hotspot-layer" aria-label="Điểm khám phá trong cảnh">
@@ -124,7 +196,7 @@ export function ExploreShell({
               </button>
             ))}
           </div>
-        ) : (
+        ) : hasMap3DChrome ? null : (
           <div className="overview-marker" aria-label={`Điểm đến ${view.destination.name}`}>
             <span className="overview-marker__pin" aria-hidden="true">
               ⌖
@@ -142,36 +214,40 @@ export function ExploreShell({
         />
       </section>
 
-      <header className="immersive-topbar">
-        <a className="immersive-topbar__brand" href="/" aria-label="Trang chủ Hà Tĩnh Immersive">
-          Hà Tĩnh <span>/</span> Immersive
-        </a>
-        <div className="immersive-topbar__actions">
-          <span className="mode-badge">{isPanorama ? '360° walk' : '3D overview'}</span>
-          {view.networkQuality !== 'good' ? (
-            <span className={`network-quality network-quality--${view.networkQuality}`}>
-              {view.networkQuality === 'offline' ? 'Ngoại tuyến' : 'Kết nối yếu'}
-            </span>
-          ) : null}
-          <button
-            className="immersive-button immersive-button--quiet"
-            type="button"
-            onClick={openInfo}
-            aria-controls="destination-info-panel"
-            aria-expanded={isInfoOpen}
-          >
-            Thông tin
-          </button>
-        </div>
-      </header>
+      {!hasMap3DChrome ? (
+        <header className="immersive-topbar">
+          <a className="immersive-topbar__brand" href="/" aria-label="Trang chủ Hà Tĩnh Immersive">
+            Hà Tĩnh <span>/</span> Immersive
+          </a>
+          <div className="immersive-topbar__actions">
+            <span className="mode-badge">{isPanorama ? '360° walk' : '3D overview'}</span>
+            {view.networkQuality !== 'good' ? (
+              <span className={`network-quality network-quality--${view.networkQuality}`}>
+                {view.networkQuality === 'offline' ? 'Ngoại tuyến' : 'Kết nối yếu'}
+              </span>
+            ) : null}
+            <button
+              className="immersive-button immersive-button--quiet"
+              type="button"
+              onClick={openInfo}
+              aria-controls="destination-info-panel"
+              aria-expanded={isInfoOpen}
+            >
+              Thông tin
+            </button>
+          </div>
+        </header>
+      ) : null}
 
-      <section className="scene-identity" aria-live="polite">
-        <p className="immersive-kicker">
-          {isPanorama ? 'Điểm đang khám phá' : view.destination.categoryLabel}
-        </p>
-        <h1>{isPanorama ? currentSceneName : view.destination.name}</h1>
-        {isPanorama ? <p>{view.destination.name}</p> : null}
-      </section>
+      {!hasMap3DChrome ? (
+        <section className="scene-identity" aria-live="polite">
+          <p className="immersive-kicker">
+            {isPanorama ? 'Điểm đang khám phá' : view.destination.categoryLabel}
+          </p>
+          <h1>{isPanorama ? currentSceneName : view.destination.name}</h1>
+          {isPanorama ? <p>{view.destination.name}</p> : null}
+        </section>
+      ) : null}
 
       {isPanorama ? (
         <div className="explore-shell__minimap">
@@ -214,7 +290,7 @@ export function ExploreShell({
             onSeek={setAudioTime}
           />
         </div>
-      ) : (
+      ) : hasMap3DChrome ? null : (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
           {canEnterPanorama ? (
             <button
@@ -252,7 +328,7 @@ export function ExploreShell({
         </div>
         <h2 id="destination-info-title">{view.destination.name}</h2>
         <p>{view.destination.summary}</p>
-        {!isPanorama && canEnterPanorama ? (
+        {!isPanorama && !hasMap3DChrome && canEnterPanorama ? (
           <button
             className="immersive-button immersive-button--primary"
             type="button"
@@ -261,7 +337,7 @@ export function ExploreShell({
             Khám phá 360°
           </button>
         ) : null}
-        {!isPanorama && !canEnterPanorama ? (
+        {!isPanorama && !hasMap3DChrome && !canEnterPanorama ? (
           <p className="immersive-readiness-note">360° đang được chuẩn bị</p>
         ) : null}
       </aside>

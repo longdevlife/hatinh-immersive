@@ -21,6 +21,8 @@ describe('renderer network failure boundaries', () => {
       mount: async () => {
         throw new Error('GOOGLE_MAPS_SCRIPT_LOAD_FAILED');
       },
+      setLocations: async () => undefined,
+      subscribeLocationSelected: () => () => undefined,
       flyTo: async () => undefined,
       addModel: async () => undefined,
       destroy: () => undefined,

@@ -7,6 +7,7 @@ export type {
   ImmersiveMode,
   ImmersiveViewVm,
   Map3DEnginePort,
+  Map3DLocation,
   MinimapProps,
   ModelPlacement,
   NetworkQuality,

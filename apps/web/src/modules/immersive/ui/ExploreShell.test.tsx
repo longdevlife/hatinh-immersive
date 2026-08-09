@@ -90,6 +90,36 @@ describe('ExploreShell', () => {
     expect(rendererSlot).toContainElement(screen.getByTestId('renderer-content'));
   });
 
+  it('renders the interactive 3D chrome and forwards location handoff intents', () => {
+    const actions = createActions();
+    const onLocationSelected = vi.fn();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+        map3dLocations={[
+          { id: 'destination-01', label: 'Sơn Trang Cổ Đạm' },
+          { id: 'destination-02', label: 'Đảo Sơn Dương' },
+        ]}
+        onLocationSelected={onLocationSelected}
+        selectedLocationId="destination-01"
+      />,
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: 'Sơn Trang Cổ Đạm' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Thông tin' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm kiếm địa điểm' }));
+    fireEvent.click(screen.getByRole('option', { name: 'Đảo Sơn Dương' }));
+    fireEvent.click(screen.getByRole('button', { name: /Khám phá 360°/ }));
+
+    expect(onLocationSelected).toHaveBeenCalledWith('destination-02');
+    expect(actions.onEnterPanorama).toHaveBeenCalledTimes(1);
+  });
+
   it('offers retry when the panorama renderer reports an error', () => {
     const actions = createActions();
 

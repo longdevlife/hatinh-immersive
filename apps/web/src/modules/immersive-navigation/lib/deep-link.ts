@@ -9,6 +9,7 @@ const DEFAULT_ORIGIN = 'https://immersive.hatinh.local';
 export interface ImmersiveDeepLinkState {
   destinationSlug: string;
   mode: ImmersiveMode;
+  locationId: string | null;
   sceneId: string | null;
   view: NavigationView;
 }
@@ -53,6 +54,10 @@ export function encodeImmersiveDeepLink(state: ImmersiveDeepLinkState): string {
   const params = new URLSearchParams();
   params.set('mode', state.mode);
 
+  if (state.locationId?.trim()) {
+    params.set('location', state.locationId);
+  }
+
   if (state.mode === 'panorama') {
     const view = normalizeView(state.view);
     if (state.sceneId?.trim()) {
@@ -86,10 +91,12 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
 
   const mode: ImmersiveMode =
     url.searchParams.get('mode') === 'panorama' ? 'panorama' : 'overview3d';
+  const locationId = url.searchParams.get('location')?.trim() || null;
   if (mode === 'overview3d') {
     return {
       destinationSlug,
       mode,
+      locationId,
       sceneId: null,
       view: { ...DEFAULT_NAVIGATION_VIEW },
     };
@@ -102,6 +109,7 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
   return {
     destinationSlug,
     mode,
+    locationId,
     sceneId: url.searchParams.get('scene')?.trim() || null,
     view: normalizeView({
       ...(heading === undefined ? {} : { heading }),

@@ -1733,6 +1733,26 @@
                         "nullable": true,
                         "type": "string"
                       },
+                      "defaultSceneId": {
+                        "format": "uuid",
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "geoPoint": {
+                        "nullable": true,
+                        "properties": {
+                          "latitude": {
+                            "example": 18.3421,
+                            "type": "number"
+                          },
+                          "longitude": {
+                            "example": 105.9032,
+                            "type": "number"
+                          }
+                        },
+                        "required": ["latitude", "longitude"],
+                        "type": "object"
+                      },
                       "id": {
                         "format": "uuid",
                         "type": "string"
@@ -1747,7 +1767,16 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "slug", "name", "summary", "coverImageUrl", "categoryLabel"],
+                    "required": [
+                      "id",
+                      "slug",
+                      "name",
+                      "summary",
+                      "coverImageUrl",
+                      "categoryLabel",
+                      "defaultSceneId",
+                      "geoPoint"
+                    ],
                     "type": "object"
                   },
                   "type": "array"

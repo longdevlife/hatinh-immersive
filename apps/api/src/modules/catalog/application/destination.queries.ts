@@ -10,6 +10,8 @@ export interface DestinationPreview {
   summary: string;
   coverImageUrl: string | null;
   categoryLabel: string | null;
+  defaultSceneId: string | null;
+  geoPoint: { latitude: number; longitude: number } | null;
 }
 
 export interface DestinationDetail extends DestinationPreview {
@@ -47,6 +49,8 @@ function toPreview(record: DestinationRecord, locale: string): DestinationPrevie
     summary: translation?.summary ?? '',
     coverImageUrl: null,
     categoryLabel: record.categoryLabel,
+    defaultSceneId: props.defaultSceneId,
+    geoPoint: props.geoPoint,
   };
 }
 

@@ -59,6 +59,8 @@ describe('Map3DViewport', () => {
       mount: async () => {
         throw new Error('WebGL unavailable');
       },
+      setLocations: async () => undefined,
+      subscribeLocationSelected: () => () => undefined,
       flyTo: async () => undefined,
       addModel: async () => undefined,
       destroy: () => undefined,
@@ -67,6 +69,45 @@ describe('Map3DViewport', () => {
     render(<Map3DViewport engine={engine} />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Không thể mở không gian 3D');
+  });
+
+  it('keeps one mounted map element while the selected location changes', async () => {
+    const engine = new FakeMap3DEngine();
+    const onLocationSelected = vi.fn();
+    const firstTarget = { ...target, lat: 18.3421, lng: 105.9032 };
+    const secondTarget = { ...target, lat: 18.401, lng: 105.91 };
+    const { rerender, unmount } = render(
+      <Map3DViewport
+        engine={engine}
+        onLocationSelected={onLocationSelected}
+        target={firstTarget}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+    });
+
+    rerender(
+      <Map3DViewport
+        engine={engine}
+        onLocationSelected={onLocationSelected}
+        target={secondTarget}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(engine.calls.filter((call) => call.type === 'flyTo')).toHaveLength(2);
+    });
+
+    expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+    expect(engine.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
+
+    engine.emitLocationSelected('destination-b');
+    expect(onLocationSelected).toHaveBeenCalledWith('destination-b');
+
+    unmount();
+    expect(engine.calls.filter((call) => call.type === 'destroy')).toHaveLength(1);
   });
 
   it('does not continue stale camera work after the viewport is replaced', async () => {
@@ -79,6 +120,8 @@ describe('Map3DViewport', () => {
       destroy: vi.fn(),
       flyTo: vi.fn(async () => flyTo),
       mount: vi.fn(async () => undefined),
+      setLocations: vi.fn(async () => undefined),
+      subscribeLocationSelected: vi.fn(() => () => undefined),
     } satisfies Map3DEnginePort;
     const newEngine = new FakeMap3DEngine();
     const { rerender } = render(<Map3DViewport engine={oldEngine} target={target} model={model} />);

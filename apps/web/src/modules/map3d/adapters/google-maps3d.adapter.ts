@@ -1,4 +1,9 @@
-import type { CameraTarget, Map3DEnginePort, ModelPlacement } from '../domain/map3d-engine.port';
+import type {
+  CameraTarget,
+  Map3DEnginePort,
+  Map3DLocation,
+  ModelPlacement,
+} from '../domain/map3d-engine.port';
 
 export interface GoogleLatLngAltitudeLiteral {
   lat: number;
@@ -33,6 +38,12 @@ export interface GoogleModel3DElementOptions {
   src: string;
 }
 
+export interface GoogleMarker3DInteractiveElementOptions {
+  altitudeMode?: 'ABSOLUTE' | 'CLAMP_TO_GROUND';
+  label?: string;
+  position: GoogleLatLngAltitudeLiteral;
+}
+
 export interface GoogleMap3DElement extends HTMLElement {
   flyCameraTo(options: { endCamera: GoogleCameraOptions }): void;
   stopCameraAnimation(): void;
@@ -40,8 +51,13 @@ export interface GoogleMap3DElement extends HTMLElement {
 
 export type GoogleModel3DElement = HTMLElement;
 
+export type GoogleMarker3DInteractiveElement = HTMLElement;
+
 export interface Maps3DLibrary {
   Map3DElement: new (options: GoogleMap3DElementOptions) => GoogleMap3DElement;
+  Marker3DInteractiveElement: new (
+    options: GoogleMarker3DInteractiveElementOptions,
+  ) => GoogleMarker3DInteractiveElement;
   Model3DElement: new (options: GoogleModel3DElementOptions) => GoogleModel3DElement;
 }
 
@@ -65,7 +81,7 @@ export interface GoogleMaps3DAdapterOptions {
   windowRef?: GoogleMaps3DWindow;
 }
 
-interface GoogleSteadyStateEvent extends Event {
+interface GoogleSteadyChangeEvent extends Event {
   isSteady?: boolean;
 }
 
@@ -73,7 +89,7 @@ function waitForMapReady(map: GoogleMap3DElement, signal: AbortSignal): Promise<
   return new Promise<void>((resolve, reject) => {
     const cleanup = () => {
       map.removeEventListener('gmp-error', onError);
-      map.removeEventListener('gmp-steadystate', onSteadyState);
+      map.removeEventListener('gmp-steadychange', onSteadyChange);
       signal.removeEventListener('abort', onAbort);
     };
     const resolveReady = () => {
@@ -85,15 +101,15 @@ function waitForMapReady(map: GoogleMap3DElement, signal: AbortSignal): Promise<
       reject(error);
     };
     const onError = () => rejectWith(new Error('GOOGLE_MAPS_3D_ERROR'));
-    const onSteadyState = (event: Event) => {
-      if ((event as GoogleSteadyStateEvent).isSteady === true) {
+    const onSteadyChange = (event: Event) => {
+      if ((event as GoogleSteadyChangeEvent).isSteady === true) {
         resolveReady();
       }
     };
     const onAbort = () => rejectWith(new Error('GOOGLE_MAPS_3D_MOUNT_CANCELLED'));
 
     map.addEventListener('gmp-error', onError);
-    map.addEventListener('gmp-steadystate', onSteadyState);
+    map.addEventListener('gmp-steadychange', onSteadyChange);
     signal.addEventListener('abort', onAbort, { once: true });
 
     if (signal.aborted) {
@@ -103,6 +119,7 @@ function waitForMapReady(map: GoogleMap3DElement, signal: AbortSignal): Promise<
 }
 
 const scriptLoads = new WeakMap<Document, Map<string, Promise<void>>>();
+let nextGoogleMapsCallbackId = 0;
 
 function resolveDocument(documentRef?: Document): Document {
   if (documentRef) {
@@ -145,12 +162,20 @@ function toCamera(target: CameraTarget): GoogleCameraOptions {
   };
 }
 
+function toMarkerOptions(location: Map3DLocation): GoogleMarker3DInteractiveElementOptions {
+  return {
+    position: location.position,
+    label: location.label,
+  };
+}
+
 function scriptLoadKey(apiKey: string, version: string): string {
   return `${apiKey}:${version}`;
 }
 
 function loadGoogleMapsScript(
   documentRef: Document,
+  windowRef: GoogleMaps3DWindow,
   apiKey: string,
   version: string,
 ): Promise<void> {
@@ -169,18 +194,25 @@ function loadGoogleMapsScript(
 
   const script = documentRef.createElement('script');
   const url = new URL('https://maps.googleapis.com/maps/api/js');
+  const callbackName = `__hatinhGoogleMapsReady${++nextGoogleMapsCallbackId}`;
+  const callbackWindow = windowRef as GoogleMaps3DWindow & Record<string, unknown>;
   url.searchParams.set('key', apiKey);
   url.searchParams.set('v', version);
   url.searchParams.set('loading', 'async');
+  url.searchParams.set('callback', callbackName);
   script.async = true;
   script.dataset.hatinhGoogleMaps = '3d';
   script.src = url.toString();
 
   const load = new Promise<void>((resolve, reject) => {
-    script.addEventListener('load', () => resolve(), { once: true });
+    callbackWindow[callbackName] = () => {
+      delete callbackWindow[callbackName];
+      resolve();
+    };
     script.addEventListener(
       'error',
       () => {
+        delete callbackWindow[callbackName];
         documentLoads?.delete(key);
         reject(new Error('GOOGLE_MAPS_SCRIPT_LOAD_FAILED'));
       },
@@ -209,6 +241,7 @@ async function loadGoogleMaps3DLibrary(
 
   await loadGoogleMapsScript(
     resolveDocument(options.documentRef),
+    browserWindow,
     options.apiKey,
     options.version ?? 'weekly',
   );
@@ -226,6 +259,11 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
   private library: Maps3DLibrary | null = null;
   private libraryPromise: Promise<Maps3DLibrary> | null = null;
   private map: GoogleMap3DElement | null = null;
+  private readonly locationListeners = new Set<(locationId: string) => void>();
+  private readonly markers = new Map<
+    string,
+    { element: GoogleMarker3DInteractiveElement; onClick: EventListener }
+  >();
   private mountGeneration = 0;
   private readinessController: AbortController | null = null;
   private readonly options: GoogleMaps3DAdapterOptions;
@@ -287,6 +325,35 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
     this.map.flyCameraTo({ endCamera: toCamera(target) });
   }
 
+  async setLocations(locations: Map3DLocation[]): Promise<void> {
+    if (!this.map || !this.library) {
+      throw new Error('GOOGLE_MAPS_3D_NOT_MOUNTED');
+    }
+
+    this.clearMarkers();
+
+    for (const location of locations) {
+      const marker = new this.library.Marker3DInteractiveElement(toMarkerOptions(location));
+      const onClick: EventListener = () => {
+        for (const listener of this.locationListeners) {
+          listener(location.id);
+        }
+      };
+
+      marker.dataset.locationId = location.id;
+      marker.addEventListener('gmp-click', onClick);
+      this.map.append(marker);
+      this.markers.set(location.id, { element: marker, onClick });
+    }
+  }
+
+  subscribeLocationSelected(listener: (locationId: string) => void): () => void {
+    this.locationListeners.add(listener);
+    return () => {
+      this.locationListeners.delete(listener);
+    };
+  }
+
   async addModel(model: ModelPlacement): Promise<void> {
     if (!this.map || !this.library) {
       throw new Error('GOOGLE_MAPS_3D_NOT_MOUNTED');
@@ -319,6 +386,8 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
   }
 
   private destroyMountedMap(): void {
+    this.clearMarkers();
+
     if (this.map) {
       this.map.stopCameraAnimation();
       this.map.remove();
@@ -328,6 +397,15 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
 
     this.map = null;
     this.container = null;
+  }
+
+  private clearMarkers(): void {
+    for (const { element, onClick } of this.markers.values()) {
+      element.removeEventListener('gmp-click', onClick);
+      element.remove();
+    }
+
+    this.markers.clear();
   }
 
   private async loadLibrary(): Promise<Maps3DLibrary> {
