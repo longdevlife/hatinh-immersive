@@ -100,7 +100,15 @@ test('keeps a fallback action when the 3D renderer fails', async ({ page }) => {
   await expect(page.locator('.immersive-renderer-state[role="alert"]')).toContainText(
     'Không thể mở không gian 3D',
   );
-  await expect(page.getByRole('button', { name: 'Thử lại' })).toBeVisible();
+  const retry = page.getByRole('button', { name: 'Thử lại' });
+  await expect(retry).toBeVisible();
+
+  await retry.click();
+
+  await expect(page.locator('.immersive-renderer-state[role="alert"]')).toContainText(
+    'Không thể mở không gian 3D',
+  );
+  await expect(retry).toBeVisible();
 });
 
 test('keeps the current panorama usable when its tile manifest fails', async ({ page }) => {

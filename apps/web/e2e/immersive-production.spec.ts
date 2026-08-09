@@ -66,6 +66,38 @@ const manifest = {
   hotspots: [],
 };
 
+const destinationB = {
+  categoryLabel: 'Thiên nhiên',
+  coverImageUrl: null,
+  defaultSceneId: 'scene-b',
+  geoPoint: { latitude: 18.268, longitude: 106.105 },
+  id: 'destination-b',
+  name: 'Biển Thiên Cầm',
+  slug: 'bien-thien-cam',
+  summary: 'Không gian biển phía đông Hà Tĩnh.',
+};
+
+const manifestB = {
+  ...manifest,
+  defaultSceneId: destinationB.defaultSceneId,
+  destination: {
+    ...manifest.destination,
+    ...destinationB,
+    description: destinationB.summary,
+  },
+  nodes: [
+    {
+      ...manifest.nodes[0],
+      destinationId: destinationB.id,
+      id: destinationB.defaultSceneId,
+      lat: destinationB.geoPoint.latitude,
+      lng: destinationB.geoPoint.longitude,
+      name: 'Toàn cảnh Thiên Cầm',
+    },
+  ],
+  links: [],
+};
+
 test('loads the public journey through the manifest REST path', async ({ page }) => {
   let manifestRequestUrl = '';
   await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
@@ -87,4 +119,69 @@ test('loads the public journey through the manifest REST path', async ({ page })
 
   await page.getByRole('button', { name: 'Đi tiếp' }).click();
   await expect(page.getByRole('heading', { name: 'Sân trung tâm' })).toBeVisible();
+});
+
+test('keeps one 3D world while selecting a destination and round-tripping through 360', async ({
+  page,
+}) => {
+  await page.route(/\/api\/v1\/destinations(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          categoryLabel: manifest.destination.categoryLabel,
+          coverImageUrl: manifest.destination.coverImageUrl,
+          defaultSceneId: manifest.destination.defaultSceneId,
+          geoPoint: manifest.destination.geoPoint,
+          id: manifest.destination.id,
+          name: manifest.destination.name,
+          slug: manifest.destination.slug,
+          summary: manifest.destination.summary,
+        },
+        destinationB,
+      ]),
+      status: 200,
+    });
+  });
+  await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify(manifest) });
+  });
+  await page.route('**/api/v1/destinations/bien-thien-cam/immersive-manifest*', async (route) => {
+    await route.fulfill({ contentType: 'application/json', body: JSON.stringify(manifestB) });
+  });
+
+  await page.goto('/explore/son-trang-co-dam?mode=overview3d');
+  const renderer = page.getByRole('application', { name: 'Không gian bản đồ 3D' });
+  await expect(renderer).toBeVisible();
+  await renderer.evaluate((element) => {
+    element.setAttribute('data-e2e-renderer-instance', 'initial');
+  });
+
+  await page.getByRole('button', { name: 'Tìm kiếm địa điểm' }).click();
+  await page.getByRole('searchbox', { name: 'Tìm kiếm địa điểm' }).fill('Thiên Cầm');
+  await page.getByRole('option', { name: destinationB.name }).click();
+
+  await expect(page.getByRole('heading', { name: destinationB.name })).toBeVisible();
+  await expect(renderer).toHaveAttribute('data-e2e-renderer-instance', 'initial');
+  await expect(page).toHaveURL(
+    /\/explore\/son-trang-co-dam\?mode=overview3d&location=destination-b$/,
+  );
+
+  await page.getByRole('button', { name: 'Khám phá 360°' }).click();
+  await expect(page).toHaveURL(
+    /\/explore\/bien-thien-cam\?mode=panorama&location=destination-b&scene=scene-b&h=0&p=0&fov=90$/,
+  );
+  await expect(page.getByRole('heading', { name: 'Toàn cảnh Thiên Cầm' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Quay lại không gian 3D' }).click();
+  await expect(page).toHaveURL(
+    /\/explore\/bien-thien-cam\?mode=overview3d&location=destination-b$/,
+  );
+  await expect(page.getByRole('heading', { name: destinationB.name })).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole('heading', { name: destinationB.name })).toBeVisible();
+  await expect(page).toHaveURL(
+    /\/explore\/bien-thien-cam\?mode=overview3d&location=destination-b$/,
+  );
 });
