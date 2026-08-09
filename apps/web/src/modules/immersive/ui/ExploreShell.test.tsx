@@ -70,6 +70,16 @@ describe('ExploreShell', () => {
     expect(actions.onNavigateScene).toHaveBeenCalledWith('scene-02');
   });
 
+  it('lets the visitor return from a ready panorama to the selected 3D location', () => {
+    const actions = createActions();
+
+    render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại không gian 3D' }));
+
+    expect(actions.onEnter3D).toHaveBeenCalledTimes(1);
+  });
+
   it('renders optional presentational renderer content inside the viewport slot', () => {
     const actions = createActions();
 

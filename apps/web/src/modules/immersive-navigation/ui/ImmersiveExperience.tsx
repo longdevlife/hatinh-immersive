@@ -602,6 +602,29 @@ export function ImmersiveExperience({
         state.selectLocation(routeLocation);
       }
 
+      const selectedDestination =
+        destinations.find(
+          (destination) => destination.id === useImmersiveNavigation.getState().selectedLocationId,
+        ) ?? manifest.destination;
+
+      if (selectedDestination.id !== manifest.destination.id) {
+        const destinationSceneId = sceneId ?? selectedDestination.defaultSceneId;
+        if (!destinationSceneId) {
+          return;
+        }
+
+        navigate(
+          encodeImmersiveDeepLink({
+            destinationSlug: selectedDestination.slug,
+            mode: 'panorama',
+            locationId: selectedDestination.id,
+            sceneId: destinationSceneId,
+            view: useImmersiveNavigation.getState().committedView,
+          }),
+        );
+        return;
+      }
+
       const resolvedSceneId = resolveSceneId(
         manifest,
         sceneId ?? useImmersiveNavigation.getState().committedSceneId,
@@ -613,7 +636,7 @@ export function ImmersiveExperience({
       useImmersiveNavigation.getState().enterPanorama(resolvedSceneId);
       writeDeepLink(navigate, destinationSlug, false);
     },
-    [destinationSlug, manifest, navigate, routeLocation],
+    [destinationSlug, destinations, manifest, navigate, routeLocation],
   );
 
   const onNavigateScene = useCallback(
