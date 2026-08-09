@@ -81,6 +81,7 @@ export function Map3DChrome({
           searchPlaceholder: 'Nhập tên địa điểm...',
           share: 'Chia sẻ địa điểm',
           constrained: 'Kết nối yếu',
+          preparing360: '360° đang được chuẩn bị',
         }
       : {
           emptyLocations: 'No locations found.',
@@ -93,6 +94,7 @@ export function Map3DChrome({
           searchPlaceholder: 'Type a location...',
           share: 'Share location',
           constrained: 'Weak connection',
+          preparing360: '360° is being prepared',
         };
 
   // Close dropdown on outside click
@@ -298,27 +300,38 @@ export function Map3DChrome({
       </aside>
 
       {/* Bottom Area: Handoff CTA */}
-      {selectedLocationId && onEnter360 && (
+      {selectedLocationId && (
         <div className="map3d-chrome__handoff">
-          <button type="button" className="map3d-chrome__enter-360-btn" onClick={onEnter360}>
-            <span className="map3d-chrome__handoff-label">
-              {selectedLocation?.label || subtitle}
-            </span>
-            <span className="map3d-chrome__handoff-action">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
-              {labels.enter360}
-            </span>
-          </button>
+          {onEnter360 ? (
+            <button
+              type="button"
+              className="map3d-chrome__enter-360-btn"
+              onClick={onEnter360}
+              aria-label={labels.enter360}
+            >
+              <span className="map3d-chrome__handoff-label" aria-hidden="true">
+                {selectedLocation?.label || subtitle}
+              </span>
+              <span className="map3d-chrome__handoff-action" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                </svg>
+                {labels.enter360}
+              </span>
+            </button>
+          ) : (
+            <div className="map3d-chrome__handoff-status" role="status">
+              {labels.preparing360}
+            </div>
+          )}
         </div>
       )}
     </div>

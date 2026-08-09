@@ -83,9 +83,19 @@ describe('Map3DChrome', () => {
     expect(onLocationSelected).toHaveBeenCalledWith('1');
   });
 
-  it('hides 360 handoff button if no location is selected', () => {
+  it('shows preparing 360 status if location selected but onEnter360 is missing', () => {
+    const locations = [{ id: '1', label: 'Tượng đài' }];
+    render(<Map3DChrome selectedLocationId="1" locations={locations} />);
+
+    expect(screen.queryByRole('button', { name: /Khám phá 360°/i })).not.toBeInTheDocument();
+    expect(screen.getByText('360° đang được chuẩn bị')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: '' })).toHaveTextContent('360° đang được chuẩn bị');
+  });
+
+  it('hides 360 handoff entirely if no location is selected', () => {
     render(<Map3DChrome selectedLocationId={null} onEnter360={vi.fn()} />);
 
     expect(screen.queryByRole('button', { name: /Khám phá 360°/i })).not.toBeInTheDocument();
+    expect(screen.queryByText('360° đang được chuẩn bị')).not.toBeInTheDocument();
   });
 });
