@@ -8,12 +8,14 @@ import { sql } from 'drizzle-orm';
 import { configureHttpApplication } from '../src/app/app.bootstrap';
 import { AppModule } from '../src/app/app.module';
 import { createDatabase, migrateDatabase } from '../src/core/database/db';
+import { mediaAssets } from '../src/core/database/schema/media';
 import { adminInject, configureTestBootstrap, loginAsAdmin } from './auth-test.utils';
 
 const databaseUrl =
   process.env.DATABASE_URL ?? 'postgresql://hatinh:hatinh@127.0.0.1:55432/hatinh_immersive';
 
 configureTestBootstrap();
+process.env.S3_PUBLIC_ORIGIN = 'https://media.example.vn/hatinh';
 
 describe('Virtual tour HTTP API', () => {
   let app: NestFastifyApplication;
@@ -72,6 +74,20 @@ describe('Virtual tour HTTP API', () => {
     expect(destinationResponse.statusCode).toBe(201);
     const createdDestination = destinationResponse.json();
     const destinationId = createdDestination.id;
+    const firstPanoramaAssetId = randomUUID();
+    const uploadedAt = new Date();
+    await db.insert(mediaAssets).values({
+      id: firstPanoramaAssetId,
+      mediaKind: 'panorama',
+      originalFilename: 'manifest.json',
+      contentType: 'application/json',
+      sizeBytes: 1,
+      storageKey: `processed/immersive-demo/${firstSceneId}/manifest.json`,
+      status: 'ready',
+      etag: 'demo-etag',
+      uploadedAt,
+      readyAt: uploadedAt,
+    });
 
     const publishDestinationResponse = await adminInject(app, adminCookie, {
       method: 'POST',
@@ -91,7 +107,7 @@ describe('Virtual tour HTTP API', () => {
           destinationId,
           name,
           geoPoint: { latitude: 18.3421 + sortOrder / 1000, longitude: 105.9032 },
-          panoramaAssetId: randomUUID(),
+          panoramaAssetId: sortOrder === 0 ? firstPanoramaAssetId : randomUUID(),
           panoramaAssetStatus: 'ready',
           initialHeading: -15,
           initialPitch: 8,
@@ -167,7 +183,12 @@ describe('Virtual tour HTTP API', () => {
       expect.objectContaining({
         defaultSceneId: firstSceneId,
         nodes: expect.arrayContaining([
-          expect.objectContaining({ id: firstSceneId, status: 'published' }),
+          expect.objectContaining({
+            id: firstSceneId,
+            status: 'published',
+            panoramaManifestUrl: `https://media.example.vn/hatinh/processed/immersive-demo/${firstSceneId}/manifest.json`,
+            panoramaPreviewUrl: `https://media.example.vn/hatinh/processed/immersive-demo/${firstSceneId}/preview.webp`,
+          }),
           expect.objectContaining({ id: secondSceneId, status: 'published' }),
         ]),
         links: [expect.objectContaining({ fromSceneId: firstSceneId, toSceneId: secondSceneId })],

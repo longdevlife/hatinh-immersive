@@ -23,6 +23,10 @@ export type GetSceneNeighbors200ItemScene = {
   panoramaAssetId: string | null;
   /** @nullable */
   panoramaAssetStatus: GetSceneNeighbors200ItemScenePanoramaAssetStatus;
+  /** @nullable */
+  panoramaManifestUrl: string | null;
+  /** @nullable */
+  panoramaPreviewUrl: string | null;
   sortOrder: number;
   status: GetSceneNeighbors200ItemSceneStatus;
 };

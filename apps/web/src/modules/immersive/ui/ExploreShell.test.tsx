@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 
 import {
@@ -9,6 +9,7 @@ import {
   threeDUnavailableFixture,
 } from '../../../shared/fixtures';
 import type { ImmersiveActions } from '../../../shared/contracts';
+import { FakeMinimapEngine } from '../../minimap';
 
 import { ExploreShell } from './ExploreShell';
 
@@ -27,6 +28,35 @@ function createActions(): ImmersiveActions {
 }
 
 describe('ExploreShell', () => {
+  it('mounts the production minimap viewport and forwards map node selection', async () => {
+    const actions = createActions();
+    const minimapEngine = new FakeMinimapEngine();
+
+    render(
+      <ExploreShell
+        view={readyImmersiveViewFixture}
+        actions={actions}
+        minimapEngine={minimapEngine}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(true),
+    );
+    expect(minimapEngine.calls).toContainEqual(
+      expect.objectContaining({
+        type: 'setState',
+        state: expect.objectContaining({
+          currentSceneId: 'scene-01',
+          heading: 42,
+        }),
+      }),
+    );
+
+    minimapEngine.emitNodeSelected('scene-02');
+    expect(actions.onNavigateScene).toHaveBeenCalledWith('scene-02');
+  });
+
   it('exposes panorama navigation and hotspot selection through the immersive callbacks', () => {
     const actions = createActions();
 
@@ -78,6 +108,21 @@ describe('ExploreShell', () => {
     expect(actions.onEnterPanorama).toHaveBeenCalledWith();
   });
 
+  it('does not advertise a 360 entry while panorama media is unavailable', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+        canEnterPanorama={false}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(2);
+  });
+
   it('keeps panorama controls available while loading on a constrained network', () => {
     const actions = createActions();
 
@@ -96,6 +141,17 @@ describe('ExploreShell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
 
     expect(actions.onToggleMinimap).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the committed panorama visible during a requested scene transition', () => {
+    const actions = createActions();
+
+    render(<ExploreShell view={panoramaLoadingFixture} actions={actions} isSceneTransitioning />);
+
+    const transitionState = screen.getByRole('status');
+    expect(transitionState).toHaveAttribute('data-renderer-transition', 'scene');
+    expect(transitionState).toHaveClass('immersive-renderer-state--transitioning');
+    expect(transitionState).toHaveTextContent('Đang chuyển cảnh');
   });
   it('exposes aria-haspopup="dialog" on panorama hotspot buttons', () => {
     const actions = createActions();

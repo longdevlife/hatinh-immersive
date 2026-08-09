@@ -1,5 +1,7 @@
 export type ImmersiveMode = 'overview3d' | 'panorama';
 
+export type ImmersiveLocale = 'vi' | 'en';
+
 export type RendererStatus = 'idle' | 'loading' | 'ready' | 'error' | 'unavailable';
 
 export type NetworkQuality = 'good' | 'constrained' | 'offline';
@@ -25,6 +27,7 @@ export interface SceneNodeVm {
 
 export interface SceneLinkVm {
   id: string;
+  sourceSceneId?: string;
   targetSceneId: string;
   label: string | null;
   yaw: number;
@@ -33,10 +36,13 @@ export interface SceneLinkVm {
 
 export interface HotspotVm {
   id: string;
+  sceneId?: string;
   type: 'information' | 'media' | 'audio' | 'external';
   yaw: number;
   pitch: number;
   label: string | null;
+  content?: string | null;
+  mediaUrl?: string | null;
 }
 
 export interface ImmersiveViewVm {
@@ -97,20 +103,30 @@ export interface PanoramaView {
   fov: number;
 }
 
+export interface PanoramaLink {
+  targetNodeId: string;
+  yaw: number;
+  pitch: number;
+}
+
 export interface PanoramaNode {
   id: string;
+  name?: string;
   panoramaUrl: string;
   previewUrl: string | null;
   lat: number;
   lng: number;
   initialView: PanoramaView;
+  links?: PanoramaLink[];
 }
 
 export interface PanoramaEnginePort {
   mount(container: HTMLElement): Promise<void>;
+  setTour?(nodes: PanoramaNode[]): void;
   loadNode(node: PanoramaNode): Promise<void>;
   setView(view: PanoramaView): void;
   subscribeViewChanged(listener: (view: PanoramaView) => void): () => void;
+  subscribeNodeChanged?(listener: (nodeId: string, view?: PanoramaView) => void): () => void;
   destroy(): void;
 }
 

@@ -11,7 +11,7 @@ export interface PanoramaSelection {
   sceneId: string | null;
   status: ImmersiveNavigationStore['panoramaStatus'];
   transition: ImmersiveNavigationStore['transition'];
-  view: ImmersiveNavigationStore['view'];
+  view: ImmersiveNavigationStore['committedView'];
 }
 
 export interface MinimapSelection {
@@ -29,15 +29,15 @@ export const selectMap3d = (state: ImmersiveNavigationStore): Map3dSelection => 
 
 export const selectPanorama = (state: ImmersiveNavigationStore): PanoramaSelection => ({
   active: state.activeRenderer === 'panorama',
-  sceneId: state.sceneId,
+  sceneId: state.committedSceneId,
   status: state.panoramaStatus,
   transition: state.transition,
-  view: state.view,
+  view: state.committedView,
 });
 
 export const selectMinimap = (state: ImmersiveNavigationStore): MinimapSelection => ({
   open: state.minimapOpen,
-  currentSceneId: state.sceneId,
-  heading: state.view.heading,
+  currentSceneId: state.committedSceneId,
+  heading: state.committedView.heading,
   visitedSceneIds: state.visitedSceneIds,
 });

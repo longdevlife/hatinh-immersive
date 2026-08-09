@@ -1,5 +1,6 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
+import { requireMinimapStyle, type MinimapStyle } from '../config/minimap-style';
 import type { MinimapEnginePort, MinimapState } from '../domain/minimap-engine.port';
 import {
   buildMinimapGeoJson,
@@ -11,15 +12,17 @@ import {
 const NODES_SOURCE_ID = 'minimap-nodes';
 const ROUTE_SOURCE_ID = 'minimap-route';
 const NODES_LAYER_ID = 'minimap-nodes';
+const ROUTE_LAYER_ID = 'minimap-route-line';
 const DEFAULT_ZOOM = 16;
 const DEFAULT_TRANSITION_DURATION = 240;
+const HA_TINH_CENTER: MapLibreCoordinate = [105.9, 18.342];
 
 export interface MapLibreMapOptions {
   attributionControl: boolean;
   center: MapLibreCoordinate;
   container: HTMLElement;
   interactive: boolean;
-  style: unknown;
+  style: MinimapStyle;
   zoom: number;
 }
 
@@ -28,6 +31,15 @@ export interface MapLibreGeoJsonSource {
 }
 
 export type MapLibreMapEventListener = (event?: unknown) => void;
+
+export interface MapLibrePoint {
+  x: number;
+  y: number;
+}
+
+export interface MapLibreRenderedFeature {
+  properties?: Record<string, unknown> | null;
+}
 
 export interface MapLibreMapInstance {
   addLayer(layer: unknown): void;
@@ -44,6 +56,11 @@ export interface MapLibreMapInstance {
     layerOrListener: string | MapLibreMapEventListener,
     listener?: MapLibreMapEventListener,
   ): this;
+  project(coordinates: MapLibreCoordinate): MapLibrePoint;
+  queryRenderedFeatures(
+    geometry?: unknown,
+    options?: { layers?: string[] },
+  ): MapLibreRenderedFeature[];
   remove(): void;
 }
 
@@ -61,22 +78,10 @@ export interface MapLibreRuntime {
 
 export interface MapLibreMinimapEngineOptions {
   loadRuntime?: () => Promise<MapLibreRuntime>;
-  style?: unknown;
+  style: MinimapStyle;
   transitionDurationMs?: number;
   zoom?: number;
 }
-
-export const DEFAULT_MINIMAP_STYLE = {
-  layers: [
-    {
-      id: 'minimap-background',
-      paint: { 'background-color': '#173c31' },
-      type: 'background',
-    },
-  ],
-  sources: {},
-  version: 8,
-} as const;
 
 async function loadMapLibreRuntime(): Promise<MapLibreRuntime> {
   const maplibre = await import('maplibre-gl');
@@ -142,8 +147,12 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
   };
   private lastPositionedSceneId: string | null = null;
   private mountGeneration = 0;
+  private projectionGeneration = 0;
+  private renderedRouteIdleListener: MapLibreMapEventListener | null = null;
+  private renderedRouteIdleMap: MapLibreMapInstance | null = null;
 
-  constructor(options: MapLibreMinimapEngineOptions = {}) {
+  constructor(options: MapLibreMinimapEngineOptions) {
+    requireMinimapStyle(options?.style);
     this.options = options;
   }
 
@@ -157,13 +166,12 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
       return;
     }
 
-    const currentNode = this.getCurrentNode();
     const map = new runtime.Map({
-      attributionControl: false,
-      center: currentNode ? [currentNode.lng, currentNode.lat] : [0, 0],
+      attributionControl: true,
+      center: HA_TINH_CENTER,
       container,
-      interactive: false,
-      style: this.options.style ?? DEFAULT_MINIMAP_STYLE,
+      interactive: true,
+      style: this.options.style,
       zoom: this.options.zoom ?? DEFAULT_ZOOM,
     });
     this.map = map;
@@ -184,7 +192,7 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
     map.addSource(NODES_SOURCE_ID, { data: emptyGeoJson().nodes, type: 'geojson' });
     map.addSource(ROUTE_SOURCE_ID, { data: emptyGeoJson().route, type: 'geojson' });
     map.addLayer({
-      id: 'minimap-route-line',
+      id: ROUTE_LAYER_ID,
       layout: {},
       paint: {
         'line-color': '#f5b866',
@@ -221,7 +229,7 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
     element.style.height = '2rem';
     element.style.transformOrigin = '50% 50%';
     element.style.width = '2rem';
-    this.marker = new runtime.Marker({ element }).addTo(map);
+    this.marker = new runtime.Marker({ element }).setLngLat(HA_TINH_CENTER).addTo(map);
     this.lastPositionedSceneId = null;
     this.applyState();
   }
@@ -259,6 +267,7 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
     );
     this.map.getSource(NODES_SOURCE_ID)?.setData(geoJson.nodes);
     this.map.getSource(ROUTE_SOURCE_ID)?.setData(geoJson.route);
+    this.syncMapTestHooks(geoJson);
 
     const currentNode = this.getCurrentNode();
     if (!currentNode) {
@@ -281,7 +290,63 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
     return this.state.nodes.find((node) => node.id === this.state.currentSceneId) ?? null;
   }
 
+  private syncMapTestHooks(geoJson: MinimapGeoJson): void {
+    const container = this.container;
+    const map = this.map;
+    if (!container || !map) {
+      return;
+    }
+
+    this.clearRenderedRouteIdleListener();
+    container.removeAttribute('data-minimap-route-branches');
+    container.removeAttribute('data-minimap-interaction-ready');
+
+    const projectionGeneration = ++this.projectionGeneration;
+    const onIdle = () => {
+      if (
+        projectionGeneration !== this.projectionGeneration ||
+        this.map !== map ||
+        this.container !== container
+      ) {
+        return;
+      }
+
+      container.dataset.minimapRouteBranches = map
+        .queryRenderedFeatures(undefined, { layers: [ROUTE_LAYER_ID] })
+        .flatMap((feature) => {
+          const sourceSceneId = feature.properties?.sourceSceneId;
+          const targetSceneId = feature.properties?.targetSceneId;
+          return typeof sourceSceneId === 'string' && typeof targetSceneId === 'string'
+            ? [`${sourceSceneId}->${targetSceneId}`]
+            : [];
+        })
+        .join(',');
+      container.dataset.minimapNodePoints = JSON.stringify(
+        Object.fromEntries(
+          geoJson.nodes.features.map((feature) => [
+            feature.properties.id,
+            map.project(feature.geometry.coordinates),
+          ]),
+        ),
+      );
+      container.dataset.minimapInteractionReady = 'true';
+      this.clearRenderedRouteIdleListener();
+    };
+    this.renderedRouteIdleMap = map;
+    this.renderedRouteIdleListener = onIdle;
+    map.on('idle', onIdle);
+  }
+
+  private clearRenderedRouteIdleListener(): void {
+    if (this.renderedRouteIdleMap && this.renderedRouteIdleListener) {
+      this.renderedRouteIdleMap.off('idle', this.renderedRouteIdleListener);
+    }
+    this.renderedRouteIdleMap = null;
+    this.renderedRouteIdleListener = null;
+  }
+
   private destroyMountedMap(): void {
+    this.clearRenderedRouteIdleListener();
     if (this.map) {
       this.map.off('click', NODES_LAYER_ID, this.handleNodeClick);
       this.marker?.remove();
@@ -294,6 +359,7 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
     this.marker = null;
     this.container = null;
     this.lastPositionedSceneId = null;
+    ++this.projectionGeneration;
   }
 
   private async getRuntime(): Promise<MapLibreRuntime> {

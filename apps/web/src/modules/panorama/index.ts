@@ -6,9 +6,17 @@ export type {
   PhotoSphereViewerInstance,
   PhotoSphereViewerOptions,
   PhotoSphereViewerRuntime,
+  PhotoSphereVirtualTourLink,
   PhotoSphereVirtualTourNode,
   PhotoSphereVirtualTourPlugin,
 } from './adapters/photo-sphere-viewer.adapter';
-export type { PanoramaEnginePort, PanoramaNode, PanoramaView } from './domain/panorama-engine.port';
+export type {
+  PanoramaEnginePort,
+  PanoramaLink,
+  PanoramaNode,
+  PanoramaView,
+} from './domain/panorama-engine.port';
 export { LazyPanoramaViewport } from './ui/lazy-panorama-viewport';
+export { HotspotPanel } from './ui/HotspotPanels';
+export type { HotspotPanelProps } from './ui/HotspotPanels';
 export type { PanoramaViewportProps } from './ui/PanoramaViewport';

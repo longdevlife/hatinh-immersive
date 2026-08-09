@@ -15,6 +15,15 @@ class InMemoryMediaRepository implements MediaAssetRepository {
   async findById(id: string) {
     return this.assets.get(id) ?? null;
   }
+
+  async findByIds(ids: string[]) {
+    return new Map(
+      ids.flatMap((id) => {
+        const asset = this.assets.get(id);
+        return asset ? [[id, asset] as const] : [];
+      }),
+    );
+  }
 }
 
 class FakeObjectStorage implements ObjectStoragePort {

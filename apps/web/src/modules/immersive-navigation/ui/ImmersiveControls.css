@@ -1,0 +1,141 @@
+.immersive-controls-group {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.immersive-controls-top-right {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.immersive-controls-bottom {
+  position: absolute;
+  bottom: 5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 600px;
+  pointer-events: auto;
+}
+
+.immersive-control-search {
+  position: relative;
+  display: flex;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 4px;
+}
+
+.immersive-control-search input {
+  background: transparent;
+  border: none;
+  color: white;
+  padding: 0.5rem 1rem;
+  outline: none;
+}
+
+.immersive-control-search button {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+.immersive-control-search__results {
+  position: absolute;
+  top: calc(100% + 0.35rem);
+  right: 0;
+  z-index: 2;
+  width: min(20rem, 80vw);
+  padding: 0.5rem;
+  color: #fff;
+  background: rgba(12, 31, 25, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 0.5rem;
+  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.25);
+}
+
+.immersive-control-search__results p {
+  margin: 0;
+  padding: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.immersive-control-search__results ul {
+  display: grid;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.immersive-control-search__results li button {
+  display: grid;
+  width: 100%;
+  gap: 0.15rem;
+  padding: 0.55rem;
+  text-align: left;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 0.35rem;
+}
+
+.immersive-control-search__results li button:hover,
+.immersive-control-search__results li button:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.immersive-control-search__results span {
+  font-size: 0.65rem;
+  opacity: 0.72;
+}
+
+.immersive-control-btn {
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.immersive-control-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.immersive-control-browser ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.5rem;
+  border-radius: 8px;
+}
+
+.immersive-control-browser button {
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.immersive-control-browser button.active {
+  background: #3b82f6;
+  color: white;
+}

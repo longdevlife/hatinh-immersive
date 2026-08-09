@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - feat/**
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -113,6 +112,12 @@ jobs:
       - name: Critical-path end-to-end tests
         run: pnpm test:e2e
 
+      - name: Deterministic MapLibre minimap end-to-end test
+        run: pnpm --filter @hatinh/web test:e2e:minimap
+
+      - name: Production manifest end-to-end smoke tests
+        run: pnpm --filter @hatinh/web exec playwright test --config=playwright.production.config.ts
+
       - name: Upload Playwright reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -142,7 +147,11 @@ jobs:
         run: docker build --file infra/docker/api.Dockerfile --tag hatinh-immersive-api:${{ github.sha }} .
 
       - name: Run API image
-        run: docker run --detach --name hatinh-immersive-api --publish 3000:3000 hatinh-immersive-api:${{ github.sha }}
+        run: >-
+          docker run --detach --name hatinh-immersive-api --publish 3000:3000
+          --env DATABASE_SSL=true
+          --env DATABASE_URL=postgresql://healthcheck:healthcheck@127.0.0.1:5432/health?sslmode=require
+          hatinh-immersive-api:${{ github.sha }}
 
       - name: Wait for API health
         run: |

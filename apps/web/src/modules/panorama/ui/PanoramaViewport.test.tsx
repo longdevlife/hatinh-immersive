@@ -1,8 +1,8 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { FakePanoramaEngine } from '../adapters/fake-panorama.adapter';
-import type { PanoramaEnginePort } from '../domain/panorama-engine.port';
+import type { PanoramaEnginePort, PanoramaView } from '../domain/panorama-engine.port';
 import { PanoramaViewport } from './PanoramaViewport';
 
 const node = {
@@ -13,6 +13,44 @@ const node = {
   lng: 105.9,
   initialView: { heading: 10, pitch: -2, fov: 88 },
 };
+
+const nextNode = {
+  ...node,
+  id: 'scene-02',
+  panoramaUrl: '/panorama/scene-02/manifest.json',
+};
+
+class NativeNavigatingPanoramaEngine implements PanoramaEnginePort {
+  readonly loadedNodeIds: string[] = [];
+  private readonly nodeListeners = new Set<(nodeId: string, view?: PanoramaView) => void>();
+
+  async mount() {}
+
+  async loadNode(nextNode: typeof node) {
+    this.loadedNodeIds.push(nextNode.id);
+  }
+
+  setView() {}
+
+  subscribeViewChanged() {
+    return () => undefined;
+  }
+
+  subscribeNodeChanged(listener: (nodeId: string, view?: PanoramaView) => void) {
+    this.nodeListeners.add(listener);
+    return () => {
+      this.nodeListeners.delete(listener);
+    };
+  }
+
+  destroy() {}
+
+  emitNativeNodeChange(nodeId: string, view: PanoramaView) {
+    for (const listener of this.nodeListeners) {
+      listener(nodeId, view);
+    }
+  }
+}
 
 describe('PanoramaViewport', () => {
   it('mounts, loads a node, and destroys the panorama engine', async () => {
@@ -62,6 +100,30 @@ describe('PanoramaViewport', () => {
     );
   });
 
+  it('keeps one mounted viewer while loading another scene', async () => {
+    const engine = new FakePanoramaEngine();
+    const { rerender, unmount } = render(<PanoramaViewport engine={engine} node={node} />);
+
+    await waitFor(() => {
+      expect(engine.calls).toHaveLength(2);
+    });
+
+    rerender(<PanoramaViewport engine={engine} node={nextNode} />);
+
+    await waitFor(() => {
+      expect(engine.calls).toHaveLength(3);
+    });
+
+    expect(engine.calls[0]?.type).toBe('mount');
+    expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+    expect(engine.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
+    expect(engine.calls.at(-1)).toEqual({ type: 'loadNode', node: nextNode });
+
+    unmount();
+
+    expect(engine.calls.filter((call) => call.type === 'destroy')).toHaveLength(1);
+  });
+
   it('forwards camera changes from the engine to the composition layer', async () => {
     const engine = new FakePanoramaEngine();
     const onViewChange = vi.fn();
@@ -89,5 +151,41 @@ describe('PanoramaViewport', () => {
     });
 
     expect(engine.calls.at(-1)).toEqual({ type: 'setView', view: initialView });
+  });
+
+  it('does not load a node again after native tour navigation already changed it', async () => {
+    const engine = new NativeNavigatingPanoramaEngine();
+    const onNodeChange = vi.fn();
+    const rendererView = { heading: 210, pitch: -6, fov: 74 };
+    const { rerender } = render(
+      <PanoramaViewport
+        engine={engine}
+        node={node}
+        onNodeChange={onNodeChange}
+        tourNodes={[node, nextNode]}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(engine.loadedNodeIds).toEqual(['scene-01']);
+    });
+
+    engine.emitNativeNodeChange('scene-02', rendererView);
+    expect(onNodeChange).toHaveBeenCalledWith('scene-02', rendererView);
+
+    rerender(
+      <PanoramaViewport
+        engine={engine}
+        node={nextNode}
+        onNodeChange={onNodeChange}
+        tourNodes={[node, nextNode]}
+      />,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(engine.loadedNodeIds).toEqual(['scene-01']);
   });
 });

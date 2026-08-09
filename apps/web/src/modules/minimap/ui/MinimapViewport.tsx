@@ -8,6 +8,8 @@ export interface MinimapViewportProps extends MinimapProps {
   engine: MinimapEnginePort;
   fallback?: ReactNode;
   onStatusChange?: (status: RendererStatus) => void;
+  showToggle?: boolean;
+  variant?: 'minimap' | 'overview';
 }
 
 export function MinimapViewport({
@@ -21,6 +23,8 @@ export function MinimapViewport({
   onNodeSelect,
   onStatusChange,
   onToggle,
+  showToggle = true,
+  variant = 'minimap',
 }: MinimapViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onNodeSelectRef = useRef(onNodeSelect);
@@ -71,19 +75,40 @@ export function MinimapViewport({
   }, [engine]);
 
   return (
-    <section aria-label="Bản đồ tuyến tham quan" data-renderer-status={status} role="application">
-      <button
-        aria-expanded={!collapsed}
-        aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
-        type="button"
-        onClick={onToggle}
-      >
-        {collapsed ? '+' : '−'}
-      </button>
+    <section
+      aria-label={variant === 'overview' ? 'Bản đồ Hà Tĩnh' : 'Bản đồ tuyến tham quan'}
+      className={`minimap-viewport minimap-viewport--${variant} ${collapsed ? 'minimap-viewport--collapsed' : ''}`}
+      data-minimap-status={status}
+      role="application"
+    >
+      <header className="minimap-viewport__header">
+        <div>
+          <p className="immersive-kicker">Bản đồ hành trình</p>
+          {!collapsed ? (
+            <strong>
+              {nodes.filter((node) => node.isVisited).length}/{nodes.length} điểm đã đi
+            </strong>
+          ) : null}
+        </div>
+        {showToggle ? (
+          <button
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
+            className="immersive-icon-button"
+            type="button"
+            onClick={onToggle}
+          >
+            {collapsed ? '+' : '−'}
+          </button>
+        ) : null}
+      </header>
       <div
         ref={containerRef}
         aria-hidden={collapsed}
-        style={{ display: collapsed ? 'none' : 'block', height: '100%', width: '100%' }}
+        className="minimap-viewport__map"
+        role="group"
+        aria-label="Các điểm của tuyến tham quan"
+        style={{ display: collapsed ? 'none' : 'block' }}
       />
       {status === 'error' ? fallback : null}
     </section>

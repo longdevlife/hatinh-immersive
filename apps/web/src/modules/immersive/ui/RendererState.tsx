@@ -5,16 +5,44 @@ interface RendererStateProps {
   status: RendererStatus;
   onRetry(): void;
   onFallback(): void;
+  isTransitioning?: boolean;
+  showFallback?: boolean;
 }
 
-export function RendererState({ mode, status, onRetry, onFallback }: RendererStateProps) {
+export function RendererState({
+  mode,
+  status,
+  onRetry,
+  onFallback,
+  isTransitioning = false,
+  showFallback = true,
+}: RendererStateProps) {
   if (status === 'ready' || status === 'idle') {
     return null;
   }
 
   if (status === 'loading') {
+    if (isTransitioning) {
+      return (
+        <div
+          aria-live="polite"
+          className="immersive-renderer-state immersive-renderer-state--transitioning"
+          data-renderer-transition="scene"
+          role="status"
+        >
+          <span className="immersive-renderer-state__spinner" aria-hidden="true" />
+          <strong>Đang chuyển cảnh</strong>
+        </div>
+      );
+    }
+
     return (
-      <div className="immersive-renderer-state" aria-live="polite" role="status">
+      <div
+        aria-live="polite"
+        className="immersive-renderer-state"
+        data-renderer-transition="initial"
+        role="status"
+      >
         <span className="immersive-renderer-state__spinner" aria-hidden="true" />
         <div>
           <strong>
@@ -56,13 +84,15 @@ export function RendererState({ mode, status, onRetry, onFallback }: RendererSta
         </strong>
         <p>Hãy tiếp tục bằng chế độ còn lại để không ngắt quãng hành trình.</p>
       </div>
-      <button
-        className="immersive-button immersive-button--light"
-        type="button"
-        onClick={onFallback}
-      >
-        {mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại không gian 3D'}
-      </button>
+      {showFallback ? (
+        <button
+          className="immersive-button immersive-button--light"
+          type="button"
+          onClick={onFallback}
+        >
+          {mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại không gian 3D'}
+        </button>
+      ) : null}
     </div>
   );
 }

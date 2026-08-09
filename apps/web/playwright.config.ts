@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
+  testIgnore: /immersive-(minimap|production)\.spec\.ts/,
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
@@ -21,6 +22,7 @@ export default defineConfig({
     env: {
       ...process.env,
       VITE_IMMERSIVE_RENDERER_MODE: 'fake',
+      VITE_IMMERSIVE_DATA_MODE: 'fake',
     },
     reuseExistingServer: false,
     timeout: 120_000,

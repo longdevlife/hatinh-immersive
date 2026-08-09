@@ -22,6 +22,11 @@ export class FakePanoramaEngine implements PanoramaEnginePort {
   }
 
   async loadNode(node: PanoramaNode) {
+    const failure = readFakeFailure();
+    if (failure === 'tile' || (failure === 'next-scene' && node.id === 'scene-02')) {
+      throw new Error('E2E_PANORAMA_LOAD_FAILURE');
+    }
+
     this.loadedNode = node;
     this.currentView = node.initialView;
     this.calls.push({ type: 'loadNode', node });
@@ -47,5 +52,22 @@ export class FakePanoramaEngine implements PanoramaEnginePort {
     this.destroyed = true;
     this.listeners.clear();
     this.calls.push({ type: 'destroy' });
+  }
+}
+
+function readFakeFailure(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const queryFailure = new URLSearchParams(window.location.search).get('e2eFailure');
+  if (queryFailure) {
+    return queryFailure;
+  }
+
+  try {
+    return window.sessionStorage.getItem('hatinh-e2e-failure');
+  } catch {
+    return null;
   }
 }

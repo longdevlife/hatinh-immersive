@@ -63,4 +63,16 @@ describe('MinimapViewport', () => {
       'Không thể tải bản đồ tuyến tham quan',
     );
   });
+
+  it('supports a full-screen overview variant without a collapse control', async () => {
+    const engine = new FakeMinimapEngine();
+
+    render(<MinimapViewport {...props} engine={engine} showToggle={false} variant="overview" />);
+
+    await waitFor(() => expect(engine.calls).toHaveLength(2));
+    expect(screen.getByRole('application', { name: 'Bản đồ Hà Tĩnh' })).toHaveClass(
+      'minimap-viewport--overview',
+    );
+    expect(screen.queryByRole('button', { name: 'Thu gọn bản đồ' })).not.toBeInTheDocument();
+  });
 });

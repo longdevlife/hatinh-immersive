@@ -1,24 +1,65 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import type { ImmersiveActions, ImmersiveViewVm } from '../../../shared/contracts';
+import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
 
 import { AudioGuideControl, type AudioGuideStatus } from './AudioGuideControl';
-import { MinimapFrame } from './MinimapFrame';
 import { RendererState } from './RendererState';
 
 export interface ExploreShellProps {
   view: ImmersiveViewVm;
   actions: ImmersiveActions;
+  canEnterPanorama?: boolean;
+  isSceneTransitioning?: boolean;
+  minimapEngine?: MinimapEnginePort | null;
   rendererContent?: ReactNode;
 }
 
-export function ExploreShell({ view, actions, rendererContent }: ExploreShellProps) {
+function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; onToggle(): void }) {
+  return (
+    <section
+      aria-label="Bản đồ tuyến tham quan"
+      className={`minimap-viewport ${collapsed ? 'minimap-viewport--collapsed' : ''}`}
+      data-minimap-status="loading"
+      role="application"
+    >
+      <header className="minimap-viewport__header">
+        <div>
+          <p className="immersive-kicker">Bản đồ hành trình</p>
+          {!collapsed ? <strong>Đang tải bản đồ…</strong> : null}
+        </div>
+        <button
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
+          className="immersive-icon-button"
+          type="button"
+          onClick={onToggle}
+        >
+          {collapsed ? '+' : '−'}
+        </button>
+      </header>
+    </section>
+  );
+}
+
+export function ExploreShell({
+  view,
+  actions,
+  canEnterPanorama = true,
+  isSceneTransitioning = false,
+  minimapEngine = null,
+  rendererContent,
+}: ExploreShellProps) {
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d');
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
   const [audioStatus, setAudioStatus] = useState<AudioGuideStatus>('idle');
   const [audioTime, setAudioTime] = useState(0);
   const isPanorama = view.mode === 'panorama';
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
+
+  useEffect(() => {
+    setIsInfoOpen(view.mode === 'overview3d');
+  }, [view.mode]);
 
   function openInfo() {
     setIsInfoOpen(true);
@@ -74,7 +115,6 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
                 type="button"
                 onClick={() => {
                   actions.onSelectHotspot(hotspot.id);
-                  openInfo();
                 }}
                 aria-haspopup="dialog"
                 aria-label={hotspot.label ?? 'Mở điểm khám phá'}
@@ -97,6 +137,8 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
           status={view.rendererStatus}
           onRetry={actions.onRetryRenderer}
           onFallback={isPanorama ? actions.onEnter3D : () => actions.onEnterPanorama()}
+          isTransitioning={isPanorama && isSceneTransitioning}
+          showFallback={isPanorama || canEnterPanorama}
         />
       </section>
 
@@ -133,15 +175,20 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
 
       {isPanorama ? (
         <div className="explore-shell__minimap">
-          <MinimapFrame
-            currentSceneId={view.currentScene?.id ?? null}
-            heading={view.heading}
-            nodes={view.nodes}
-            links={view.links}
-            collapsed={isMinimapCollapsed}
-            onToggle={toggleMinimap}
-            onNodeSelect={actions.onNavigateScene}
-          />
+          {minimapEngine ? (
+            <MinimapViewport
+              currentSceneId={view.currentScene?.id ?? null}
+              heading={view.heading}
+              nodes={view.nodes}
+              links={view.links}
+              collapsed={isMinimapCollapsed}
+              engine={minimapEngine}
+              onToggle={toggleMinimap}
+              onNodeSelect={actions.onNavigateScene}
+            />
+          ) : (
+            <MinimapLoadingBoundary collapsed={isMinimapCollapsed} onToggle={toggleMinimap} />
+          )}
         </div>
       ) : null}
 
@@ -169,13 +216,17 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
         </div>
       ) : (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
-          <button
-            className="immersive-button immersive-button--primary"
-            type="button"
-            onClick={() => actions.onEnterPanorama()}
-          >
-            Khám phá 360°
-          </button>
+          {canEnterPanorama ? (
+            <button
+              className="immersive-button immersive-button--primary"
+              type="button"
+              onClick={() => actions.onEnterPanorama()}
+            >
+              Khám phá 360°
+            </button>
+          ) : (
+            <p className="immersive-readiness-note">360° đang được chuẩn bị</p>
+          )}
         </div>
       )}
 
@@ -201,7 +252,7 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
         </div>
         <h2 id="destination-info-title">{view.destination.name}</h2>
         <p>{view.destination.summary}</p>
-        {!isPanorama ? (
+        {!isPanorama && canEnterPanorama ? (
           <button
             className="immersive-button immersive-button--primary"
             type="button"
@@ -209,6 +260,9 @@ export function ExploreShell({ view, actions, rendererContent }: ExploreShellPro
           >
             Khám phá 360°
           </button>
+        ) : null}
+        {!isPanorama && !canEnterPanorama ? (
+          <p className="immersive-readiness-note">360° đang được chuẩn bị</p>
         ) : null}
       </aside>
     </main>

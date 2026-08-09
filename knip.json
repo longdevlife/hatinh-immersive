@@ -4,7 +4,11 @@
   "ignore": ["tooling/scripts/architecture-fixture.test.mjs"],
   "workspaces": {
     "apps/web": {
-      "entry": ["src/modules/minimap/index.ts", "src/shared/api/immersive.ts"]
+      "entry": [
+        "src/modules/minimap/index.ts",
+        "src/shared/api/immersive.ts",
+        "playwright.production.config.ts"
+      ]
     }
   }
 }

@@ -73,7 +73,11 @@ describe('minimap projection', () => {
           ],
           type: 'LineString',
         },
-        properties: { id: 'link-01-02', targetSceneId: 'scene-02' },
+        properties: {
+          id: 'link-01-02',
+          sourceSceneId: 'scene-01',
+          targetSceneId: 'scene-02',
+        },
         type: 'Feature',
       }),
       expect.objectContaining({
@@ -84,10 +88,33 @@ describe('minimap projection', () => {
           ],
           type: 'LineString',
         },
-        properties: { id: 'link-01-03', targetSceneId: 'scene-03' },
+        properties: {
+          id: 'link-01-03',
+          sourceSceneId: 'scene-01',
+          targetSceneId: 'scene-03',
+        },
         type: 'Feature',
       }),
     ]);
+  });
+
+  it('projects the complete route when the overview has no committed scene', () => {
+    const geoJson = buildMinimapGeoJson(
+      nodes,
+      links.map((link) => ({ ...link, sourceSceneId: 'scene-01' })),
+      null,
+    );
+
+    expect(geoJson.route.features).toHaveLength(2);
+    expect(geoJson.route.features[0]).toMatchObject({
+      geometry: {
+        coordinates: [
+          [105.9, 18.342],
+          [105.902, 18.343],
+        ],
+      },
+      properties: { sourceSceneId: 'scene-01', targetSceneId: 'scene-02' },
+    });
   });
 
   it('normalizes heading to the map marker range', () => {

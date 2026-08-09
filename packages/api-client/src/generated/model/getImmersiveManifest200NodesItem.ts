@@ -23,6 +23,10 @@ export type GetImmersiveManifest200NodesItem = {
   panoramaAssetId: string | null;
   /** @nullable */
   panoramaAssetStatus: GetImmersiveManifest200NodesItemPanoramaAssetStatus;
+  /** @nullable */
+  panoramaManifestUrl: string | null;
+  /** @nullable */
+  panoramaPreviewUrl: string | null;
   sortOrder: number;
   status: GetImmersiveManifest200NodesItemStatus;
 };
