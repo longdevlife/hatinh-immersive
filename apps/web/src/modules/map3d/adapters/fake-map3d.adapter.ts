@@ -15,17 +15,27 @@ export type FakeMap3DCall =
 export class FakeMap3DEngine implements Map3DEnginePort {
   readonly calls: FakeMap3DCall[] = [];
   private readonly locationListeners = new Set<(locationId: string) => void>();
+  private traceElement: HTMLElement | null = null;
 
   async mount(container: HTMLElement) {
+    this.traceElement = container.parentElement ?? container;
     if (readFakeFailure() === 'map3d') {
       throw new Error('E2E_MAP3D_FAILURE');
     }
 
     this.calls.push({ type: 'mount', container });
+    this.traceElement.dataset.e2eMap3dMountCount = String(
+      Number(this.traceElement.dataset.e2eMap3dMountCount ?? '0') + 1,
+    );
+    this.traceElement.dataset.e2eMap3dDestroyCount = '0';
   }
 
   async flyTo(target: CameraTarget) {
     this.calls.push({ type: 'flyTo', target });
+    if (this.traceElement) {
+      this.traceElement.dataset.e2eMap3dLastLat = String(target.lat);
+      this.traceElement.dataset.e2eMap3dLastLng = String(target.lng);
+    }
   }
 
   async setLocations(locations: Map3DLocation[]) {
@@ -51,6 +61,12 @@ export class FakeMap3DEngine implements Map3DEnginePort {
 
   destroy() {
     this.calls.push({ type: 'destroy' });
+    if (this.traceElement) {
+      this.traceElement.dataset.e2eMap3dDestroyCount = String(
+        Number(this.traceElement.dataset.e2eMap3dDestroyCount ?? '0') + 1,
+      );
+    }
+    this.traceElement = null;
   }
 }
 
