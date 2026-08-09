@@ -61,18 +61,18 @@ export function ExploreShell({
   onLocationSelected,
   selectedLocationId = null,
 }: ExploreShellProps) {
-  const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d');
+  const isPanorama = view.mode === 'panorama';
+  const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
+  const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [audioStatus, setAudioStatus] = useState<AudioGuideStatus>('idle');
   const [audioTime, setAudioTime] = useState(0);
-  const isPanorama = view.mode === 'panorama';
-  const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
 
   useEffect(() => {
-    setIsInfoOpen(view.mode === 'overview3d');
-  }, [view.mode]);
+    setIsInfoOpen(view.mode === 'overview3d' && !hasMap3DChrome);
+  }, [hasMap3DChrome, view.mode]);
 
   useEffect(() => {
     const syncFullscreenState = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -328,7 +328,7 @@ export function ExploreShell({
         </div>
         <h2 id="destination-info-title">{view.destination.name}</h2>
         <p>{view.destination.summary}</p>
-        {!isPanorama && canEnterPanorama ? (
+        {!isPanorama && !hasMap3DChrome && canEnterPanorama ? (
           <button
             className="immersive-button immersive-button--primary"
             type="button"
@@ -337,7 +337,7 @@ export function ExploreShell({
             Khám phá 360°
           </button>
         ) : null}
-        {!isPanorama && !canEnterPanorama ? (
+        {!isPanorama && !hasMap3DChrome && !canEnterPanorama ? (
           <p className="immersive-readiness-note">360° đang được chuẩn bị</p>
         ) : null}
       </aside>

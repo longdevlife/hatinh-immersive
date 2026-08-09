@@ -108,8 +108,13 @@ describe('ExploreShell', () => {
     );
 
     expect(screen.getByRole('heading', { level: 1, name: 'Sơn Trang Cổ Đạm' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Thông tin' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Tìm kiếm địa điểm' }));
     fireEvent.click(screen.getByRole('option', { name: 'Đảo Sơn Dương' }));
-    fireEvent.click(screen.getAllByRole('button', { name: 'Khám phá 360°' })[0]!);
+    fireEvent.click(screen.getByRole('button', { name: /Khám phá 360°/ }));
 
     expect(onLocationSelected).toHaveBeenCalledWith('destination-02');
     expect(actions.onEnterPanorama).toHaveBeenCalledTimes(1);
