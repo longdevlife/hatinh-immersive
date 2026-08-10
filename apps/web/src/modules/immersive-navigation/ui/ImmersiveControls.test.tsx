@@ -47,11 +47,7 @@ describe('ImmersiveControls', () => {
       { id: '3', name: 'Scene 3' },
     ];
     render(
-      <ImmersiveControlsGroup
-        nodes={nodes}
-        links={[{ targetSceneId: '2' }]}
-        currentSceneId="1"
-      />,
+      <ImmersiveControlsGroup nodes={nodes} links={[{ targetSceneId: '2' }]} currentSceneId="1" />,
     );
 
     const browser = screen.getByRole('navigation', { name: 'Danh sách cảnh quan' });
