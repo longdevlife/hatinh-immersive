@@ -827,7 +827,16 @@
 /* Virtual Tour Tooltip specific */
 .psv-virtual-tour-tooltip {
   display: flex !important;
-  flex-direction: column !important;
+  flex-direction: column-reverse !important;
+  width: 220px !important;
+}
+
+.psv-virtual-tour-tooltip img {
+  display: block !important;
+  width: 100% !important;
+  height: 120px !important;
+  object-fit: cover !important;
+  margin: 0 !important;
 }
 
 .psv-virtual-tour-tooltip h2,
@@ -835,9 +844,11 @@
   font-family: inherit !important;
   font-size: 0.9rem !important;
   font-weight: 600 !important;
-  padding: 0.5rem 1rem !important;
+  padding: 0.5rem 0.5rem !important;
   margin: 0 !important;
   text-align: center !important;
   background: transparent !important;
   color: var(--color-text-inverse, #fff) !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
 }
