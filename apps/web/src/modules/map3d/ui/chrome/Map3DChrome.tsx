@@ -39,6 +39,8 @@ export interface Map3DChromeProps {
   onLocationSelected?: (id: string) => void;
   /** User clicks the affordance to enter 360 mode */
   onEnter360?: () => void;
+  /** User clicks to retry loading the 360 view */
+  onRetry360?: () => void;
 }
 
 export function Map3DChrome({
@@ -48,7 +50,6 @@ export function Map3DChrome({
   isInfoOpen = false,
   networkQuality = 'good',
   title = 'Khu Di Tích Ngã Ba Đồng Lộc',
-  subtitle,
   selectedLocationId = null,
   locations = [],
   onLanguageToggle,
@@ -57,6 +58,7 @@ export function Map3DChrome({
   onShowInfo,
   onLocationSelected,
   onEnter360,
+  onRetry360,
 }: Map3DChromeProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isListOpen, setIsListOpen] = useState(false);
@@ -82,6 +84,7 @@ export function Map3DChrome({
           share: 'Chia sẻ địa điểm',
           constrained: 'Kết nối yếu',
           preparing360: '360° đang được chuẩn bị',
+          retry: 'Thử lại',
         }
       : {
           emptyLocations: 'No locations found.',
@@ -95,6 +98,7 @@ export function Map3DChrome({
           share: 'Share location',
           constrained: 'Weak connection',
           preparing360: '360° is being prepared',
+          retry: 'Retry',
         };
 
   // Close dropdown on outside click
@@ -309,9 +313,6 @@ export function Map3DChrome({
               onClick={onEnter360}
               aria-label={labels.enter360}
             >
-              <span className="map3d-chrome__handoff-label" aria-hidden="true">
-                {selectedLocation?.label || subtitle}
-              </span>
               <span className="map3d-chrome__handoff-action" aria-hidden="true">
                 <svg
                   viewBox="0 0 24 24"
@@ -327,8 +328,30 @@ export function Map3DChrome({
                 {labels.enter360}
               </span>
             </button>
+          ) : onRetry360 ? (
+            <button
+              type="button"
+              className="map3d-chrome__retry-btn"
+              onClick={onRetry360}
+              aria-label={labels.retry}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 2v6h-6"></path>
+                <path d="M3 12a9 9 0 1 0 2.13-5.85L21 8"></path>
+              </svg>
+              {labels.retry}
+            </button>
           ) : (
             <div className="map3d-chrome__handoff-status" role="status">
+              <span className="map3d-chrome__spinner" aria-hidden="true" />
               {labels.preparing360}
             </div>
           )}

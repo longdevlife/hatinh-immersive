@@ -98,4 +98,15 @@ describe('Map3DChrome', () => {
     expect(screen.queryByRole('button', { name: /Khám phá 360°/i })).not.toBeInTheDocument();
     expect(screen.queryByText('360° đang được chuẩn bị')).not.toBeInTheDocument();
   });
+  it('shows retry button if onRetry360 is provided instead of onEnter360', () => {
+    const onRetry360 = vi.fn();
+    render(<Map3DChrome selectedLocationId="1" onRetry360={onRetry360} />);
+
+    const retryBtn = screen.getByRole('button', { name: 'Thử lại' });
+    expect(retryBtn).toBeInTheDocument();
+
+    fireEvent.click(retryBtn);
+    expect(onRetry360).toHaveBeenCalled();
+    expect(screen.queryByText('360° đang được chuẩn bị')).not.toBeInTheDocument();
+  });
 });
