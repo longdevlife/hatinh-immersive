@@ -862,6 +862,7 @@ export function ImmersiveExperience({
         <ImmersiveControlsGroup
           currentSceneId={navigation.committedSceneId}
           destinations={destinationSearchResults}
+          links={view.links}
           locale={locale}
           nodes={view.nodes}
           searchLoading={shouldFetchDestinations && destinationsQuery.isPending}
