@@ -22,8 +22,9 @@ export default defineConfig({
     env: {
       ...process.env,
       VITE_IMMERSIVE_DATA_MODE: 'fake',
+      VITE_IMMERSIVE_MAP3D_MODE: 'fake',
       VITE_IMMERSIVE_MINIMAP_MODE: 'maplibre',
-      VITE_IMMERSIVE_RENDERER_MODE: 'fake',
+      VITE_IMMERSIVE_PANORAMA_MODE: 'fake',
       VITE_MINIMAP_STYLE_URL: '/test/minimap-style.json',
     },
     reuseExistingServer: false,
