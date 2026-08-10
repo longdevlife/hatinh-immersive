@@ -108,6 +108,7 @@ function toVirtualTourNode(node: PanoramaNode, panorama: unknown): PhotoSphereVi
     links: (node.links ?? []).map(toVirtualTourLink),
     name: node.name ?? node.id,
     panorama,
+    ...(node.previewUrl ? { thumbnail: node.previewUrl } : {}),
   };
 }
 
