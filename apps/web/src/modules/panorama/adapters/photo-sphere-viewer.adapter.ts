@@ -545,7 +545,10 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
 
     const marker = 'marker' in event ? event.marker : null;
     const hotspotId =
-      typeof marker === 'object' && marker !== null && 'id' in marker && typeof marker.id === 'string'
+      typeof marker === 'object' &&
+      marker !== null &&
+      'id' in marker &&
+      typeof marker.id === 'string'
         ? marker.id
         : null;
     if (!hotspotId || !this.hotspots.some((hotspot) => hotspot.id === hotspotId)) {
