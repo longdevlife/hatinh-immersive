@@ -109,8 +109,16 @@ export function SceneBrowser({
   currentSceneId?: string | null | undefined;
   onNavigate?: ((id: string) => void) | undefined;
 }) {
+  const currentIndex = nodes.findIndex((node) => node.id === currentSceneId);
+  const progressLabel =
+    currentIndex >= 0 ? `${currentIndex + 1}/${nodes.length}` : `${nodes.length} cảnh`;
+
   return (
     <nav className="immersive-control-browser" aria-label="Danh sách cảnh quan">
+      <div className="immersive-control-browser__header">
+        <span>Lộ trình 360°</span>
+        <span>{progressLabel}</span>
+      </div>
       <ul role="list">
         {nodes.map((node) => {
           const isCurrent = node.id === currentSceneId;

@@ -23,11 +23,10 @@ export function resolveRendererModes(environment: unknown): ImmersiveRendererMod
       aggregateFake || modes.VITE_IMMERSIVE_PANORAMA_MODE === 'fake'
         ? 'fake'
         : 'photo-sphere-viewer',
-    minimap:
-      modes.VITE_IMMERSIVE_MINIMAP_MODE === 'maplibre'
-        ? 'maplibre'
-        : aggregateFake || modes.VITE_IMMERSIVE_MINIMAP_MODE === 'fake'
-          ? 'fake'
-          : 'maplibre',
+    minimap: aggregateFake
+      ? 'fake'
+      : modes.VITE_IMMERSIVE_MINIMAP_MODE === 'fake'
+        ? 'fake'
+        : 'maplibre',
   };
 }

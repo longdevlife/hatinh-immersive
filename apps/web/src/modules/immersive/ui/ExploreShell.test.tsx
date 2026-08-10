@@ -201,6 +201,14 @@ describe('ExploreShell', () => {
     expect(hotspotButton).toHaveAttribute('aria-haspopup', 'dialog');
   });
 
+  it('keeps the panorama interaction layer pass-through and omits unavailable audio controls', () => {
+    const actions = createActions();
+    render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
+
+    expect(screen.getByLabelText('Điểm khám phá trong cảnh')).toHaveClass('hotspot-layer');
+    expect(screen.queryByLabelText('Hướng dẫn âm thanh')).not.toBeInTheDocument();
+  });
+
   it('exposes role="region" with accessible name on the control groups', () => {
     const actions = createActions();
     const { rerender } = render(

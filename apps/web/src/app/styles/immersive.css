@@ -79,11 +79,18 @@
 .immersive-topbar {
   align-items: center;
   display: flex;
-  justify-content: space-between;
+  gap: var(--space-3);
+  justify-content: flex-start;
   left: 0;
   padding: clamp(1rem, 2.5vw, 2rem) clamp(1rem, 4vw, 4rem);
+  pointer-events: none;
   right: 0;
   top: 0;
+}
+
+.immersive-topbar__brand,
+.immersive-topbar__actions {
+  pointer-events: auto;
 }
 
 .immersive-topbar__brand {
@@ -199,12 +206,12 @@
 .scene-identity {
   bottom: clamp(7rem, 14vw, 11rem);
   left: clamp(1rem, 4vw, 4rem);
-  max-width: min(34rem, calc(100% - 2rem));
+  max-width: min(27rem, calc(100% - 2rem));
 }
 
 .scene-identity h1,
 .info-panel h2 {
-  font-size: clamp(2.15rem, 5vw, 4.8rem);
+  font-size: clamp(2rem, 4vw, 3.75rem);
   letter-spacing: -0.055em;
   line-height: 0.96;
   margin: 0.45rem 0 0;
@@ -247,6 +254,7 @@
 
 .hotspot-layer {
   inset: 0;
+  pointer-events: none;
 }
 
 .hotspot-marker {
@@ -260,6 +268,7 @@
   height: 2.75rem;
   justify-content: center;
   position: absolute;
+  pointer-events: auto;
   width: 2.75rem;
 }
 
@@ -456,6 +465,11 @@
   bottom: clamp(1rem, 3vw, 2rem);
   left: clamp(1rem, 4vw, 4rem);
   max-width: calc(100% - 2rem);
+  pointer-events: none;
+}
+
+.explore-shell__controls > * {
+  pointer-events: auto;
 }
 
 .immersive-readiness-note {

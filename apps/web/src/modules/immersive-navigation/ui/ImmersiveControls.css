@@ -2,7 +2,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 10;
+  z-index: 20;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -10,8 +10,8 @@
 
 .immersive-controls-top-right {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: clamp(1rem, 2.5vw, 2rem);
+  right: clamp(1rem, 4vw, 4rem);
   display: flex;
   gap: 0.5rem;
   align-items: center;
@@ -20,35 +20,55 @@
 
 .immersive-controls-bottom {
   position: absolute;
-  bottom: 5rem;
+  bottom: clamp(1rem, 3vw, 2rem);
   left: 50%;
   transform: translateX(-50%);
-  width: 90%;
-  max-width: 600px;
+  width: max-content;
+  max-width: min(78vw, 42rem);
   pointer-events: auto;
 }
 
 .immersive-control-search {
   position: relative;
   display: flex;
-  background: rgba(0, 0, 0, 0.6);
-  border-radius: 4px;
+  align-items: center;
+  background: rgba(8, 22, 18, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 0.75rem 2rem rgba(3, 12, 9, 0.22);
 }
 
 .immersive-control-search input {
+  width: clamp(8rem, 15vw, 12rem);
   background: transparent;
   border: none;
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.7rem 0.25rem 0.7rem 1rem;
   outline: none;
 }
 
+.immersive-control-search input::placeholder {
+  color: rgba(255, 255, 255, 0.68);
+}
+
 .immersive-control-search button {
-  background: rgba(255, 255, 255, 0.1);
+  display: inline-grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  margin-right: 0.2rem;
+  background: transparent;
   border: none;
+  border-radius: 50%;
   color: white;
   padding: 0.5rem;
   cursor: pointer;
+}
+
+.immersive-control-search button:hover,
+.immersive-control-search button:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .immersive-control-search__results {
@@ -101,41 +121,89 @@
 }
 
 .immersive-control-btn {
-  background: rgba(0, 0, 0, 0.6);
+  min-height: 2.7rem;
+  background: rgba(8, 22, 18, 0.76);
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  padding: 0.5rem 0.85rem;
   cursor: pointer;
   font-weight: bold;
+  backdrop-filter: blur(18px);
+  box-shadow: 0 0.75rem 2rem rgba(3, 12, 9, 0.22);
 }
 
-.immersive-control-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
+.immersive-control-btn:hover,
+.immersive-control-btn:focus-visible {
+  background: rgba(29, 66, 53, 0.88);
+}
+
+.immersive-control-browser {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1rem;
+  background: rgba(8, 22, 18, 0.74);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 1rem 2.5rem rgba(3, 12, 9, 0.28);
+}
+
+.immersive-control-browser__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0.75rem 0.35rem;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .immersive-control-browser ul {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0.25rem 0.45rem 0.55rem;
   display: flex;
   gap: 0.5rem;
   overflow-x: auto;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 0.5rem;
-  border-radius: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.34) transparent;
 }
 
 .immersive-control-browser button {
-  background: rgba(255, 255, 255, 0.8);
-  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.88);
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
 }
 
+.immersive-control-browser button:hover,
+.immersive-control-browser button:focus-visible {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 .immersive-control-browser button.active {
-  background: #3b82f6;
+  background: #e5a95f;
+  border-color: #f3c47d;
   color: white;
+}
+
+@media (max-width: 700px) {
+  .immersive-controls-top-right {
+    left: 1rem;
+    right: 1rem;
+    justify-content: flex-end;
+  }
+
+  .immersive-control-search input {
+    width: min(38vw, 10rem);
+  }
+
+  .immersive-controls-bottom {
+    max-width: calc(100vw - 2rem);
+  }
 }

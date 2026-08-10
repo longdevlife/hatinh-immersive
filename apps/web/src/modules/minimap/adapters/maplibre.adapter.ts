@@ -45,6 +45,7 @@ export interface MapLibreMapInstance {
   addLayer(layer: unknown): void;
   addSource(id: string, source: { data: unknown; type: 'geojson' }): void;
   easeTo(options: { center: MapLibreCoordinate; duration: number }): void;
+  getLayer?(id: string): unknown;
   getSource(id: string): MapLibreGeoJsonSource | undefined;
   off(
     event: string,
@@ -311,8 +312,10 @@ export class MapLibreMinimapEngine implements MinimapEnginePort {
         return;
       }
 
-      container.dataset.minimapRouteBranches = map
-        .queryRenderedFeatures(undefined, { layers: [ROUTE_LAYER_ID] })
+      const routeFeatures = map.getLayer?.(ROUTE_LAYER_ID)
+        ? map.queryRenderedFeatures(undefined, { layers: [ROUTE_LAYER_ID] })
+        : [];
+      container.dataset.minimapRouteBranches = routeFeatures
         .flatMap((feature) => {
           const sourceSceneId = feature.properties?.sourceSceneId;
           const targetSceneId = feature.properties?.targetSceneId;

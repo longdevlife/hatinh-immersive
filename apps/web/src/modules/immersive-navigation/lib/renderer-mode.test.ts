@@ -7,6 +7,7 @@ describe('resolveRendererModes', () => {
     expect(
       resolveRendererModes({
         VITE_IMMERSIVE_RENDERER_MODE: 'fake',
+        VITE_IMMERSIVE_MINIMAP_MODE: 'maplibre',
       }),
     ).toEqual({
       map3d: 'fake',

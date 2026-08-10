@@ -4,7 +4,6 @@ import type { ImmersiveActions, ImmersiveLocale, ImmersiveViewVm } from '../../.
 import { Map3DChrome, type Map3DChromeLocation } from '../../map3d';
 import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
 
-import { AudioGuideControl, type AudioGuideStatus } from './AudioGuideControl';
 import { RendererState } from './RendererState';
 
 export interface ExploreShellProps {
@@ -66,8 +65,6 @@ export function ExploreShell({
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [audioStatus, setAudioStatus] = useState<AudioGuideStatus>('idle');
-  const [audioTime, setAudioTime] = useState(0);
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
 
   useEffect(() => {
@@ -220,7 +217,6 @@ export function ExploreShell({
             Hà Tĩnh <span>/</span> Immersive
           </a>
           <div className="immersive-topbar__actions">
-            <span className="mode-badge">{isPanorama ? '360° walk' : '3D overview'}</span>
             {view.networkQuality !== 'good' ? (
               <span className={`network-quality network-quality--${view.networkQuality}`}>
                 {view.networkQuality === 'offline' ? 'Ngoại tuyến' : 'Kết nối yếu'}
@@ -232,8 +228,10 @@ export function ExploreShell({
               onClick={openInfo}
               aria-controls="destination-info-panel"
               aria-expanded={isInfoOpen}
+              aria-label="Thông tin"
             >
-              Thông tin
+              <span aria-hidden="true">i</span>
+              <span className="sr-only">Thông tin</span>
             </button>
           </div>
         </header>
@@ -288,14 +286,6 @@ export function ExploreShell({
               {link.label ?? 'Di chuyển'}
             </button>
           ))}
-          <AudioGuideControl
-            status={audioStatus}
-            currentTime={audioTime}
-            duration={180}
-            onPlay={() => setAudioStatus('playing')}
-            onPause={() => setAudioStatus('paused')}
-            onSeek={setAudioTime}
-          />
         </div>
       ) : hasMap3DChrome ? null : (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
