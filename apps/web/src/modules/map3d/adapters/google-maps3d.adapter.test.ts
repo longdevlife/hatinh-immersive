@@ -8,6 +8,7 @@ import {
   type GoogleMap3DElementOptions,
   type GoogleMarker3DInteractiveElementOptions,
   type GoogleModel3DElementOptions,
+  type GooglePopoverElementOptions,
 } from './google-maps3d.adapter';
 
 class FakeMap3DElement extends HTMLElement {
@@ -51,6 +52,15 @@ class FakeMarker3DInteractiveElement extends HTMLElement {
   }
 }
 
+class FakePopoverElement extends HTMLElement {
+  readonly options: GooglePopoverElementOptions;
+
+  constructor(options: GooglePopoverElementOptions = {}) {
+    super();
+    this.options = options;
+  }
+}
+
 class FailingMap3DElement extends HTMLElement {
   constructor() {
     super();
@@ -69,12 +79,14 @@ class FailingMap3DElement extends HTMLElement {
 customElements.define('gmp-map-3d', FakeMap3DElement);
 customElements.define('gmp-model-3d', FakeModel3DElement);
 customElements.define('gmp-marker-3d-interactive', FakeMarker3DInteractiveElement);
+customElements.define('gmp-popover', FakePopoverElement);
 customElements.define('gmp-map-3d-error', FailingMap3DElement);
 
 const library = {
   Map3DElement: FakeMap3DElement,
   Model3DElement: FakeModel3DElement,
   Marker3DInteractiveElement: FakeMarker3DInteractiveElement,
+  PopoverElement: FakePopoverElement,
 } as unknown as Maps3DLibrary;
 
 const model: ModelPlacement = {
@@ -111,15 +123,20 @@ describe('GoogleMaps3DEngine', () => {
     const script = document.querySelector<HTMLScriptElement>(
       'script[data-hatinh-google-maps="3d"]',
     )!;
-    const callbackName = new URL(script.src).searchParams.get('callback');
+    const callbackPath = new URL(script.src).searchParams.get('callback');
+    const callbackName = callbackPath?.split('.').at(-1);
 
+    expect(callbackPath).toMatch(/^google\.maps\.__hatinhGoogleMapsReady\d+$/);
     expect(callbackName).toBeTruthy();
+    expect(new URL(script.src).searchParams.get('libraries')).toBe('maps3d');
     script.dispatchEvent(new Event('load'));
     await Promise.resolve();
     expect(importLibrary).not.toHaveBeenCalled();
 
-    windowRef.google = { maps: { importLibrary } };
-    (windowRef as unknown as Record<string, () => void>)[callbackName!]!();
+    windowRef.google!.maps!.importLibrary = importLibrary;
+    const callback = (windowRef.google!.maps as Record<string, unknown>)[callbackName!];
+    expect(callback).toEqual(expect.any(Function));
+    (callback as () => void)();
 
     await expect(mount).resolves.toBeUndefined();
     expect(importLibrary).toHaveBeenCalledWith('maps3d');
@@ -160,13 +177,18 @@ describe('GoogleMaps3DEngine', () => {
     await engine.setLocations(locations);
 
     const map = container.firstElementChild as FakeMap3DElement;
-    const markers = [...map.children] as FakeMarker3DInteractiveElement[];
+    const markers = [
+      ...map.querySelectorAll('[data-location-id]'),
+    ] as FakeMarker3DInteractiveElement[];
 
     expect(markers).toHaveLength(2);
-    expect(markers[1]?.options).toEqual({
-      label: 'Điểm B',
-      position: { lat: 18.401, lng: 105.91, altitude: 0 },
+    expect(markers[1]?.options).toMatchObject({
+      altitudeMode: 'CLAMP_TO_GROUND',
+      position: { lat: 18.401, lng: 105.91 },
     });
+    const popover = markers[1]?.options.gmpPopoverTargetElement;
+    expect(popover).toBeInstanceOf(FakePopoverElement);
+    expect((popover as FakePopoverElement).options).toEqual({ open: true });
 
     markers[1]?.dispatchEvent(new Event('gmp-click'));
     expect(onLocationSelected).toHaveBeenCalledWith('destination-b');
@@ -176,8 +198,10 @@ describe('GoogleMaps3DEngine', () => {
     expect(onLocationSelected).toHaveBeenCalledTimes(1);
 
     await engine.setLocations([locations[0]!]);
-    expect(map.children).toHaveLength(1);
+    expect(map.querySelectorAll('[data-location-id]')).toHaveLength(1);
+    expect(map.querySelectorAll('gmp-popover')).toHaveLength(1);
     engine.destroy();
+    expect(map.querySelectorAll('gmp-popover')).toHaveLength(0);
   });
 
   it('lazily creates the map, flies the camera, mounts models, and cleans up', async () => {
@@ -217,8 +241,10 @@ describe('GoogleMaps3DEngine', () => {
       heading: 32,
       tilt: 48,
       range: 1800,
+      defaultUIHidden: true,
       mode: 'SATELLITE',
     });
+    expect(map).toHaveStyle({ display: 'block', height: '100%', width: '100%' });
     expect(map.flights).toEqual([
       {
         endCamera: {
@@ -258,6 +284,24 @@ describe('GoogleMaps3DEngine', () => {
 
     await expect(failingEngine.mount(failingContainer)).rejects.toThrow('GOOGLE_MAPS_3D_ERROR');
     expect(failingContainer).toBeEmptyDOMElement();
+  });
+
+  it('subscribes to readiness before connecting the map element', async () => {
+    const engine = new GoogleMaps3DEngine({
+      loadLibrary: vi.fn(async () => library),
+      readinessTimeoutMs: 20,
+    });
+    const container = document.createElement('div');
+    const replaceChildren = container.replaceChildren.bind(container);
+    container.replaceChildren = (...nodes: Node[]) => {
+      replaceChildren(...nodes);
+      const event = new Event('gmp-steadychange');
+      Object.defineProperty(event, 'isSteady', { value: true });
+      nodes[0]?.dispatchEvent(event);
+    };
+
+    await expect(engine.mount(container)).resolves.toBeUndefined();
+    engine.destroy();
   });
 
   it('times out readiness, cleans the failed map, and mounts a clean retry', async () => {
@@ -336,6 +380,7 @@ describe('GoogleMaps3DEngine', () => {
 
     expect(maps).toHaveLength(2);
     expect(container.querySelectorAll('[data-location-id="destination-a"]')).toHaveLength(1);
+    expect(container.querySelectorAll('gmp-popover')).toHaveLength(1);
     engine.destroy();
   });
 });
