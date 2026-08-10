@@ -152,7 +152,9 @@ export interface PanoramaEnginePort {
   setView(view: PanoramaView): void;
   setHotspots?(hotspots: HotspotVm[]): void;
   subscribeViewChanged(listener: (view: PanoramaView) => void): () => void;
-  subscribeNodeChanged?(listener: (nodeId: string, view?: PanoramaView) => void): () => void;
+  subscribeNodeChanged?(
+    listener: (nodeId: string, view?: PanoramaView) => void,
+  ): () => void;
   subscribeHotspotSelected?(listener: (hotspotId: string) => void): () => void;
   destroy(): void;
 }
