@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-import type { RendererStatus } from '../../../shared/contracts';
+import type { HotspotVm, RendererStatus } from '../../../shared/contracts';
 
 import type {
   PanoramaEnginePort,
@@ -8,11 +8,15 @@ import type {
   PanoramaView,
 } from '../domain/panorama-engine.port';
 
+import './PanoramaViewport.css';
+
 export interface PanoramaViewportProps {
   engine: PanoramaEnginePort;
   fallback?: ReactNode;
+  hotspots?: HotspotVm[];
   initialView?: PanoramaView;
   node: PanoramaNode;
+  onHotspotSelect?: (hotspotId: string) => void;
   onStatusChange?: (status: RendererStatus) => void;
   onNodeChange?: (nodeId: string, view: PanoramaView) => void;
   onViewChange?: (view: PanoramaView) => void;
@@ -22,8 +26,10 @@ export interface PanoramaViewportProps {
 export function PanoramaViewport({
   engine,
   fallback = <p role="alert">Không thể tải không gian toàn cảnh.</p>,
+  hotspots = [],
   initialView,
   node,
+  onHotspotSelect,
   onNodeChange,
   onStatusChange,
   onViewChange,
@@ -32,6 +38,7 @@ export function PanoramaViewport({
   const containerRef = useRef<HTMLDivElement>(null);
   const initialViewRef = useRef(initialView);
   const nodeRef = useRef(node);
+  const onHotspotSelectRef = useRef(onHotspotSelect);
   const onStatusChangeRef = useRef(onStatusChange);
   const onNodeChangeRef = useRef(onNodeChange);
   const onViewChangeRef = useRef(onViewChange);
@@ -40,6 +47,7 @@ export function PanoramaViewport({
   const lastNodeReportedByEngineRef = useRef<string | null>(null);
   const [status, setStatus] = useState<RendererStatus>('loading');
 
+  onHotspotSelectRef.current = onHotspotSelect;
   onStatusChangeRef.current = onStatusChange;
   onNodeChangeRef.current = onNodeChange;
   initialViewRef.current = initialView;
@@ -73,6 +81,11 @@ export function PanoramaViewport({
         }
       }
     });
+    const unsubscribeHotspotSelected = engine.subscribeHotspotSelected?.((hotspotId) => {
+      if (!cancelled) {
+        onHotspotSelectRef.current?.(hotspotId);
+      }
+    });
     const reportStatus = (nextStatus: RendererStatus) => {
       if (cancelled) {
         return;
@@ -93,10 +106,15 @@ export function PanoramaViewport({
       cancelled = true;
       unsubscribeViewChanged();
       unsubscribeNodeChanged?.();
+      unsubscribeHotspotSelected?.();
       engine.destroy();
       mountPromiseRef.current = null;
     };
   }, [engine]);
+
+  useEffect(() => {
+    engine.setHotspots?.(hotspots);
+  }, [engine, hotspots]);
 
   useEffect(() => {
     let cancelled = false;
