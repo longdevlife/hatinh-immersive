@@ -487,21 +487,58 @@
   padding: 0.7rem 1rem;
 }
 
-.navigation-hint {
-  background: rgb(8 26 21 / 0.66);
-  border: 1px solid rgb(255 255 255 / 0.26);
-  border-radius: var(--radius-pill);
-  color: inherit;
-  font-size: 0.82rem;
-  font-weight: 700;
-  min-height: 2.65rem;
-  padding: 0.55rem 0.85rem;
+/* Navigation Hint is removed, but we replace it with side-nav */
+.explore-shell__side-nav {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2rem;
+  z-index: var(--z-index-ui);
+  pointer-events: none;
 }
 
-.navigation-hint span {
-  color: #ffd69d;
-  font-size: 1rem;
-  margin-right: 0.35rem;
+.side-nav-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(12, 31, 25, 0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.side-nav-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: rgba(255, 255, 255, 0.9);
+  transition: transform 0.3s ease;
+}
+
+.side-nav-btn:hover,
+.side-nav-btn:focus-visible {
+  background: rgba(12, 31, 25, 0.85);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.08);
+  outline: none;
+}
+
+.side-nav-btn--prev:hover svg {
+  transform: translateX(-3px);
+}
+
+.side-nav-btn--next:hover svg {
+  transform: translateX(3px);
 }
 
 .audio-guide {

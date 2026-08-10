@@ -243,6 +243,38 @@ export function ExploreShell({
         </section>
       ) : null}
 
+      {isPanorama && view.links.length > 0 ? (
+        <div className="explore-shell__side-nav" aria-label="Điều hướng cảnh" role="navigation">
+          {view.links
+            .map((link, idx) => (
+              <button
+                key={link.id}
+                className={`side-nav-btn ${idx === 0 ? 'side-nav-btn--prev' : 'side-nav-btn--next'}`}
+                type="button"
+                onClick={() => actions.onNavigateScene(link.targetSceneId)}
+                aria-label={link.label ?? 'Di chuyển'}
+                title={link.label ?? 'Di chuyển'}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  {idx === 0 ? (
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  ) : (
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  )}
+                </svg>
+              </button>
+            ))
+            .slice(0, 2)}
+        </div>
+      ) : null}
+
       {isPanorama ? (
         <div className="explore-shell__minimap">
           {minimapEngine ? (
@@ -271,17 +303,6 @@ export function ExploreShell({
           >
             Quay lại không gian 3D
           </button>
-          {view.links.slice(0, 2).map((link) => (
-            <button
-              key={link.id}
-              className="navigation-hint"
-              type="button"
-              onClick={() => actions.onNavigateScene(link.targetSceneId)}
-            >
-              <span aria-hidden="true">↑</span>
-              {link.label ?? 'Di chuyển'}
-            </button>
-          ))}
         </div>
       ) : hasMap3DChrome ? null : (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
