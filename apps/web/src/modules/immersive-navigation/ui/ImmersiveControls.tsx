@@ -47,9 +47,17 @@ export function DestinationSearch({
   }, [destinations, normalizedQuery]);
 
   useEffect(() => {
-    if (!isOpen) return undefined;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+    document.body.classList.toggle('is-search-open', isOpen);
+    return () => document.body.classList.remove('is-search-open');
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
         setIsOpen(false);
       }
     };
@@ -58,13 +66,13 @@ export function DestinationSearch({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!onSearch || normalizedQuery.length < 2) {
+    if (!isOpen || !onSearch || normalizedQuery.length < 2) {
       return undefined;
     }
 
     const timeout = window.setTimeout(() => onSearch(normalizedQuery), 300);
     return () => window.clearTimeout(timeout);
-  }, [normalizedQuery, onSearch]);
+  }, [isOpen, normalizedQuery, onSearch]);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -89,6 +97,7 @@ export function DestinationSearch({
           strokeLinecap="round"
           strokeLinejoin="round"
           style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+          aria-hidden="true"
         >
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -121,6 +130,7 @@ export function DestinationSearch({
           strokeLinecap="round"
           strokeLinejoin="round"
           style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+          aria-hidden="true"
         >
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -264,6 +274,7 @@ export function FullscreenControl() {
           strokeLinecap="round"
           strokeLinejoin="round"
           style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+          aria-hidden="true"
         >
           <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
         </svg>
@@ -276,6 +287,7 @@ export function FullscreenControl() {
           strokeLinecap="round"
           strokeLinejoin="round"
           style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+          aria-hidden="true"
         >
           <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
         </svg>
@@ -309,7 +321,7 @@ export function ShareControl() {
       className="immersive-control-btn share-btn"
       type="button"
       onClick={() => void share()}
-      aria-label="Chia sẻ cảnh này"
+      aria-label={copied ? 'Đã sao chép liên kết' : 'Chia sẻ cảnh này'}
       aria-live="polite"
     >
       {copied ? (
@@ -321,6 +333,7 @@ export function ShareControl() {
           strokeLinecap="round"
           strokeLinejoin="round"
           style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+          aria-hidden="true"
         >
           <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
@@ -333,6 +346,7 @@ export function ShareControl() {
           strokeLinecap="round"
           strokeLinejoin="round"
           style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+          aria-hidden="true"
         >
           <circle cx="18" cy="5" r="3"></circle>
           <circle cx="6" cy="12" r="3"></circle>
