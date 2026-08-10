@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import type { DestinationPreviewVm, ImmersiveLocale, SceneNodeVm } from '../../../shared/contracts';
 
@@ -31,6 +31,8 @@ export function DestinationSearch({
 }: DestinationSearchProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const restoreLauncherFocusRef = useRef(false);
   const normalizedQuery = query.trim();
   const results = useMemo(() => {
     if (normalizedQuery.length < 2) {
@@ -52,13 +54,20 @@ export function DestinationSearch({
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen && restoreLauncherFocusRef.current) {
+      restoreLauncherFocusRef.current = false;
+      launcherRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen) {
       return undefined;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsOpen(false);
+        closeSearch();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -74,6 +83,16 @@ export function DestinationSearch({
     return () => window.clearTimeout(timeout);
   }, [isOpen, normalizedQuery, onSearch]);
 
+  function openSearch() {
+    restoreLauncherFocusRef.current = false;
+    setIsOpen(true);
+  }
+
+  function closeSearch() {
+    restoreLauncherFocusRef.current = true;
+    setIsOpen(false);
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (normalizedQuery.length >= 2) {
@@ -84,8 +103,9 @@ export function DestinationSearch({
   if (!isOpen) {
     return (
       <button
+        ref={launcherRef}
         className="immersive-control-btn search-toggle-btn"
-        onClick={() => setIsOpen(true)}
+        onClick={openSearch}
         aria-label="Mở tìm kiếm"
         type="button"
       >
@@ -121,7 +141,7 @@ export function DestinationSearch({
         placeholder="Tìm điểm tham quan..."
         aria-label="Nhập tên điểm đến"
       />
-      <button type="button" onClick={() => setIsOpen(false)} aria-label="Đóng tìm kiếm">
+      <button type="button" onClick={closeSearch} aria-label="Đóng tìm kiếm">
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -148,7 +168,7 @@ export function DestinationSearch({
                     type="button"
                     onClick={() => {
                       onSelectDestination?.(destination);
-                      setIsOpen(false);
+                      closeSearch();
                     }}
                   >
                     <span>{destination.categoryLabel}</span>
