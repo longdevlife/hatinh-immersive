@@ -16,7 +16,7 @@
     "test:integration": "turbo run test:integration",
     "test:e2e": "turbo run test:e2e",
     "format": "prettier --write .",
-    "format:check": "prettier --write apps/web/src/modules/minimap/ui/MinimapViewport.test.tsx && cat apps/web/src/modules/minimap/ui/MinimapViewport.test.tsx && exit 1",
+    "format:check": "prettier --check .",
     "architecture:check": "depcruise --config .dependency-cruiser.cjs apps packages tooling && node tooling/scripts/architecture-check.mjs --workspace",
     "deadcode": "knip",
     "repo:smoke": "node tooling/scripts/repo-smoke.mjs",
