@@ -55,8 +55,12 @@ describe('MinimapViewport', () => {
       />,
     );
 
-    await waitFor(() => expect(engine.calls.some((call) => call.type === 'mount')).toBe(true));
-    expect(screen.getByRole('application', { name: 'Bản đồ tuyến tham quan' })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(engine.calls.some((call) => call.type === 'mount')).toBe(true),
+    );
+    expect(
+      screen.getByRole('application', { name: 'Bản đồ tuyến tham quan' }),
+    ).toBeInTheDocument();
 
     engine.emitNodeSelected('scene-02');
     expect(onNodeSelect).toHaveBeenCalledWith('scene-02');
@@ -74,15 +78,25 @@ describe('MinimapViewport', () => {
     expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(0);
 
     fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
-    await waitFor(() => expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(1));
-    expect(screen.getByRole('group', { name: 'Các điểm của tuyến tham quan' })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(1),
+    );
+    expect(
+      screen.getByRole('group', { name: 'Các điểm của tuyến tham quan' }),
+    ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
-    await waitFor(() => expect(engine.calls.some((call) => call.type === 'destroy')).toBe(true));
-    expect(screen.queryByRole('group', { name: 'Các điểm của tuyến tham quan' })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(engine.calls.some((call) => call.type === 'destroy')).toBe(true),
+    );
+    expect(
+      screen.queryByRole('group', { name: 'Các điểm của tuyến tham quan' }),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
-    await waitFor(() => expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(2));
+    await waitFor(() =>
+      expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(2),
+    );
   });
 
   it('keeps an accessible fallback boundary when MapLibre cannot initialize', async () => {
@@ -103,7 +117,9 @@ describe('MinimapViewport', () => {
 
     render(<MinimapViewport {...props} engine={engine} showToggle={false} variant="overview" />);
 
-    await waitFor(() => expect(engine.calls.some((call) => call.type === 'mount')).toBe(true));
+    await waitFor(() =>
+      expect(engine.calls.some((call) => call.type === 'mount')).toBe(true),
+    );
     expect(screen.getByRole('application', { name: 'Bản đồ Hà Tĩnh' })).toHaveClass(
       'minimap-viewport--overview',
     );
