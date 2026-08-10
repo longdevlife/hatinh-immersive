@@ -35,6 +35,15 @@ describe('resolveMinimapStyle', () => {
     );
   });
 
+  it('allows the bundled demo style for an explicitly fake-data deployment', () => {
+    expect(
+      resolveMinimapStyle({
+        allowDemoFallback: true,
+        isProduction: true,
+      }),
+    ).toBe(DEFAULT_HA_TINH_MINIMAP_STYLE);
+  });
+
   it('defines OpenStreetMap attribution for the local raster fallback', () => {
     expect(DEFAULT_HA_TINH_MINIMAP_STYLE).toMatchObject({
       sources: {
