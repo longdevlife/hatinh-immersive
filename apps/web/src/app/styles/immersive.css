@@ -303,7 +303,7 @@
 }
 
 .explore-shell__minimap {
-  right: clamp(1rem, 3vw, 2.5rem);
+  right: clamp(1rem, 4vw, 4rem);
   top: clamp(5rem, 11vw, 7rem);
 }
 
@@ -497,7 +497,7 @@
   display: flex;
   justify-content: space-between;
   padding: 0 2rem;
-  z-index: var(--z-index-ui);
+  z-index: 100;
   pointer-events: none;
 }
 
