@@ -16,7 +16,11 @@ test('explores overview to 360, follows a scene, and restores it after refresh',
   );
   await expect(page.getByRole('heading', { name: 'Lối dạo Thiên Cầm' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Đi tiếp' }).click();
+  await page
+    .getByRole('navigation', { name: 'Danh sách cảnh quan' })
+    .getByRole('button')
+    .nth(1)
+    .click();
   await expect(page).toHaveURL(
     /\/explore\/bien-thien-cam\?mode=panorama&location=thien-cam-beach&scene=thien-cam-shore&h=118&p=0&fov=88$/,
   );

@@ -131,7 +131,11 @@ test('restores the previous scene after a next-scene load failure', async ({ pag
   await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01&e2eFailure=next-scene');
   await expect(page.getByRole('heading', { name: firstSceneHeading })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Đi tiếp' }).click();
+  await page
+    .getByRole('navigation', { name: 'Danh sách cảnh quan' })
+    .getByRole('button')
+    .nth(1)
+    .click();
 
   await expect(page).toHaveURL(/scene=scene-01/);
   await expect(page.getByRole('heading', { name: firstSceneHeading })).toBeVisible();
@@ -161,6 +165,8 @@ test('preserves the current scene when the browser goes offline', async ({ page 
 
   await page.context().setOffline(true);
 
-  await expect(page.getByText('Ngoại tuyến')).toBeVisible();
   await expect(page.getByRole('heading', { name: firstSceneHeading })).toBeVisible();
+  await expect(page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' })).toHaveCount(
+    1,
+  );
 });
