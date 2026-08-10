@@ -20,6 +20,43 @@ export interface ExploreShellProps {
   selectedLocationId?: string | null;
 }
 
+function MapLauncherIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+      aria-hidden="true"
+    >
+      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+      <line x1="9" y1="3" x2="9" y2="21"></line>
+      <line x1="15" y1="3" x2="15" y2="21"></line>
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ width: '1rem', height: '1rem' }}
+      aria-hidden="true"
+    >
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  );
+}
+
 function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; onToggle(): void }) {
   return (
     <section
@@ -28,21 +65,33 @@ function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; o
       data-minimap-status="loading"
       role="application"
     >
-      <header className="minimap-viewport__header">
-        <div>
-          <p className="immersive-kicker">Bản đồ hành trình</p>
-          {!collapsed ? <strong>Đang tải bản đồ…</strong> : null}
-        </div>
+      {collapsed ? (
         <button
-          aria-expanded={!collapsed}
-          aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
-          className="immersive-icon-button"
+          aria-expanded={false}
+          aria-label="Mở rộng bản đồ"
+          className="minimap-viewport__toggle--standalone immersive-icon-button"
           type="button"
           onClick={onToggle}
         >
-          {collapsed ? '+' : '−'}
+          <MapLauncherIcon />
         </button>
-      </header>
+      ) : (
+        <header className="minimap-viewport__header">
+          <div>
+            <p className="immersive-kicker">Bản đồ hành trình</p>
+            <strong>Đang tải bản đồ…</strong>
+          </div>
+          <button
+            aria-expanded={true}
+            aria-label="Thu gọn bản đồ"
+            className="immersive-icon-button"
+            type="button"
+            onClick={onToggle}
+          >
+            <CloseIcon />
+          </button>
+        </header>
+      )}
     </section>
   );
 }
