@@ -104,7 +104,7 @@ export function DestinationSearch({
     return (
       <button
         ref={launcherRef}
-        className="immersive-control-btn search-toggle-btn"
+        className="panorama-control panorama-search-launcher"
         onClick={openSearch}
         aria-label="Mở tìm kiếm"
         type="button"
@@ -128,7 +128,7 @@ export function DestinationSearch({
 
   return (
     <form
-      className="immersive-control-search"
+      className="panorama-search"
       onSubmit={handleSubmit}
       role="search"
       aria-label="Tìm kiếm điểm đến"
@@ -157,7 +157,7 @@ export function DestinationSearch({
         </svg>
       </button>
       {normalizedQuery.length >= 2 ? (
-        <div className="immersive-control-search__results" aria-live="polite">
+        <div className="panorama-search__results" aria-live="polite">
           {isLoading ? <p role="status">Đang tìm điểm đến…</p> : null}
           {!isLoading && results.length === 0 ? <p>Không tìm thấy điểm đến.</p> : null}
           {!isLoading && results.length > 0 ? (
@@ -194,7 +194,7 @@ export function SceneBrowser({
   onNavigate?: ((id: string) => void) | undefined;
 }) {
   return (
-    <nav className="immersive-control-browser" aria-label="Danh sách cảnh quan">
+    <nav className="panorama-scene-browser" aria-label="Danh sách cảnh quan">
       <ul role="list">
         {nodes.map((node) => {
           const isCurrent = node.id === currentSceneId;
@@ -206,7 +206,8 @@ export function SceneBrowser({
                 aria-current={isCurrent ? 'step' : undefined}
                 className={isCurrent ? 'active' : ''}
               >
-                {node.name || 'Cảnh chưa đặt tên'}
+                <span className="panorama-scene-browser__state" aria-hidden="true" />
+                <span>{node.name || 'Cảnh chưa đặt tên'}</span>
               </button>
             </li>
           );
@@ -242,7 +243,7 @@ export function LocaleControl({
 
   return (
     <button
-      className="immersive-control-btn locale-btn"
+      className="panorama-control panorama-locale-control"
       type="button"
       onClick={toggle}
       aria-label={`Đổi ngôn ngữ sang ${activeLocale === 'vi' ? 'Tiếng Anh' : 'Tiếng Việt'}`}
@@ -279,7 +280,7 @@ export function FullscreenControl() {
 
   return (
     <button
-      className="immersive-control-btn fullscreen-btn"
+      className="panorama-control panorama-fullscreen-control"
       type="button"
       onClick={() => void toggle()}
       aria-pressed={isFullscreen}
@@ -338,7 +339,7 @@ export function ShareControl() {
 
   return (
     <button
-      className="immersive-control-btn share-btn"
+      className="panorama-control panorama-share-control"
       type="button"
       onClick={() => void share()}
       aria-label={copied ? 'Đã sao chép liên kết' : 'Chia sẻ cảnh này'}
@@ -391,19 +392,21 @@ export function ImmersiveControlsGroup({
   onLocaleChange,
 }: ImmersiveControlsProps) {
   return (
-    <div className="immersive-controls-group" role="region" aria-label="Các công cụ tiện ích">
-      <div className="immersive-controls-top-right">
+    <div className="panorama-controls" role="region" aria-label="Các công cụ tiện ích">
+      <div className="panorama-controls__utilities">
         <DestinationSearch
           destinations={destinations}
           isLoading={searchLoading}
           onSearch={onSearchDestination}
           onSelectDestination={onSelectDestination}
         />
-        <LocaleControl locale={locale} onChange={onLocaleChange} />
-        <ShareControl />
-        <FullscreenControl />
+        <div className="panorama-controls__secondary">
+          <LocaleControl locale={locale} onChange={onLocaleChange} />
+          <ShareControl />
+          <FullscreenControl />
+        </div>
       </div>
-      <div className="immersive-controls-bottom">
+      <div className="panorama-controls__scenes">
         <SceneBrowser nodes={nodes} currentSceneId={currentSceneId} onNavigate={onNavigateScene} />
       </div>
     </div>
