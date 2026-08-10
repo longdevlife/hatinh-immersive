@@ -326,8 +326,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
       getNode: (nodeId: string) => this.loadVirtualTourNode(nodeId),
       positionMode: 'manual',
       preload: true,
-      renderMode: '3d',
-      arrowStyle: { size: 0.6 },
+      renderMode: '2d',
       transitionOptions: {
         effect: 'fade',
         rotation: true,
