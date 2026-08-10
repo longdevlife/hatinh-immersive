@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation, useParams } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FakeMap3DEngine } from '../../map3d';
 import { FakeMinimapEngine } from '../../minimap';
@@ -94,8 +94,7 @@ function renderExperience(
   );
 }
 
-function createFactories(panorama = new FakePanoramaEngine()) {
-  const map3d = new FakeMap3DEngine();
+function createFactories(panorama = new FakePanoramaEngine(), map3d = new FakeMap3DEngine()) {
   const minimap = new FakeMinimapEngine();
 
   const factories: ImmersiveExperienceFactories = {
@@ -105,6 +104,33 @@ function createFactories(panorama = new FakePanoramaEngine()) {
   };
 
   return { factories, map3d, minimap, panorama };
+}
+
+class PendingLocationsTimingMap3DEngine extends FakeMap3DEngine {
+  private resolveLocationsStarted!: () => void;
+  private resolveLocations!: () => void;
+  readonly locationsStarted = new Promise<void>((resolve) => {
+    this.resolveLocationsStarted = resolve;
+  });
+  private readonly locationsPending = new Promise<void>((resolve) => {
+    this.resolveLocations = resolve;
+  });
+  readonly flightTimes: number[] = [];
+
+  override async setLocations(locations: Parameters<FakeMap3DEngine['setLocations']>[0]) {
+    await super.setLocations(locations);
+    this.resolveLocationsStarted();
+    await this.locationsPending;
+  }
+
+  override async flyTo(preset: Parameters<FakeMap3DEngine['flyTo']>[0]) {
+    this.flightTimes.push(Date.now());
+    await super.flyTo(preset);
+  }
+
+  releaseLocations() {
+    this.resolveLocations();
+  }
 }
 
 class DeferredPanoramaEngine extends FakePanoramaEngine {
@@ -152,6 +178,10 @@ class NativeNavigatingPanoramaEngine extends FakePanoramaEngine {
 describe('ImmersiveExperience', () => {
   beforeEach(() => {
     useImmersiveNavigation.getState().reset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('mounts the overview renderer, then hands off to one panorama renderer', async () => {
@@ -343,6 +373,67 @@ describe('ImmersiveExperience', () => {
         '/explore/son-trang-co-dam?mode=overview3d&location=destination-c',
       );
     });
+  });
+
+  it('flies to a selected marker within 100ms without remounting the 3D map', async () => {
+    vi.useFakeTimers();
+    const map3d = new PendingLocationsTimingMap3DEngine();
+    const { factories } = createFactories(undefined, map3d);
+    const manifest = createFakeImmersiveManifest();
+    const locations: DestinationPreviewVm[] = [
+      manifest.destination,
+      {
+        id: 'destination-b',
+        slug: 'location-b',
+        name: 'Điểm B',
+        summary: 'Điểm B tại Hà Tĩnh.',
+        coverImageUrl: null,
+        categoryLabel: 'Thiên nhiên',
+        defaultSceneId: 'scene-b',
+        geoPoint: { latitude: 18.4, longitude: 105.9 },
+        cameraPreset: {
+          center: { lat: 18.4, lng: 105.9, altitude: 240 },
+          heading: 110,
+          tilt: 50,
+          range: 1200,
+        },
+      },
+    ];
+
+    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories, manifest, locations);
+
+    try {
+      await map3d.locationsStarted;
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+      expect(map3d.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
+      const flightsBeforeSelection = map3d.flightTimes.length;
+      const selectedAt = Date.now();
+
+      act(() => map3d.emitLocationSelected('destination-b'));
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(100);
+      });
+
+      expect(map3d.flightTimes).toHaveLength(flightsBeforeSelection + 1);
+      expect(map3d.flightTimes.at(-1)! - selectedAt).toBeLessThanOrEqual(100);
+      expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
+        preset: { center: { lat: 18.4, lng: 105.9 } },
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam?mode=overview3d&location=destination-b',
+      );
+    } finally {
+      await act(async () => {
+        map3d.releaseLocations();
+        await Promise.resolve();
+      });
+    }
   });
 
   it('enters the selected destination tour and returns to its 3D camera', async () => {
