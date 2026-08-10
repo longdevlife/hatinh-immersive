@@ -1,53 +1,89 @@
 .hotspot-panel {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: var(--safe-area-spacing, clamp(1rem, 4vw, 4rem));
+  right: var(--safe-area-spacing, clamp(1rem, 4vw, 4rem));
+  bottom: var(--safe-area-spacing, clamp(1rem, 4vw, 4rem));
   width: 90%;
-  max-width: 500px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 24rem;
+  background: var(--color-background-overlay, rgba(8, 22, 18, 0.76));
+  backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md, 1.125rem);
+  box-shadow: var(--elevation-2, 0 8px 24px rgba(0, 0, 0, 0.4));
   z-index: 100;
   display: flex;
   flex-direction: column;
+  color: var(--color-text-inverse, #fff);
+}
+
+@media (max-width: 700px) {
+  .hotspot-panel {
+    top: auto;
+    left: 1rem;
+    right: 1rem;
+    bottom: 5.5rem; /* above scene navigation */
+    max-width: none;
+    width: auto;
+    max-height: 50vh;
+  }
 }
 
 .hotspot-panel__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .hotspot-panel__header h2 {
   margin: 0;
-  font-size: 1.25rem;
-  color: #333;
+  font-size: 1.1rem;
+  font-weight: var(--font-weight-semibold, 650);
+  color: inherit;
 }
 
 .hotspot-panel__header button {
-  background: transparent;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  background: rgba(255, 255, 255, 0.1);
   border: none;
-  font-size: 1.5rem;
+  border-radius: 50%;
   cursor: pointer;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 0.2s;
+}
+
+.hotspot-panel__header button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 .hotspot-panel__body {
-  padding: 1rem;
-  max-height: 70vh;
+  padding: 1.25rem;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  flex: 1;
 }
 
 .hotspot-panel__media {
   width: 100%;
-  border-radius: 4px;
-  margin-bottom: 1rem;
+  border-radius: var(--radius-sm, 0.75rem);
+  margin-bottom: 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .hotspot-panel__audio {
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  border-radius: var(--radius-sm, 0.75rem);
+}
+
+.hotspot-panel p {
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
+  font-size: 0.95rem;
 }

@@ -122,19 +122,24 @@
 }
 
 .immersive-control-btn {
-  height: 2.8rem;
-  background: rgba(8, 22, 18, 0.76);
+  height: var(--control-height-base, 2.75rem);
+  min-width: var(--control-height-base, 2.75rem);
+  background: var(--color-background-overlay, rgba(8, 22, 18, 0.76));
   color: white;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
+  border-radius: var(--radius-control, 999px);
   padding: 0 0.85rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-weight: bold;
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(var(--backdrop-blur-base, 18px));
   box-shadow: 0 0.75rem 2rem rgba(3, 12, 9, 0.22);
+}
+
+.immersive-control-btn.search-toggle-btn {
+  padding: 0; /* circle button */
 }
 
 .immersive-control-btn:hover,
@@ -143,25 +148,7 @@
 }
 
 .immersive-control-browser {
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 1rem;
-  background: rgba(8, 22, 18, 0.74);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 1rem 2.5rem rgba(3, 12, 9, 0.28);
-}
-
-.immersive-control-browser__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.55rem 0.75rem 0.35rem;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  width: 100%;
 }
 
 .immersive-control-browser ul {
@@ -176,13 +163,16 @@
 }
 
 .immersive-control-browser button {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(8, 22, 18, 0.5);
+  backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.14);
   color: rgba(255, 255, 255, 0.88);
   padding: 0.5rem 1rem;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
+  font-size: 0.8rem;
+  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.15);
 }
 
 .immersive-control-browser button:hover,

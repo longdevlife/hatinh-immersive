@@ -63,7 +63,7 @@ export function ExploreShell({
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
-  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
+  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
 
