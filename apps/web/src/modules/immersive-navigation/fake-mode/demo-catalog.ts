@@ -179,7 +179,7 @@ function createManifest(definition: DemoDestinationDefinition): ImmersiveManifes
         sourceSceneId: source.id,
         targetSceneId: target.id,
         label: 'Đi tiếp',
-        yaw: target.heading,
+        yaw: source.heading,
         pitch: 0,
       },
       {
@@ -187,7 +187,7 @@ function createManifest(definition: DemoDestinationDefinition): ImmersiveManifes
         sourceSceneId: target.id,
         targetSceneId: source.id,
         label: 'Quay lại',
-        yaw: (source.heading + 180) % 360,
+        yaw: (target.heading + 180) % 360,
         pitch: 0,
       },
     ];
