@@ -210,7 +210,7 @@ describe('ImmersiveExperience', () => {
       '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Đi tiếp' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
 
     await waitFor(() => {
       expect(panorama.calls.filter((call) => call.type === 'loadNode')).toHaveLength(2);
@@ -617,7 +617,7 @@ describe('ImmersiveExperience', () => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Đi tiếp' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Lối đi di sản 1' })).toBeInTheDocument();

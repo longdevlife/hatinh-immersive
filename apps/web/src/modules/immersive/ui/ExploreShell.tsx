@@ -142,6 +142,9 @@ export function ExploreShell({
           Không gian trải nghiệm đang được kết nối. Các điều khiển bên dưới vẫn có thể sử dụng bằng
           bàn phím.
         </p>
+        {isPanorama || hasMap3DChrome ? (
+          <h1 className="sr-only">{isPanorama ? currentSceneName : view.destination.name}</h1>
+        ) : null}
         {isPanorama ? (
           <div className="explore-shell__horizon" aria-hidden="true" />
         ) : (
