@@ -4,12 +4,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { DestinationSearch, ImmersiveControlsGroup, LocaleControl } from './ImmersiveControls';
 
 describe('ImmersiveControls', () => {
-  it('keeps destination search compact until activated and closes with Escape', () => {
+  it('keeps destination search compact and restores launcher focus after closing', () => {
     const onSearch = vi.fn();
     render(<DestinationSearch onSearch={onSearch} />);
 
     expect(screen.queryByRole('search')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Mở tìm kiếm' }));
+    const launcher = screen.getByRole('button', { name: 'Mở tìm kiếm' });
+    launcher.focus();
+    fireEvent.click(launcher);
 
     const form = screen.getByRole('search');
     const input = screen.getByRole('searchbox', { name: 'Nhập tên điểm đến' });
@@ -22,7 +24,11 @@ describe('ImmersiveControls', () => {
 
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('search')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Mở tìm kiếm' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mở tìm kiếm' })).toHaveFocus();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tìm kiếm' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng tìm kiếm' }));
+    expect(screen.getByRole('button', { name: 'Mở tìm kiếm' })).toHaveFocus();
   });
 
   it('renders locale control and toggles value', () => {
