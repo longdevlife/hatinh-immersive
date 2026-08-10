@@ -200,6 +200,8 @@ describe('ImmersiveExperience', () => {
     await waitFor(() => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
     });
+    expect(minimap.calls.some((call) => call.type === 'mount')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
     await waitFor(() => {
       expect(minimap.calls.some((call) => call.type === 'mount')).toBe(true);
     });
