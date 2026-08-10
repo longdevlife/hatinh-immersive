@@ -1,15 +1,19 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 
 import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
 
 import { ImmersiveExperience } from '../modules/immersive-navigation';
+import {
+  DEMO_DESTINATIONS,
+  getDemoManifest,
+} from '../modules/immersive-navigation/fake-mode/demo-catalog';
 import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
 import './styles/index.css';
 
-const DEFAULT_PUBLIC_DESTINATION_SLUG = 'son-trang-co-dam';
+const DEFAULT_PUBLIC_DESTINATION_SLUG = 'bien-thien-cam';
 const e2eFailure =
   typeof window !== 'undefined'
     ? new URLSearchParams(window.location.search).get('e2eFailure')
@@ -23,10 +27,20 @@ if (import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake' && e2eFailure) {
   }
 }
 
-const fakeManifest =
-  import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake' && e2eFailure !== 'manifest'
-    ? createFakeImmersiveManifest()
-    : undefined;
+const useFakeData = import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake';
+
+function FakeImmersiveExperience() {
+  const { destinationSlug = DEFAULT_PUBLIC_DESTINATION_SLUG } = useParams();
+  const demoDestination = DEMO_DESTINATIONS.find(({ preview }) => preview.slug === destinationSlug);
+  const manifest = demoDestination
+    ? getDemoManifest(destinationSlug)
+    : createFakeImmersiveManifest();
+  const destinations = demoDestination
+    ? DEMO_DESTINATIONS.map(({ preview }) => preview)
+    : [manifest.destination, ...DEMO_DESTINATIONS.map(({ preview }) => preview)];
+
+  return <ImmersiveExperience destinations={destinations} manifest={manifest} />;
+}
 
 function PublicHome() {
   const navigate = useNavigate();
@@ -70,8 +84,8 @@ export function App() {
             <Route
               path="/explore/:destinationSlug"
               element={
-                fakeManifest ? (
-                  <ImmersiveExperience manifest={fakeManifest} />
+                useFakeData && e2eFailure !== 'manifest' ? (
+                  <FakeImmersiveExperience />
                 ) : (
                   <ImmersiveExperience />
                 )

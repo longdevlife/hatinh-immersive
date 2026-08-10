@@ -7,6 +7,7 @@ import { FakeMap3DEngine } from '../../map3d';
 import { FakeMinimapEngine } from '../../minimap';
 import { FakePanoramaEngine, type PanoramaNode, type PanoramaView } from '../../panorama';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
+import { DEMO_DESTINATIONS, getDemoManifest } from '../fake-mode/demo-catalog';
 import { createFakeImmersiveManifest } from '../fake-mode/manifest';
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
 import { useImmersiveNavigation } from '../index';
@@ -379,28 +380,10 @@ describe('ImmersiveExperience', () => {
     vi.useFakeTimers();
     const map3d = new PendingLocationsTimingMap3DEngine();
     const { factories } = createFactories(undefined, map3d);
-    const manifest = createFakeImmersiveManifest();
-    const locations: DestinationPreviewVm[] = [
-      manifest.destination,
-      {
-        id: 'destination-b',
-        slug: 'location-b',
-        name: 'Điểm B',
-        summary: 'Điểm B tại Hà Tĩnh.',
-        coverImageUrl: null,
-        categoryLabel: 'Thiên nhiên',
-        defaultSceneId: 'scene-b',
-        geoPoint: { latitude: 18.4, longitude: 105.9 },
-        cameraPreset: {
-          center: { lat: 18.4, lng: 105.9, altitude: 240 },
-          heading: 110,
-          tilt: 50,
-          range: 1200,
-        },
-      },
-    ];
+    const manifest = getDemoManifest('bien-thien-cam');
+    const locations = DEMO_DESTINATIONS.map(({ preview }) => preview);
 
-    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories, manifest, locations);
+    renderExperience('/explore/bien-thien-cam?mode=overview3d', factories, manifest, locations);
 
     try {
       await map3d.locationsStarted;
@@ -410,23 +393,25 @@ describe('ImmersiveExperience', () => {
 
       expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
       expect(map3d.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
-      const flightsBeforeSelection = map3d.flightTimes.length;
-      const selectedAt = Date.now();
+      for (const destination of DEMO_DESTINATIONS.slice(1)) {
+        const flightsBeforeSelection = map3d.flightTimes.length;
+        const selectedAt = Date.now();
 
-      act(() => map3d.emitLocationSelected('destination-b'));
+        act(() => map3d.emitLocationSelected(destination.location.id));
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(100);
+        });
 
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(100);
-      });
+        expect(map3d.flightTimes).toHaveLength(flightsBeforeSelection + 1);
+        expect(map3d.flightTimes.at(-1)! - selectedAt).toBeLessThanOrEqual(100);
+        expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
+          preset: destination.location.cameraPreset,
+        });
+      }
 
-      expect(map3d.flightTimes).toHaveLength(flightsBeforeSelection + 1);
-      expect(map3d.flightTimes.at(-1)! - selectedAt).toBeLessThanOrEqual(100);
       expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
-      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
-        preset: { center: { lat: 18.4, lng: 105.9 } },
-      });
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=overview3d&location=destination-b',
+        '/explore/bien-thien-cam?mode=overview3d&location=dong-loc-junction',
       );
     } finally {
       await act(async () => {

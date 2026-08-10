@@ -849,7 +849,7 @@ export function ImmersiveExperience({
           destinations={destinationSearchResults}
           locale={locale}
           nodes={view.nodes}
-          searchLoading={destinationsQuery.isPending}
+          searchLoading={shouldFetchDestinations && destinationsQuery.isPending}
           onLocaleChange={onLocaleChange}
           onNavigateScene={actions.onNavigateScene}
           onSearchDestination={setDestinationSearchQuery}

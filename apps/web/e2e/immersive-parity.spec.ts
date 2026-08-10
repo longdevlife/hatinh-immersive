@@ -145,11 +145,11 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
   await page.getByRole('button', { name: 'Chia sẻ cảnh này' }).click();
 
   const searchInput = page.getByRole('search').getByRole('searchbox');
-  await searchInput.fill('Đảo');
-  await expect(page.getByRole('button', { name: 'Đảo Sơn Dương' })).toBeVisible();
-  await page.getByRole('button', { name: 'Đảo Sơn Dương' }).click();
+  await searchInput.fill('Nguyễn');
+  await expect(page.getByRole('button', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
+  await page.getByRole('button', { name: 'Khu lưu niệm Nguyễn Du' }).click();
   await expect(page).toHaveURL(
-    /\/explore\/son-trang-co-dam\?mode=overview3d&location=destination-02$/,
+    /\/explore\/son-trang-co-dam\?mode=overview3d&location=nguyen-du-memorial$/,
   );
-  await expect(page.getByRole('heading', { name: 'Đảo Sơn Dương' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
 });
