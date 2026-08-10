@@ -327,6 +327,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
       positionMode: 'manual',
       preload: true,
       renderMode: '3d',
+      arrowStyle: { size: 0.6 },
       transitionOptions: {
         effect: 'fade',
         rotation: true,
