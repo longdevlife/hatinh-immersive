@@ -1,4 +1,9 @@
+import { readFile, stat } from 'node:fs/promises';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
+
+import { parsePanoramaManifest } from '@hatinh/immersive-contracts';
 
 import { DEMO_DESTINATIONS, getDemoManifest } from './demo-catalog';
 
@@ -49,9 +54,51 @@ describe('Hà Tĩnh demo catalog', () => {
     }
   });
 
+  it('keeps the Thiên Cầm walk nodes within natural walking distance', () => {
+    const nodes = getDemoManifest('bien-thien-cam').nodes;
+
+    for (let index = 1; index < nodes.length; index += 1) {
+      const previous = nodes[index - 1]!;
+      const current = nodes[index]!;
+      const distance = distanceMeters(previous.lat, previous.lng, current.lat, current.lng);
+      expect(distance).toBeGreaterThanOrEqual(5);
+      expect(distance).toBeLessThanOrEqual(15);
+    }
+  });
+
   it('rejects an unknown demo destination slug', () => {
     expect(() => getDemoManifest('khong-ton-tai')).toThrow(
       'DEMO_DESTINATION_NOT_FOUND:khong-ton-tai',
     );
   });
+
+  it('references only committed local progressive panorama media', async () => {
+    const publicRoot = path.resolve(process.cwd(), 'public');
+
+    for (const { preview } of DEMO_DESTINATIONS) {
+      const manifest = getDemoManifest(preview.slug);
+      for (const node of manifest.panoramaNodes) {
+        expect(node.panoramaUrl).toBe(`/demo/360/${node.id}/manifest.json`);
+        expect(node.previewUrl).toBe(`/demo/360/${node.id}/preview.webp`);
+
+        const output = path.join(publicRoot, 'demo', '360', node.id);
+        const mediaManifest = parsePanoramaManifest(
+          JSON.parse(await readFile(path.join(output, 'manifest.json'), 'utf8')),
+        );
+        expect((await stat(path.join(output, mediaManifest.preview))).size).toBeGreaterThan(0);
+        expect((await stat(path.join(output, 'tiles', '0', '0-0.webp'))).size).toBeGreaterThan(0);
+      }
+    }
+  });
 });
+
+function distanceMeters(latA: number, lngA: number, latB: number, lngB: number): number {
+  const earthRadius = 6_371_000;
+  const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+  const deltaLat = toRadians(latB - latA);
+  const deltaLng = toRadians(lngB - lngA);
+  const a =
+    Math.sin(deltaLat / 2) ** 2 +
+    Math.cos(toRadians(latA)) * Math.cos(toRadians(latB)) * Math.sin(deltaLng / 2) ** 2;
+  return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
