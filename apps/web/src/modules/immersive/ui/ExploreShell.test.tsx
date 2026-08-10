@@ -60,15 +60,14 @@ describe('ExploreShell', () => {
     expect(actions.onNavigateScene).toHaveBeenCalledWith('scene-02');
   });
 
-  it('exposes hotspot selection through the immersive callbacks', () => {
+  it('leaves panorama hotspot spatial rendering to the renderer', () => {
     const actions = createActions();
 
     render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
 
     expect(screen.getByRole('heading', { name: 'Lối đi di sản 1' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Câu chuyện địa danh' }));
-
-    expect(actions.onSelectHotspot).toHaveBeenCalledWith('hotspot-story');
+    expect(screen.queryByLabelText('Điểm khám phá trong cảnh')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Câu chuyện địa danh' })).not.toBeInTheDocument();
   });
 
   it('lets the visitor return from a ready panorama to the selected 3D location', () => {
@@ -196,19 +195,10 @@ describe('ExploreShell', () => {
     expect(transitionState).toHaveTextContent('Đang chuyển cảnh');
   });
 
-  it('exposes aria-haspopup="dialog" on panorama hotspot buttons', () => {
+  it('omits unavailable audio controls from panorama chrome', () => {
     const actions = createActions();
     render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
 
-    const hotspotButton = screen.getByRole('button', { name: 'Câu chuyện địa danh' });
-    expect(hotspotButton).toHaveAttribute('aria-haspopup', 'dialog');
-  });
-
-  it('keeps the panorama interaction layer pass-through and omits unavailable audio controls', () => {
-    const actions = createActions();
-    render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
-
-    expect(screen.getByLabelText('Điểm khám phá trong cảnh')).toHaveClass('hotspot-layer');
     expect(screen.queryByLabelText('Hướng dẫn âm thanh')).not.toBeInTheDocument();
   });
 
