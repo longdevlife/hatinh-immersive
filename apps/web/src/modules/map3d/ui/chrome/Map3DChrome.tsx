@@ -19,11 +19,6 @@ export interface Map3DChromeProps {
   /** Current connection quality for a non-blocking status badge. */
   networkQuality?: 'good' | 'constrained' | 'offline';
 
-  /** The title displayed in the top chrome */
-  title?: string;
-  /** The subtitle or location name displayed below the title */
-  subtitle?: string;
-
   /** Currently selected location ID */
   selectedLocationId?: string | null;
   /** List of locations available for search and marker selection */
@@ -49,7 +44,7 @@ export function Map3DChrome({
   isFullscreen = false,
   isInfoOpen = false,
   networkQuality = 'good',
-  title = 'Khu Di Tích Ngã Ba Đồng Lộc',
+
   selectedLocationId = null,
   locations = [],
   onLanguageToggle,
@@ -123,10 +118,6 @@ export function Map3DChrome({
 
       {/* Top Chrome: Brand, Title, Actions (Compact) */}
       <header className="map3d-chrome__topbar">
-        <div className="map3d-chrome__brand-title">
-          <h1 className="map3d-chrome__title">{title}</h1>
-        </div>
-
         <div className="map3d-chrome__actions">
           <button
             type="button"

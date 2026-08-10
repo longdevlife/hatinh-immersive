@@ -156,8 +156,7 @@ export function ExploreShell({
               locations={map3dLocations ?? []}
               networkQuality={view.networkQuality}
               selectedLocationId={selectedLocationId}
-              subtitle={view.destination.categoryLabel ?? 'Hà Tĩnh'}
-              title={view.destination.name}
+
               onShare={() => void shareLocation()}
               onShowInfo={openInfo}
               onToggleFullscreen={() => void toggleFullscreen()}

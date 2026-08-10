@@ -52,31 +52,6 @@
   pointer-events: none;
 }
 
-.map3d-chrome__brand-title {
-  background: var(--chrome-bg);
-  backdrop-filter: blur(var(--chrome-blur));
-  -webkit-backdrop-filter: blur(var(--chrome-blur));
-  border: 1px solid var(--chrome-border);
-  border-radius: 12px;
-  padding: 0.75rem 1.25rem;
-  pointer-events: auto;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-}
-
-.map3d-chrome__title {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: #ffffff;
-}
-
-.map3d-chrome__subtitle {
-  margin: 0.2rem 0 0 0;
-  font-size: 0.8rem;
-  color: var(--chrome-text-secondary);
-}
-
 /* ACTIONS */
 .map3d-chrome__actions {
   display: flex;
@@ -404,14 +379,6 @@
 @media (max-width: 768px) {
   .map3d-chrome__topbar {
     padding: 1rem;
-  }
-
-  .map3d-chrome__brand-title {
-    padding: 0.6rem 1rem;
-  }
-
-  .map3d-chrome__title {
-    font-size: 1rem;
   }
 
   .map3d-chrome__launcher {

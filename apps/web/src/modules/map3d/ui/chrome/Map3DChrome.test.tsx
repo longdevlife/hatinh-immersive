@@ -3,14 +3,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { Map3DChrome } from './Map3DChrome';
 
 describe('Map3DChrome', () => {
-  it('renders chrome with title', () => {
+  it('renders chrome with viewport', () => {
     render(
-      <Map3DChrome title="Ngã Ba Đồng Lộc">
+      <Map3DChrome>
         <div data-testid="viewport" />
       </Map3DChrome>,
     );
 
-    expect(screen.getByText('Ngã Ba Đồng Lộc')).toBeInTheDocument();
     expect(screen.getByTestId('viewport')).toBeInTheDocument();
   });
 
