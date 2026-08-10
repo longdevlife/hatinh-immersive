@@ -1,19 +1,28 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { ImmersiveControlsGroup, DestinationSearch, LocaleControl } from './ImmersiveControls';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+import { DestinationSearch, ImmersiveControlsGroup, LocaleControl } from './ImmersiveControls';
 
 describe('ImmersiveControls', () => {
-  it('renders destination search with accessible roles', () => {
+  it('keeps destination search compact until activated and closes with Escape', () => {
     const onSearch = vi.fn();
     render(<DestinationSearch onSearch={onSearch} />);
-    const form = screen.getByRole('search');
-    expect(form).toBeInTheDocument();
 
-    const input = screen.getByPlaceholderText('Tìm điểm tham quan...');
+    expect(screen.queryByRole('search')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tìm kiếm' }));
+
+    const form = screen.getByRole('search');
+    const input = screen.getByRole('searchbox', { name: 'Nhập tên điểm đến' });
+    expect(form).toBeInTheDocument();
+    expect(input).toHaveFocus();
+
     fireEvent.change(input, { target: { value: 'test' } });
     fireEvent.submit(form);
-
     expect(onSearch).toHaveBeenCalledWith('test');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('search')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mở tìm kiếm' })).toBeInTheDocument();
   });
 
   it('renders locale control and toggles value', () => {
@@ -25,7 +34,7 @@ describe('ImmersiveControls', () => {
     expect(btn).toHaveTextContent('EN');
   });
 
-  it('renders scene browser with current item marked', () => {
+  it('renders a lightweight scene browser with the current item marked', () => {
     const nodes = [
       { id: '1', name: 'Scene 1' },
       { id: '2', name: 'Scene 2' },
@@ -34,9 +43,9 @@ describe('ImmersiveControls', () => {
 
     const browser = screen.getByRole('navigation', { name: 'Danh sách cảnh quan' });
     expect(browser).toBeInTheDocument();
-    expect(screen.getByText('Lộ trình 360°')).toBeInTheDocument();
+    expect(screen.queryByText('Lộ trình 360°')).not.toBeInTheDocument();
 
-    const activeBtn = screen.getByText('Scene 1');
+    const activeBtn = screen.getByRole('button', { name: 'Scene 1' });
     expect(activeBtn).toHaveAttribute('aria-current', 'step');
   });
 });
