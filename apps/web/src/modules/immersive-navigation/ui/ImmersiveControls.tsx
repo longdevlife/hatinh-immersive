@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
-import type { DestinationPreviewVm, ImmersiveLocale, SceneNodeVm } from '../../../shared/contracts';
+import type {
+  DestinationPreviewVm,
+  ImmersiveLocale,
+  SceneLinkVm,
+  SceneNodeVm,
+} from '../../../shared/contracts';
 
 import './ImmersiveControls.css';
 
 export interface ImmersiveControlsProps {
   nodes: Pick<SceneNodeVm, 'id' | 'name'>[];
+  links?: Pick<SceneLinkVm, 'targetSceneId'>[] | undefined;
   currentSceneId?: string | null | undefined;
   destinations?: DestinationPreviewVm[] | undefined;
   locale?: ImmersiveLocale | undefined;
@@ -382,6 +388,7 @@ export function ShareControl() {
 
 export function ImmersiveControlsGroup({
   nodes,
+  links,
   currentSceneId,
   destinations,
   locale = 'vi',
@@ -391,6 +398,15 @@ export function ImmersiveControlsGroup({
   onSelectDestination,
   onLocaleChange,
 }: ImmersiveControlsProps) {
+  const visibleNodes = useMemo(() => {
+    if (!currentSceneId || links === undefined) {
+      return nodes;
+    }
+
+    const visibleIds = new Set([currentSceneId, ...links.map((link) => link.targetSceneId)]);
+    return nodes.filter((node) => visibleIds.has(node.id));
+  }, [currentSceneId, links, nodes]);
+
   return (
     <div className="panorama-controls" role="region" aria-label="Các công cụ tiện ích">
       <div className="panorama-controls__utilities">
@@ -407,7 +423,11 @@ export function ImmersiveControlsGroup({
         </div>
       </div>
       <div className="panorama-controls__scenes">
-        <SceneBrowser nodes={nodes} currentSceneId={currentSceneId} onNavigate={onNavigateScene} />
+        <SceneBrowser
+          nodes={visibleNodes}
+          currentSceneId={currentSceneId}
+          onNavigate={onNavigateScene}
+        />
       </div>
     </div>
   );
