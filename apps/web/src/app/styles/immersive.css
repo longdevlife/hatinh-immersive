@@ -10,6 +10,7 @@
 }
 
 .explore-shell {
+  --panorama-utility-row-height: var(--control-height-base, 2.7rem);
   background: var(--color-background-canvas);
   color: var(--color-text-inverse);
   isolation: isolate;
@@ -469,6 +470,7 @@
   left: var(--safe-area-spacing);
   bottom: auto;
   max-width: calc(100% - 2rem);
+  width: max-content;
   pointer-events: none;
   display: flex;
   gap: var(--space-3);
@@ -746,14 +748,6 @@
 
   .scene-identity {
     bottom: 10rem;
-  }
-
-  .explore-shell__controls {
-    top: 1rem;
-    left: auto;
-    right: 1rem;
-    gap: var(--space-1);
-    justify-content: flex-end;
   }
 
   .explore-shell__minimap {

@@ -266,10 +266,12 @@ interface RendererHostProps {
   onLocationSelected(locationId: string): void;
   onNodeChange(nodeId: string, view: PanoramaView): void;
   onStatusChange(status: RendererStatus): void;
-  onViewChange(view: PanoramaView): void;
+  onViewChange?: (view: PanoramaView) => void;
   panoramaNode: PanoramaNode | null;
   panoramaNodes: PanoramaNode[];
-  cameraPreset: LocationCameraPreset | undefined;
+  cameraPreset?: LocationCameraPreset;
+  hotspots?: any[];
+  onHotspotClick?: (id: string) => void;
   retryKey: number;
 }
 
@@ -286,6 +288,8 @@ function RendererHost({
   panoramaNode,
   panoramaNodes,
   cameraPreset,
+  hotspots,
+  onHotspotClick,
   retryKey,
 }: RendererHostProps): ReactNode {
   if (!engine || activeRenderer === 'none') {
@@ -319,6 +323,8 @@ function RendererHost({
           onStatusChange={onStatusChange}
           onViewChange={onViewChange}
           tourNodes={panoramaNodes}
+          hotspots={hotspots}
+          onHotspotClick={onHotspotClick}
         />
       </Suspense>
     );
@@ -438,7 +444,6 @@ export function ImmersiveExperience({
   const navigation = useImmersiveNavigation();
   const [locale, setLocale] = useState<ImmersiveLocale>('vi');
   const [destinationSearchQuery, setDestinationSearchQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const manifestQuery = useImmersiveManifest(destinationSlug, locale, !manifestOverride);
   const shouldFetchDestinations =
     destinationsOverride === undefined &&
@@ -831,6 +836,8 @@ export function ImmersiveExperience({
       panoramaNode={currentPanoramaNode}
       panoramaNodes={manifest.panoramaNodes}
       cameraPreset={selectedLocationPreset}
+      hotspots={view.hotspots}
+      onHotspotClick={actions.onSelectHotspot}
       retryKey={retryKey}
     />
   );
@@ -849,8 +856,6 @@ export function ImmersiveExperience({
         rendererContent={rendererContent}
         selectedLocationId={navigation.selectedLocationId}
         view={view}
-        forceMinimapCollapsed={isSearchOpen}
-        onMinimapOpenChange={(isOpen) => isOpen && setIsSearchOpen(false)}
       />
       {navigation.mode === 'panorama' ? (
         <ImmersiveControlsGroup
@@ -863,8 +868,6 @@ export function ImmersiveExperience({
           onNavigateScene={actions.onNavigateScene}
           onSearchDestination={setDestinationSearchQuery}
           onSelectDestination={onSelectDestination}
-          isSearchOpen={isSearchOpen}
-          onSearchOpenChange={setIsSearchOpen}
         />
       ) : null}
       {selectedHotspot && selectedHotspotType ? (

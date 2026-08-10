@@ -13,6 +13,8 @@ export interface PanoramaViewportProps {
   fallback?: ReactNode;
   initialView?: PanoramaView;
   node: PanoramaNode;
+  hotspots?: any[];
+  onHotspotClick?: (id: string) => void;
   onStatusChange?: (status: RendererStatus) => void;
   onNodeChange?: (nodeId: string, view: PanoramaView) => void;
   onViewChange?: (view: PanoramaView) => void;
@@ -24,6 +26,8 @@ export function PanoramaViewport({
   fallback = <p role="alert">Không thể tải không gian toàn cảnh.</p>,
   initialView,
   node,
+  hotspots,
+  onHotspotClick,
   onNodeChange,
   onStatusChange,
   onViewChange,
@@ -142,6 +146,12 @@ export function PanoramaViewport({
       cancelled = true;
     };
   }, [engine, node]);
+
+  useEffect(() => {
+    if (status === 'ready' && hotspots && onHotspotClick) {
+      engine.setHotspots?.(hotspots, onHotspotClick);
+    }
+  }, [engine, status, hotspots, onHotspotClick]);
 
   return (
     <div

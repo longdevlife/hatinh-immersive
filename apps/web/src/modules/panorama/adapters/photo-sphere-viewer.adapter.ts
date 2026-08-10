@@ -40,6 +40,14 @@ export interface PhotoSphereViewerInstance {
   zoom(level: number): void;
 }
 
+export interface PhotoSphereMarkersPlugin {
+  addMarker(marker: unknown): void;
+  clearMarkers(): void;
+  setMarkers(markers: unknown[]): void;
+  addEventListener(type: string, listener: (event: unknown, marker: unknown) => void): void;
+  removeEventListener(type: string, listener: (event: unknown, marker: unknown) => void): void;
+}
+
 export interface PhotoSphereVirtualTourPlugin {
   addEventListener?(type: string, listener: PhotoSphereViewerEventListener): void;
   removeEventListener?(type: string, listener: PhotoSphereViewerEventListener): void;
@@ -205,6 +213,11 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   private mountGeneration = 0;
   private loadGeneration = 0;
   private committedNodeId: string | null = null;
+  private markersPlugin: PhotoSphereMarkersPlugin | null = null;
+  private hotspotSelectHandler: ((id: string) => void) | null = null;
+  private readonly handleMarkerClick = (_: unknown, marker: { id: string }) => {
+    this.hotspotSelectHandler?.(marker.id);
+  };
 
   constructor(options: PhotoSphereViewerAdapterOptions = {}) {
     this.options = options;
@@ -298,6 +311,29 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     this.viewer.zoom(fovToZoom(view.fov));
   }
 
+  setHotspots(hotspots: any[], onSelect: (id: string) => void): void {
+    if (!this.markersPlugin) {
+      return;
+    }
+
+    this.hotspotSelectHandler = onSelect;
+    this.markersPlugin.setMarkers(
+      hotspots.map((hotspot) => ({
+        id: hotspot.id,
+        yaw: degreesToRadians(normalizeHeading(hotspot.yaw)),
+        pitch: degreesToRadians(clamp(hotspot.pitch, -90, 90)),
+        html: `
+          <button class="hotspot-marker hotspot-marker--${hotspot.type}" aria-haspopup="dialog" aria-label="${hotspot.label ?? 'Mở điểm khám phá'}">
+            <span aria-hidden="true">+</span>
+            <span class="hotspot-marker__label">${hotspot.label ?? ''}</span>
+          </button>
+        `,
+        size: { width: 44, height: 44 },
+        anchor: 'center center',
+      })),
+    );
+  }
+
   subscribeViewChanged(listener: (view: PanoramaView) => void): () => void {
     this.viewListeners.add(listener);
     return () => this.viewListeners.delete(listener);
@@ -343,7 +379,10 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
 
     this.viewer = viewer;
     this.virtualTour = viewer.getPlugin<PhotoSphereVirtualTourPlugin>('virtual-tour');
+    this.markersPlugin = viewer.getPlugin<PhotoSphereMarkersPlugin>('markers');
+
     this.virtualTour.addEventListener?.('node-changed', this.handleNodeChanged);
+    this.markersPlugin.addEventListener('select-marker', this.handleMarkerClick);
     viewer.addEventListener('position-updated', this.handlePositionUpdated);
     viewer.addEventListener('zoom-updated', this.handleZoomUpdated);
   }

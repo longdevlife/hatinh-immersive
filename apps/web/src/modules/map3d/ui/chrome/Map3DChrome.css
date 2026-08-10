@@ -1,11 +1,29 @@
 .map3d-chrome {
+  --chrome-bg: rgba(10, 20, 16, 0.65);
+  --chrome-border: rgba(255, 255, 255, 0.15);
+  --chrome-blur: 24px;
+  --chrome-text-primary: #ffffff;
+  --chrome-text-secondary: rgba(255, 255, 255, 0.7);
+  --chrome-accent: #e5a95f;
+  --chrome-accent-hover: #f3b971;
+  --chrome-transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --chrome-z-index: 100;
+
   display: flex;
   flex-direction: column;
   position: absolute;
   inset: 0;
   overflow: hidden;
-  font-family: var(--font-family, inherit);
-  color: var(--color-text-inverse);
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  color: var(--chrome-text-primary);
   pointer-events: none; /* Let clicks pass through to 3D world */
 }
 
@@ -16,7 +34,7 @@
 .map3d-chrome__viewport {
   position: absolute;
   inset: 0;
-  z-index: var(--z-index-base);
+  z-index: 0;
   pointer-events: auto;
 }
 
@@ -29,136 +47,134 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: var(--safe-area-spacing);
-  z-index: var(--z-index-overlay);
+  padding: 1.5rem 2rem;
+  z-index: var(--chrome-z-index);
   pointer-events: none;
 }
 
-/* UTILITIES CLUSTER (Top Right) */
-.map3d-chrome__utilities {
+/* ACTIONS */
+.map3d-chrome__actions {
   display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  pointer-events: none; /* Children handle events */
-  position: relative;
+  gap: 0.5rem;
+  pointer-events: auto;
+  background: var(--chrome-bg);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  padding: 0.5rem;
+  border-radius: 50px;
+  border: 1px solid var(--chrome-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 .map3d-chrome__icon-btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: var(--control-height-base);
-  height: var(--control-height-base);
-  border-radius: var(--radius-control);
-  background: var(--color-background-overlay);
-  backdrop-filter: var(--backdrop-blur-base);
-  -webkit-backdrop-filter: var(--backdrop-blur-base);
-  border: 1px solid var(--color-border-subtle);
-  color: var(--color-text-inverse);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--chrome-text-primary);
   cursor: pointer;
-  font-size: var(--icon-size-sm);
-  font-weight: var(--font-weight-bold);
-  box-shadow: var(--elevation-1);
-  transition: all var(--motion-duration-fast) var(--motion-easing-enter);
-  pointer-events: auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: all var(--chrome-transition);
 }
 
 .map3d-chrome__icon-btn svg {
-  width: var(--icon-size-base);
-  height: var(--icon-size-base);
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .map3d-chrome__icon-btn:hover,
 .map3d-chrome__icon-btn:focus-visible {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.12);
   outline: none;
 }
 
-/* STATUS GROUP (Top Left) */
-.map3d-chrome__status-group {
-  pointer-events: auto;
-}
-
 .map3d-chrome__network {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  padding: 0 var(--space-4);
-  height: var(--control-height-base);
+  padding: 0 1rem;
   font-size: 0.75rem;
-  font-weight: var(--font-weight-semibold);
-  border-radius: var(--radius-control);
-  border: 1px solid var(--color-border-subtle);
-  backdrop-filter: var(--backdrop-blur-base);
-  -webkit-backdrop-filter: var(--backdrop-blur-base);
-  box-shadow: var(--elevation-1);
+  font-weight: 600;
+  border-radius: 20px;
+  margin-left: 0.25rem;
 }
 
 .map3d-chrome__network--constrained {
-  background: rgba(200, 138, 42, 0.2); /* color-state-warning with opacity */
+  background: rgba(229, 169, 95, 0.2);
   color: #ffdfa6;
 }
 
 .map3d-chrome__network--offline {
-  background: rgba(187, 74, 61, 0.3); /* color-state-error with opacity */
+  background: rgba(239, 83, 80, 0.2);
   color: #ffb4b2;
 }
 
-/* SEARCH GROUP */
-.map3d-chrome__search-group {
+/* LAUNCHER (Compact Search/List) */
+.map3d-chrome__launcher {
+  position: absolute;
+  top: 6.5rem;
+  left: 2rem;
+  z-index: var(--chrome-z-index);
+  pointer-events: auto;
+}
+
+.map3d-chrome__launcher-toggle {
   display: flex;
   align-items: center;
-  background: var(--color-background-overlay);
-  backdrop-filter: var(--backdrop-blur-base);
-  -webkit-backdrop-filter: var(--backdrop-blur-base);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-control);
-  box-shadow: var(--elevation-1);
-  pointer-events: auto;
-  transition: all var(--motion-duration-base) var(--motion-easing-enter);
-  overflow: hidden;
+  gap: 0.75rem;
+  background: var(--chrome-bg);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  border: 1px solid var(--chrome-border);
+  padding: 0.85rem 1.25rem;
+  border-radius: 24px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: all var(--chrome-transition);
 }
 
-.map3d-chrome__search-group--open {
-  background: var(--color-background-overlay);
+.map3d-chrome__launcher-toggle svg:not(.map3d-chrome__chevron) {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--chrome-text-secondary);
 }
 
-.map3d-chrome__search-group .map3d-chrome__search-toggle {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  backdrop-filter: none;
+.map3d-chrome__chevron {
+  width: 1rem;
+  height: 1rem;
+  color: var(--chrome-text-secondary);
+  transition: transform var(--chrome-transition);
 }
 
-.map3d-chrome__search-input {
-  background: transparent;
-  border: none;
-  color: var(--color-text-inverse);
-  padding: 0 var(--space-2) 0 var(--space-4);
-  font-size: 0.9rem;
-  width: 16rem;
+.map3d-chrome__chevron--open {
+  transform: rotate(180deg);
+}
+
+.map3d-chrome__launcher-toggle:hover,
+.map3d-chrome__launcher-toggle:focus-visible {
+  background: rgba(20, 30, 25, 0.85);
+  border-color: rgba(255, 255, 255, 0.3);
   outline: none;
-  transition: width var(--motion-duration-base) var(--motion-easing-enter);
-}
-
-.map3d-chrome__search-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
 }
 
 .map3d-chrome__launcher-dropdown {
-  position: absolute;
-  top: calc(100% + var(--space-2));
-  right: 0;
+  margin-top: 0.75rem;
   width: 22rem;
-  background: var(--color-background-overlay);
-  backdrop-filter: var(--backdrop-blur-heavy);
-  -webkit-backdrop-filter: var(--backdrop-blur-heavy);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
+  background: var(--chrome-bg);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  border: 1px solid var(--chrome-border);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: var(--elevation-3);
-  pointer-events: auto;
-  animation: slideDownFade var(--motion-duration-base) var(--motion-easing-enter) forwards;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+  animation: slideDownFade 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 @keyframes slideDownFade {
@@ -173,14 +189,29 @@
 }
 
 .map3d-chrome__search-container {
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--color-border-subtle);
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.map3d-chrome__search-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.map3d-chrome__search-input:focus {
+  outline: none;
+  border-color: var(--chrome-accent);
 }
 
 .map3d-chrome__location-list {
   max-height: 40vh;
   overflow-y: auto;
-  padding: var(--space-2);
+  padding: 0.5rem;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
@@ -196,15 +227,15 @@
 .map3d-chrome__location-btn {
   width: 100%;
   display: block;
-  padding: var(--space-3) var(--space-4);
+  padding: 0.85rem 1rem;
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm);
-  color: var(--color-text-inverse);
+  border-radius: 8px;
+  color: var(--chrome-text-primary);
   font-size: 0.9rem;
   text-align: left;
   cursor: pointer;
-  transition: background var(--motion-duration-fast) var(--motion-easing-enter);
+  transition: background var(--chrome-transition);
 }
 
 .map3d-chrome__location-btn:hover,
@@ -214,15 +245,15 @@
 }
 
 .map3d-chrome__location-btn--selected {
-  background: rgba(217, 128, 60, 0.15); /* color-accent-primary with opacity */
-  color: var(--color-accent-primary);
-  font-weight: var(--font-weight-semibold);
+  background: rgba(229, 169, 95, 0.15);
+  color: var(--chrome-accent);
+  font-weight: 600;
 }
 
 .map3d-chrome__location-empty {
-  padding: var(--space-5);
+  padding: 1.5rem;
   text-align: center;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--chrome-text-secondary);
   font-size: 0.9rem;
   margin: 0;
 }
@@ -230,12 +261,12 @@
 /* HANDOFF AFFORDANCE */
 .map3d-chrome__handoff {
   position: absolute;
-  bottom: var(--safe-area-bottom);
+  bottom: 2.5rem;
   left: 50%;
   transform: translateX(-50%);
-  z-index: var(--z-index-overlay);
+  z-index: var(--chrome-z-index);
   pointer-events: auto;
-  animation: slideUpFade var(--motion-duration-slow) var(--motion-easing-spatial) forwards;
+  animation: slideUpFade 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 @keyframes slideUpFade {
@@ -252,54 +283,54 @@
 .map3d-chrome__enter-360-btn {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  background: var(--color-accent-primary);
+  gap: 0.5rem;
+  background: var(--chrome-accent);
   color: #1a1a1a;
-  padding: var(--space-3) var(--space-5);
+  padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: var(--radius-pill);
+  border-radius: 40px;
   cursor: pointer;
-  box-shadow: var(--elevation-2);
-  transition: all var(--motion-duration-base) var(--motion-easing-enter);
-  font-weight: var(--font-weight-bold);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  transition: all var(--chrome-transition);
+  font-weight: 700;
   font-size: 0.95rem;
 }
 
 .map3d-chrome__retry-btn {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  background: rgba(187, 74, 61, 0.9); /* color-state-error */
-  backdrop-filter: var(--backdrop-blur-base);
-  -webkit-backdrop-filter: var(--backdrop-blur-base);
-  border: 1px solid rgba(187, 74, 61, 0.4);
-  padding: var(--space-3) var(--space-5);
-  border-radius: var(--radius-pill);
-  color: var(--color-text-inverse);
+  gap: 0.5rem;
+  background: rgba(220, 38, 38, 0.9);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 0.75rem 1.5rem;
+  border-radius: 40px;
+  color: #fff;
   font-size: 0.95rem;
-  font-weight: var(--font-weight-bold);
+  font-weight: 700;
   cursor: pointer;
-  box-shadow: var(--elevation-2);
-  transition: all var(--motion-duration-base) var(--motion-easing-enter);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  transition: all var(--chrome-transition);
 }
 
 .map3d-chrome__retry-btn svg {
-  width: var(--icon-size-base);
-  height: var(--icon-size-base);
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .map3d-chrome__retry-btn:hover,
 .map3d-chrome__retry-btn:focus-visible {
-  background: var(--color-state-error);
-  transform: translateY(-2px) scale(1.02);
+  background: rgba(239, 68, 68, 1);
+  transform: translateY(-4px) scale(1.02);
   outline: none;
 }
 
 .map3d-chrome__spinner {
   display: inline-block;
-  width: var(--icon-size-sm);
-  height: var(--icon-size-sm);
-  margin-right: var(--space-2);
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.5rem;
   border: 2px solid rgba(255, 255, 255, 0.2);
   border-top-color: #fff;
   border-radius: 50%;
@@ -316,42 +347,58 @@
 .map3d-chrome__handoff-action {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0.5rem;
 }
 
 .map3d-chrome__handoff-action svg {
-  width: var(--icon-size-base);
-  height: var(--icon-size-base);
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .map3d-chrome__handoff-status {
-  background: var(--color-background-overlay);
-  backdrop-filter: var(--backdrop-blur-base);
-  -webkit-backdrop-filter: var(--backdrop-blur-base);
-  border: 1px solid var(--color-border-subtle);
-  padding: var(--space-3) var(--space-5);
-  border-radius: var(--radius-pill);
-  color: rgba(255, 255, 255, 0.7);
+  background: var(--chrome-bg);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  border: 1px solid var(--chrome-border);
+  padding: 0.75rem 1.5rem;
+  border-radius: 40px;
+  color: var(--chrome-text-secondary);
   font-size: 0.95rem;
-  font-weight: var(--font-weight-semibold);
-  box-shadow: var(--elevation-2);
+  font-weight: 600;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
 .map3d-chrome__enter-360-btn:hover,
 .map3d-chrome__enter-360-btn:focus-visible {
-  filter: brightness(1.1);
-  transform: translateY(-2px) scale(1.02);
+  background: var(--chrome-accent-hover);
+  transform: translateY(-4px) scale(1.02);
   outline: none;
 }
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
+  .map3d-chrome__topbar {
+    padding: 1rem;
+  }
+
+  .map3d-chrome__launcher {
+    top: 5rem;
+    left: 1rem;
+    right: 1rem;
+  }
+
+  .map3d-chrome__launcher-dropdown {
+    width: 100%;
+  }
+
   .map3d-chrome__handoff {
+    bottom: 2rem;
     width: 90%;
   }
 
   .map3d-chrome__enter-360-btn {
     width: 100%;
     justify-content: center;
+    padding: 0.5rem;
   }
 }

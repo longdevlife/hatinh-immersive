@@ -81,56 +81,27 @@ export function MinimapViewport({
       data-minimap-status={status}
       role="application"
     >
-      {!collapsed && (
-        <header className="minimap-viewport__header">
-          <strong>
-            {nodes.filter((node) => node.isVisited).length}/{nodes.length} điểm đã khám phá
-          </strong>
-          {showToggle && (
-            <button
-              aria-expanded={true}
-              aria-label="Thu gọn bản đồ"
-              className="minimap-viewport__toggle"
-              type="button"
-              onClick={onToggle}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-            </button>
-          )}
-        </header>
-      )}
-
-      {collapsed && showToggle && (
-        <button
-          aria-expanded={false}
-          aria-label="Mở rộng bản đồ"
-          className="minimap-viewport__toggle minimap-viewport__toggle--standalone"
-          type="button"
-          onClick={onToggle}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
+      <header className="minimap-viewport__header">
+        <div>
+          <p className="immersive-kicker">Bản đồ hành trình</p>
+          {!collapsed ? (
+            <strong>
+              {nodes.filter((node) => node.isVisited).length}/{nodes.length} điểm đã đi
+            </strong>
+          ) : null}
+        </div>
+        {showToggle ? (
+          <button
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
+            className="immersive-icon-button"
+            type="button"
+            onClick={onToggle}
           >
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-          </svg>
-        </button>
-      )}
+            {collapsed ? '+' : '−'}
+          </button>
+        ) : null}
+      </header>
       <div
         ref={containerRef}
         aria-hidden={collapsed}

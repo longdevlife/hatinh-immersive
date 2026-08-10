@@ -165,7 +165,7 @@ describe('ExploreShell', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Đang tải không gian 360°');
     expect(screen.getByRole('button', { name: 'Quay lại không gian 3D' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
 
     expect(actions.onToggleMinimap).toHaveBeenCalledTimes(1);
   });
@@ -179,6 +179,12 @@ describe('ExploreShell', () => {
     expect(transitionState).toHaveAttribute('data-renderer-transition', 'scene');
     expect(transitionState).toHaveClass('immersive-renderer-state--transitioning');
     expect(transitionState).toHaveTextContent('Đang chuyển cảnh');
+  });
+  it('omits unavailable audio controls', () => {
+    const actions = createActions();
+    render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
+
+    expect(screen.queryByLabelText('Hướng dẫn âm thanh')).not.toBeInTheDocument();
   });
 
   it('exposes role="region" with accessible name on the control groups', () => {

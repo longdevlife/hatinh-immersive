@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import type { ImmersiveActions, ImmersiveLocale, ImmersiveViewVm } from '../../../shared/contracts';
 import { Map3DChrome, type Map3DChromeLocation } from '../../map3d';
@@ -18,8 +18,6 @@ export interface ExploreShellProps {
   onLocationSelected?: (locationId: string) => void;
   rendererContent?: ReactNode;
   selectedLocationId?: string | null;
-  forceMinimapCollapsed?: boolean;
-  onMinimapOpenChange?: (isOpen: boolean) => void;
 }
 
 function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; onToggle(): void }) {
@@ -30,52 +28,21 @@ function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; o
       data-minimap-status="loading"
       role="application"
     >
-      {!collapsed && (
-        <header className="minimap-viewport__header">
-          <strong>Đang tải bản đồ…</strong>
-          <button
-            aria-expanded={true}
-            aria-label="Thu gọn bản đồ"
-            className="minimap-viewport__toggle"
-            type="button"
-            onClick={onToggle}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-        </header>
-      )}
-
-      {collapsed && (
+      <header className="minimap-viewport__header">
+        <div>
+          <p className="immersive-kicker">Bản đồ hành trình</p>
+          {!collapsed ? <strong>Đang tải bản đồ…</strong> : null}
+        </div>
         <button
-          aria-expanded={false}
-          aria-label="Mở rộng bản đồ"
-          className="minimap-viewport__toggle minimap-viewport__toggle--standalone"
+          aria-expanded={!collapsed}
+          aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
+          className="immersive-icon-button"
           type="button"
           onClick={onToggle}
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-          </svg>
+          {collapsed ? '+' : '−'}
         </button>
-      )}
+      </header>
     </section>
   );
 }
@@ -92,32 +59,13 @@ export function ExploreShell({
   onLanguageToggle,
   onLocationSelected,
   selectedLocationId = null,
-  forceMinimapCollapsed = false,
-  onMinimapOpenChange,
 }: ExploreShellProps) {
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
-  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(true);
+  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
-
-  const toggleMinimap = useCallback(() => {
-    setIsMinimapCollapsed((prev) => {
-      const next = !prev;
-      if (!next) {
-        onMinimapOpenChange?.(true);
-      }
-      return next;
-    });
-    actions.onToggleMinimap();
-  }, [actions, onMinimapOpenChange]);
-
-  useEffect(() => {
-    if (forceMinimapCollapsed) {
-      setIsMinimapCollapsed(true);
-    }
-  }, [forceMinimapCollapsed]);
 
   useEffect(() => {
     setIsInfoOpen(view.mode === 'overview3d' && !hasMap3DChrome);
@@ -137,6 +85,11 @@ export function ExploreShell({
   function closeInfo() {
     setIsInfoOpen(false);
     actions.onCloseDestinationInfo();
+  }
+
+  function toggleMinimap() {
+    setIsMinimapCollapsed((collapsed) => !collapsed);
+    actions.onToggleMinimap();
   }
 
   async function toggleFullscreen() {
@@ -220,14 +173,14 @@ export function ExploreShell({
             rendererContent
           )}
         </div>
-        {!isPanorama && !hasMap3DChrome ? (
+        {hasMap3DChrome ? null : (
           <div className="overview-marker" aria-label={`Điểm đến ${view.destination.name}`}>
             <span className="overview-marker__pin" aria-hidden="true">
               ⌖
             </span>
             <strong>{view.destination.name}</strong>
           </div>
-        ) : null}
+        )}
         <RendererState
           mode={view.mode}
           status={view.rendererStatus}
@@ -272,43 +225,12 @@ export function ExploreShell({
       ) : null}
 
       {isPanorama ? (
-        <div className="explore-shell__minimap">
-          {minimapEngine ? (
-            <MinimapViewport
-              currentSceneId={view.currentScene?.id ?? null}
-              heading={view.heading}
-              nodes={view.nodes}
-              links={view.links}
-              collapsed={isMinimapCollapsed}
-              engine={minimapEngine}
-              onToggle={toggleMinimap}
-              onNodeSelect={actions.onNavigateScene}
-            />
-          ) : (
-            <MinimapLoadingBoundary collapsed={isMinimapCollapsed} onToggle={toggleMinimap} />
-          )}
-        </div>
-      ) : null}
-
-      {isPanorama ? (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
           <button
-            className="immersive-button immersive-button--back"
+            className="immersive-button immersive-button--quiet"
             type="button"
             onClick={actions.onEnter3D}
-            aria-label="Quay lại không gian 3D"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
             Quay lại không gian 3D
           </button>
         </div>
@@ -327,6 +249,25 @@ export function ExploreShell({
           )}
         </div>
       )}
+
+      {isPanorama ? (
+        <div className="explore-shell__minimap">
+          {minimapEngine ? (
+            <MinimapViewport
+              currentSceneId={view.currentScene?.id ?? null}
+              heading={view.heading}
+              nodes={view.nodes}
+              links={view.links}
+              collapsed={isMinimapCollapsed}
+              engine={minimapEngine}
+              onToggle={toggleMinimap}
+              onNodeSelect={actions.onNavigateScene}
+            />
+          ) : (
+            <MinimapLoadingBoundary collapsed={isMinimapCollapsed} onToggle={toggleMinimap} />
+          )}
+        </div>
+      ) : null}
 
       <aside
         id="destination-info-panel"
