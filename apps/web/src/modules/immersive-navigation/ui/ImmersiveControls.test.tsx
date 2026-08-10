@@ -40,18 +40,28 @@ describe('ImmersiveControls', () => {
     expect(btn).toHaveTextContent('EN');
   });
 
-  it('renders a lightweight scene browser with the current item marked', () => {
+  it('renders current plus reachable scenes and marks current without color alone', () => {
     const nodes = [
       { id: '1', name: 'Scene 1' },
       { id: '2', name: 'Scene 2' },
+      { id: '3', name: 'Scene 3' },
     ];
-    render(<ImmersiveControlsGroup nodes={nodes} currentSceneId="1" />);
+    render(
+      <ImmersiveControlsGroup
+        nodes={nodes}
+        links={[{ targetSceneId: '2' }]}
+        currentSceneId="1"
+      />,
+    );
 
     const browser = screen.getByRole('navigation', { name: 'Danh sách cảnh quan' });
     expect(browser).toBeInTheDocument();
     expect(screen.queryByText('Lộ trình 360°')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Scene 2' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Scene 3' })).not.toBeInTheDocument();
 
     const activeBtn = screen.getByRole('button', { name: 'Scene 1' });
     expect(activeBtn).toHaveAttribute('aria-current', 'step');
+    expect(activeBtn.querySelector('.panorama-scene-browser__state')).toBeInTheDocument();
   });
 });
