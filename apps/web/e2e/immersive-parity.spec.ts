@@ -165,7 +165,9 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
   await page.getByRole('button', { name: 'Chia sẻ cảnh này' }).click();
 
   await page.getByRole('button', { name: 'Mở tìm kiếm' }).click();
-  const searchInput = page.getByRole('search').getByRole('searchbox', { name: 'Nhập tên điểm đến' });
+  const searchInput = page
+    .getByRole('search')
+    .getByRole('searchbox', { name: 'Nhập tên điểm đến' });
   await searchInput.fill('Nguyễn');
   await expect(page.getByRole('button', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
   await page.getByRole('button', { name: 'Khu lưu niệm Nguyễn Du' }).click();
