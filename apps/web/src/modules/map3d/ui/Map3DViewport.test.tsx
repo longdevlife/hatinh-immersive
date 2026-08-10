@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -110,6 +110,44 @@ describe('Map3DViewport', () => {
     render(<Map3DViewport engine={engine} />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Không thể mở không gian 3D');
+  });
+
+  it('reports a failed mount and retries with one fresh lifecycle', async () => {
+    let attempts = 0;
+    const engine = {
+      mount: vi.fn(async () => {
+        attempts += 1;
+        if (attempts === 1) {
+          throw new Error('GOOGLE_MAPS_3D_READY_TIMEOUT');
+        }
+      }),
+      setLocations: vi.fn(async () => undefined),
+      subscribeLocationSelected: vi.fn(() => () => undefined),
+      flyTo: vi.fn(async () => undefined),
+      addModel: vi.fn(async () => undefined),
+      destroy: vi.fn(),
+    } satisfies Map3DEnginePort;
+
+    function RetryHarness() {
+      const [retryKey, setRetryKey] = useState(0);
+      return (
+        <Map3DViewport
+          key={retryKey}
+          engine={engine}
+          fallback={<button onClick={() => setRetryKey((value) => value + 1)}>Thử lại</button>}
+        />
+      );
+    }
+
+    render(<RetryHarness />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Thử lại' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('application')).toHaveAttribute('data-renderer-status', 'ready');
+    });
+    expect(engine.mount).toHaveBeenCalledTimes(2);
+    expect(engine.destroy).toHaveBeenCalledTimes(1);
   });
 
   it('keeps one mounted map element while the selected location changes', async () => {

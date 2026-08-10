@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Map3DLocation, ModelPlacement } from '../domain/map3d-engine.port';
 import {
@@ -86,6 +86,10 @@ const model: ModelPlacement = {
   heading: 12,
   scale: 0.8,
 };
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('GoogleMaps3DEngine', () => {
   it('waits for the async loader callback before importing the maps3d library', async () => {
@@ -254,5 +258,84 @@ describe('GoogleMaps3DEngine', () => {
 
     await expect(failingEngine.mount(failingContainer)).rejects.toThrow('GOOGLE_MAPS_3D_ERROR');
     expect(failingContainer).toBeEmptyDOMElement();
+  });
+
+  it('times out readiness, cleans the failed map, and mounts a clean retry', async () => {
+    vi.useFakeTimers();
+    const maps: Array<HTMLElement & { removedEventTypes: string[] }> = [];
+    let mountAttempt = 0;
+
+    class RetryableMap3DElement extends HTMLElement {
+      readonly removedEventTypes: string[] = [];
+
+      constructor(_options: GoogleMap3DElementOptions) {
+        super();
+        maps.push(this);
+        mountAttempt += 1;
+        if (mountAttempt === 2) {
+          queueMicrotask(() => {
+            const event = new Event('gmp-steadychange');
+            Object.defineProperty(event, 'isSteady', { value: true });
+            this.dispatchEvent(event);
+          });
+        }
+      }
+
+      flyCameraTo(_options: unknown) {
+        return undefined;
+      }
+
+      stopCameraAnimation() {
+        return undefined;
+      }
+
+      override removeEventListener(
+        type: string,
+        callback: EventListenerOrEventListenerObject,
+        options?: boolean | EventListenerOptions,
+      ) {
+        this.removedEventTypes.push(type);
+        super.removeEventListener(type, callback, options);
+      }
+    }
+    customElements.define('gmp-map-3d-retryable', RetryableMap3DElement);
+
+    const engine = new GoogleMaps3DEngine({
+      loadLibrary: vi.fn(async () => ({
+        ...library,
+        Map3DElement: RetryableMap3DElement,
+      })),
+      readinessTimeoutMs: 8_000,
+    });
+    const container = document.createElement('div');
+    const firstMount = engine.mount(container);
+    void firstMount.catch(() => undefined);
+
+    await vi.advanceTimersByTimeAsync(8_000);
+
+    await expect(firstMount).rejects.toThrow('GOOGLE_MAPS_3D_READY_TIMEOUT');
+    expect(container).toBeEmptyDOMElement();
+    expect(maps[0]?.removedEventTypes).toEqual(
+      expect.arrayContaining(['gmp-error', 'gmp-steadychange']),
+    );
+
+    await expect(engine.mount(container)).resolves.toBeUndefined();
+    await engine.setLocations([
+      {
+        id: 'destination-a',
+        label: 'Điểm A',
+        position: { lat: 18.3421, lng: 105.9032 },
+        cameraPreset: {
+          center: { lat: 18.3421, lng: 105.9032 },
+          heading: 32,
+          tilt: 58,
+          range: 1_250,
+        },
+      },
+    ]);
+
+    expect(maps).toHaveLength(2);
+    expect(container.querySelectorAll('[data-location-id="destination-a"]')).toHaveLength(1);
+    engine.destroy();
   });
 });

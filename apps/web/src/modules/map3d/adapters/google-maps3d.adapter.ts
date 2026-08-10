@@ -77,6 +77,7 @@ export interface GoogleMaps3DAdapterOptions {
   language?: string;
   loadLibrary?: () => Promise<Maps3DLibrary>;
   mapId?: string;
+  readinessTimeoutMs?: number;
   region?: string;
   version?: string;
   windowRef?: GoogleMaps3DWindow;
@@ -86,18 +87,38 @@ interface GoogleSteadyChangeEvent extends Event {
   isSteady?: boolean;
 }
 
-function waitForMapReady(map: GoogleMap3DElement, signal: AbortSignal): Promise<void> {
+const DEFAULT_READINESS_TIMEOUT_MS = 8_000;
+
+function waitForMapReady(
+  map: GoogleMap3DElement,
+  signal: AbortSignal,
+  timeoutMs: number,
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const timeoutId = globalThis.setTimeout(
+      () => rejectWith(new Error('GOOGLE_MAPS_3D_READY_TIMEOUT')),
+      timeoutMs,
+    );
     const cleanup = () => {
+      globalThis.clearTimeout(timeoutId);
       map.removeEventListener('gmp-error', onError);
       map.removeEventListener('gmp-steadychange', onSteadyChange);
       signal.removeEventListener('abort', onAbort);
     };
     const resolveReady = () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
       cleanup();
       resolve();
     };
     const rejectWith = (error: Error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
       cleanup();
       reject(error);
     };
@@ -310,7 +331,11 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
     const readinessController = new AbortController();
     this.readinessController = readinessController;
     try {
-      await waitForMapReady(map, readinessController.signal);
+      await waitForMapReady(
+        map,
+        readinessController.signal,
+        this.options.readinessTimeoutMs ?? DEFAULT_READINESS_TIMEOUT_MS,
+      );
     } catch (error) {
       if (this.map === map) {
         this.destroyMountedMap();
