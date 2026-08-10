@@ -852,4 +852,6 @@
   color: var(--color-text-inverse, #fff) !important;
   white-space: normal !important;
   word-wrap: break-word !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
