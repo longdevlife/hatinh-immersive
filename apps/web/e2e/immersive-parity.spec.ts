@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
 
+const cameraPreset = (lat: number, lng: number, heading = 0) => ({
+  center: { lat, lng, altitude: 150 },
+  heading,
+  tilt: 55,
+  range: 1_000,
+});
+
 const manifest = (locale: string) => ({
   defaultSceneId: 'scene-01',
   destination: {
@@ -10,6 +17,7 @@ const manifest = (locale: string) => ({
     defaultSceneId: 'scene-01',
     description: 'Một hành trình di sản.',
     geoPoint: { latitude: 18.3421, longitude: 105.9032 },
+    cameraPreset: cameraPreset(18.3421, 105.9032, 24),
     id: 'destination-01',
     name: locale === 'en' ? 'Son Trang Heritage' : 'Sơn Trang Cổ Đạm',
     slug: 'son-trang-co-dam',
@@ -105,10 +113,22 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
           coverImageUrl: null,
           defaultSceneId: null,
           geoPoint: { latitude: 18.2231, longitude: 106.3321 },
+          cameraPreset: cameraPreset(18.2231, 106.3321, 70),
           id: 'destination-02',
           name: 'Đảo Sơn Dương',
           slug: 'dao-son-duong',
           summary: 'Một điểm đến ven biển.',
+        },
+        {
+          categoryLabel: 'Di sản & văn hóa',
+          coverImageUrl: null,
+          defaultSceneId: 'nguyen-du-courtyard',
+          geoPoint: { latitude: 18.6647657, longitude: 105.7667208 },
+          cameraPreset: cameraPreset(18.6647657, 105.7667208, 118),
+          id: 'nguyen-du-memorial',
+          name: 'Khu lưu niệm Nguyễn Du',
+          slug: 'khu-luu-niem-nguyen-du',
+          summary: 'Không gian tưởng niệm và văn hóa Nguyễn Du.',
         },
       ]),
       status: 200,

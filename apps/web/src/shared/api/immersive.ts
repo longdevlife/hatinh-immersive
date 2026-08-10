@@ -6,6 +6,7 @@ import {
   mapImmersiveManifest,
   type ImmersiveManifestVm,
 } from '../../modules/immersive-navigation/api/immersive-manifest.mapper';
+import { toLocationCameraPreset } from './location-camera-preset';
 
 export function useImmersiveManifest(slug: string, locale: ImmersiveLocale = 'vi', enabled = true) {
   const query = useGetImmersiveManifest(
@@ -45,16 +46,20 @@ export function useImmersiveDestinations(locale: ImmersiveLocale = 'vi', enabled
   const data = useMemo<DestinationPreviewVm[]>(
     () =>
       query.data?.status === 200
-        ? query.data.data.map((destination) => ({
-            id: destination.id,
-            name: destination.name,
-            slug: destination.slug,
-            summary: destination.summary,
-            coverImageUrl: destination.coverImageUrl,
-            categoryLabel: destination.categoryLabel,
-            defaultSceneId: destination.defaultSceneId,
-            geoPoint: destination.geoPoint,
-          }))
+        ? query.data.data.map((destination) => {
+            const cameraPreset = toLocationCameraPreset(destination.cameraPreset);
+            return {
+              id: destination.id,
+              name: destination.name,
+              slug: destination.slug,
+              summary: destination.summary,
+              coverImageUrl: destination.coverImageUrl,
+              categoryLabel: destination.categoryLabel,
+              defaultSceneId: destination.defaultSceneId,
+              geoPoint: destination.geoPoint,
+              ...(cameraPreset ? { cameraPreset } : {}),
+            };
+          })
         : [],
     [query.data],
   );

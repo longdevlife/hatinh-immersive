@@ -255,14 +255,14 @@ describe('ImmersiveExperience', () => {
     });
   });
 
-  it('excludes destinations without a curated camera preset from map markers and flights', async () => {
+  it('derives a deterministic camera preset for destinations without a curated override', async () => {
     const { factories, map3d } = createFactories();
     const manifest = createFakeImmersiveManifest();
     const destinationWithoutPreset: DestinationPreviewVm = {
       id: 'destination-without-preset',
       slug: 'without-preset',
       name: 'Điểm không có góc máy',
-      summary: 'Không được hiện trên bản đồ 3D.',
+      summary: 'Dùng góc máy mặc định trên bản đồ 3D.',
       coverImageUrl: null,
       categoryLabel: 'Thiên nhiên',
       defaultSceneId: null,
@@ -290,18 +290,35 @@ describe('ImmersiveExperience', () => {
             range: 1800,
           },
         }),
+        expect.objectContaining({
+          id: destinationWithoutPreset.id,
+          cameraPreset: {
+            center: { lat: 18.4, lng: 105.9, altitude: 0 },
+            heading: 0,
+            tilt: 55,
+            range: 1200,
+          },
+        }),
       ],
     });
     const flightCount = map3d.calls.filter((call) => call.type === 'flyTo').length;
 
     act(() => map3d.emitLocationSelected(destinationWithoutPreset.id));
 
-    await act(async () => {
-      await Promise.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState().selectedLocationId).toBe(
+        destinationWithoutPreset.id,
+      );
+      expect(map3d.calls.filter((call) => call.type === 'flyTo')).toHaveLength(flightCount + 1);
+      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
+        preset: {
+          center: { lat: 18.4, lng: 105.9, altitude: 0 },
+          heading: 0,
+          tilt: 55,
+          range: 1200,
+        },
+      });
     });
-
-    expect(useImmersiveNavigation.getState().selectedLocationId).toBe(manifest.destination.id);
-    expect(map3d.calls.filter((call) => call.type === 'flyTo')).toHaveLength(flightCount);
   });
 
   it('flies one persistent 3D map through marker selections without changing destination route', async () => {

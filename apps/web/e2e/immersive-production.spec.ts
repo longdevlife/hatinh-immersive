@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
 
+const cameraPreset = (lat: number, lng: number, heading = 0) => ({
+  center: { lat, lng, altitude: 150 },
+  heading,
+  tilt: 55,
+  range: 1_000,
+});
+
 const manifest = {
   defaultSceneId: 'scene-01',
   destination: {
@@ -10,6 +17,7 @@ const manifest = {
     defaultSceneId: 'scene-01',
     description: 'Một hành trình di sản.',
     geoPoint: { latitude: 18.3421, longitude: 105.9032 },
+    cameraPreset: cameraPreset(18.3421, 105.9032, 24),
     id: 'destination-01',
     name: 'Sơn Trang Cổ Đạm',
     slug: 'son-trang-co-dam',
@@ -71,6 +79,7 @@ const destinationB = {
   coverImageUrl: null,
   defaultSceneId: 'scene-b',
   geoPoint: { latitude: 18.268, longitude: 106.105 },
+  cameraPreset: cameraPreset(18.268, 106.105, 32),
   id: 'destination-b',
   name: 'Biển Thiên Cầm',
   slug: 'bien-thien-cam',
@@ -103,6 +112,7 @@ const destinationC = {
   coverImageUrl: null,
   defaultSceneId: 'scene-c',
   geoPoint: { latitude: 18.5, longitude: 106 },
+  cameraPreset: cameraPreset(18.5, 106, 180),
   id: 'destination-c',
   name: 'Thành cổ Hà Tĩnh',
   slug: 'thanh-co-ha-tinh',

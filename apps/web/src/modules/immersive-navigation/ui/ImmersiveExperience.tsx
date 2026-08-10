@@ -119,9 +119,16 @@ function getInitialSceneId(manifest: ImmersiveManifestVm): string | null {
 }
 
 function toMap3DLocation(destination: DestinationPreviewVm): Map3DLocation | null {
-  if (!destination.geoPoint || !destination.cameraPreset) {
+  if (!destination.geoPoint) {
     return null;
   }
+
+  const cameraPreset =
+    destination.cameraPreset ??
+    buildDefaultLocationCamera({
+      lat: destination.geoPoint.latitude,
+      lng: destination.geoPoint.longitude,
+    });
 
   return {
     id: destination.id,
@@ -131,11 +138,17 @@ function toMap3DLocation(destination: DestinationPreviewVm): Map3DLocation | nul
       lng: destination.geoPoint.longitude,
       altitude: 0,
     },
-    cameraPreset: {
-      ...destination.cameraPreset,
-      center: { ...destination.cameraPreset.center },
-    },
+    cameraPreset,
   };
+}
+
+function buildDefaultLocationCamera(location: Pick<Map3DLocation['position'], 'lat' | 'lng'>) {
+  return {
+    center: { lat: location.lat, lng: location.lng, altitude: 0 },
+    heading: 0,
+    tilt: 55,
+    range: 1200,
+  } satisfies LocationCameraPreset;
 }
 
 function mergeMapLocations(

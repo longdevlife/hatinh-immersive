@@ -1725,6 +1725,43 @@
                 "schema": {
                   "items": {
                     "properties": {
+                      "cameraPreset": {
+                        "properties": {
+                          "center": {
+                            "properties": {
+                              "altitude": {
+                                "example": 150,
+                                "nullable": true,
+                                "type": "number"
+                              },
+                              "lat": {
+                                "example": 18.3421,
+                                "type": "number"
+                              },
+                              "lng": {
+                                "example": 105.9032,
+                                "type": "number"
+                              }
+                            },
+                            "required": ["lat", "lng"],
+                            "type": "object"
+                          },
+                          "heading": {
+                            "example": 32,
+                            "type": "number"
+                          },
+                          "range": {
+                            "example": 1200,
+                            "type": "number"
+                          },
+                          "tilt": {
+                            "example": 55,
+                            "type": "number"
+                          }
+                        },
+                        "required": ["center", "heading", "tilt", "range"],
+                        "type": "object"
+                      },
                       "categoryLabel": {
                         "nullable": true,
                         "type": "string"
@@ -1809,6 +1846,43 @@
               "application/json": {
                 "schema": {
                   "properties": {
+                    "cameraPreset": {
+                      "properties": {
+                        "center": {
+                          "properties": {
+                            "altitude": {
+                              "example": 150,
+                              "nullable": true,
+                              "type": "number"
+                            },
+                            "lat": {
+                              "example": 18.3421,
+                              "type": "number"
+                            },
+                            "lng": {
+                              "example": 105.9032,
+                              "type": "number"
+                            }
+                          },
+                          "required": ["lat", "lng"],
+                          "type": "object"
+                        },
+                        "heading": {
+                          "example": 32,
+                          "type": "number"
+                        },
+                        "range": {
+                          "example": 1200,
+                          "type": "number"
+                        },
+                        "tilt": {
+                          "example": 55,
+                          "type": "number"
+                        }
+                      },
+                      "required": ["center", "heading", "tilt", "range"],
+                      "type": "object"
+                    },
                     "categoryId": {
                       "format": "uuid",
                       "nullable": true,
@@ -1928,6 +2002,43 @@
                     },
                     "destination": {
                       "properties": {
+                        "cameraPreset": {
+                          "properties": {
+                            "center": {
+                              "properties": {
+                                "altitude": {
+                                  "example": 150,
+                                  "nullable": true,
+                                  "type": "number"
+                                },
+                                "lat": {
+                                  "example": 18.3421,
+                                  "type": "number"
+                                },
+                                "lng": {
+                                  "example": 105.9032,
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["lat", "lng"],
+                              "type": "object"
+                            },
+                            "heading": {
+                              "example": 32,
+                              "type": "number"
+                            },
+                            "range": {
+                              "example": 1200,
+                              "type": "number"
+                            },
+                            "tilt": {
+                              "example": 55,
+                              "type": "number"
+                            }
+                          },
+                          "required": ["center", "heading", "tilt", "range"],
+                          "type": "object"
+                        },
                         "categoryId": {
                           "format": "uuid",
                           "nullable": true,

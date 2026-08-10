@@ -5,9 +5,11 @@
  * REST API for the Hà Tĩnh immersive tourism platform foundation.
  * OpenAPI spec version: 1.0
  */
+import type { ListDestinations200ItemCameraPreset } from './listDestinations200ItemCameraPreset';
 import type { ListDestinations200ItemGeoPoint } from './listDestinations200ItemGeoPoint';
 
 export type ListDestinations200Item = {
+  cameraPreset?: ListDestinations200ItemCameraPreset;
   /** @nullable */
   categoryLabel: string | null;
   /** @nullable */

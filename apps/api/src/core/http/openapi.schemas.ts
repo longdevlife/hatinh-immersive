@@ -68,6 +68,25 @@ const geoPointSchema = {
   },
 };
 
+const cameraPresetSchema = {
+  type: 'object',
+  required: ['center', 'heading', 'tilt', 'range'],
+  properties: {
+    center: {
+      type: 'object',
+      required: ['lat', 'lng'],
+      properties: {
+        lat: { type: 'number', example: 18.3421 },
+        lng: { type: 'number', example: 105.9032 },
+        altitude: { type: 'number', nullable: true, example: 150 },
+      },
+    },
+    heading: { type: 'number', example: 32 },
+    tilt: { type: 'number', example: 55 },
+    range: { type: 'number', example: 1200 },
+  },
+};
+
 export const destinationPreviewResponseSchema = {
   type: 'object',
   required: [
@@ -89,6 +108,7 @@ export const destinationPreviewResponseSchema = {
     categoryLabel: { type: 'string', nullable: true },
     defaultSceneId: { ...uuidSchema, nullable: true },
     geoPoint: { ...geoPointSchema, nullable: true },
+    cameraPreset: cameraPresetSchema,
   },
 };
 
