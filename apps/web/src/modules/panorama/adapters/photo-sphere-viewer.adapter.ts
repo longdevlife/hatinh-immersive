@@ -24,7 +24,7 @@ type PhotoSphereViewerEventListener = (event?: unknown) => void;
 export interface PhotoSphereViewerOptions {
   adapter: unknown;
   container: HTMLElement;
-  panorama: unknown;
+  panorama?: unknown;
   plugins: unknown[];
 }
 
@@ -237,9 +237,8 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     const generation = this.mountGeneration;
     const loadGeneration = ++this.loadGeneration;
     let runtime: PhotoSphereViewerRuntime;
-    let panorama: unknown;
     try {
-      [runtime, panorama] = await Promise.all([this.getRuntime(), this.loadPanoramaForNode(node)]);
+      [runtime] = await Promise.all([this.getRuntime(), this.loadPanoramaForNode(node)]);
     } catch (error) {
       await this.restoreCommittedNode(generation, loadGeneration);
       throw error;
@@ -254,7 +253,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     }
 
     if (!this.viewer) {
-      this.createViewer(container, runtime, panorama);
+      this.createViewer(container, runtime);
     }
 
     const virtualTour = this.virtualTour;
@@ -322,11 +321,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     this.nodeListeners.clear();
   }
 
-  private createViewer(
-    container: HTMLElement,
-    runtime: PhotoSphereViewerRuntime,
-    panorama: unknown,
-  ): void {
+  private createViewer(container: HTMLElement, runtime: PhotoSphereViewerRuntime): void {
     const virtualTourConfig = runtime.VirtualTourPlugin.withConfig({
       dataMode: 'server',
       getNode: (nodeId: string) => this.loadVirtualTourNode(nodeId),
@@ -342,7 +337,6 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     const viewer = new runtime.Viewer({
       adapter: runtime.EquirectangularTilesAdapter,
       container,
-      panorama,
       plugins: [virtualTourConfig, runtime.MarkersPlugin],
     });
 

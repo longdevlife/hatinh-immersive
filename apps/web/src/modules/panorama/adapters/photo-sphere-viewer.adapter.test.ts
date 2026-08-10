@@ -379,18 +379,10 @@ describe('PhotoSphereViewerEngine', () => {
     expect(loadPanorama).toHaveBeenCalledWith(node);
     expect(runtime.Viewer).toHaveBeenCalledTimes(1);
     expect(fakeViewer.setPanoramaCalls).toHaveLength(0);
-    const panorama = (
-      vi.mocked(runtime.Viewer).mock.calls.at(-1)?.[0] as {
-        panorama: {
-          baseUrl: string;
-          levels: unknown[];
-          tileUrl: (column: number, row: number, level: number) => string;
-        };
-      }
-    ).panorama;
-    expect(panorama.baseUrl).toBe('https://cdn.example.test/scene-01/preview.webp');
-    expect(panorama.levels).toHaveLength(2);
-    expect(panorama.tileUrl(1, 0, 1)).toBe('https://cdn.example.test/scene-01/tiles/1/1-0.webp');
+    const viewerOptions = vi.mocked(runtime.Viewer).mock.calls.at(-1)?.[0] as {
+      panorama?: unknown;
+    };
+    expect(viewerOptions.panorama).toBeUndefined();
     expect(virtualTourPlugin.setCurrentNodeCalls).toEqual(['scene-01']);
 
     const virtualTourConfig = vi

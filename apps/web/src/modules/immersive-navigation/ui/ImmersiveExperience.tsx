@@ -43,6 +43,7 @@ import {
   encodeImmersiveDeepLink,
   type ImmersiveDeepLinkState,
 } from '../lib/deep-link';
+import { resolveRendererModes } from '../lib/renderer-mode';
 import { useImmersiveNavigation } from '../model/navigation.store';
 import { DEFAULT_NAVIGATION_VIEW } from '../model/navigation.view';
 import type { ActiveRenderer, ImmersiveNavigationState } from '../model/navigation.types';
@@ -66,47 +67,38 @@ interface PanoramaEntryRouteState {
 }
 
 function createDefaultFactories(initialTarget?: CameraTarget): ImmersiveExperienceFactories {
-  const usesFakeRenderers = import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake';
-  const usesDeterministicMapLibre =
-    usesFakeRenderers && import.meta.env.VITE_IMMERSIVE_MINIMAP_MODE === 'maplibre';
-
-  if (usesFakeRenderers) {
-    return {
-      createMap3DEngine: async () => new FakeMap3DEngine(),
-      createPanoramaEngine: async () => new FakePanoramaEngine(),
-      createMinimapEngine: usesDeterministicMapLibre
-        ? () =>
-            createLazyMapLibreMinimapEngine({
-              style: resolveMinimapStyle({
-                isProduction: true,
-                styleUrl: import.meta.env.VITE_MINIMAP_STYLE_URL,
-              }),
-            })
-        : async () => {
-            const { FakeMinimapEngine } = await import('../../minimap');
-            return new FakeMinimapEngine();
-          },
-    };
-  }
+  const rendererModes = resolveRendererModes(import.meta.env);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const mapId = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID;
 
   return {
-    createMap3DEngine: () =>
-      createLazyGoogleMaps3DEngine({
-        ...(apiKey ? { apiKey } : {}),
-        ...(initialTarget ? { initialTarget } : {}),
-        ...(mapId ? { mapId } : {}),
-      }),
-    createPanoramaEngine: () => createLazyPhotoSphereViewerEngine(),
-    createMinimapEngine: () =>
-      createLazyMapLibreMinimapEngine({
-        style: resolveMinimapStyle({
-          isProduction: import.meta.env.PROD,
-          styleUrl: import.meta.env.VITE_MINIMAP_STYLE_URL,
-        }),
-      }),
+    createMap3DEngine:
+      rendererModes.map3d === 'fake'
+        ? async () => new FakeMap3DEngine()
+        : () =>
+            createLazyGoogleMaps3DEngine({
+              ...(apiKey ? { apiKey } : {}),
+              ...(initialTarget ? { initialTarget } : {}),
+              ...(mapId ? { mapId } : {}),
+            }),
+    createPanoramaEngine:
+      rendererModes.panorama === 'fake'
+        ? async () => new FakePanoramaEngine()
+        : () => createLazyPhotoSphereViewerEngine(),
+    createMinimapEngine:
+      rendererModes.minimap === 'fake'
+        ? async () => {
+            const { FakeMinimapEngine } = await import('../../minimap');
+            return new FakeMinimapEngine();
+          }
+        : () =>
+            createLazyMapLibreMinimapEngine({
+              style: resolveMinimapStyle({
+                isProduction: import.meta.env.PROD,
+                styleUrl: import.meta.env.VITE_MINIMAP_STYLE_URL,
+              }),
+            }),
   };
 }
 
