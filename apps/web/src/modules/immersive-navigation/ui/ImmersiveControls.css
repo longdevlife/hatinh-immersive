@@ -20,7 +20,7 @@
 
 .immersive-controls-bottom {
   position: absolute;
-  bottom: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(4.5rem, 6vw, 5.5rem);
   left: 50%;
   transform: translateX(-50%);
   width: max-content;

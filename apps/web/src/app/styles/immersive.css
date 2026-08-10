@@ -462,10 +462,14 @@
 }
 
 .explore-shell__controls {
-  bottom: clamp(1rem, 3vw, 2rem);
+  top: clamp(1rem, 3vw, 2rem);
   left: clamp(1rem, 4vw, 4rem);
+  bottom: auto;
   max-width: calc(100% - 2rem);
   pointer-events: none;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .explore-shell__controls > * {
@@ -811,4 +815,56 @@
   100% {
     box-shadow: 0 0 0 0 rgb(217 128 60 / 0);
   }
+}
+
+/* Custom Photo Sphere Viewer Tooltip Overrides */
+.psv-tooltip {
+  backdrop-filter: blur(var(--blur-overlay, 12px)) !important;
+  background: rgb(12 31 25 / 0.78) !important;
+  border: 1px solid rgb(255 255 255 / 0.15) !important;
+  border-radius: var(--radius-md, 12px) !important;
+  box-shadow: var(--shadow-panel, 0 8px 32px rgba(0, 0, 0, 0.4)) !important;
+  color: var(--color-text-inverse, #fff) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-easing-enter),
+    transform var(--motion-duration-fast) var(--motion-easing-enter) !important;
+}
+
+.psv-tooltip-content {
+  padding: 0 !important;
+}
+
+/* Hide the chunky arrow for a cleaner floating pill look */
+.psv-tooltip-arrow {
+  display: none !important;
+}
+
+/* Virtual Tour Tooltip specific */
+.psv-virtual-tour-tooltip {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.psv-virtual-tour-tooltip h2,
+.psv-virtual-tour-tooltip .psv-tooltip-title {
+  font-family: inherit !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  padding: 0.75rem 1rem !important;
+  margin: 0 !important;
+  text-align: center !important;
+  background: transparent !important;
+  color: var(--color-text-inverse, #fff) !important;
+}
+
+/* Fix distorted thumbnail with object-fit: cover */
+.psv-virtual-tour-tooltip img {
+  width: 100% !important;
+  height: 90px !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  border-radius: 0 0 calc(var(--radius-md, 12px) - 1px) calc(var(--radius-md, 12px) - 1px) !important;
+  display: block !important;
 }

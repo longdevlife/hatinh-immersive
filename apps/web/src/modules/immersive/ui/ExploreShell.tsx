@@ -211,7 +211,7 @@ export function ExploreShell({
         />
       </section>
 
-      {!hasMap3DChrome ? (
+      {!hasMap3DChrome && !isPanorama ? (
         <header className="immersive-topbar">
           <a className="immersive-topbar__brand" href="/" aria-label="Trang chủ Hà Tĩnh Immersive">
             Hà Tĩnh <span>/</span> Immersive
@@ -237,13 +237,10 @@ export function ExploreShell({
         </header>
       ) : null}
 
-      {!hasMap3DChrome ? (
+      {!hasMap3DChrome && !isPanorama ? (
         <section className="scene-identity" aria-live="polite">
-          <p className="immersive-kicker">
-            {isPanorama ? 'Điểm đang khám phá' : view.destination.categoryLabel}
-          </p>
-          <h1>{isPanorama ? currentSceneName : view.destination.name}</h1>
-          {isPanorama ? <p>{view.destination.name}</p> : null}
+          <p className="immersive-kicker">{view.destination.categoryLabel}</p>
+          <h1>{view.destination.name}</h1>
         </section>
       ) : null}
 
