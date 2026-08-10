@@ -150,7 +150,6 @@ export interface PanoramaEnginePort {
   setTour?(nodes: PanoramaNode[]): void;
   loadNode(node: PanoramaNode): Promise<void>;
   setView(view: PanoramaView): void;
-  setHotspots?(hotspots: any[], onSelect: (id: string) => void): void;
   subscribeViewChanged(listener: (view: PanoramaView) => void): () => void;
   subscribeNodeChanged?(listener: (nodeId: string, view?: PanoramaView) => void): () => void;
   destroy(): void;

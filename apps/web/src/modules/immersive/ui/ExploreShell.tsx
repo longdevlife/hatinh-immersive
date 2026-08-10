@@ -173,7 +173,29 @@ export function ExploreShell({
             rendererContent
           )}
         </div>
-        {hasMap3DChrome ? null : (
+        {isPanorama ? (
+          <div className="hotspot-layer" aria-label="Điểm khám phá trong cảnh">
+            {view.hotspots.map((hotspot, index) => (
+              <button
+                key={hotspot.id}
+                className={`hotspot-marker hotspot-marker--${hotspot.type}`}
+                style={{
+                  left: `${12 + ((hotspot.yaw % 360) / 360) * 76}%`,
+                  top: `${42 + hotspot.pitch * 2 + (index % 2) * 7}%`,
+                }}
+                type="button"
+                onClick={() => {
+                  actions.onSelectHotspot(hotspot.id);
+                }}
+                aria-haspopup="dialog"
+                aria-label={hotspot.label ?? 'Mở điểm khám phá'}
+              >
+                <span aria-hidden="true">+</span>
+                <span className="hotspot-marker__label">{hotspot.label}</span>
+              </button>
+            ))}
+          </div>
+        ) : hasMap3DChrome ? null : (
           <div className="overview-marker" aria-label={`Điểm đến ${view.destination.name}`}>
             <span className="overview-marker__pin" aria-hidden="true">
               ⌖
@@ -225,6 +247,25 @@ export function ExploreShell({
       ) : null}
 
       {isPanorama ? (
+        <div className="explore-shell__minimap">
+          {minimapEngine ? (
+            <MinimapViewport
+              currentSceneId={view.currentScene?.id ?? null}
+              heading={view.heading}
+              nodes={view.nodes}
+              links={view.links}
+              collapsed={isMinimapCollapsed}
+              engine={minimapEngine}
+              onToggle={toggleMinimap}
+              onNodeSelect={actions.onNavigateScene}
+            />
+          ) : (
+            <MinimapLoadingBoundary collapsed={isMinimapCollapsed} onToggle={toggleMinimap} />
+          )}
+        </div>
+      ) : null}
+
+      {isPanorama ? (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
           <button
             className="immersive-button immersive-button--quiet"
@@ -249,25 +290,6 @@ export function ExploreShell({
           )}
         </div>
       )}
-
-      {isPanorama ? (
-        <div className="explore-shell__minimap">
-          {minimapEngine ? (
-            <MinimapViewport
-              currentSceneId={view.currentScene?.id ?? null}
-              heading={view.heading}
-              nodes={view.nodes}
-              links={view.links}
-              collapsed={isMinimapCollapsed}
-              engine={minimapEngine}
-              onToggle={toggleMinimap}
-              onNodeSelect={actions.onNavigateScene}
-            />
-          ) : (
-            <MinimapLoadingBoundary collapsed={isMinimapCollapsed} onToggle={toggleMinimap} />
-          )}
-        </div>
-      ) : null}
 
       <aside
         id="destination-info-panel"

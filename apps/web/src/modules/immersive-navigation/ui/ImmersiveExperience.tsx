@@ -266,12 +266,10 @@ interface RendererHostProps {
   onLocationSelected(locationId: string): void;
   onNodeChange(nodeId: string, view: PanoramaView): void;
   onStatusChange(status: RendererStatus): void;
-  onViewChange?: (view: PanoramaView) => void;
+  onViewChange(view: PanoramaView): void;
   panoramaNode: PanoramaNode | null;
   panoramaNodes: PanoramaNode[];
-  cameraPreset?: LocationCameraPreset;
-  hotspots?: any[];
-  onHotspotClick?: (id: string) => void;
+  cameraPreset: LocationCameraPreset | undefined;
   retryKey: number;
 }
 
@@ -288,8 +286,6 @@ function RendererHost({
   panoramaNode,
   panoramaNodes,
   cameraPreset,
-  hotspots,
-  onHotspotClick,
   retryKey,
 }: RendererHostProps): ReactNode {
   if (!engine || activeRenderer === 'none') {
@@ -323,8 +319,6 @@ function RendererHost({
           onStatusChange={onStatusChange}
           onViewChange={onViewChange}
           tourNodes={panoramaNodes}
-          hotspots={hotspots}
-          onHotspotClick={onHotspotClick}
         />
       </Suspense>
     );
@@ -836,8 +830,6 @@ export function ImmersiveExperience({
       panoramaNode={currentPanoramaNode}
       panoramaNodes={manifest.panoramaNodes}
       cameraPreset={selectedLocationPreset}
-      hotspots={view.hotspots}
-      onHotspotClick={actions.onSelectHotspot}
       retryKey={retryKey}
     />
   );

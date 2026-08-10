@@ -30,7 +30,6 @@ export function DestinationSearch({
   onSelectDestination,
 }: DestinationSearchProps) {
   const [query, setQuery] = useState('');
-  const [isExpanded, setIsExpanded] = useState(false);
   const normalizedQuery = query.trim();
   const results = useMemo(() => {
     if (normalizedQuery.length < 2) {
@@ -64,7 +63,7 @@ export function DestinationSearch({
 
   return (
     <form
-      className={`immersive-control-search ${isExpanded || query.length > 0 ? 'is-expanded' : ''}`}
+      className="immersive-control-search"
       onSubmit={handleSubmit}
       role="search"
       aria-label="Tìm kiếm điểm đến"
@@ -72,30 +71,11 @@ export function DestinationSearch({
       <input
         type="search"
         value={query}
-        onChange={(event) => {
-          setQuery(event.target.value);
-          setIsExpanded(true);
-        }}
-        onFocus={() => setIsExpanded(true)}
-        onBlur={(e) => {
-          if (!e.currentTarget.value) {
-            setIsExpanded(false);
-          }
-        }}
+        onChange={(event) => setQuery(event.target.value)}
         placeholder="Tìm điểm tham quan..."
         aria-label="Nhập tên điểm đến"
       />
-      <button
-        type="button"
-        aria-label="Tìm kiếm"
-        onClick={() => {
-          if (!isExpanded) {
-            setIsExpanded(true);
-          } else {
-            handleSubmit(new Event('submit') as unknown as FormEvent<HTMLFormElement>);
-          }
-        }}
-      >
+      <button type="submit" aria-label="Thực hiện tìm kiếm">
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -234,38 +214,13 @@ export function FullscreenControl() {
 
   return (
     <button
-      className="immersive-control-btn immersive-icon-button fullscreen-btn"
+      className="immersive-control-btn fullscreen-btn"
       type="button"
       onClick={() => void toggle()}
       aria-pressed={isFullscreen}
       aria-label={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
-      title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
     >
-      {isFullscreen ? (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ width: '1.25rem', height: '1.25rem' }}
-        >
-          <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-        </svg>
-      ) : (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ width: '1.25rem', height: '1.25rem' }}
-        >
-          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-        </svg>
-      )}
+      {isFullscreen ? '↙' : '↗'}
     </button>
   );
 }
@@ -292,42 +247,13 @@ export function ShareControl() {
 
   return (
     <button
-      className="immersive-control-btn immersive-icon-button share-btn"
+      className="immersive-control-btn share-btn"
       type="button"
       onClick={() => void share()}
       aria-label="Chia sẻ cảnh này"
       aria-live="polite"
-      title="Chia sẻ cảnh này"
     >
-      {copied ? (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ width: '1.25rem', height: '1.25rem' }}
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ) : (
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{ width: '1.25rem', height: '1.25rem' }}
-        >
-          <circle cx="18" cy="5" r="3" />
-          <circle cx="6" cy="12" r="3" />
-          <circle cx="18" cy="19" r="3" />
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-        </svg>
-      )}
+      {copied ? 'Đã chép' : 'Chia sẻ'}
     </button>
   );
 }
