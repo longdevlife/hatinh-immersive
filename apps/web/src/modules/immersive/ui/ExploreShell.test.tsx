@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 
+import type { ImmersiveActions } from '../../../shared/contracts';
 import {
   constrainedNetworkFixture,
   panoramaLoadingFixture,
@@ -8,7 +9,6 @@ import {
   readyImmersiveViewFixture,
   threeDUnavailableFixture,
 } from '../../../shared/fixtures';
-import type { ImmersiveActions } from '../../../shared/contracts';
 import { FakeMinimapEngine } from '../../minimap';
 
 import { ExploreShell } from './ExploreShell';
@@ -28,7 +28,7 @@ function createActions(): ImmersiveActions {
 }
 
 describe('ExploreShell', () => {
-  it('mounts the production minimap viewport and forwards map node selection', async () => {
+  it('keeps the production minimap collapsed until requested and forwards map node selection', async () => {
     const actions = createActions();
     const minimapEngine = new FakeMinimapEngine();
 
@@ -39,6 +39,9 @@ describe('ExploreShell', () => {
         minimapEngine={minimapEngine}
       />,
     );
+
+    expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
 
     await waitFor(() =>
       expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(true),
@@ -161,7 +164,7 @@ describe('ExploreShell', () => {
     expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(2);
   });
 
-  it('keeps panorama controls available while loading on a constrained network', () => {
+  it('keeps panorama controls compact while loading on a constrained network', () => {
     const actions = createActions();
 
     render(
@@ -176,8 +179,9 @@ describe('ExploreShell', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Đang tải không gian 360°');
     expect(screen.getByRole('button', { name: 'Quay lại không gian 3D' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
+    expect(screen.queryByText('Bản đồ hành trình')).not.toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
     expect(actions.onToggleMinimap).toHaveBeenCalledTimes(1);
   });
 
@@ -191,6 +195,7 @@ describe('ExploreShell', () => {
     expect(transitionState).toHaveClass('immersive-renderer-state--transitioning');
     expect(transitionState).toHaveTextContent('Đang chuyển cảnh');
   });
+
   it('exposes aria-haspopup="dialog" on panorama hotspot buttons', () => {
     const actions = createActions();
     render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
@@ -213,10 +218,8 @@ describe('ExploreShell', () => {
       <ExploreShell view={readyImmersiveViewFixture} actions={actions} />,
     );
 
-    // In panorama mode
     expect(screen.getByRole('region', { name: 'Điều khiển trải nghiệm' })).toBeInTheDocument();
 
-    // In 3D overview mode
     rerender(
       <ExploreShell
         view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
