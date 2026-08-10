@@ -158,7 +158,11 @@ test('loads the public journey through the manifest REST path', async ({ page })
   await page.getByRole('button', { name: 'Khám phá 360°' }).first().click();
   await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Đi tiếp' }).click();
+  await page
+    .getByRole('navigation', { name: 'Danh sách cảnh quan' })
+    .getByRole('button')
+    .nth(1)
+    .click();
   await expect(page.getByRole('heading', { name: 'Sân trung tâm' })).toBeVisible();
 });
 
