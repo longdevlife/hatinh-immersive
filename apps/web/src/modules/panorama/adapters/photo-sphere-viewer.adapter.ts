@@ -204,6 +204,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   private readonly suppressedNodeChangeLoads = new Set<number>();
   private mountGeneration = 0;
   private loadGeneration = 0;
+  private committedNodeId: string | null = null;
 
   constructor(options: PhotoSphereViewerAdapterOptions = {}) {
     this.options = options;
@@ -213,6 +214,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     ++this.mountGeneration;
     this.destroyViewer();
     this.suppressedNodeChangeLoads.clear();
+    this.committedNodeId = null;
     this.virtualNodes.clear();
     this.panoramaCache.clear();
     this.container = container;
@@ -234,10 +236,14 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     this.tourNodes.set(node.id, node);
     const generation = this.mountGeneration;
     const loadGeneration = ++this.loadGeneration;
-    const [runtime, panorama] = await Promise.all([
-      this.getRuntime(),
-      this.loadPanoramaForNode(node),
-    ]);
+    let runtime: PhotoSphereViewerRuntime;
+    let panorama: unknown;
+    try {
+      [runtime, panorama] = await Promise.all([this.getRuntime(), this.loadPanoramaForNode(node)]);
+    } catch (error) {
+      await this.restoreCommittedNode(generation, loadGeneration);
+      throw error;
+    }
 
     if (
       generation !== this.mountGeneration ||
@@ -264,16 +270,20 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
         rotation: false,
         showLoader: false,
       });
+      if (!completed) {
+        throw new Error(`PHOTO_SPHERE_VIEWER_NODE_LOAD_ABORTED:${node.id}`);
+      }
+    } catch (error) {
+      await this.restoreCommittedNode(generation, loadGeneration);
+      throw error;
     } finally {
       this.suppressedNodeChangeLoads.delete(loadGeneration);
-    }
-    if (!completed) {
-      throw new Error(`PHOTO_SPHERE_VIEWER_NODE_LOAD_ABORTED:${node.id}`);
     }
     if (loadGeneration !== this.loadGeneration || generation !== this.mountGeneration) {
       return;
     }
 
+    this.committedNodeId = node.id;
     this.setView(node.initialView);
   }
 
@@ -303,6 +313,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     ++this.mountGeneration;
     this.destroyViewer();
     this.suppressedNodeChangeLoads.clear();
+    this.committedNodeId = null;
     this.container = null;
     this.tourNodes.clear();
     this.virtualNodes.clear();
@@ -357,6 +368,31 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     const virtualNode = toVirtualTourNode(node, panorama);
     this.virtualNodes.set(node.id, virtualNode);
     return virtualNode;
+  }
+
+  private async restoreCommittedNode(generation: number, loadGeneration: number): Promise<void> {
+    if (
+      generation !== this.mountGeneration ||
+      loadGeneration !== this.loadGeneration ||
+      !this.committedNodeId ||
+      !this.virtualTour
+    ) {
+      return;
+    }
+
+    const committedNodeId = this.committedNodeId;
+    this.suppressedNodeChangeLoads.add(loadGeneration);
+    try {
+      await this.virtualTour.setCurrentNode(committedNodeId, {
+        effect: 'none',
+        rotation: false,
+        showLoader: false,
+      });
+    } catch {
+      // Preserve the original scene-load failure even if recovery also fails.
+    } finally {
+      this.suppressedNodeChangeLoads.delete(loadGeneration);
+    }
   }
 
   private async loadPanoramaForNode(node: PanoramaNode): Promise<unknown> {

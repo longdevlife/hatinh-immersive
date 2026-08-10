@@ -513,6 +513,53 @@ describe('ImmersiveExperience', () => {
     });
   });
 
+  it('enters the real Nguyễn Du demo tour and returns to its selected 3D location', async () => {
+    const { factories, map3d, panorama } = createFactories();
+    const thienCamManifest = getDemoManifest('bien-thien-cam');
+    const nguyenDuManifest = getDemoManifest('khu-luu-niem-nguyen-du');
+    const destinations = DEMO_DESTINATIONS.map(({ preview }) => preview);
+
+    renderRoutedExperience(
+      '/explore/bien-thien-cam?mode=overview3d',
+      factories,
+      {
+        'bien-thien-cam': thienCamManifest,
+        'khu-luu-niem-nguyen-du': nguyenDuManifest,
+      },
+      destinations,
+    );
+
+    await waitFor(() => expect(map3d.calls.some((call) => call.type === 'mount')).toBe(true));
+    act(() => map3d.emitLocationSelected('nguyen-du-memorial'));
+
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Khám phá 360°' }));
+
+    await waitFor(() => {
+      expect(panorama.loadedNode?.id).toBe('nguyen-du-courtyard');
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/khu-luu-niem-nguyen-du?mode=panorama&location=nguyen-du-memorial&scene=nguyen-du-courtyard',
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại không gian 3D' }));
+
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        mode: 'overview3d',
+        selectedLocationId: 'nguyen-du-memorial',
+      });
+      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
+        preset: DEMO_DESTINATIONS[1]?.location.cameraPreset,
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/khu-luu-niem-nguyen-du?mode=overview3d&location=nguyen-du-memorial',
+      );
+    });
+  });
+
   it('restores the linked scene and camera after a refresh', async () => {
     const { factories, panorama } = createFactories();
     renderExperience(
