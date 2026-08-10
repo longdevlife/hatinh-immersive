@@ -41,6 +41,10 @@ export function MinimapViewport({
   }, [currentSceneId, engine, heading, links, nodes]);
 
   useEffect(() => {
+    if (collapsed) {
+      return undefined;
+    }
+
     const container = containerRef.current;
     if (!container) {
       return undefined;
@@ -72,7 +76,7 @@ export function MinimapViewport({
       unsubscribe();
       engine.destroy();
     };
-  }, [engine]);
+  }, [collapsed, engine]);
 
   return (
     <section
