@@ -28,21 +28,52 @@ function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; o
       data-minimap-status="loading"
       role="application"
     >
-      <header className="minimap-viewport__header">
-        <div>
-          <p className="immersive-kicker">Bản đồ hành trình</p>
-          {!collapsed ? <strong>Đang tải bản đồ…</strong> : null}
-        </div>
+      {!collapsed && (
+        <header className="minimap-viewport__header">
+          <strong>Đang tải bản đồ…</strong>
+          <button
+            aria-expanded={true}
+            aria-label="Thu gọn bản đồ"
+            className="minimap-viewport__toggle"
+            type="button"
+            onClick={onToggle}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </header>
+      )}
+
+      {collapsed && (
         <button
-          aria-expanded={!collapsed}
-          aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
-          className="immersive-icon-button"
+          aria-expanded={false}
+          aria-label="Mở rộng bản đồ"
+          className="minimap-viewport__toggle minimap-viewport__toggle--standalone"
           type="button"
           onClick={onToggle}
         >
-          {collapsed ? '+' : '−'}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+          </svg>
         </button>
-      </header>
+      )}
     </section>
   );
 }
@@ -268,10 +299,22 @@ export function ExploreShell({
       {isPanorama ? (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
           <button
-            className="immersive-button immersive-button--quiet"
+            className="immersive-button immersive-button--back"
             type="button"
             onClick={actions.onEnter3D}
+            aria-label="Quay lại không gian 3D"
           >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
             Quay lại không gian 3D
           </button>
         </div>

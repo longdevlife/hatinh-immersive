@@ -2,7 +2,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 20;
+  z-index: var(--z-index-overlay);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -10,21 +10,21 @@
 
 .immersive-controls-top-right {
   position: absolute;
-  top: clamp(1rem, 2.5vw, 2rem);
-  right: clamp(1rem, 4vw, 4rem);
+  top: var(--safe-area-spacing);
+  right: var(--safe-area-spacing);
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
   align-items: center;
   pointer-events: auto;
 }
 
 .immersive-controls-bottom {
   position: absolute;
-  bottom: clamp(4.5rem, 6vw, 5.5rem);
+  bottom: calc(var(--safe-area-bottom) + 1.5rem);
   left: 50%;
   transform: translateX(-50%);
   width: max-content;
-  max-width: min(78vw, 42rem);
+  max-width: min(90vw, 36rem);
   pointer-events: auto;
 }
 
@@ -32,69 +32,74 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 2.8rem;
-  background: rgba(8, 22, 18, 0.76);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 0.75rem 2rem rgba(3, 12, 9, 0.22);
+  height: var(--control-height-base);
+  background: var(--color-background-overlay);
+  backdrop-filter: var(--backdrop-blur-base);
+  -webkit-backdrop-filter: var(--backdrop-blur-base);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--elevation-2);
+  transition: all var(--motion-duration-base) var(--motion-easing-enter);
 }
 
 .immersive-control-search input {
   width: clamp(8rem, 15vw, 12rem);
   background: transparent;
   border: none;
-  color: white;
-  padding: 0.7rem 0.25rem 0.7rem 1rem;
+  color: var(--color-text-inverse);
+  padding: 0 var(--space-2) 0 var(--space-4);
   outline: none;
+  font-size: 0.9rem;
 }
 
 .immersive-control-search input::placeholder {
-  color: rgba(255, 255, 255, 0.68);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .immersive-control-search button {
   display: inline-grid;
   place-items: center;
-  width: 2.35rem;
-  height: 2.35rem;
-  margin-right: 0.2rem;
+  width: var(--control-height-base);
+  height: var(--control-height-base);
   background: transparent;
   border: none;
   border-radius: 50%;
-  color: white;
-  padding: 0.5rem;
+  color: var(--color-text-inverse);
   cursor: pointer;
+  transition: background var(--motion-duration-fast) ease;
 }
 
 .immersive-control-search button:hover,
 .immersive-control-search button:focus-visible {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .immersive-control-search__results {
   position: absolute;
-  top: calc(100% + 0.35rem);
+  top: calc(100% + var(--space-2));
   right: 0;
-  z-index: 2;
+  z-index: var(--z-index-dropdown);
   width: min(20rem, 80vw);
-  padding: 0.5rem;
-  color: #fff;
-  background: rgba(12, 31, 25, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 0.5rem;
-  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.25);
+  padding: var(--space-2);
+  color: var(--color-text-primary);
+  background: var(--color-background-panel);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-3);
+  backdrop-filter: var(--backdrop-blur-base);
+  -webkit-backdrop-filter: var(--backdrop-blur-base);
 }
 
 .immersive-control-search__results p {
   margin: 0;
-  padding: 0.5rem;
-  font-size: 0.8rem;
+  padding: var(--space-3);
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
 }
 
 .immersive-control-search__results ul {
   display: grid;
-  gap: 0.25rem;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -103,111 +108,133 @@
 .immersive-control-search__results li button {
   display: grid;
   width: 100%;
-  gap: 0.15rem;
-  padding: 0.55rem;
+  gap: var(--space-1);
+  padding: var(--space-3);
   text-align: left;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 0.35rem;
+  color: var(--color-text-primary);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  transition: background var(--motion-duration-fast) ease;
+  cursor: pointer;
 }
 
 .immersive-control-search__results li button:hover,
 .immersive-control-search__results li button:focus-visible {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .immersive-control-search__results span {
-  font-size: 0.65rem;
-  opacity: 0.72;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
 }
 
 .immersive-control-btn {
-  height: 2.8rem;
-  background: rgba(8, 22, 18, 0.76);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  padding: 0 0.85rem;
+  height: var(--control-height-base);
+  background: var(--color-background-overlay);
+  backdrop-filter: var(--backdrop-blur-base);
+  -webkit-backdrop-filter: var(--backdrop-blur-base);
+  color: var(--color-text-inverse);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-4);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-weight: bold;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 0.75rem 2rem rgba(3, 12, 9, 0.22);
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--elevation-2);
+  transition: all var(--motion-duration-base) var(--motion-easing-enter);
 }
 
 .immersive-control-btn:hover,
 .immersive-control-btn:focus-visible {
-  background: rgba(29, 66, 53, 0.88);
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
 }
 
 .immersive-control-browser {
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 1rem;
-  background: rgba(8, 22, 18, 0.74);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 1rem 2.5rem rgba(3, 12, 9, 0.28);
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .immersive-control-browser__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.55rem 0.75rem 0.35rem;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  gap: var(--space-3);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 .immersive-control-browser ul {
   list-style: none;
   margin: 0;
-  padding: 0.25rem 0.45rem 0.55rem;
+  padding: var(--space-2) 0;
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
   overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.34) transparent;
+  scrollbar-width: none; /* Hide scrollbar */
+  max-width: 100%;
+}
+
+.immersive-control-browser ul::-webkit-scrollbar {
+  display: none;
 }
 
 .immersive-control-browser button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.88);
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
+  background: var(--color-background-overlay);
+  backdrop-filter: var(--backdrop-blur-base);
+  -webkit-backdrop-filter: var(--backdrop-blur-base);
+  border: 1px solid var(--color-border-subtle);
+  color: rgba(255, 255, 255, 0.7);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   white-space: nowrap;
+  font-size: 0.85rem;
+  transition: all var(--motion-duration-base) var(--motion-easing-enter);
 }
 
 .immersive-control-browser button:hover,
 .immersive-control-browser button:focus-visible {
-  background: rgba(255, 255, 255, 0.18);
+  color: var(--color-text-inverse);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .immersive-control-browser button.active {
-  background: #e5a95f;
-  border-color: #f3c47d;
-  color: white;
+  color: var(--color-text-inverse);
+  background: transparent;
+  border-color: transparent;
+  font-weight: var(--font-weight-bold);
+  position: relative;
 }
 
-@media (max-width: 700px) {
+.immersive-control-browser button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-text-inverse);
+}
+
+@media (max-width: 768px) {
   .immersive-controls-top-right {
-    left: 1rem;
-    right: 1rem;
+    top: var(--safe-area-spacing);
+    right: var(--safe-area-spacing);
+    flex-wrap: wrap;
     justify-content: flex-end;
-  }
-
-  .immersive-control-search input {
-    width: min(38vw, 10rem);
-  }
-
-  .immersive-controls-bottom {
-    max-width: calc(100vw - 2rem);
   }
 }

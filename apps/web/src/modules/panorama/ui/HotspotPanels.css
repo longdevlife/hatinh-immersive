@@ -1,53 +1,92 @@
 .hotspot-panel {
   position: absolute;
-  top: 50%;
+  bottom: calc(var(--safe-area-bottom) + 1rem);
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 500px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  z-index: 100;
+  transform: translateX(-50%);
+  width: min(90vw, 400px);
+  background: var(--color-background-panel);
+  backdrop-filter: var(--backdrop-blur-base);
+  -webkit-backdrop-filter: var(--backdrop-blur-base);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-3);
+  z-index: var(--z-index-panel);
   display: flex;
   flex-direction: column;
+  animation: hotspotFadeIn var(--motion-duration-base) var(--motion-easing-spatial) forwards;
+  color: var(--color-text-primary);
+  overflow: hidden;
+}
+
+@keyframes hotspotFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
 }
 
 .hotspot-panel__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: rgba(0, 0, 0, 0.2);
 }
 
 .hotspot-panel__header h2 {
   margin: 0;
-  font-size: 1.25rem;
-  color: #333;
+  font-size: 1rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hotspot-panel__header button {
   background: transparent;
   border: none;
   font-size: 1.5rem;
+  line-height: 1;
   cursor: pointer;
-  color: #666;
+  color: var(--color-text-secondary);
+  padding: 0;
+  margin-left: var(--space-3);
+  transition: color var(--motion-duration-fast) ease;
+}
+
+.hotspot-panel__header button:hover {
+  color: var(--color-text-inverse);
 }
 
 .hotspot-panel__body {
-  padding: 1rem;
-  max-height: 70vh;
+  padding: var(--space-4);
+  max-height: 40vh;
   overflow-y: auto;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.hotspot-panel__body p {
+  margin: 0;
 }
 
 .hotspot-panel__media {
   width: 100%;
-  border-radius: 4px;
-  margin-bottom: 1rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-3);
+  object-fit: cover;
+  max-height: 160px;
 }
 
 .hotspot-panel__audio {
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: var(--space-3);
+  height: var(--control-height-base);
 }
