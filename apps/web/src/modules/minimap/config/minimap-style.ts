@@ -28,6 +28,7 @@ export function requireMinimapStyle(
 }
 
 export function resolveMinimapStyle(input: {
+  allowDemoFallback?: boolean;
   isProduction: boolean;
   styleUrl?: string;
 }): MinimapStyle {
@@ -36,7 +37,7 @@ export function resolveMinimapStyle(input: {
     return styleUrl;
   }
 
-  if (input.isProduction) {
+  if (input.isProduction && !input.allowDemoFallback) {
     throw new Error('MINIMAP_PRODUCTION_STYLE_REQUIRED');
   }
 

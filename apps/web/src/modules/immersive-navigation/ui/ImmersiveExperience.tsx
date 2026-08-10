@@ -95,6 +95,7 @@ function createDefaultFactories(initialTarget?: CameraTarget): ImmersiveExperien
         : () =>
             createLazyMapLibreMinimapEngine({
               style: resolveMinimapStyle({
+                allowDemoFallback: import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake',
                 isProduction: import.meta.env.PROD,
                 styleUrl: import.meta.env.VITE_MINIMAP_STYLE_URL,
               }),
