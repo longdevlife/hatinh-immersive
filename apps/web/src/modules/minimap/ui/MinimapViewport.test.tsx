@@ -115,7 +115,9 @@ describe('MinimapViewport', () => {
   it('supports a full-screen overview variant without a collapse control', async () => {
     const engine = new FakeMinimapEngine();
 
-    render(<MinimapViewport {...props} engine={engine} showToggle={false} variant="overview" />);
+    render(
+      <MinimapViewport {...props} engine={engine} showToggle={false} variant="overview" />,
+    );
 
     await waitFor(() =>
       expect(engine.calls.some((call) => call.type === 'mount')).toBe(true),
