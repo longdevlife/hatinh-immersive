@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { HotspotVm, PanoramaNode, PanoramaView } from '../../../shared/contracts';
+import type { HotspotVm, PanoramaNode } from '../../../shared/contracts';
 import {
   PhotoSphereViewerEngine,
   type PhotoSphereViewerRuntime,
