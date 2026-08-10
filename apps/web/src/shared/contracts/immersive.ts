@@ -15,6 +15,7 @@ export interface DestinationPreviewVm {
   categoryLabel: string | null;
   defaultSceneId: string | null;
   geoPoint: { latitude: number; longitude: number } | null;
+  cameraPreset?: LocationCameraPreset;
 }
 
 export interface SceneNodeVm {
@@ -82,15 +83,24 @@ export interface CameraTarget {
   range?: number;
 }
 
+export interface GeographicPosition {
+  lat: number;
+  lng: number;
+  altitude?: number;
+}
+
+export interface LocationCameraPreset {
+  center: GeographicPosition;
+  heading: number;
+  tilt: number;
+  range: number;
+}
+
 export interface Map3DLocation {
   id: string;
   label: string;
-  position: {
-    lat: number;
-    lng: number;
-    altitude?: number;
-  };
-  target: CameraTarget;
+  position: GeographicPosition;
+  cameraPreset: LocationCameraPreset;
 }
 
 export interface ModelPlacement {
@@ -107,7 +117,7 @@ export interface Map3DEnginePort {
   mount(container: HTMLElement): Promise<void>;
   setLocations(locations: Map3DLocation[]): Promise<void>;
   subscribeLocationSelected(listener: (locationId: string) => void): () => void;
-  flyTo(target: CameraTarget): Promise<void>;
+  flyTo(preset: LocationCameraPreset): Promise<void>;
   addModel(model: ModelPlacement): Promise<void>;
   destroy(): void;
 }

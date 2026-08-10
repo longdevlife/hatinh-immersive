@@ -1,12 +1,13 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation, useParams } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FakeMap3DEngine } from '../../map3d';
 import { FakeMinimapEngine } from '../../minimap';
 import { FakePanoramaEngine, type PanoramaNode, type PanoramaView } from '../../panorama';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
+import { DEMO_DESTINATIONS, getDemoManifest } from '../fake-mode/demo-catalog';
 import { createFakeImmersiveManifest } from '../fake-mode/manifest';
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
 import { useImmersiveNavigation } from '../index';
@@ -94,8 +95,7 @@ function renderExperience(
   );
 }
 
-function createFactories(panorama = new FakePanoramaEngine()) {
-  const map3d = new FakeMap3DEngine();
+function createFactories(panorama = new FakePanoramaEngine(), map3d = new FakeMap3DEngine()) {
   const minimap = new FakeMinimapEngine();
 
   const factories: ImmersiveExperienceFactories = {
@@ -105,6 +105,33 @@ function createFactories(panorama = new FakePanoramaEngine()) {
   };
 
   return { factories, map3d, minimap, panorama };
+}
+
+class PendingLocationsTimingMap3DEngine extends FakeMap3DEngine {
+  private resolveLocationsStarted!: () => void;
+  private resolveLocations!: () => void;
+  readonly locationsStarted = new Promise<void>((resolve) => {
+    this.resolveLocationsStarted = resolve;
+  });
+  private readonly locationsPending = new Promise<void>((resolve) => {
+    this.resolveLocations = resolve;
+  });
+  readonly flightTimes: number[] = [];
+
+  override async setLocations(locations: Parameters<FakeMap3DEngine['setLocations']>[0]) {
+    await super.setLocations(locations);
+    this.resolveLocationsStarted();
+    await this.locationsPending;
+  }
+
+  override async flyTo(preset: Parameters<FakeMap3DEngine['flyTo']>[0]) {
+    this.flightTimes.push(Date.now());
+    await super.flyTo(preset);
+  }
+
+  releaseLocations() {
+    this.resolveLocations();
+  }
 }
 
 class DeferredPanoramaEngine extends FakePanoramaEngine {
@@ -154,6 +181,10 @@ describe('ImmersiveExperience', () => {
     useImmersiveNavigation.getState().reset();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('mounts the overview renderer, then hands off to one panorama renderer', async () => {
     const { factories, map3d, minimap, panorama } = createFactories();
     renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories);
@@ -179,7 +210,7 @@ describe('ImmersiveExperience', () => {
       '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Đi tiếp' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
 
     await waitFor(() => {
       expect(panorama.calls.filter((call) => call.type === 'loadNode')).toHaveLength(2);
@@ -224,6 +255,72 @@ describe('ImmersiveExperience', () => {
     });
   });
 
+  it('derives a deterministic camera preset for destinations without a curated override', async () => {
+    const { factories, map3d } = createFactories();
+    const manifest = createFakeImmersiveManifest();
+    const destinationWithoutPreset: DestinationPreviewVm = {
+      id: 'destination-without-preset',
+      slug: 'without-preset',
+      name: 'Điểm không có góc máy',
+      summary: 'Dùng góc máy mặc định trên bản đồ 3D.',
+      coverImageUrl: null,
+      categoryLabel: 'Thiên nhiên',
+      defaultSceneId: null,
+      geoPoint: { latitude: 18.4, longitude: 105.9 },
+    };
+
+    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories, manifest, [
+      manifest.destination,
+      destinationWithoutPreset,
+    ]);
+
+    await waitFor(() => {
+      expect(map3d.calls.filter((call) => call.type === 'setLocations')).toHaveLength(1);
+    });
+
+    expect(map3d.calls.filter((call) => call.type === 'setLocations').at(-1)).toEqual({
+      type: 'setLocations',
+      locations: [
+        expect.objectContaining({
+          id: manifest.destination.id,
+          cameraPreset: {
+            center: { lat: 18.3421, lng: 105.9032, altitude: 420 },
+            heading: 32,
+            tilt: 48,
+            range: 1800,
+          },
+        }),
+        expect.objectContaining({
+          id: destinationWithoutPreset.id,
+          cameraPreset: {
+            center: { lat: 18.4, lng: 105.9, altitude: 0 },
+            heading: 0,
+            tilt: 55,
+            range: 1200,
+          },
+        }),
+      ],
+    });
+    const flightCount = map3d.calls.filter((call) => call.type === 'flyTo').length;
+
+    act(() => map3d.emitLocationSelected(destinationWithoutPreset.id));
+
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState().selectedLocationId).toBe(
+        destinationWithoutPreset.id,
+      );
+      expect(map3d.calls.filter((call) => call.type === 'flyTo')).toHaveLength(flightCount + 1);
+      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
+        preset: {
+          center: { lat: 18.4, lng: 105.9, altitude: 0 },
+          heading: 0,
+          tilt: 55,
+          range: 1200,
+        },
+      });
+    });
+  });
+
   it('flies one persistent 3D map through marker selections without changing destination route', async () => {
     const { factories, map3d } = createFactories();
     const manifest = createFakeImmersiveManifest();
@@ -238,6 +335,12 @@ describe('ImmersiveExperience', () => {
         categoryLabel: 'Thiên nhiên',
         defaultSceneId: 'scene-b',
         geoPoint: { latitude: 18.4, longitude: 105.9 },
+        cameraPreset: {
+          center: { lat: 18.4, lng: 105.9, altitude: 240 },
+          heading: 110,
+          tilt: 50,
+          range: 1200,
+        },
       },
       {
         id: 'destination-c',
@@ -248,6 +351,12 @@ describe('ImmersiveExperience', () => {
         categoryLabel: 'Văn hóa',
         defaultSceneId: 'scene-c',
         geoPoint: { latitude: 18.5, longitude: 106 },
+        cameraPreset: {
+          center: { lat: 18.5, lng: 106, altitude: 260 },
+          heading: 205,
+          tilt: 46,
+          range: 1300,
+        },
       },
     ];
 
@@ -262,7 +371,7 @@ describe('ImmersiveExperience', () => {
 
     await waitFor(() => {
       expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
-        target: { lat: 18.4, lng: 105.9 },
+        preset: { center: { lat: 18.4, lng: 105.9 } },
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
         '/explore/son-trang-co-dam?mode=overview3d&location=destination-b',
@@ -275,13 +384,58 @@ describe('ImmersiveExperience', () => {
       expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
       expect(map3d.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
       expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
-        target: { lat: 18.5, lng: 106 },
+        preset: { center: { lat: 18.5, lng: 106 } },
       });
       expect(screen.getByRole('heading', { name: 'Điểm C' })).toBeInTheDocument();
       expect(screen.getByTestId('location')).toHaveTextContent(
         '/explore/son-trang-co-dam?mode=overview3d&location=destination-c',
       );
     });
+  });
+
+  it('flies to a selected marker within 100ms without remounting the 3D map', async () => {
+    vi.useFakeTimers();
+    const map3d = new PendingLocationsTimingMap3DEngine();
+    const { factories } = createFactories(undefined, map3d);
+    const manifest = getDemoManifest('bien-thien-cam');
+    const locations = DEMO_DESTINATIONS.map(({ preview }) => preview);
+
+    renderExperience('/explore/bien-thien-cam?mode=overview3d', factories, manifest, locations);
+
+    try {
+      await map3d.locationsStarted;
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+      expect(map3d.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
+      for (const destination of DEMO_DESTINATIONS.slice(1)) {
+        const flightsBeforeSelection = map3d.flightTimes.length;
+        const selectedAt = Date.now();
+
+        act(() => map3d.emitLocationSelected(destination.location.id));
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(100);
+        });
+
+        expect(map3d.flightTimes).toHaveLength(flightsBeforeSelection + 1);
+        expect(map3d.flightTimes.at(-1)! - selectedAt).toBeLessThanOrEqual(100);
+        expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
+          preset: destination.location.cameraPreset,
+        });
+      }
+
+      expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/bien-thien-cam?mode=overview3d&location=dong-loc-junction',
+      );
+    } finally {
+      await act(async () => {
+        map3d.releaseLocations();
+        await Promise.resolve();
+      });
+    }
   });
 
   it('enters the selected destination tour and returns to its 3D camera', async () => {
@@ -296,6 +450,12 @@ describe('ImmersiveExperience', () => {
       categoryLabel: 'Thiên nhiên',
       defaultSceneId: 'scene-b',
       geoPoint: { latitude: 18.4, longitude: 105.9 },
+      cameraPreset: {
+        center: { lat: 18.4, lng: 105.9, altitude: 240 },
+        heading: 110,
+        tilt: 50,
+        range: 1200,
+      },
     };
     const sourceScene = manifestA.nodes[0]!;
     const sourcePanorama = manifestA.panoramaNodes[0]!;
@@ -362,10 +522,57 @@ describe('ImmersiveExperience', () => {
         selectedLocationId: destinationB.id,
       });
       expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
-        target: { lat: 18.4, lng: 105.9 },
+        preset: { center: { lat: 18.4, lng: 105.9 } },
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
         '/explore/location-b?mode=overview3d&location=destination-b',
+      );
+    });
+  });
+
+  it('enters the real Nguyễn Du demo tour and returns to its selected 3D location', async () => {
+    const { factories, map3d, panorama } = createFactories();
+    const thienCamManifest = getDemoManifest('bien-thien-cam');
+    const nguyenDuManifest = getDemoManifest('khu-luu-niem-nguyen-du');
+    const destinations = DEMO_DESTINATIONS.map(({ preview }) => preview);
+
+    renderRoutedExperience(
+      '/explore/bien-thien-cam?mode=overview3d',
+      factories,
+      {
+        'bien-thien-cam': thienCamManifest,
+        'khu-luu-niem-nguyen-du': nguyenDuManifest,
+      },
+      destinations,
+    );
+
+    await waitFor(() => expect(map3d.calls.some((call) => call.type === 'mount')).toBe(true));
+    act(() => map3d.emitLocationSelected('nguyen-du-memorial'));
+
+    await waitFor(() =>
+      expect(screen.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Khám phá 360°' }));
+
+    await waitFor(() => {
+      expect(panorama.loadedNode?.id).toBe('nguyen-du-courtyard');
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/khu-luu-niem-nguyen-du?mode=panorama&location=nguyen-du-memorial&scene=nguyen-du-courtyard',
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại không gian 3D' }));
+
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        mode: 'overview3d',
+        selectedLocationId: 'nguyen-du-memorial',
+      });
+      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
+        preset: DEMO_DESTINATIONS[1]?.location.cameraPreset,
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/khu-luu-niem-nguyen-du?mode=overview3d&location=nguyen-du-memorial',
       );
     });
   });
@@ -410,7 +617,7 @@ describe('ImmersiveExperience', () => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Đi tiếp' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Lối đi di sản 1' })).toBeInTheDocument();

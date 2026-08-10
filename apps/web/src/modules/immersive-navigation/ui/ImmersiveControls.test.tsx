@@ -34,6 +34,7 @@ describe('ImmersiveControls', () => {
 
     const browser = screen.getByRole('navigation', { name: 'Danh sách cảnh quan' });
     expect(browser).toBeInTheDocument();
+    expect(screen.getByText('Lộ trình 360°')).toBeInTheDocument();
 
     const activeBtn = screen.getByText('Scene 1');
     expect(activeBtn).toHaveAttribute('aria-current', 'step');

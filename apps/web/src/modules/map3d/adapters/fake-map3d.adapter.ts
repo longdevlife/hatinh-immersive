@@ -1,5 +1,5 @@
 import type {
-  CameraTarget,
+  LocationCameraPreset,
   Map3DEnginePort,
   Map3DLocation,
   ModelPlacement,
@@ -8,7 +8,7 @@ import type {
 export type FakeMap3DCall =
   | { type: 'mount'; container: HTMLElement }
   | { type: 'setLocations'; locations: Map3DLocation[] }
-  | { type: 'flyTo'; target: CameraTarget }
+  | { type: 'flyTo'; preset: LocationCameraPreset }
   | { type: 'addModel'; model: ModelPlacement }
   | { type: 'destroy' };
 
@@ -30,11 +30,11 @@ export class FakeMap3DEngine implements Map3DEnginePort {
     this.traceElement.dataset.e2eMap3dDestroyCount = '0';
   }
 
-  async flyTo(target: CameraTarget) {
-    this.calls.push({ type: 'flyTo', target });
+  async flyTo(preset: LocationCameraPreset) {
+    this.calls.push({ type: 'flyTo', preset });
     if (this.traceElement) {
-      this.traceElement.dataset.e2eMap3dLastLat = String(target.lat);
-      this.traceElement.dataset.e2eMap3dLastLng = String(target.lng);
+      this.traceElement.dataset.e2eMap3dLastLat = String(preset.center.lat);
+      this.traceElement.dataset.e2eMap3dLastLng = String(preset.center.lng);
     }
   }
 

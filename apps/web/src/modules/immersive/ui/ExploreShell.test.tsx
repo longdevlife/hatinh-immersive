@@ -57,17 +57,15 @@ describe('ExploreShell', () => {
     expect(actions.onNavigateScene).toHaveBeenCalledWith('scene-02');
   });
 
-  it('exposes panorama navigation and hotspot selection through the immersive callbacks', () => {
+  it('exposes hotspot selection through the immersive callbacks', () => {
     const actions = createActions();
 
     render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
 
     expect(screen.getByRole('heading', { name: 'Lối đi di sản 1' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Câu chuyện địa danh' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Đi tiếp' }));
 
     expect(actions.onSelectHotspot).toHaveBeenCalledWith('hotspot-story');
-    expect(actions.onNavigateScene).toHaveBeenCalledWith('scene-02');
   });
 
   it('lets the visitor return from a ready panorama to the selected 3D location', () => {
@@ -177,7 +175,7 @@ describe('ExploreShell', () => {
     );
 
     expect(screen.getByRole('status')).toHaveTextContent('Đang tải không gian 360°');
-    expect(screen.getByText('Kết nối yếu')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quay lại không gian 3D' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
 
     expect(actions.onToggleMinimap).toHaveBeenCalledTimes(1);
@@ -199,6 +197,14 @@ describe('ExploreShell', () => {
 
     const hotspotButton = screen.getByRole('button', { name: 'Câu chuyện địa danh' });
     expect(hotspotButton).toHaveAttribute('aria-haspopup', 'dialog');
+  });
+
+  it('keeps the panorama interaction layer pass-through and omits unavailable audio controls', () => {
+    const actions = createActions();
+    render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
+
+    expect(screen.getByLabelText('Điểm khám phá trong cảnh')).toHaveClass('hotspot-layer');
+    expect(screen.queryByLabelText('Hướng dẫn âm thanh')).not.toBeInTheDocument();
   });
 
   it('exposes role="region" with accessible name on the control groups', () => {

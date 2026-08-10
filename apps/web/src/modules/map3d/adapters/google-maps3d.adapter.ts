@@ -1,5 +1,6 @@
 import type {
   CameraTarget,
+  LocationCameraPreset,
   Map3DEnginePort,
   Map3DLocation,
   ModelPlacement,
@@ -40,8 +41,12 @@ export interface GoogleModel3DElementOptions {
 
 export interface GoogleMarker3DInteractiveElementOptions {
   altitudeMode?: 'ABSOLUTE' | 'CLAMP_TO_GROUND';
-  label?: string;
+  gmpPopoverTargetElement?: GooglePopoverElement;
   position: GoogleLatLngAltitudeLiteral;
+}
+
+export interface GooglePopoverElementOptions {
+  open?: boolean;
 }
 
 export interface GoogleMap3DElement extends HTMLElement {
@@ -53,19 +58,25 @@ export type GoogleModel3DElement = HTMLElement;
 
 export type GoogleMarker3DInteractiveElement = HTMLElement;
 
+export type GooglePopoverElement = HTMLElement;
+
 export interface Maps3DLibrary {
   Map3DElement: new (options: GoogleMap3DElementOptions) => GoogleMap3DElement;
   Marker3DInteractiveElement: new (
     options: GoogleMarker3DInteractiveElementOptions,
   ) => GoogleMarker3DInteractiveElement;
   Model3DElement: new (options: GoogleModel3DElementOptions) => GoogleModel3DElement;
+  PopoverElement: new (options?: GooglePopoverElementOptions) => GooglePopoverElement;
+}
+
+interface GoogleMaps3DMaps {
+  importLibrary?: (libraryName: 'maps3d') => Promise<Maps3DLibrary>;
+  [key: string]: unknown;
 }
 
 export interface GoogleMaps3DWindow {
   google?: {
-    maps?: {
-      importLibrary?: (libraryName: 'maps3d') => Promise<Maps3DLibrary>;
-    };
+    maps?: GoogleMaps3DMaps;
   };
 }
 
@@ -76,6 +87,7 @@ export interface GoogleMaps3DAdapterOptions {
   language?: string;
   loadLibrary?: () => Promise<Maps3DLibrary>;
   mapId?: string;
+  readinessTimeoutMs?: number;
   region?: string;
   version?: string;
   windowRef?: GoogleMaps3DWindow;
@@ -85,18 +97,38 @@ interface GoogleSteadyChangeEvent extends Event {
   isSteady?: boolean;
 }
 
-function waitForMapReady(map: GoogleMap3DElement, signal: AbortSignal): Promise<void> {
+const DEFAULT_READINESS_TIMEOUT_MS = 8_000;
+
+function waitForMapReady(
+  map: GoogleMap3DElement,
+  signal: AbortSignal,
+  timeoutMs: number,
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const timeoutId = globalThis.setTimeout(
+      () => rejectWith(new Error('GOOGLE_MAPS_3D_READY_TIMEOUT')),
+      timeoutMs,
+    );
     const cleanup = () => {
+      globalThis.clearTimeout(timeoutId);
       map.removeEventListener('gmp-error', onError);
       map.removeEventListener('gmp-steadychange', onSteadyChange);
       signal.removeEventListener('abort', onAbort);
     };
     const resolveReady = () => {
+      if (settled) {
+        return;
+      }
+      settled = true;
       cleanup();
       resolve();
     };
     const rejectWith = (error: Error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
       cleanup();
       reject(error);
     };
@@ -153,7 +185,7 @@ function toPosition(target: CameraTarget): GoogleLatLngAltitudeLiteral {
   };
 }
 
-function toCamera(target: CameraTarget): GoogleCameraOptions {
+function toInitialCamera(target: CameraTarget): GoogleCameraOptions {
   return {
     center: toPosition(target),
     ...(target.heading === undefined ? {} : { heading: target.heading }),
@@ -162,10 +194,25 @@ function toCamera(target: CameraTarget): GoogleCameraOptions {
   };
 }
 
-function toMarkerOptions(location: Map3DLocation): GoogleMarker3DInteractiveElementOptions {
+function toCamera(preset: LocationCameraPreset): GoogleCameraOptions {
   return {
-    position: location.position,
-    label: location.label,
+    center: preset.center,
+    heading: preset.heading,
+    tilt: preset.tilt,
+    range: preset.range,
+  };
+}
+
+function toMarkerOptions(location: Map3DLocation): GoogleMarker3DInteractiveElementOptions {
+  const { lat, lng, altitude } = location.position;
+
+  return {
+    altitudeMode: 'CLAMP_TO_GROUND',
+    position: {
+      lat,
+      lng,
+      ...(altitude === undefined || altitude === 0 ? {} : { altitude }),
+    },
   };
 }
 
@@ -195,24 +242,26 @@ function loadGoogleMapsScript(
   const script = documentRef.createElement('script');
   const url = new URL('https://maps.googleapis.com/maps/api/js');
   const callbackName = `__hatinhGoogleMapsReady${++nextGoogleMapsCallbackId}`;
-  const callbackWindow = windowRef as GoogleMaps3DWindow & Record<string, unknown>;
+  const callbackGoogle = (windowRef.google ??= {}) as NonNullable<GoogleMaps3DWindow['google']>;
+  const callbackMaps: GoogleMaps3DMaps = callbackGoogle.maps ?? (callbackGoogle.maps = {});
   url.searchParams.set('key', apiKey);
   url.searchParams.set('v', version);
+  url.searchParams.set('libraries', 'maps3d');
   url.searchParams.set('loading', 'async');
-  url.searchParams.set('callback', callbackName);
+  url.searchParams.set('callback', `google.maps.${callbackName}`);
   script.async = true;
   script.dataset.hatinhGoogleMaps = '3d';
   script.src = url.toString();
 
   const load = new Promise<void>((resolve, reject) => {
-    callbackWindow[callbackName] = () => {
-      delete callbackWindow[callbackName];
+    callbackMaps[callbackName] = () => {
+      delete callbackMaps[callbackName];
       resolve();
     };
     script.addEventListener(
       'error',
       () => {
-        delete callbackWindow[callbackName];
+        delete callbackMaps[callbackName];
         documentLoads?.delete(key);
         reject(new Error('GOOGLE_MAPS_SCRIPT_LOAD_FAILED'));
       },
@@ -245,7 +294,6 @@ async function loadGoogleMaps3DLibrary(
     options.apiKey,
     options.version ?? 'weekly',
   );
-
   const loadedImportLibrary = resolveWindow(options.windowRef).google?.maps?.importLibrary;
   if (!loadedImportLibrary) {
     throw new Error('GOOGLE_MAPS_IMPORT_LIBRARY_UNAVAILABLE');
@@ -262,7 +310,11 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
   private readonly locationListeners = new Set<(locationId: string) => void>();
   private readonly markers = new Map<
     string,
-    { element: GoogleMarker3DInteractiveElement; onClick: EventListener }
+    {
+      element: GoogleMarker3DInteractiveElement;
+      onClick: EventListener;
+      popover: GooglePopoverElement;
+    }
   >();
   private mountGeneration = 0;
   private readinessController: AbortController | null = null;
@@ -285,22 +337,34 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
     this.library = library;
     const initialTarget = this.options.initialTarget ?? { lat: 0, lng: 0, altitude: 0 };
     const map = new library.Map3DElement({
-      ...toCamera(initialTarget),
+      ...toInitialCamera(initialTarget),
       defaultUIHidden: true,
       mode: 'SATELLITE',
       ...(this.options.language === undefined ? {} : { language: this.options.language }),
       ...(this.options.mapId === undefined ? {} : { mapId: this.options.mapId }),
       ...(this.options.region === undefined ? {} : { region: this.options.region }),
     });
-
-    container.replaceChildren(map);
-    this.container = container;
-    this.map = map;
+    map.style.display = 'block';
+    map.style.height = '100%';
+    map.style.width = '100%';
 
     const readinessController = new AbortController();
     this.readinessController = readinessController;
+    this.container = container;
+    this.map = map;
+    const readinessPromise = waitForMapReady(
+      map,
+      readinessController.signal,
+      this.options.readinessTimeoutMs ?? DEFAULT_READINESS_TIMEOUT_MS,
+    );
+
+    // Map3DElement starts rendering as soon as it is connected. Register the
+    // readiness listeners before attaching it so a synchronous first event
+    // cannot be lost between DOM connection and listener setup.
+    container.replaceChildren(map);
+
     try {
-      await waitForMapReady(map, readinessController.signal);
+      await readinessPromise;
     } catch (error) {
       if (this.map === map) {
         this.destroyMountedMap();
@@ -317,12 +381,12 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
     }
   }
 
-  async flyTo(target: CameraTarget): Promise<void> {
+  async flyTo(preset: LocationCameraPreset): Promise<void> {
     if (!this.map) {
       throw new Error('GOOGLE_MAPS_3D_NOT_MOUNTED');
     }
 
-    this.map.flyCameraTo({ endCamera: toCamera(target) });
+    this.map.flyCameraTo({ endCamera: toCamera(preset) });
   }
 
   async setLocations(locations: Map3DLocation[]): Promise<void> {
@@ -333,7 +397,13 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
     this.clearMarkers();
 
     for (const location of locations) {
-      const marker = new this.library.Marker3DInteractiveElement(toMarkerOptions(location));
+      const popover = new this.library.PopoverElement({ open: true });
+      popover.append(location.label);
+      const markerOptions = {
+        ...toMarkerOptions(location),
+        gmpPopoverTargetElement: popover,
+      };
+      const marker = new this.library.Marker3DInteractiveElement(markerOptions);
       const onClick: EventListener = () => {
         for (const listener of this.locationListeners) {
           listener(location.id);
@@ -343,7 +413,8 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
       marker.dataset.locationId = location.id;
       marker.addEventListener('gmp-click', onClick);
       this.map.append(marker);
-      this.markers.set(location.id, { element: marker, onClick });
+      this.map.append(popover);
+      this.markers.set(location.id, { element: marker, onClick, popover });
     }
   }
 
@@ -400,9 +471,10 @@ export class GoogleMaps3DEngine implements Map3DEnginePort {
   }
 
   private clearMarkers(): void {
-    for (const { element, onClick } of this.markers.values()) {
+    for (const { element, onClick, popover } of this.markers.values()) {
       element.removeEventListener('gmp-click', onClick);
       element.remove();
+      popover.remove();
     }
 
     this.markers.clear();

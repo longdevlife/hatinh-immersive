@@ -76,7 +76,18 @@ export function DestinationSearch({
         aria-label="Nhập tên điểm đến"
       />
       <button type="submit" aria-label="Thực hiện tìm kiếm">
-        🔍
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ width: '1rem', height: '1rem' }}
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
       </button>
       {normalizedQuery.length >= 2 ? (
         <div className="immersive-control-search__results" aria-live="polite">
@@ -109,8 +120,16 @@ export function SceneBrowser({
   currentSceneId?: string | null | undefined;
   onNavigate?: ((id: string) => void) | undefined;
 }) {
+  const currentIndex = nodes.findIndex((node) => node.id === currentSceneId);
+  const progressLabel =
+    currentIndex >= 0 ? `${currentIndex + 1}/${nodes.length}` : `${nodes.length} cảnh`;
+
   return (
     <nav className="immersive-control-browser" aria-label="Danh sách cảnh quan">
+      <div className="immersive-control-browser__header">
+        <span>Lộ trình 360°</span>
+        <span>{progressLabel}</span>
+      </div>
       <ul role="list">
         {nodes.map((node) => {
           const isCurrent = node.id === currentSceneId;

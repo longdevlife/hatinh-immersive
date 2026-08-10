@@ -1,6 +1,6 @@
 import type {
-  CameraTarget,
   ImmersiveMode,
+  LocationCameraPreset,
   Map3DLocation,
   NetworkQuality,
   RendererStatus,
@@ -28,7 +28,7 @@ export interface SceneTransitionState {
 export interface ImmersiveNavigationState extends SceneTransitionState {
   destinationId: string | null;
   selectedLocationId: string | null;
-  selectedLocationTarget: CameraTarget | null;
+  selectedLocationPreset: LocationCameraPreset | null;
   mode: ImmersiveMode;
   activeRenderer: ActiveRenderer;
   transition: NavigationTransition;

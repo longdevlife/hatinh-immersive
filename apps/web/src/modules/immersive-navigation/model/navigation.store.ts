@@ -14,7 +14,7 @@ export function createInitialNavigationState(): ImmersiveNavigationState {
   return {
     destinationId: null,
     selectedLocationId: null,
-    selectedLocationTarget: null,
+    selectedLocationPreset: null,
     mode: 'overview3d',
     activeRenderer: 'none',
     transition: 'idle',
@@ -55,7 +55,10 @@ function withSelectedLocation(location: Map3DLocation) {
   return {
     destinationId: location.id,
     selectedLocationId: location.id,
-    selectedLocationTarget: { ...location.target },
+    selectedLocationPreset: {
+      ...location.cameraPreset,
+      center: { ...location.cameraPreset.center },
+    },
   };
 }
 
@@ -95,7 +98,7 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
     set((state) => ({
       destinationId: state.destinationId,
       selectedLocationId: state.selectedLocationId,
-      selectedLocationTarget: state.selectedLocationTarget,
+      selectedLocationPreset: state.selectedLocationPreset,
       mode: 'panorama',
       activeRenderer: 'panorama',
       transition: 'entering-panorama',

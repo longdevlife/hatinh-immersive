@@ -4,7 +4,6 @@ import type { ImmersiveActions, ImmersiveLocale, ImmersiveViewVm } from '../../.
 import { Map3DChrome, type Map3DChromeLocation } from '../../map3d';
 import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
 
-import { AudioGuideControl, type AudioGuideStatus } from './AudioGuideControl';
 import { RendererState } from './RendererState';
 
 export interface ExploreShellProps {
@@ -66,8 +65,6 @@ export function ExploreShell({
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [audioStatus, setAudioStatus] = useState<AudioGuideStatus>('idle');
-  const [audioTime, setAudioTime] = useState(0);
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
 
   useEffect(() => {
@@ -145,6 +142,9 @@ export function ExploreShell({
           Không gian trải nghiệm đang được kết nối. Các điều khiển bên dưới vẫn có thể sử dụng bằng
           bàn phím.
         </p>
+        {isPanorama || hasMap3DChrome ? (
+          <h1 className="sr-only">{isPanorama ? currentSceneName : view.destination.name}</h1>
+        ) : null}
         {isPanorama ? (
           <div className="explore-shell__horizon" aria-hidden="true" />
         ) : (
@@ -159,8 +159,7 @@ export function ExploreShell({
               locations={map3dLocations ?? []}
               networkQuality={view.networkQuality}
               selectedLocationId={selectedLocationId}
-              subtitle={view.destination.categoryLabel ?? 'Hà Tĩnh'}
-              title={view.destination.name}
+
               onShare={() => void shareLocation()}
               onShowInfo={openInfo}
               onToggleFullscreen={() => void toggleFullscreen()}
@@ -214,13 +213,12 @@ export function ExploreShell({
         />
       </section>
 
-      {!hasMap3DChrome ? (
+      {!hasMap3DChrome && !isPanorama ? (
         <header className="immersive-topbar">
           <a className="immersive-topbar__brand" href="/" aria-label="Trang chủ Hà Tĩnh Immersive">
             Hà Tĩnh <span>/</span> Immersive
           </a>
           <div className="immersive-topbar__actions">
-            <span className="mode-badge">{isPanorama ? '360° walk' : '3D overview'}</span>
             {view.networkQuality !== 'good' ? (
               <span className={`network-quality network-quality--${view.networkQuality}`}>
                 {view.networkQuality === 'offline' ? 'Ngoại tuyến' : 'Kết nối yếu'}
@@ -232,20 +230,19 @@ export function ExploreShell({
               onClick={openInfo}
               aria-controls="destination-info-panel"
               aria-expanded={isInfoOpen}
+              aria-label="Thông tin"
             >
-              Thông tin
+              <span aria-hidden="true">i</span>
+              <span className="sr-only">Thông tin</span>
             </button>
           </div>
         </header>
       ) : null}
 
-      {!hasMap3DChrome ? (
+      {!hasMap3DChrome && !isPanorama ? (
         <section className="scene-identity" aria-live="polite">
-          <p className="immersive-kicker">
-            {isPanorama ? 'Điểm đang khám phá' : view.destination.categoryLabel}
-          </p>
-          <h1>{isPanorama ? currentSceneName : view.destination.name}</h1>
-          {isPanorama ? <p>{view.destination.name}</p> : null}
+          <p className="immersive-kicker">{view.destination.categoryLabel}</p>
+          <h1>{view.destination.name}</h1>
         </section>
       ) : null}
 
@@ -277,25 +274,6 @@ export function ExploreShell({
           >
             Quay lại không gian 3D
           </button>
-          {view.links.slice(0, 2).map((link) => (
-            <button
-              key={link.id}
-              className="navigation-hint"
-              type="button"
-              onClick={() => actions.onNavigateScene(link.targetSceneId)}
-            >
-              <span aria-hidden="true">↑</span>
-              {link.label ?? 'Di chuyển'}
-            </button>
-          ))}
-          <AudioGuideControl
-            status={audioStatus}
-            currentTime={audioTime}
-            duration={180}
-            onPlay={() => setAudioStatus('playing')}
-            onPause={() => setAudioStatus('paused')}
-            onSeek={setAudioTime}
-          />
         </div>
       ) : hasMap3DChrome ? null : (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">

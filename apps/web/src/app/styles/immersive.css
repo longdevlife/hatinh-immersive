@@ -79,11 +79,18 @@
 .immersive-topbar {
   align-items: center;
   display: flex;
-  justify-content: space-between;
+  gap: var(--space-3);
+  justify-content: flex-start;
   left: 0;
   padding: clamp(1rem, 2.5vw, 2rem) clamp(1rem, 4vw, 4rem);
+  pointer-events: none;
   right: 0;
   top: 0;
+}
+
+.immersive-topbar__brand,
+.immersive-topbar__actions {
+  pointer-events: auto;
 }
 
 .immersive-topbar__brand {
@@ -199,12 +206,12 @@
 .scene-identity {
   bottom: clamp(7rem, 14vw, 11rem);
   left: clamp(1rem, 4vw, 4rem);
-  max-width: min(34rem, calc(100% - 2rem));
+  max-width: min(27rem, calc(100% - 2rem));
 }
 
 .scene-identity h1,
 .info-panel h2 {
-  font-size: clamp(2.15rem, 5vw, 4.8rem);
+  font-size: clamp(2rem, 4vw, 3.75rem);
   letter-spacing: -0.055em;
   line-height: 0.96;
   margin: 0.45rem 0 0;
@@ -247,6 +254,7 @@
 
 .hotspot-layer {
   inset: 0;
+  pointer-events: none;
 }
 
 .hotspot-marker {
@@ -260,6 +268,7 @@
   height: 2.75rem;
   justify-content: center;
   position: absolute;
+  pointer-events: auto;
   width: 2.75rem;
 }
 
@@ -294,7 +303,7 @@
 }
 
 .explore-shell__minimap {
-  right: clamp(1rem, 3vw, 2.5rem);
+  right: clamp(1rem, 4vw, 4rem);
   top: clamp(5rem, 11vw, 7rem);
 }
 
@@ -453,9 +462,18 @@
 }
 
 .explore-shell__controls {
-  bottom: clamp(1rem, 3vw, 2rem);
+  top: clamp(1rem, 3vw, 2rem);
   left: clamp(1rem, 4vw, 4rem);
+  bottom: auto;
   max-width: calc(100% - 2rem);
+  pointer-events: none;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.explore-shell__controls > * {
+  pointer-events: auto;
 }
 
 .immersive-readiness-note {
@@ -467,23 +485,6 @@
   font-size: 0.82rem;
   margin: 0;
   padding: 0.7rem 1rem;
-}
-
-.navigation-hint {
-  background: rgb(8 26 21 / 0.66);
-  border: 1px solid rgb(255 255 255 / 0.26);
-  border-radius: var(--radius-pill);
-  color: inherit;
-  font-size: 0.82rem;
-  font-weight: 700;
-  min-height: 2.65rem;
-  padding: 0.55rem 0.85rem;
-}
-
-.navigation-hint span {
-  color: #ffd69d;
-  font-size: 1rem;
-  margin-right: 0.35rem;
 }
 
 .audio-guide {
@@ -797,4 +798,60 @@
   100% {
     box-shadow: 0 0 0 0 rgb(217 128 60 / 0);
   }
+}
+
+/* Custom Photo Sphere Viewer Tooltip Overrides */
+.psv-tooltip {
+  backdrop-filter: blur(var(--blur-overlay, 12px)) !important;
+  background: rgb(12 31 25 / 0.78) !important;
+  border: 1px solid rgb(255 255 255 / 0.15) !important;
+  border-radius: 40px !important;
+  box-shadow: var(--shadow-panel, 0 8px 32px rgba(0, 0, 0, 0.4)) !important;
+  color: var(--color-text-inverse, #fff) !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-easing-enter),
+    transform var(--motion-duration-fast) var(--motion-easing-enter) !important;
+}
+
+.psv-tooltip-content {
+  padding: 0 !important;
+}
+
+/* Hide the chunky arrow for a cleaner floating pill look */
+.psv-tooltip-arrow {
+  display: none !important;
+}
+
+/* Virtual Tour Tooltip specific */
+.psv-virtual-tour-tooltip .psv-tooltip-content {
+  display: flex !important;
+  flex-direction: column-reverse !important;
+  width: 220px !important;
+}
+
+.psv-virtual-tour-tooltip img {
+  display: block !important;
+  width: 100% !important;
+  height: 120px !important;
+  object-fit: cover !important;
+  margin: 0 !important;
+}
+
+.psv-virtual-tour-tooltip h2,
+.psv-virtual-tour-tooltip h3,
+.psv-virtual-tour-tooltip .psv-tooltip-title {
+  font-family: inherit !important;
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  padding: 0.5rem 0.5rem !important;
+  margin: 0 !important;
+  text-align: center !important;
+  background: transparent !important;
+  color: var(--color-text-inverse, #fff) !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }

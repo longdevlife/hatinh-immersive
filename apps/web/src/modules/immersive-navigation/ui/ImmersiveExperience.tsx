@@ -29,6 +29,7 @@ import type {
   ImmersiveViewVm,
   CameraTarget,
   DestinationPreviewVm,
+  LocationCameraPreset,
   Map3DLocation,
   NetworkQuality,
   PanoramaNode,
@@ -42,6 +43,7 @@ import {
   encodeImmersiveDeepLink,
   type ImmersiveDeepLinkState,
 } from '../lib/deep-link';
+import { resolveRendererModes } from '../lib/renderer-mode';
 import { useImmersiveNavigation } from '../model/navigation.store';
 import { DEFAULT_NAVIGATION_VIEW } from '../model/navigation.view';
 import type { ActiveRenderer, ImmersiveNavigationState } from '../model/navigation.types';
@@ -64,47 +66,39 @@ interface PanoramaEntryRouteState {
   entrySceneId: string;
 }
 
-function createDefaultFactories(): ImmersiveExperienceFactories {
-  const usesFakeRenderers = import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake';
-  const usesDeterministicMapLibre =
-    usesFakeRenderers && import.meta.env.VITE_IMMERSIVE_MINIMAP_MODE === 'maplibre';
-
-  if (usesFakeRenderers) {
-    return {
-      createMap3DEngine: async () => new FakeMap3DEngine(),
-      createPanoramaEngine: async () => new FakePanoramaEngine(),
-      createMinimapEngine: usesDeterministicMapLibre
-        ? () =>
-            createLazyMapLibreMinimapEngine({
-              style: resolveMinimapStyle({
-                isProduction: true,
-                styleUrl: import.meta.env.VITE_MINIMAP_STYLE_URL,
-              }),
-            })
-        : async () => {
-            const { FakeMinimapEngine } = await import('../../minimap');
-            return new FakeMinimapEngine();
-          },
-    };
-  }
+function createDefaultFactories(initialTarget?: CameraTarget): ImmersiveExperienceFactories {
+  const rendererModes = resolveRendererModes(import.meta.env);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const mapId = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID;
 
   return {
-    createMap3DEngine: () =>
-      createLazyGoogleMaps3DEngine({
-        ...(apiKey ? { apiKey } : {}),
-        ...(mapId ? { mapId } : {}),
-      }),
-    createPanoramaEngine: () => createLazyPhotoSphereViewerEngine(),
-    createMinimapEngine: () =>
-      createLazyMapLibreMinimapEngine({
-        style: resolveMinimapStyle({
-          isProduction: import.meta.env.PROD,
-          styleUrl: import.meta.env.VITE_MINIMAP_STYLE_URL,
-        }),
-      }),
+    createMap3DEngine:
+      rendererModes.map3d === 'fake'
+        ? async () => new FakeMap3DEngine()
+        : () =>
+            createLazyGoogleMaps3DEngine({
+              ...(apiKey ? { apiKey } : {}),
+              ...(initialTarget ? { initialTarget } : {}),
+              ...(mapId ? { mapId } : {}),
+            }),
+    createPanoramaEngine:
+      rendererModes.panorama === 'fake'
+        ? async () => new FakePanoramaEngine()
+        : () => createLazyPhotoSphereViewerEngine(),
+    createMinimapEngine:
+      rendererModes.minimap === 'fake'
+        ? async () => {
+            const { FakeMinimapEngine } = await import('../../minimap');
+            return new FakeMinimapEngine();
+          }
+        : () =>
+            createLazyMapLibreMinimapEngine({
+              style: resolveMinimapStyle({
+                isProduction: import.meta.env.PROD,
+                styleUrl: import.meta.env.VITE_MINIMAP_STYLE_URL,
+              }),
+            }),
   };
 }
 
@@ -121,6 +115,13 @@ function toMap3DLocation(destination: DestinationPreviewVm): Map3DLocation | nul
     return null;
   }
 
+  const cameraPreset =
+    destination.cameraPreset ??
+    buildDefaultLocationCamera({
+      lat: destination.geoPoint.latitude,
+      lng: destination.geoPoint.longitude,
+    });
+
   return {
     id: destination.id,
     label: destination.name,
@@ -129,15 +130,17 @@ function toMap3DLocation(destination: DestinationPreviewVm): Map3DLocation | nul
       lng: destination.geoPoint.longitude,
       altitude: 0,
     },
-    target: {
-      lat: destination.geoPoint.latitude,
-      lng: destination.geoPoint.longitude,
-      altitude: 120,
-      heading: 0,
-      tilt: 55,
-      range: 900,
-    },
+    cameraPreset,
   };
+}
+
+function buildDefaultLocationCamera(location: Pick<Map3DLocation['position'], 'lat' | 'lng'>) {
+  return {
+    center: { lat: location.lat, lng: location.lng, altitude: 0 },
+    heading: 0,
+    tilt: 55,
+    range: 1200,
+  } satisfies LocationCameraPreset;
 }
 
 function mergeMapLocations(
@@ -265,7 +268,7 @@ interface RendererHostProps {
   onViewChange(view: PanoramaView): void;
   panoramaNode: PanoramaNode | null;
   panoramaNodes: PanoramaNode[];
-  overviewTarget: CameraTarget;
+  cameraPreset: LocationCameraPreset | undefined;
   retryKey: number;
 }
 
@@ -281,7 +284,7 @@ function RendererHost({
   onViewChange,
   panoramaNode,
   panoramaNodes,
-  overviewTarget,
+  cameraPreset,
   retryKey,
 }: RendererHostProps): ReactNode {
   if (!engine || activeRenderer === 'none') {
@@ -297,7 +300,7 @@ function RendererHost({
           locations={locations}
           onLocationSelected={onLocationSelected}
           onStatusChange={onStatusChange}
-          target={overviewTarget}
+          {...(cameraPreset ? { cameraPreset } : {})}
         />
       </Suspense>
     );
@@ -471,7 +474,10 @@ export function ImmersiveExperience({
     };
   }, []);
 
-  const defaultFactories = useMemo(createDefaultFactories, []);
+  const defaultFactories = useMemo(
+    () => createDefaultFactories(manifest?.overviewTarget),
+    [manifest?.overviewTarget],
+  );
   const resolvedFactories = factories ?? defaultFactories;
   const [retryKey, setRetryKey] = useState(0);
   const pendingUrlFrame = useRef<number | null>(null);
@@ -765,11 +771,11 @@ export function ImmersiveExperience({
   const panoramaTargetView = navigation.requestedSceneId
     ? (currentPanoramaNode?.initialView ?? navigation.committedView)
     : navigation.committedView;
-  const overviewTarget =
-    navigation.selectedLocationTarget ??
-    mapLocations.find((candidate) => candidate.id === navigation.selectedLocationId)?.target ??
-    routeLocation?.target ??
-    manifest.overviewTarget;
+  const selectedLocationPreset =
+    navigation.selectedLocationPreset ??
+    mapLocations.find((candidate) => candidate.id === navigation.selectedLocationId)
+      ?.cameraPreset ??
+    routeLocation?.cameraPreset;
   const view = buildImmersiveView(manifest, destinationSlug, navigation, selectedDestination);
   const selectedHotspot = view.hotspots.find(
     (hotspot) => hotspot.id === navigation.selectedHotspotId,
@@ -822,7 +828,7 @@ export function ImmersiveExperience({
       }}
       panoramaNode={currentPanoramaNode}
       panoramaNodes={manifest.panoramaNodes}
-      overviewTarget={overviewTarget}
+      cameraPreset={selectedLocationPreset}
       retryKey={retryKey}
     />
   );
@@ -848,7 +854,7 @@ export function ImmersiveExperience({
           destinations={destinationSearchResults}
           locale={locale}
           nodes={view.nodes}
-          searchLoading={destinationsQuery.isPending}
+          searchLoading={shouldFetchDestinations && destinationsQuery.isPending}
           onLocaleChange={onLocaleChange}
           onNavigateScene={actions.onNavigateScene}
           onSearchDestination={setDestinationSearchQuery}

@@ -145,11 +145,13 @@ const targetNode: PanoramaNode = {
 
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>((nextResolve) => {
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => {
     resolve = nextResolve;
+    reject = nextReject;
   });
 
-  return { promise, resolve };
+  return { promise, resolve, reject };
 }
 
 describe('PhotoSphereViewerEngine', () => {
@@ -239,6 +241,39 @@ describe('PhotoSphereViewerEngine', () => {
 
     nodeChangeC.resolve(true);
     await loadC;
+  });
+
+  it('restores the last committed scene when the newest scene load fails', async () => {
+    const sceneB = { ...targetNode, id: 'scene-b' };
+    const sceneC = { ...targetNode, id: 'scene-c' };
+    const transitionB = createDeferred<boolean>();
+    const transitionC = createDeferred<boolean>();
+    virtualTourPlugin.setCurrentNodeResults.set(sceneB.id, transitionB.promise);
+    virtualTourPlugin.setCurrentNodeResults.set(sceneC.id, transitionC.promise);
+    const engine = new PhotoSphereViewerEngine({
+      loadPanorama: async (candidate) => ({ id: candidate.id }),
+      loadRuntime: async () => runtime,
+    });
+
+    await engine.mount(document.createElement('div'));
+    await engine.loadNode(node);
+
+    const loadB = engine.loadNode(sceneB);
+    await vi.waitFor(() => {
+      expect(virtualTourPlugin.setCurrentNodeCalls).toEqual([node.id, sceneB.id]);
+    });
+    const loadC = engine.loadNode(sceneC);
+    await vi.waitFor(() => {
+      expect(virtualTourPlugin.setCurrentNodeCalls).toEqual([node.id, sceneB.id, sceneC.id]);
+    });
+
+    transitionB.resolve(true);
+    transitionC.reject(new Error('tile failed'));
+
+    await expect(loadB).resolves.toBeUndefined();
+    await expect(loadC).rejects.toThrow('tile failed');
+    expect(virtualTourPlugin.setCurrentNodeCalls).toEqual([node.id, sceneB.id, sceneC.id, node.id]);
+    expect(runtime.Viewer).toHaveBeenCalledTimes(1);
   });
 
   it('delivers native node changes after remounting with an unresolved old transition', async () => {
@@ -344,18 +379,10 @@ describe('PhotoSphereViewerEngine', () => {
     expect(loadPanorama).toHaveBeenCalledWith(node);
     expect(runtime.Viewer).toHaveBeenCalledTimes(1);
     expect(fakeViewer.setPanoramaCalls).toHaveLength(0);
-    const panorama = (
-      vi.mocked(runtime.Viewer).mock.calls.at(-1)?.[0] as {
-        panorama: {
-          baseUrl: string;
-          levels: unknown[];
-          tileUrl: (column: number, row: number, level: number) => string;
-        };
-      }
-    ).panorama;
-    expect(panorama.baseUrl).toBe('https://cdn.example.test/scene-01/preview.webp');
-    expect(panorama.levels).toHaveLength(2);
-    expect(panorama.tileUrl(1, 0, 1)).toBe('https://cdn.example.test/scene-01/tiles/1/1-0.webp');
+    const viewerOptions = vi.mocked(runtime.Viewer).mock.calls.at(-1)?.[0] as {
+      panorama?: unknown;
+    };
+    expect(viewerOptions.panorama).toBeUndefined();
     expect(virtualTourPlugin.setCurrentNodeCalls).toEqual(['scene-01']);
 
     const virtualTourConfig = vi

@@ -8,6 +8,7 @@ import type {
   SceneLinkVm,
   SceneNodeVm,
 } from '../../../shared/contracts';
+import { toLocationCameraPreset } from '../../../shared/api/location-camera-preset';
 
 export interface ImmersiveManifestVm {
   destination: DestinationPreviewVm;
@@ -54,6 +55,8 @@ export function getSceneLinks(links: SceneLinkVm[], sceneId: string | null): Sce
 }
 
 function toDestination(dto: GetImmersiveManifest200): DestinationPreviewVm {
+  const cameraPreset = toLocationCameraPreset(dto.destination.cameraPreset);
+
   return {
     id: dto.destination.id,
     slug: dto.destination.slug,
@@ -63,6 +66,7 @@ function toDestination(dto: GetImmersiveManifest200): DestinationPreviewVm {
     categoryLabel: dto.destination.categoryLabel,
     defaultSceneId: dto.destination.defaultSceneId,
     geoPoint: dto.destination.geoPoint,
+    ...(cameraPreset ? { cameraPreset } : {}),
   };
 }
 

@@ -9,4 +9,10 @@ export const destinationFixture = {
   categoryLabel: 'Di sản & văn hóa',
   defaultSceneId: 'scene-01',
   geoPoint: { latitude: 18.3421, longitude: 105.9032 },
+  cameraPreset: {
+    center: { lat: 18.3421, lng: 105.9032, altitude: 420 },
+    heading: 32,
+    tilt: 48,
+    range: 1800,
+  },
 } satisfies DestinationPreviewVm;

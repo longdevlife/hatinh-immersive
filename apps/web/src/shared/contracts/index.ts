@@ -6,6 +6,8 @@ export type {
   ImmersiveLocale,
   ImmersiveMode,
   ImmersiveViewVm,
+  GeographicPosition,
+  LocationCameraPreset,
   Map3DEnginePort,
   Map3DLocation,
   MinimapProps,

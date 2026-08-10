@@ -104,6 +104,14 @@ class FakeMap {
     this.layers.push(layer);
   }
 
+  getLayer(id: string) {
+    return this.layers.some(
+      (layer) => typeof layer === 'object' && layer !== null && 'id' in layer && layer.id === id,
+    )
+      ? {}
+      : undefined;
+  }
+
   easeTo(options: unknown) {
     this.easeToCalls.push(options);
   }
