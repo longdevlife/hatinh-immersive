@@ -29,7 +29,7 @@ export function MinimapViewport({
   const containerRef = useRef<HTMLDivElement>(null);
   const onNodeSelectRef = useRef(onNodeSelect);
   const onStatusChangeRef = useRef(onStatusChange);
-  const [status, setStatus] = useState<RendererStatus>('loading');
+  const [status, setStatus] = useState<RendererStatus>(collapsed ? 'idle' : 'loading');
 
   onNodeSelectRef.current = onNodeSelect;
   onStatusChangeRef.current = onStatusChange;
@@ -42,6 +42,8 @@ export function MinimapViewport({
 
   useEffect(() => {
     if (collapsed) {
+      setStatus('idle');
+      onStatusChangeRef.current?.('idle');
       return undefined;
     }
 
