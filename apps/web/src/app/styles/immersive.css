@@ -822,7 +822,7 @@
   backdrop-filter: blur(var(--blur-overlay, 12px)) !important;
   background: rgb(12 31 25 / 0.78) !important;
   border: 1px solid rgb(255 255 255 / 0.15) !important;
-  border-radius: var(--radius-md, 12px) !important;
+  border-radius: 40px !important;
   box-shadow: var(--shadow-panel, 0 8px 32px rgba(0, 0, 0, 0.4)) !important;
   color: var(--color-text-inverse, #fff) !important;
   padding: 0 !important;
@@ -852,19 +852,9 @@
   font-family: inherit !important;
   font-size: 0.9rem !important;
   font-weight: 600 !important;
-  padding: 0.75rem 1rem !important;
+  padding: 0.5rem 1rem !important;
   margin: 0 !important;
   text-align: center !important;
   background: transparent !important;
   color: var(--color-text-inverse, #fff) !important;
-}
-
-/* Fix distorted thumbnail with object-fit: cover */
-.psv-virtual-tour-tooltip img {
-  width: 100% !important;
-  height: 90px !important;
-  object-fit: cover !important;
-  object-position: center center !important;
-  border-radius: 0 0 calc(var(--radius-md, 12px) - 1px) calc(var(--radius-md, 12px) - 1px) !important;
-  display: block !important;
 }
