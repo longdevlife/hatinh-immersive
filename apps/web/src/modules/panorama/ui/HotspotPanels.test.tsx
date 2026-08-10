@@ -1,6 +1,29 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { useState } from 'react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
 import { HotspotPanel } from './HotspotPanels';
+
+function FocusHarness() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button type="button" onClick={() => setIsOpen(true)}>
+        Mở hotspot
+      </button>
+      {isOpen ? (
+        <HotspotPanel
+          content="Nội dung câu chuyện"
+          isOpen
+          onClose={() => setIsOpen(false)}
+          title="Câu chuyện địa danh"
+          type="information"
+        />
+      ) : null}
+    </>
+  );
+}
 
 describe('HotspotPanels', () => {
   it('renders null when closed', () => {
@@ -33,5 +56,21 @@ describe('HotspotPanels', () => {
     const closeBtn = screen.getByRole('button', { name: 'Đóng chi tiết điểm khám phá' });
     fireEvent.click(closeBtn);
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('focuses the dialog, closes with Escape, and restores focus to the invoker', () => {
+    render(<FocusHarness />);
+
+    const trigger = screen.getByRole('button', { name: 'Mở hotspot' });
+    trigger.focus();
+    fireEvent.click(trigger);
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Đóng chi tiết điểm khám phá' })).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
   });
 });
