@@ -895,8 +895,3 @@
   background: transparent !important;
   color: var(--color-text-inverse, #fff) !important;
 }
-
-/* Hide VirtualTourPlugin links completely (we use side arrows for navigation) */
-.psv-virtual-tour-link {
-  display: none !important;
-}
