@@ -208,7 +208,6 @@ export function ExploreShell({
               locations={map3dLocations ?? []}
               networkQuality={view.networkQuality}
               selectedLocationId={selectedLocationId}
-
               onShare={() => void shareLocation()}
               onShowInfo={openInfo}
               onToggleFullscreen={() => void toggleFullscreen()}
@@ -222,36 +221,14 @@ export function ExploreShell({
             rendererContent
           )}
         </div>
-        {isPanorama ? (
-          <div className="hotspot-layer" aria-label="Điểm khám phá trong cảnh">
-            {view.hotspots.map((hotspot, index) => (
-              <button
-                key={hotspot.id}
-                className={`hotspot-marker hotspot-marker--${hotspot.type}`}
-                style={{
-                  left: `${12 + ((hotspot.yaw % 360) / 360) * 76}%`,
-                  top: `${42 + hotspot.pitch * 2 + (index % 2) * 7}%`,
-                }}
-                type="button"
-                onClick={() => {
-                  actions.onSelectHotspot(hotspot.id);
-                }}
-                aria-haspopup="dialog"
-                aria-label={hotspot.label ?? 'Mở điểm khám phá'}
-              >
-                <span aria-hidden="true">+</span>
-                <span className="hotspot-marker__label">{hotspot.label}</span>
-              </button>
-            ))}
-          </div>
-        ) : hasMap3DChrome ? null : (
+        {!isPanorama && !hasMap3DChrome ? (
           <div className="overview-marker" aria-label={`Điểm đến ${view.destination.name}`}>
             <span className="overview-marker__pin" aria-hidden="true">
               ⌖
             </span>
             <strong>{view.destination.name}</strong>
           </div>
-        )}
+        ) : null}
         <RendererState
           mode={view.mode}
           status={view.rendererStatus}
