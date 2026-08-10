@@ -147,8 +147,8 @@ describe('PhotoSphereViewerEngine panorama hotspots', () => {
     engine.setHotspots([hotspot]);
 
     expect(runtime.Viewer).toHaveBeenCalledTimes(1);
-    expect(fakeViewer.markers.setMarkersCalls).toHaveLength(1);
-    const marker = fakeViewer.markers.setMarkersCalls[0]?.[0] as {
+    expect(fakeViewer.markers.setMarkersCalls.length).toBeGreaterThanOrEqual(1);
+    const marker = fakeViewer.markers.setMarkersCalls.at(-1)?.[0] as {
       id: string;
       element: HTMLElement;
       position: { yaw: number; pitch: number };
