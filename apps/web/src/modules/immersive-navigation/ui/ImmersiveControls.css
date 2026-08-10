@@ -1,98 +1,164 @@
-.immersive-controls-group {
+.panorama-controls {
+  --panorama-control-size: var(--control-height-base, 2.75rem);
+  --panorama-surface: var(--color-background-overlay, rgb(8 22 18 / 0.76));
+  --panorama-border: var(--color-border-subtle, rgb(255 255 255 / 0.2));
+  --panorama-focus: var(--color-accent-primary, #e5a95f);
+  --panorama-motion: var(--motion-duration-base, 240ms);
+  --panorama-ease: var(--motion-easing-enter, cubic-bezier(0.22, 1, 0.36, 1));
   position: absolute;
   inset: 0;
+  z-index: var(--z-index-overlay, 20);
   pointer-events: none;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 
-.immersive-controls-top-right {
+.panorama-controls__utilities {
   position: absolute;
-  top: clamp(1rem, 2.5vw, 2rem);
-  right: clamp(1rem, 4vw, 4rem);
+  top: var(--safe-area-spacing, clamp(1rem, 2.5vw, 2rem));
+  right: var(--safe-area-spacing, clamp(1rem, 4vw, 4rem));
   display: flex;
-  gap: 0.5rem;
   align-items: center;
+  gap: var(--space-2, 0.5rem);
   pointer-events: auto;
 }
 
-.immersive-controls-bottom {
+.panorama-controls__secondary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+}
+
+.panorama-controls__scenes {
   position: absolute;
   bottom: clamp(4.5rem, 6vw, 5.5rem);
   left: 50%;
-  transform: translateX(-50%);
   width: max-content;
   max-width: min(78vw, 42rem);
   pointer-events: auto;
+  transform: translateX(-50%);
 }
 
-.immersive-control-search {
+.panorama-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 0.82rem;
+  color: var(--color-text-inverse, #fff);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 720;
+  background: var(--panorama-surface);
+  border: 1px solid var(--panorama-border);
+  border-radius: var(--radius-control, 999px);
+  box-shadow: var(--elevation-1, 0 0.75rem 2rem rgb(3 12 9 / 0.22));
+  backdrop-filter: var(--backdrop-blur-base, blur(18px));
+  -webkit-backdrop-filter: var(--backdrop-blur-base, blur(18px));
+  cursor: pointer;
+  transition:
+    background-color var(--panorama-motion) var(--panorama-ease),
+    border-color var(--panorama-motion) var(--panorama-ease),
+    transform 160ms var(--panorama-ease);
+}
+
+.panorama-search-launcher,
+.panorama-share-control,
+.panorama-fullscreen-control {
+  width: 44px;
+  padding: 0;
+}
+
+.panorama-control:hover {
+  background: color-mix(in srgb, var(--panorama-surface) 82%, white 18%);
+}
+
+.panorama-control:active {
+  transform: scale(0.96);
+}
+
+.panorama-control:focus-visible,
+.panorama-search input:focus-visible,
+.panorama-search button:focus-visible,
+.panorama-scene-browser button:focus-visible {
+  outline: 3px solid var(--panorama-focus);
+  outline-offset: 3px;
+}
+
+.panorama-search {
   position: relative;
   display: flex;
   align-items: center;
-  height: 2.8rem;
-  background: rgba(8, 22, 18, 0.76);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 999px;
-  backdrop-filter: blur(18px);
-  box-shadow: 0 0.75rem 2rem rgba(3, 12, 9, 0.22);
+  width: clamp(17.5rem, 25vw, 22rem);
+  min-height: 44px;
+  color: var(--color-text-inverse, #fff);
+  background: var(--panorama-surface);
+  border: 1px solid var(--panorama-border);
+  border-radius: var(--radius-control, 999px);
+  box-shadow: var(--elevation-1, 0 0.75rem 2rem rgb(3 12 9 / 0.22));
+  backdrop-filter: var(--backdrop-blur-base, blur(18px));
+  -webkit-backdrop-filter: var(--backdrop-blur-base, blur(18px));
 }
 
-.immersive-control-search input {
-  width: clamp(8rem, 15vw, 12rem);
+.panorama-search input {
+  min-width: 0;
+  flex: 1;
+  height: 42px;
+  padding: 0 0.35rem 0 0.95rem;
+  color: inherit;
+  font: inherit;
+  font-size: 0.88rem;
   background: transparent;
-  border: none;
-  color: white;
-  padding: 0.7rem 0.25rem 0.7rem 1rem;
+  border: 0;
   outline: none;
 }
 
-.immersive-control-search input::placeholder {
-  color: rgba(255, 255, 255, 0.68);
+.panorama-search input::placeholder {
+  color: color-mix(in srgb, currentColor 66%, transparent);
 }
 
-.immersive-control-search button {
+.panorama-search > button {
   display: inline-grid;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  margin-right: 2px;
   place-items: center;
-  width: 2.35rem;
-  height: 2.35rem;
-  margin-right: 0.2rem;
+  color: inherit;
   background: transparent;
-  border: none;
+  border: 0;
   border-radius: 50%;
-  color: white;
-  padding: 0.5rem;
   cursor: pointer;
 }
 
-.immersive-control-search button:hover,
-.immersive-control-search button:focus-visible {
-  background: rgba(255, 255, 255, 0.12);
+.panorama-search > button:hover {
+  background: rgb(255 255 255 / 0.1);
 }
 
-.immersive-control-search__results {
+.panorama-search__results {
   position: absolute;
-  top: calc(100% + 0.35rem);
+  top: calc(100% + var(--space-2, 0.5rem));
   right: 0;
   z-index: 2;
-  width: min(20rem, 80vw);
-  padding: 0.5rem;
-  color: #fff;
-  background: rgba(12, 31, 25, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 0.5rem;
-  box-shadow: 0 0.8rem 2rem rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-height: min(22rem, 56vh);
+  padding: var(--space-2, 0.5rem);
+  overflow-y: auto;
+  color: var(--color-text-inverse, #fff);
+  background: var(--panorama-surface);
+  border: 1px solid var(--panorama-border);
+  border-radius: var(--radius-md, 0.75rem);
+  box-shadow: var(--elevation-2, 0 0.8rem 2rem rgb(0 0 0 / 0.25));
+  backdrop-filter: var(--backdrop-blur-base, blur(18px));
+  -webkit-backdrop-filter: var(--backdrop-blur-base, blur(18px));
 }
 
-.immersive-control-search__results p {
+.panorama-search__results p {
   margin: 0;
-  padding: 0.5rem;
+  padding: 0.65rem 0.75rem;
   font-size: 0.8rem;
 }
 
-.immersive-control-search__results ul {
+.panorama-search__results ul {
   display: grid;
   gap: 0.25rem;
   margin: 0;
@@ -100,104 +166,129 @@
   list-style: none;
 }
 
-.immersive-control-search__results li button {
+.panorama-search__results li button {
   display: grid;
   width: 100%;
-  gap: 0.15rem;
-  padding: 0.55rem;
+  min-height: 44px;
+  gap: 0.12rem;
+  padding: 0.55rem 0.7rem;
   text-align: left;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 0.35rem;
-}
-
-.immersive-control-search__results li button:hover,
-.immersive-control-search__results li button:focus-visible {
-  background: rgba(255, 255, 255, 0.18);
-}
-
-.immersive-control-search__results span {
-  font-size: 0.65rem;
-  opacity: 0.72;
-}
-
-.immersive-control-btn {
-  height: var(--control-height-base, 2.75rem);
-  min-width: var(--control-height-base, 2.75rem);
-  background: var(--color-background-overlay, rgba(8, 22, 18, 0.76));
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-control, 999px);
-  padding: 0 0.85rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm, 0.5rem);
   cursor: pointer;
-  font-weight: bold;
-  backdrop-filter: blur(var(--backdrop-blur-base, 18px));
-  box-shadow: 0 0.75rem 2rem rgba(3, 12, 9, 0.22);
 }
 
-.immersive-control-btn.search-toggle-btn {
-  padding: 0; /* circle button */
+.panorama-search__results li button:hover,
+.panorama-search__results li button:focus-visible {
+  background: rgb(255 255 255 / 0.1);
 }
 
-.immersive-control-btn:hover,
-.immersive-control-btn:focus-visible {
-  background: rgba(29, 66, 53, 0.88);
+.panorama-search__results span {
+  font-size: 0.67rem;
+  opacity: 0.7;
 }
 
-.immersive-control-browser {
+.panorama-scene-browser {
   width: 100%;
 }
 
-.immersive-control-browser ul {
-  list-style: none;
-  margin: 0;
-  padding: 0.25rem 0.45rem 0.55rem;
+.panorama-scene-browser ul {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2, 0.5rem);
+  margin: 0;
+  padding: 0.3rem 0.45rem 0.55rem;
   overflow-x: auto;
+  list-style: none;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.34) transparent;
+  scrollbar-color: rgb(255 255 255 / 0.34) transparent;
 }
 
-.immersive-control-browser button {
-  background: rgba(8, 22, 18, 0.5);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: rgba(255, 255, 255, 0.88);
-  padding: 0.5rem 1rem;
-  border-radius: 999px;
-  cursor: pointer;
-  white-space: nowrap;
+.panorama-scene-browser button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 0.5rem;
+  padding: 0 0.9rem;
+  color: color-mix(in srgb, var(--color-text-inverse, #fff) 88%, transparent);
+  font: inherit;
   font-size: 0.8rem;
-  box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--panorama-surface) 72%, transparent);
+  border: 1px solid var(--panorama-border);
+  border-radius: var(--radius-control, 999px);
+  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 0.15);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  transition:
+    background-color var(--panorama-motion) var(--panorama-ease),
+    transform 160ms var(--panorama-ease);
 }
 
-.immersive-control-browser button:hover,
-.immersive-control-browser button:focus-visible {
-  background: rgba(255, 255, 255, 0.18);
+.panorama-scene-browser button:hover {
+  background: color-mix(in srgb, var(--panorama-surface) 78%, white 12%);
 }
 
-.immersive-control-browser button.active {
-  background: #e5a95f;
-  border-color: #f3c47d;
-  color: white;
+.panorama-scene-browser__state {
+  width: 0.42rem;
+  height: 0.42rem;
+  flex: 0 0 auto;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.5;
 }
 
-@media (max-width: 700px) {
-  .immersive-controls-top-right {
-    left: 1rem;
-    right: 1rem;
+.panorama-scene-browser button.active {
+  color: var(--color-text-inverse, #fff);
+  font-weight: 740;
+  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 36%, var(--panorama-surface));
+  border-color: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 72%, white 28%);
+}
+
+.panorama-scene-browser button.active .panorama-scene-browser__state {
+  background: var(--color-accent-primary, #e5a95f);
+  border-color: var(--color-text-inverse, #fff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent-primary, #e5a95f) 30%, transparent);
+  opacity: 1;
+}
+
+@media (max-width: 767px) {
+  .panorama-controls__utilities {
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: max(0.75rem, env(safe-area-inset-right));
+    left: max(0.75rem, env(safe-area-inset-left));
     justify-content: flex-end;
   }
 
-  .immersive-control-search input {
-    width: min(38vw, 10rem);
+  .panorama-controls__scenes {
+    max-width: calc(100vw - 1.5rem);
   }
 
-  .immersive-controls-bottom {
-    max-width: calc(100vw - 2rem);
+  body.is-search-open .panorama-controls__utilities {
+    justify-content: stretch;
+  }
+
+  body.is-search-open .panorama-search {
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  body.is-search-open .panorama-controls__secondary {
+    display: none;
+  }
+
+  .panorama-search__results {
+    right: 0;
+    left: 0;
+    width: auto;
+    max-height: min(24rem, 58dvh);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panorama-control,
+  .panorama-scene-browser button {
+    transition: none;
   }
 }
