@@ -825,7 +825,7 @@
 }
 
 /* Virtual Tour Tooltip specific */
-.psv-virtual-tour-tooltip {
+.psv-virtual-tour-tooltip .psv-tooltip-content {
   display: flex !important;
   flex-direction: column-reverse !important;
   width: 220px !important;
