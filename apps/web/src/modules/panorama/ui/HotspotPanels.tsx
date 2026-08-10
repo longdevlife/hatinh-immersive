@@ -53,7 +53,9 @@ export function HotspotPanel({
         return;
       }
 
-      const focusable = [...(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? [])];
+      const focusable = [
+        ...(panelRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []),
+      ];
       if (focusable.length === 0) {
         event.preventDefault();
         return;
