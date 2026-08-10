@@ -840,6 +840,7 @@
 }
 
 .psv-virtual-tour-tooltip h2,
+.psv-virtual-tour-tooltip h3,
 .psv-virtual-tour-tooltip .psv-tooltip-title {
   font-family: inherit !important;
   font-size: 0.9rem !important;
