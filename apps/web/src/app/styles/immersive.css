@@ -304,7 +304,7 @@
 
 .explore-shell__minimap {
   right: var(--safe-area-spacing);
-  top: var(--safe-area-spacing);
+  top: calc(var(--safe-area-spacing) + var(--panorama-utility-row-height) + var(--space-3));
   position: absolute;
   z-index: var(--z-index-overlay);
 }
@@ -317,9 +317,12 @@
   border-radius: var(--radius-md);
   box-shadow: var(--elevation-2);
   padding: var(--space-3);
-  width: min(18rem, calc(100vw - 2rem));
   pointer-events: auto;
   transition: all var(--motion-duration-base) var(--motion-easing-enter);
+}
+
+.minimap-viewport:not(.minimap-viewport--collapsed) {
+  width: min(16rem, calc(100vw - 2rem));
 }
 
 .minimap-viewport--collapsed {
@@ -384,7 +387,7 @@
 
 .minimap-viewport__map {
   border-radius: var(--radius-sm);
-  height: 12rem;
+  height: 9.5rem;
   overflow: hidden;
   position: relative;
   background: rgba(0, 0, 0, 0.2); /* placeholder for canvas */
@@ -736,7 +739,7 @@
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   .immersive-topbar__actions .mode-badge {
     display: none;
   }
@@ -745,9 +748,21 @@
     bottom: 10rem;
   }
 
-  .explore-shell__minimap {
+  .explore-shell__controls {
+    top: 1rem;
+    left: auto;
     right: 1rem;
-    top: 4.5rem;
+    gap: var(--space-1);
+    justify-content: flex-end;
+  }
+
+  .explore-shell__minimap {
+    top: calc(1rem + var(--control-height-base) + var(--space-2));
+    right: 1rem;
+  }
+
+  .minimap-viewport:not(.minimap-viewport--collapsed) {
+    width: min(15rem, calc(100vw - 2rem));
   }
 
   .minimap-frame {
@@ -768,12 +783,6 @@
 
   .minimap-viewport--collapsed .minimap-viewport__header > div {
     display: none;
-  }
-
-  .explore-shell__controls {
-    align-items: stretch;
-    flex-wrap: wrap;
-    right: 1rem;
   }
 
   .audio-guide {
@@ -855,33 +864,38 @@
 }
 
 /* Virtual Tour Tooltip specific */
-.psv-virtual-tour-tooltip .psv-tooltip-content {
-  display: flex !important;
-  flex-direction: column-reverse !important;
-  width: 220px !important;
+.psv-virtual-tour-tooltip {
+  max-width: 11rem !important;
+  border-radius: var(--radius-pill) !important;
+  background: rgb(8 22 18 / 0.72) !important;
+  border: 1px solid rgb(255 255 255 / 0.18) !important;
+  box-shadow: var(--elevation-1) !important;
+  backdrop-filter: var(--backdrop-blur-base) !important;
+  overflow: hidden !important;
 }
 
-.psv-virtual-tour-tooltip img {
+.psv-virtual-tour-tooltip .psv-tooltip-content {
   display: block !important;
-  width: 100% !important;
-  height: 120px !important;
-  object-fit: cover !important;
-  margin: 0 !important;
+  width: auto !important;
+  max-width: 11rem !important;
+}
+
+/* Scene navigation uses a lightweight label, not a permanent preview card. */
+.psv-virtual-tour-tooltip img {
+  display: none !important;
 }
 
 .psv-virtual-tour-tooltip h2,
 .psv-virtual-tour-tooltip h3,
 .psv-virtual-tour-tooltip .psv-tooltip-title {
-  font-family: inherit !important;
-  font-size: 0.9rem !important;
-  font-weight: 600 !important;
-  padding: 0.5rem 0.5rem !important;
   margin: 0 !important;
+  padding: 0.45rem 0.65rem !important;
+  width: auto !important;
+  font-size: 0.75rem !important;
+  font-weight: var(--font-weight-semibold) !important;
+  line-height: 1.25 !important;
   text-align: center !important;
-  background: transparent !important;
-  color: var(--color-text-inverse, #fff) !important;
-  white-space: normal !important;
-  word-wrap: break-word !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
 }

@@ -63,8 +63,6 @@ export function Map3DChrome({
     loc.label.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const selectedLocation = locations.find((loc) => loc.id === selectedLocationId);
-
   const labels =
     language === 'vi'
       ? {

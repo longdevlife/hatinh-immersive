@@ -46,6 +46,7 @@
   --control-height-sm: 2rem;
   --control-height-base: 2.75rem; /* ~44px */
   --control-height-lg: 3.5rem;
+  --panorama-utility-row-height: var(--control-height-base);
 
   /* Icon Sizes */
   --icon-size-sm: 1rem;

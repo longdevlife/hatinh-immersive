@@ -9,6 +9,9 @@ describe('ImmersiveControls', () => {
     const form = screen.getByRole('search');
     expect(form).toBeInTheDocument();
 
+    const toggleBtn = screen.getByRole('button', { name: 'Tìm điểm tham quan' });
+    fireEvent.click(toggleBtn);
+
     const input = screen.getByPlaceholderText('Tìm điểm tham quan...');
     fireEvent.change(input, { target: { value: 'test' } });
     fireEvent.submit(form);
@@ -34,7 +37,6 @@ describe('ImmersiveControls', () => {
 
     const browser = screen.getByRole('navigation', { name: 'Danh sách cảnh quan' });
     expect(browser).toBeInTheDocument();
-    expect(screen.getByText('Lộ trình 360°')).toBeInTheDocument();
 
     const activeBtn = screen.getByText('Scene 1');
     expect(activeBtn).toHaveAttribute('aria-current', 'step');

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import type { ImmersiveActions, ImmersiveLocale, ImmersiveViewVm } from '../../../shared/contracts';
 import { Map3DChrome, type Map3DChromeLocation } from '../../map3d';
@@ -18,6 +18,8 @@ export interface ExploreShellProps {
   onLocationSelected?: (locationId: string) => void;
   rendererContent?: ReactNode;
   selectedLocationId?: string | null;
+  forceMinimapCollapsed?: boolean;
+  onMinimapOpenChange?: (isOpen: boolean) => void;
 }
 
 function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; onToggle(): void }) {
@@ -90,13 +92,32 @@ export function ExploreShell({
   onLanguageToggle,
   onLocationSelected,
   selectedLocationId = null,
+  forceMinimapCollapsed = false,
+  onMinimapOpenChange,
 }: ExploreShellProps) {
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
-  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
+  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
+
+  const toggleMinimap = useCallback(() => {
+    setIsMinimapCollapsed((prev) => {
+      const next = !prev;
+      if (!next) {
+        onMinimapOpenChange?.(true);
+      }
+      return next;
+    });
+    actions.onToggleMinimap();
+  }, [actions, onMinimapOpenChange]);
+
+  useEffect(() => {
+    if (forceMinimapCollapsed) {
+      setIsMinimapCollapsed(true);
+    }
+  }, [forceMinimapCollapsed]);
 
   useEffect(() => {
     setIsInfoOpen(view.mode === 'overview3d' && !hasMap3DChrome);
@@ -116,11 +137,6 @@ export function ExploreShell({
   function closeInfo() {
     setIsInfoOpen(false);
     actions.onCloseDestinationInfo();
-  }
-
-  function toggleMinimap() {
-    setIsMinimapCollapsed((collapsed) => !collapsed);
-    actions.onToggleMinimap();
   }
 
   async function toggleFullscreen() {
@@ -204,36 +220,14 @@ export function ExploreShell({
             rendererContent
           )}
         </div>
-        {isPanorama ? (
-          <div className="hotspot-layer" aria-label="Điểm khám phá trong cảnh">
-            {view.hotspots.map((hotspot, index) => (
-              <button
-                key={hotspot.id}
-                className={`hotspot-marker hotspot-marker--${hotspot.type}`}
-                style={{
-                  left: `${12 + ((hotspot.yaw % 360) / 360) * 76}%`,
-                  top: `${42 + hotspot.pitch * 2 + (index % 2) * 7}%`,
-                }}
-                type="button"
-                onClick={() => {
-                  actions.onSelectHotspot(hotspot.id);
-                }}
-                aria-haspopup="dialog"
-                aria-label={hotspot.label ?? 'Mở điểm khám phá'}
-              >
-                <span aria-hidden="true">+</span>
-                <span className="hotspot-marker__label">{hotspot.label}</span>
-              </button>
-            ))}
-          </div>
-        ) : hasMap3DChrome ? null : (
+        {!isPanorama && !hasMap3DChrome ? (
           <div className="overview-marker" aria-label={`Điểm đến ${view.destination.name}`}>
             <span className="overview-marker__pin" aria-hidden="true">
               ⌖
             </span>
             <strong>{view.destination.name}</strong>
           </div>
-        )}
+        ) : null}
         <RendererState
           mode={view.mode}
           status={view.rendererStatus}

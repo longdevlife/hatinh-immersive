@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import type { DestinationPreviewVm, ImmersiveLocale, SceneNodeVm } from '../../../shared/contracts';
 
@@ -21,6 +21,8 @@ export interface DestinationSearchProps {
   isLoading?: boolean | undefined;
   onSearch?: ((query: string) => void) | undefined;
   onSelectDestination?: ((destination: DestinationPreviewVm) => void) | undefined;
+  isOpen?: boolean | undefined;
+  onOpenChange?: ((isOpen: boolean) => void) | undefined;
 }
 
 export function DestinationSearch({
@@ -28,8 +30,22 @@ export function DestinationSearch({
   isLoading = false,
   onSearch,
   onSelectDestination,
+  isOpen: controlledIsOpen,
+  onOpenChange,
 }: DestinationSearchProps) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = controlledIsOpen ?? internalIsOpen;
+
+  const handleOpenChange = (newIsOpen: boolean) => {
+    if (controlledIsOpen === undefined) {
+      setInternalIsOpen(newIsOpen);
+    }
+    onOpenChange?.(newIsOpen);
+  };
+
   const [query, setQuery] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const normalizedQuery = query.trim();
   const results = useMemo(() => {
     if (normalizedQuery.length < 2) {
@@ -44,6 +60,12 @@ export function DestinationSearch({
         .includes(search),
     );
   }, [destinations, normalizedQuery]);
+
+  useEffect(() => {
+    if (isOpen) {
+      inputRef.current?.focus();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (!onSearch || normalizedQuery.length < 2) {
@@ -63,19 +85,33 @@ export function DestinationSearch({
 
   return (
     <form
-      className="immersive-control-search"
+      className={`immersive-control-search ${isOpen ? 'immersive-control-search--open' : ''}`}
       onSubmit={handleSubmit}
       role="search"
       aria-label="Tìm kiếm điểm đến"
     >
-      <input
-        type="search"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        placeholder="Tìm điểm tham quan..."
-        aria-label="Nhập tên điểm đến"
-      />
-      <button type="submit" aria-label="Thực hiện tìm kiếm">
+      {isOpen ? (
+        <input
+          ref={inputRef}
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              handleOpenChange(false);
+            }
+          }}
+          placeholder="Tìm điểm tham quan..."
+          aria-label="Nhập tên điểm đến"
+        />
+      ) : null}
+      <button
+        type="button"
+        className="immersive-control-search__toggle"
+        aria-expanded={isOpen}
+        aria-label={isOpen ? 'Đóng tìm kiếm' : 'Tìm điểm tham quan'}
+        onClick={() => handleOpenChange(!isOpen)}
+      >
         <svg
           viewBox="0 0 24 24"
           fill="none"
@@ -83,13 +119,13 @@ export function DestinationSearch({
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ width: '1rem', height: '1rem' }}
+          style={{ width: '1.25rem', height: '1.25rem' }}
         >
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
         </svg>
       </button>
-      {normalizedQuery.length >= 2 ? (
+      {isOpen && normalizedQuery.length >= 2 ? (
         <div className="immersive-control-search__results" aria-live="polite">
           {isLoading ? <p role="status">Đang tìm điểm đến…</p> : null}
           {!isLoading && results.length === 0 ? <p>Không tìm thấy điểm đến.</p> : null}
@@ -121,15 +157,9 @@ export function SceneBrowser({
   onNavigate?: ((id: string) => void) | undefined;
 }) {
   const currentIndex = nodes.findIndex((node) => node.id === currentSceneId);
-  const progressLabel =
-    currentIndex >= 0 ? `${currentIndex + 1}/${nodes.length}` : `${nodes.length} cảnh`;
 
   return (
     <nav className="immersive-control-browser" aria-label="Danh sách cảnh quan">
-      <div className="immersive-control-browser__header">
-        <span>Lộ trình 360°</span>
-        <span>{progressLabel}</span>
-      </div>
       <ul role="list">
         {nodes.map((node) => {
           const isCurrent = node.id === currentSceneId;
@@ -219,8 +249,33 @@ export function FullscreenControl() {
       onClick={() => void toggle()}
       aria-pressed={isFullscreen}
       aria-label={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
+      title={isFullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'}
     >
-      {isFullscreen ? '↙' : '↗'}
+      {isFullscreen ? (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path>
+        </svg>
+      ) : (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+        </svg>
+      )}
     </button>
   );
 }
@@ -251,9 +306,38 @@ export function ShareControl() {
       type="button"
       onClick={() => void share()}
       aria-label="Chia sẻ cảnh này"
+      title="Chia sẻ cảnh này"
       aria-live="polite"
     >
-      {copied ? 'Đã chép' : 'Chia sẻ'}
+      {copied ? (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      ) : (
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="18" cy="5" r="3"></circle>
+          <circle cx="6" cy="12" r="3"></circle>
+          <circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
+      )}
     </button>
   );
 }
@@ -268,7 +352,12 @@ export function ImmersiveControlsGroup({
   onSearchDestination,
   onSelectDestination,
   onLocaleChange,
-}: ImmersiveControlsProps) {
+  isSearchOpen,
+  onSearchOpenChange,
+}: ImmersiveControlsProps & {
+  isSearchOpen?: boolean;
+  onSearchOpenChange?: (isOpen: boolean) => void;
+}) {
   return (
     <div className="immersive-controls-group" role="region" aria-label="Các công cụ tiện ích">
       <div className="immersive-controls-top-right">
@@ -277,6 +366,8 @@ export function ImmersiveControlsGroup({
           isLoading={searchLoading}
           onSearch={onSearchDestination}
           onSelectDestination={onSelectDestination}
+          isOpen={isSearchOpen}
+          onOpenChange={onSearchOpenChange}
         />
         <LocaleControl locale={locale} onChange={onLocaleChange} />
         <ShareControl />

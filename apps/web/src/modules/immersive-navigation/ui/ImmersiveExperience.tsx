@@ -438,6 +438,7 @@ export function ImmersiveExperience({
   const navigation = useImmersiveNavigation();
   const [locale, setLocale] = useState<ImmersiveLocale>('vi');
   const [destinationSearchQuery, setDestinationSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const manifestQuery = useImmersiveManifest(destinationSlug, locale, !manifestOverride);
   const shouldFetchDestinations =
     destinationsOverride === undefined &&
@@ -848,6 +849,8 @@ export function ImmersiveExperience({
         rendererContent={rendererContent}
         selectedLocationId={navigation.selectedLocationId}
         view={view}
+        forceMinimapCollapsed={isSearchOpen}
+        onMinimapOpenChange={(isOpen) => isOpen && setIsSearchOpen(false)}
       />
       {navigation.mode === 'panorama' ? (
         <ImmersiveControlsGroup
@@ -860,6 +863,8 @@ export function ImmersiveExperience({
           onNavigateScene={actions.onNavigateScene}
           onSearchDestination={setDestinationSearchQuery}
           onSelectDestination={onSelectDestination}
+          isSearchOpen={isSearchOpen}
+          onSearchOpenChange={setIsSearchOpen}
         />
       ) : null}
       {selectedHotspot && selectedHotspotType ? (
