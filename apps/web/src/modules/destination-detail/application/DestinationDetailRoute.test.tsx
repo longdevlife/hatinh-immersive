@@ -15,7 +15,11 @@ function LocationProbe() {
   return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
 }
 
-function renderRoute(initialEntry: string, routeDestinations = destinations) {
+function renderRoute(
+  initialEntry: string,
+  routeDestinations = destinations,
+  routeProps?: { capabilityConfig?: { selected3DSlugs: ReadonlySet<string> } },
+) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
   return render(
@@ -24,7 +28,7 @@ function renderRoute(initialEntry: string, routeDestinations = destinations) {
         <Routes>
           <Route
             path="/explore/:destinationSlug"
-            element={<DestinationDetailRoute destinations={routeDestinations} />}
+            element={<DestinationDetailRoute destinations={routeDestinations} {...routeProps} />}
           />
         </Routes>
         <LocationProbe />
@@ -50,6 +54,36 @@ describe('DestinationDetailRoute', () => {
 
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01',
+    );
+  });
+
+  it('returns to Explore from the focused Sơn Trang back action', () => {
+    renderRoute('/explore/son-trang-co-dam', [destinationFixture, ...destinations]);
+
+    fireEvent.click(screen.getByRole('button', { name: /Khám phá Hà Tĩnh/ }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/explore');
+  });
+
+  it('opens the focused Sơn Trang location on the map', () => {
+    renderRoute('/explore/son-trang-co-dam', [destinationFixture, ...destinations]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Xem trên bản đồ' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/explore?destination=son-trang-co-dam',
+    );
+  });
+
+  it('enters selected 3D from the focused Sơn Trang CTA when explicitly enabled', () => {
+    renderRoute('/explore/son-trang-co-dam', [destinationFixture, ...destinations], {
+      capabilityConfig: { selected3DSlugs: new Set(['son-trang-co-dam']) },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Xem 3D' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/explore/son-trang-co-dam/immersive?mode=overview3d&location=destination-son-trang-co-dam',
     );
   });
 

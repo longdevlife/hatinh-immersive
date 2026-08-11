@@ -1,9 +1,6 @@
-import type { DestinationPreviewVm } from '../../../shared/contracts';
+import type { DestinationCapabilities, DestinationPreviewVm } from '../../../shared/contracts';
 
-export interface DestinationCapabilities {
-  hasPanorama: boolean;
-  hasSelected3D: boolean;
-}
+export type { DestinationCapabilities } from '../../../shared/contracts';
 
 export interface DestinationDetailViewModel {
   id: string;

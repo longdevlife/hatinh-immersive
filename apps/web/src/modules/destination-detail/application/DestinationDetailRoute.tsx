@@ -3,7 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
 import { SonTrangExperience, toSonTrangExperienceVm } from '../../son-trang';
-import { getDestinationCapabilities } from '../model/destination-capabilities';
+import {
+  getDestinationCapabilities,
+  type DestinationCapabilityConfig,
+} from '../model/destination-capabilities';
 import {
   createDestinationImmersiveHref,
   createExploreMapHref,
@@ -13,6 +16,7 @@ import { DestinationExperience } from '../ui/DestinationExperience';
 
 export interface DestinationDetailRouteProps {
   destinations?: readonly DestinationPreviewVm[];
+  capabilityConfig?: DestinationCapabilityConfig;
 }
 
 function DestinationDetailState({ kind }: { kind: 'loading' | 'error' | 'not-found' }) {
@@ -41,6 +45,7 @@ function DestinationDetailState({ kind }: { kind: 'loading' | 'error' | 'not-fou
 
 export function DestinationDetailRoute({
   destinations: destinationsOverride,
+  capabilityConfig,
 }: DestinationDetailRouteProps) {
   const { destinationSlug } = useParams<{ destinationSlug: string }>();
   const navigate = useNavigate();
@@ -60,7 +65,7 @@ export function DestinationDetailRoute({
     return <DestinationDetailState kind="not-found" />;
   }
 
-  const capabilities = getDestinationCapabilities(destination);
+  const capabilities = getDestinationCapabilities(destination, capabilityConfig);
   const view = toDestinationDetailViewModel(destination, capabilities);
   const sonTrangExperience = toSonTrangExperienceVm(destination);
   const onBackToExplore = () => navigate('/explore');

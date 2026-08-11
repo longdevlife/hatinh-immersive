@@ -1,6 +1,4 @@
-import type { DestinationPreviewVm } from '../../../shared/contracts';
-
-import type { DestinationCapabilities } from './destination-detail.types';
+import type { DestinationCapabilities, DestinationPreviewVm } from '../../../shared/contracts';
 
 export interface DestinationCapabilityConfig {
   selected3DSlugs: ReadonlySet<string>;
