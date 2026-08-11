@@ -71,7 +71,7 @@ function toExploreMapDestination(destination: DestinationPreviewVm): ExploreMapD
 }
 
 function createDefaultExploreMapEngine(): ExploreMapEnginePort {
-  if (import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake') {
+  if (import.meta.env.VITE_EXPLORE_MAP_MODE === 'fake') {
     return new FakeExploreMapEngine();
   }
 

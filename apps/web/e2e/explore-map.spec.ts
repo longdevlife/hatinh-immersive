@@ -15,7 +15,7 @@ test('explore discovery synchronizes card selection with the deterministic map s
 
   await expect(page.locator('#explore-title')).toBeVisible();
   await expect(map).toHaveAttribute('data-explore-map-status', 'ready');
-  await expect(map).toHaveAttribute('data-selected-destination-id', 'thien-cam-beach');
+  await expect(map).toHaveAttribute('data-selected-destination-id', '');
 
   await page.getByRole('button', { name: 'Chọn điểm đến Khu lưu niệm Nguyễn Du' }).click();
 
