@@ -491,12 +491,15 @@
   align-items: center;
   gap: var(--space-2);
   padding: 0 var(--space-4) 0 var(--space-3);
-  height: var(--control-height-base);
+  height: max(var(--control-height-base, 44px), 44px);
+  min-height: 44px;
   border-radius: var(--radius-control);
   font-size: 0.9rem;
+  font: inherit;
   font-weight: var(--font-weight-medium);
   box-shadow: var(--elevation-1);
   transition: all var(--motion-duration-base) var(--motion-easing-enter);
+  cursor: pointer;
 }
 
 .immersive-button--back svg {
@@ -508,7 +511,18 @@
 .immersive-button--back:focus-visible {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.4);
-  transform: translateX(-2px);
+}
+
+.immersive-button--back:focus-visible {
+  outline: 3px solid #ffcb82;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .immersive-button--back:hover,
+  .immersive-button--back:focus-visible {
+    transform: translateX(-2px);
+  }
 }
 
 .immersive-readiness-note {
