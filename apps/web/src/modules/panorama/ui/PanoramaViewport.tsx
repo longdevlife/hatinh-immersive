@@ -23,6 +23,27 @@ export interface PanoramaViewportProps {
   tourNodes?: PanoramaNode[];
 }
 
+function areHotspotsEqual(previous: HotspotVm[] | null, next: HotspotVm[]): boolean {
+  if (!previous || previous.length !== next.length) {
+    return false;
+  }
+
+  return previous.every((hotspot, index) => {
+    const candidate = next[index];
+    return (
+      candidate !== undefined &&
+      hotspot.id === candidate.id &&
+      hotspot.sceneId === candidate.sceneId &&
+      hotspot.type === candidate.type &&
+      hotspot.yaw === candidate.yaw &&
+      hotspot.pitch === candidate.pitch &&
+      hotspot.label === candidate.label &&
+      hotspot.content === candidate.content &&
+      hotspot.mediaUrl === candidate.mediaUrl
+    );
+  });
+}
+
 export function PanoramaViewport({
   engine,
   fallback = <p role="alert">Không thể tải không gian toàn cảnh.</p>,
@@ -45,6 +66,7 @@ export function PanoramaViewport({
   const tourNodesRef = useRef(tourNodes);
   const mountPromiseRef = useRef<Promise<void> | null>(null);
   const lastNodeReportedByEngineRef = useRef<string | null>(null);
+  const installedHotspotsRef = useRef<HotspotVm[] | null>(null);
   const [status, setStatus] = useState<RendererStatus>('loading');
 
   onHotspotSelectRef.current = onHotspotSelect;
@@ -63,6 +85,7 @@ export function PanoramaViewport({
 
     let cancelled = false;
     lastNodeReportedByEngineRef.current = null;
+    installedHotspotsRef.current = null;
     const unsubscribeViewChanged = engine.subscribeViewChanged((view) => {
       if (!cancelled) {
         onViewChangeRef.current?.(view);
@@ -109,11 +132,17 @@ export function PanoramaViewport({
       unsubscribeHotspotSelected?.();
       engine.destroy();
       mountPromiseRef.current = null;
+      installedHotspotsRef.current = null;
     };
   }, [engine]);
 
   useEffect(() => {
-    engine.setHotspots?.(hotspots);
+    if (!engine.setHotspots || areHotspotsEqual(installedHotspotsRef.current, hotspots)) {
+      return;
+    }
+
+    engine.setHotspots(hotspots);
+    installedHotspotsRef.current = hotspots.map((hotspot) => ({ ...hotspot }));
   }, [engine, hotspots]);
 
   useEffect(() => {
