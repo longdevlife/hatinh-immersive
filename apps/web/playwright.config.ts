@@ -22,6 +22,7 @@ export default defineConfig({
     env: {
       ...process.env,
       VITE_EXPLORE_MAP_MODE: 'fake',
+      VITE_EXPLORE_MAP_E2E_HOOKS: 'true',
       VITE_IMMERSIVE_RENDERER_MODE: 'fake',
       VITE_IMMERSIVE_DATA_MODE: 'fake',
       VITE_IMMERSIVE_SELECTED_3D_CAPABILITIES:
