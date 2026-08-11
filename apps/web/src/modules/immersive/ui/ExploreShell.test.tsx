@@ -75,7 +75,9 @@ describe('ExploreShell', () => {
       />,
     );
 
-    await waitFor(() => expect(firstEngine.calls.some((call) => call.type === 'mount')).toBe(true));
+    await waitFor(() =>
+      expect(firstEngine.calls.some((call) => call.type === 'mount')).toBe(true),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
     expect(window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY)).toBe('collapsed');
     firstRender.unmount();
@@ -93,7 +95,9 @@ describe('ExploreShell', () => {
     expect(secondEngine.calls.some((call) => call.type === 'mount')).toBe(false);
 
     fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
-    await waitFor(() => expect(secondEngine.calls.some((call) => call.type === 'mount')).toBe(true));
+    await waitFor(() =>
+      expect(secondEngine.calls.some((call) => call.type === 'mount')).toBe(true),
+    );
     expect(window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY)).toBe('expanded');
     secondRender.unmount();
 
@@ -106,7 +110,9 @@ describe('ExploreShell', () => {
       />,
     );
 
-    await waitFor(() => expect(thirdEngine.calls.some((call) => call.type === 'mount')).toBe(true));
+    await waitFor(() =>
+      expect(thirdEngine.calls.some((call) => call.type === 'mount')).toBe(true),
+    );
     expect(screen.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeInTheDocument();
   });
 
