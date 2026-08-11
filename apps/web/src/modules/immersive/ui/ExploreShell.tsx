@@ -6,6 +6,35 @@ import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
 
 import { RendererState } from './RendererState';
 
+const MINIMAP_SESSION_STATE_KEY = 'hatinh:immersive:minimap:collapsed';
+
+function readMinimapCollapsedPreference(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    return window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY) === 'collapsed';
+  } catch {
+    return false;
+  }
+}
+
+function persistMinimapCollapsedPreference(collapsed: boolean): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(
+      MINIMAP_SESSION_STATE_KEY,
+      collapsed ? 'collapsed' : 'expanded',
+    );
+  } catch {
+    // Storage can be unavailable in privacy-restricted contexts; in-memory state still works.
+  }
+}
+
 export interface ExploreShellProps {
   view: ImmersiveViewVm;
   actions: ImmersiveActions;
@@ -112,7 +141,7 @@ export function ExploreShell({
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
-  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(true);
+  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(readMinimapCollapsedPreference);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
 
@@ -137,7 +166,11 @@ export function ExploreShell({
   }
 
   function toggleMinimap() {
-    setIsMinimapCollapsed((collapsed) => !collapsed);
+    setIsMinimapCollapsed((collapsed) => {
+      const nextCollapsed = !collapsed;
+      persistMinimapCollapsedPreference(nextCollapsed);
+      return nextCollapsed;
+    });
     actions.onToggleMinimap();
   }
 
