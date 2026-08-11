@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
+import { DEFAULT_HA_TINH_RASTER_STYLE } from '../../../shared/map/ha-tinh-raster-style';
 import { DestinationPanel, filterDestinations } from '../../destination-catalog';
 import {
   FakeExploreMapEngine,
@@ -10,7 +11,6 @@ import {
   type ExploreMapDestination,
   type ExploreMapEnginePort,
 } from '../../explore-map';
-import { DEFAULT_HA_TINH_MINIMAP_STYLE } from '../../minimap/config/minimap-style';
 
 export interface ExploreExperienceProps {
   destinations?: readonly DestinationPreviewVm[];
@@ -47,7 +47,7 @@ function createDefaultExploreMapEngine(): ExploreMapEnginePort {
     ...(styleUrl
       ? { style: styleUrl }
       : allowDemoFallback
-        ? { style: DEFAULT_HA_TINH_MINIMAP_STYLE }
+        ? { style: DEFAULT_HA_TINH_RASTER_STYLE }
         : {}),
   });
 }
