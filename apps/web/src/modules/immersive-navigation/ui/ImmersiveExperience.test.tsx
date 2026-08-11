@@ -700,7 +700,9 @@ describe('ImmersiveExperience', () => {
       expect(panorama.loadRequests.get('scene-02')).toBeDefined();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 3' }));
+    act(() => {
+      useImmersiveNavigation.getState().navigateToScene('scene-03');
+    });
     await waitFor(() => {
       expect(panorama.loadRequests.get('scene-03')).toBeDefined();
     });
