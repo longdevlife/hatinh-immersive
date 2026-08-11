@@ -139,6 +139,76 @@ const manifestC = {
   ],
 };
 
+test('connects Sơn Trang detail to linked panorama scene and returns to the destination', async ({
+  page,
+}) => {
+  await page.route(/\/api\/v1\/destinations(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([
+        {
+          categoryLabel: manifest.destination.categoryLabel,
+          coverImageUrl: manifest.destination.coverImageUrl,
+          defaultSceneId: manifest.destination.defaultSceneId,
+          geoPoint: manifest.destination.geoPoint,
+          id: manifest.destination.id,
+          name: manifest.destination.name,
+          slug: manifest.destination.slug,
+          summary: manifest.destination.summary,
+        },
+      ]),
+      status: 200,
+    });
+  });
+  await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(manifest),
+      status: 200,
+    });
+  });
+
+  await page.goto('/explore');
+  await page.getByRole('button', { name: `Chọn điểm đến ${manifest.destination.name}` }).click();
+  await page.getByRole('button', { name: 'Xem chi tiết' }).click();
+
+  await expect(page).toHaveURL('/explore/son-trang-co-dam');
+  const sonTrangDetail = page.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' });
+  await expect(sonTrangDetail).toBeVisible();
+  await expect(
+    sonTrangDetail.getByRole('heading', { name: manifest.destination.name }).first(),
+  ).toBeVisible();
+  await expect(page.locator('[data-renderer-status]')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Khám phá 360°' }).click();
+
+  await expect(page).toHaveURL(
+    /\/explore\/son-trang-co-dam\/immersive\?mode=panorama&location=destination-01&scene=scene-01/,
+  );
+  await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
+
+  const sceneBrowser = page.getByRole('navigation', { name: 'Danh sách cảnh quan' });
+  await expect(sceneBrowser.getByRole('button', { name: 'Cổng vào' })).toHaveAttribute(
+    'aria-current',
+    'step',
+  );
+  await sceneBrowser.getByRole('button', { name: 'Sân trung tâm' }).click();
+  await expect(page.getByRole('heading', { name: 'Sân trung tâm' })).toBeVisible();
+  await expect(page).toHaveURL(/scene=scene-02/);
+
+  const returnLabel = `Quay lại ${manifest.destination.name}`;
+  await page.getByRole('button', { name: returnLabel }).click();
+
+  await expect(page).toHaveURL('/explore/son-trang-co-dam');
+  await expect(sonTrangDetail).toBeVisible();
+  await expect(
+    sonTrangDetail.getByRole('heading', { name: manifest.destination.name }).first(),
+  ).toBeVisible();
+  await expect(page.locator('[data-renderer-status]')).toHaveCount(0);
+  await expect(page.locator('[data-testid="immersive-renderer-slot"]')).toHaveCount(0);
+  await expect(page.getByRole('application', { name: /Không gian (3D|360)/ })).toHaveCount(0);
+});
+
 test('loads the public journey through the manifest REST path', async ({ page }) => {
   let manifestRequestUrl = '';
   await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
