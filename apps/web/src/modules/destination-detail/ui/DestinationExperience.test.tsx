@@ -16,6 +16,7 @@ const baseDestination: DestinationDetailViewModel = {
   capabilities: {
     hasPanorama: true,
     hasSelected3D: false,
+    selected3DAvailability: 'disabled',
   },
 };
 
@@ -59,7 +60,11 @@ describe('DestinationExperience', () => {
     renderExperience({
       ...baseDestination,
       hasMapLocation: false,
-      capabilities: { hasPanorama: false, hasSelected3D: false },
+      capabilities: {
+        hasPanorama: false,
+        hasSelected3D: false,
+        selected3DAvailability: 'disabled',
+      },
     });
 
     expect(screen.queryByRole('button', { name: 'Xem trên bản đồ' })).not.toBeInTheDocument();
@@ -72,7 +77,11 @@ describe('DestinationExperience', () => {
     renderExperience(
       {
         ...baseDestination,
-        capabilities: { hasPanorama: false, hasSelected3D: true },
+        capabilities: {
+          hasPanorama: false,
+          hasSelected3D: true,
+          selected3DAvailability: 'available',
+        },
       },
       { onEnterSelected3D },
     );

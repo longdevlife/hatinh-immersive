@@ -21,4 +21,4 @@ export type {
   SceneLinkVm,
   SceneNodeVm,
 } from './immersive';
-export type { DestinationCapabilities } from './destination-capabilities';
+export type { DestinationCapabilities, Selected3DAvailability } from './destination-capabilities';

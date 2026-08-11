@@ -3,7 +3,10 @@ export {
   DestinationDetailState,
 } from './application/DestinationDetailRoute';
 export type { DestinationDetailRouteProps } from './application/DestinationDetailRoute';
-export { getDestinationCapabilities } from './model/destination-capabilities';
+export {
+  getDestinationCapabilities,
+  resolveDestinationCapabilityConfig,
+} from './model/destination-capabilities';
 export type { DestinationCapabilityConfig } from './model/destination-capabilities';
 export {
   createDestinationImmersiveHref,

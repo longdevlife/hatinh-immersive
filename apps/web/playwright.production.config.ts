@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: /immersive-(production|parity|failure-modes)\.spec\.ts/,
+  testMatch: /(?:immersive-(production|parity|failure-modes)|selected-3d)\.spec\.ts/,
   fullyParallel: false,
   reporter: 'list',
   use: {
@@ -21,6 +21,7 @@ export default defineConfig({
       ...process.env,
       VITE_IMMERSIVE_RENDERER_MODE: 'fake',
       VITE_IMMERSIVE_DATA_MODE: 'api',
+      VITE_IMMERSIVE_SELECTED_3D_CAPABILITIES: 'son-trang-co-dam=available',
     },
     reuseExistingServer: false,
     timeout: 120_000,

@@ -37,6 +37,7 @@ describe('SonTrangExperience', () => {
   const defaultCapabilities: DestinationCapabilities = {
     hasPanorama: true,
     hasSelected3D: true,
+    selected3DAvailability: 'available',
   };
 
   const defaultProps = {

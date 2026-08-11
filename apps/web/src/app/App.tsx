@@ -19,6 +19,7 @@ import {
   getDemoManifest,
 } from '../modules/immersive-navigation/fake-mode/demo-catalog';
 import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
+import { resolveDestinationCapabilityConfig } from '../modules/destination-detail';
 import './styles/index.css';
 
 const LazyImmersiveExperience = lazy(() =>
@@ -54,6 +55,7 @@ if (import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake' && e2eFailure) {
 }
 
 const useFakeData = import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake';
+const destinationCapabilityConfig = resolveDestinationCapabilityConfig(import.meta.env);
 
 function FakeImmersiveExperience() {
   const { destinationSlug = DEFAULT_PUBLIC_DESTINATION_SLUG } = useParams();
@@ -112,7 +114,10 @@ function PublicDestinationDetail() {
 
   return (
     <Suspense fallback={<DestinationRouteLoading />}>
-      <LazyDestinationDetailRoute {...(destinations ? { destinations } : {})} />
+      <LazyDestinationDetailRoute
+        {...(destinations ? { destinations } : {})}
+        capabilityConfig={destinationCapabilityConfig}
+      />
     </Suspense>
   );
 }

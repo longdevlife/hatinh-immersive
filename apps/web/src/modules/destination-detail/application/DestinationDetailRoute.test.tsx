@@ -7,6 +7,7 @@ import * as immersiveApi from '../../../shared/api/immersive';
 import { destinationFixture } from '../../../shared/fixtures';
 import { DEMO_DESTINATIONS } from '../../immersive-navigation/fake-mode/demo-catalog';
 import { DestinationDetailRoute } from './DestinationDetailRoute';
+import type { DestinationCapabilityConfig } from '../model/destination-capabilities';
 
 const destinations = DEMO_DESTINATIONS.map(({ preview }) => preview);
 
@@ -18,7 +19,7 @@ function LocationProbe() {
 function renderRoute(
   initialEntry: string,
   routeDestinations = destinations,
-  routeProps?: { capabilityConfig?: { selected3DSlugs: ReadonlySet<string> } },
+  routeProps?: { capabilityConfig?: DestinationCapabilityConfig },
 ) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -85,6 +86,22 @@ describe('DestinationDetailRoute', () => {
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/explore/son-trang-co-dam/immersive?mode=overview3d&location=destination-son-trang-co-dam',
     );
+  });
+
+  it('does not render a selected 3D CTA in the default detail capability set', () => {
+    renderRoute('/explore/son-trang-co-dam', [destinationFixture, ...destinations]);
+
+    expect(screen.queryByRole('button', { name: 'Xem 3D' })).not.toBeInTheDocument();
+  });
+
+  it('does not render a selected 3D CTA when the configured provider is unavailable', () => {
+    renderRoute('/explore/son-trang-co-dam', [destinationFixture, ...destinations], {
+      capabilityConfig: {
+        selected3DAvailabilityBySlug: { 'son-trang-co-dam': 'unavailable' },
+      },
+    });
+
+    expect(screen.queryByRole('button', { name: 'Xem 3D' })).not.toBeInTheDocument();
   });
 
   it('renders a destination detail product page without mounting an immersive renderer', () => {

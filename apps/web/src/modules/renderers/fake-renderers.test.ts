@@ -28,6 +28,17 @@ describe('fake renderer adapters', () => {
     ]);
   });
 
+  it('can deterministically fail Map3D initialization for provider-failure tests', async () => {
+    const initialUrl = window.location.href;
+    window.history.replaceState(null, '', '/?e2eFailure=map3d');
+
+    await expect(new FakeMap3DEngine().mount(document.createElement('div'))).rejects.toThrow(
+      'E2E_MAP3D_FAILURE',
+    );
+
+    window.history.replaceState(null, '', initialUrl);
+  });
+
   it('publishes panorama view changes and releases listeners on destroy', async () => {
     const engine = new FakePanoramaEngine();
     const container = document.createElement('div');
