@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
-import { filterDestinations } from '../../destination-catalog';
-import { DestinationPanel } from '../../destination-catalog/ui';
+import { DestinationPanel, filterDestinations } from '../../destination-catalog';
 
 export interface ExploreExperienceProps {
   destinations?: readonly DestinationPreviewVm[];
