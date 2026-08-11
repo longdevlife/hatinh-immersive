@@ -26,10 +26,7 @@ function persistMinimapCollapsedPreference(collapsed: boolean): void {
   }
 
   try {
-    window.sessionStorage.setItem(
-      MINIMAP_SESSION_STATE_KEY,
-      collapsed ? 'collapsed' : 'expanded',
-    );
+    window.sessionStorage.setItem(MINIMAP_SESSION_STATE_KEY, collapsed ? 'collapsed' : 'expanded');
   } catch {
     // Storage can be unavailable in privacy-restricted contexts; in-memory state still works.
   }
