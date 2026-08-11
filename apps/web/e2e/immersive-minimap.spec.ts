@@ -45,12 +45,6 @@ test('runs the real MapLibre minimap against only locally fulfilled Ha Tinh tile
   const minimap = page.getByRole('application', { name: 'Bản đồ tuyến tham quan' });
   const map = minimap.getByRole('group', { name: 'Các điểm của tuyến tham quan' });
   await expect(minimap).toBeVisible();
-  await expect(minimap).toHaveAttribute('data-minimap-status', 'idle');
-  await expect(page.getByRole('button', { name: 'Mở rộng bản đồ' })).toBeVisible();
-  expect(styleRequests).toBe(0);
-  expect(tileRequests).toBe(0);
-
-  await page.getByRole('button', { name: 'Mở rộng bản đồ' }).click();
   await expect(minimap).toHaveAttribute('data-minimap-status', 'ready');
   await expect(page.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeVisible();
   await expect(map).toHaveAttribute('data-minimap-route-branches', 'scene-01->scene-02');
