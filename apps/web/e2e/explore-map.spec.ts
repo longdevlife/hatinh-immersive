@@ -32,13 +32,20 @@ test('mobile keeps destination cards primary until Xem bản đồ is activated'
   await page.goto('/explore');
 
   const mapShell = page.getByTestId('explore-map');
+  const destinationList = page.getByRole('region', { name: 'Danh sách điểm đến' });
+  await expect(destinationList).toBeVisible();
   await expect(mapShell).toBeHidden();
 
   await page.getByRole('button', { name: 'Xem bản đồ' }).click();
 
   await expect(mapShell).toBeVisible();
+  await expect(destinationList).toBeHidden();
   await expect(page.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
     'data-explore-map-status',
     'ready',
   );
+
+  await page.getByRole('button', { name: 'Quay lại danh sách' }).click();
+  await expect(destinationList).toBeVisible();
+  await expect(mapShell).toBeHidden();
 });

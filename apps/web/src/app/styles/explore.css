@@ -23,6 +23,8 @@
    ============================================================================ */
 
 .explore-experience {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: #f4f0e8;
   color: #17261f;
@@ -49,6 +51,7 @@
 
 .explore-experience__layout {
   display: grid;
+  flex: 1;
   grid-template-columns: minmax(20rem, 32%) minmax(0, 1fr);
   min-height: calc(100vh - 12rem);
   margin: 0 clamp(1rem, 4vw, 4rem) clamp(1rem, 4vw, 4rem);
@@ -60,6 +63,7 @@
 }
 
 .explore-experience__destinations {
+  height: 100%;
   min-width: 0;
   min-height: 0;
 }
@@ -73,6 +77,8 @@
 }
 
 .explore-experience__map {
+  display: flex;
+  flex-direction: column;
   position: relative;
   min-width: 0;
   min-height: 0;
@@ -95,6 +101,10 @@
   box-shadow: 0 0.5rem 1.5rem rgb(23 38 31 / 0.14);
   font-size: 0.875rem;
   font-weight: 700;
+}
+
+.explore-experience__back-to-list {
+  display: none;
 }
 
 /* ============================================================================
@@ -393,15 +403,6 @@
   overflow: hidden;
 }
 
-.destination-card__meta {
-  margin: auto 0 0;
-  font-size: 0.8rem;
-  color: var(--explore-text-muted);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
 .destination-card__action {
   position: absolute;
   inset: 0;
@@ -437,18 +438,42 @@
     border-radius: 1.25rem 1.25rem 0 0;
   }
 
-  .explore-experience__map {
+  .explore-experience__layout[data-explore-mode='map'] .explore-experience__destinations {
     display: none;
-    min-height: 60vh;
   }
 
-  .explore-experience__map[data-map-open='true'] {
+  .explore-experience__layout[data-explore-mode='destination-list'] .explore-experience__map {
+    display: none;
+  }
+
+  .explore-experience__layout[data-explore-mode='map'] .explore-experience__map {
     display: block;
-    min-height: 60vh;
+    height: calc(100dvh - 8rem);
+    min-height: 24rem;
   }
 
-  .explore-experience__map[data-map-open='true'] .explore-map-viewport {
-    min-height: 60vh;
+  .explore-experience__layout[data-explore-mode='map'] .explore-map-viewport {
+    height: 100%;
+  }
+
+  .explore-experience__back-to-list {
+    position: absolute;
+    z-index: 4;
+    top: 1rem;
+    left: 1rem;
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid rgba(23, 38, 31, 0.14);
+    border-radius: 999px;
+    background: rgb(255 253 248 / 0.94);
+    color: #173c31;
+    box-shadow: 0 0.5rem 1.5rem rgb(23 38 31 / 0.14);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
   }
 
   .destination-panel__mobile-actions {

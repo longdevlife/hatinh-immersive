@@ -105,6 +105,7 @@ export function ExploreExperience({
   const [category, setCategory] = useState('');
   const [isMobileMapOpen, setIsMobileMapOpen] = useState(false);
   const isMobileViewport = useIsMobileViewport();
+  const exploreMode = isMobileViewport && !isMobileMapOpen ? 'destination-list' : 'map';
   const filteredDestinations = useMemo(
     () => filterDestinations(destinations, { query, category }),
     [category, destinations, query],
@@ -145,7 +146,7 @@ export function ExploreExperience({
         <p>Chọn một điểm đến để bắt đầu hành trình của bạn.</p>
       </header>
 
-      <div className="explore-experience__layout">
+      <div className="explore-experience__layout" data-explore-mode={exploreMode}>
         <section className="explore-experience__destinations" aria-label="Danh sách điểm đến">
           {destinationsQuery.isLoading && destinationsOverride === undefined ? (
             <p role="status">Đang tải điểm đến…</p>
@@ -170,7 +171,7 @@ export function ExploreExperience({
 
         <section
           className="explore-experience__map"
-          data-explore-mode={isMobileViewport && !isMobileMapOpen ? 'destination-list' : 'map'}
+          data-explore-mode={exploreMode}
           data-map-open={isMobileMapOpen}
           data-testid="explore-map"
         >
