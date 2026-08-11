@@ -77,7 +77,6 @@
 }
 
 .panorama-control:focus-visible,
-.panorama-search input:focus-visible,
 .panorama-search button:focus-visible,
 .panorama-scene-browser button:focus-visible {
   outline: 3px solid var(--panorama-focus);
@@ -99,6 +98,11 @@
   -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
 }
 
+.panorama-search:focus-within {
+  outline: 3px solid var(--panorama-focus);
+  outline-offset: 3px;
+}
+
 .panorama-search input {
   min-width: 0;
   flex: 1;
@@ -109,6 +113,10 @@
   font-size: 0.88rem;
   background: transparent;
   border: 0;
+  outline: none;
+}
+
+.panorama-search input:focus-visible {
   outline: none;
 }
 
@@ -242,14 +250,19 @@
 .panorama-scene-browser button.active {
   color: var(--color-text-inverse, #fff);
   font-weight: 740;
-  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 36%, var(--panorama-surface));
+  background: color-mix(
+    in srgb,
+    var(--color-accent-primary, #e5a95f) 36%,
+    var(--panorama-surface)
+  );
   border-color: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 72%, white 28%);
 }
 
 .panorama-scene-browser button.active .panorama-scene-browser__state {
   background: var(--color-accent-primary, #e5a95f);
   border-color: var(--color-text-inverse, #fff);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent-primary, #e5a95f) 30%, transparent);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--color-accent-primary, #e5a95f) 30%, transparent);
   opacity: 1;
 }
 
