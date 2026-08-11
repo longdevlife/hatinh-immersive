@@ -1,6 +1,9 @@
 import type { ExploreMapEnginePort } from '../domain/explore-map-engine.port';
 import type { ExploreMapCameraTarget, ExploreMapViewportState } from '../model/explore-map.types';
 
+type PendingCameraCommand =
+  { type: 'flyTo'; target: ExploreMapCameraTarget } | { type: 'fitOverview' };
+
 import type { ExploreMapOptions } from './maplibre-explore-map.adapter';
 
 function cloneState(state: ExploreMapViewportState): ExploreMapViewportState {
@@ -19,7 +22,7 @@ export class LazyMapLibreExploreMapEngine implements ExploreMapEnginePort {
     destinations: [],
     selectedDestinationId: null,
   };
-  private pendingCameraTarget: ExploreMapCameraTarget | null = null;
+  private pendingCameraCommand: PendingCameraCommand | null = null;
   private lifecycleGeneration = 0;
 
   constructor(options: ExploreMapOptions) {
@@ -43,11 +46,40 @@ export class LazyMapLibreExploreMapEngine implements ExploreMapEnginePort {
       }
     });
 
-    await engine.mount(container);
+    try {
+      await engine.mount(container);
+    } catch (error) {
+      if (generation !== this.lifecycleGeneration || this.engine !== engine) {
+        engine.destroy();
+        return;
+      }
 
-    if (this.pendingCameraTarget) {
-      await engine.flyTo(this.pendingCameraTarget);
-      this.pendingCameraTarget = null;
+      throw error;
+    }
+
+    if (generation !== this.lifecycleGeneration || this.engine !== engine) {
+      engine.destroy();
+      return;
+    }
+
+    const pendingCameraCommand = this.pendingCameraCommand;
+    if (!pendingCameraCommand) {
+      return;
+    }
+
+    if (pendingCameraCommand.type === 'flyTo') {
+      await engine.flyTo(pendingCameraCommand.target);
+    } else {
+      await engine.fitOverview();
+    }
+
+    if (generation !== this.lifecycleGeneration || this.engine !== engine) {
+      engine.destroy();
+      return;
+    }
+
+    if (this.pendingCameraCommand === pendingCameraCommand) {
+      this.pendingCameraCommand = null;
     }
   }
 
@@ -57,9 +89,20 @@ export class LazyMapLibreExploreMapEngine implements ExploreMapEnginePort {
   }
 
   flyTo(target: ExploreMapCameraTarget): Promise<void> {
-    this.pendingCameraTarget = { ...target };
+    const pendingCameraCommand: PendingCameraCommand = { target: { ...target }, type: 'flyTo' };
+    this.pendingCameraCommand = pendingCameraCommand;
     if (this.engine) {
-      return this.engine.flyTo(this.pendingCameraTarget);
+      return this.engine.flyTo(pendingCameraCommand.target);
+    }
+
+    return Promise.resolve();
+  }
+
+  fitOverview(): Promise<void> {
+    const pendingCameraCommand: PendingCameraCommand = { type: 'fitOverview' };
+    this.pendingCameraCommand = pendingCameraCommand;
+    if (this.engine) {
+      return this.engine.fitOverview();
     }
 
     return Promise.resolve();
@@ -81,6 +124,6 @@ export class LazyMapLibreExploreMapEngine implements ExploreMapEnginePort {
     this.engine?.destroy();
     this.engine = null;
     this.destinationListeners.clear();
-    this.pendingCameraTarget = null;
+    this.pendingCameraCommand = null;
   }
 }

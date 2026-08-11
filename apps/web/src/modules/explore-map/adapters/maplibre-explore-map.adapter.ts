@@ -13,6 +13,8 @@ const DESTINATIONS_LABEL_LAYER_ID = 'explore-destination-labels';
 const DEFAULT_CENTER: ExploreMapCoordinate = [105.9, 18.342];
 const DEFAULT_ZOOM = 9;
 const DEFAULT_TRANSITION_DURATION = 650;
+const DEFAULT_OVERVIEW_PADDING = 64;
+const DEFAULT_OVERVIEW_MAX_ZOOM = 11;
 
 export type ExploreMapStyle = string | Record<string, unknown>;
 export type ExploreMapCoordinate = [longitude: number, latitude: number];
@@ -34,6 +36,10 @@ export type ExploreMapEventListener = (event?: unknown) => void;
 export interface ExploreMapInstance {
   addLayer(layer: unknown): void;
   addSource(id: string, source: { data: unknown; type: 'geojson' }): void;
+  fitBounds(
+    bounds: [ExploreMapCoordinate, ExploreMapCoordinate],
+    options: { duration: number; maxZoom: number; padding: number },
+  ): void;
   flyTo(options: { center: ExploreMapCoordinate; duration: number; zoom?: number }): void;
   getSource(id: string): ExploreMapSource | undefined;
   on(
@@ -110,24 +116,51 @@ function toGeoJson(
   };
 }
 
-function waitForMapLoad(map: ExploreMapInstance): Promise<void> {
-  return new Promise<void>((resolve, reject) => {
+interface MapLoadWaiter extends Promise<void> {
+  cancel(): void;
+}
+
+function waitForMapLoad(map: ExploreMapInstance): MapLoadWaiter {
+  let cancel = () => undefined;
+  const promise = new Promise<void>((resolve, reject) => {
+    let settled = false;
     const cleanup = () => {
       map.off('load', onLoad);
       map.off('error', onError);
     };
     const onLoad = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
       cleanup();
       resolve();
     };
     const onError = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
       cleanup();
       reject(new Error('MAPLIBRE_EXPLORE_MAP_ERROR'));
+    };
+    cancel = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+      reject(new Error('MAPLIBRE_EXPLORE_MAP_MOUNT_CANCELLED'));
     };
 
     map.on('load', onLoad);
     map.on('error', onError);
   });
+
+  return Object.assign(promise, { cancel });
 }
 
 function readDestinationId(event?: unknown): string | null {
@@ -149,8 +182,9 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     destinations: [],
     selectedDestinationId: null,
   };
-  private pendingCameraTarget: ExploreMapCameraTarget | null = null;
+  private pendingCameraCommand: PendingCameraCommand | null = null;
   private mountGeneration = 0;
+  private pendingMapLoadCancellation: (() => void) | null = null;
   private readonly handleDestinationClick = (event?: unknown) => {
     const destinationId = readDestinationId(event);
     if (!destinationId) {
@@ -190,13 +224,21 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     });
     this.map = map;
 
+    const mapLoad = waitForMapLoad(map);
+    this.pendingMapLoadCancellation = mapLoad.cancel;
     try {
-      await waitForMapLoad(map);
+      await mapLoad;
     } catch (error) {
-      if (this.map === map) {
-        this.destroyMountedMap();
+      if (generation !== this.mountGeneration || this.map !== map) {
+        return;
       }
+
+      this.destroyMountedMap();
       throw error;
+    } finally {
+      if (this.pendingMapLoadCancellation === mapLoad.cancel) {
+        this.pendingMapLoadCancellation = null;
+      }
     }
 
     if (generation !== this.mountGeneration || this.map !== map) {
@@ -245,9 +287,9 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     map.on('click', DESTINATIONS_LABEL_LAYER_ID, this.handleDestinationClick);
 
     this.applyState();
-    if (this.pendingCameraTarget) {
-      this.applyCameraTarget(this.pendingCameraTarget);
-      this.pendingCameraTarget = null;
+    if (this.pendingCameraCommand) {
+      this.applyCameraCommand(this.pendingCameraCommand);
+      this.pendingCameraCommand = null;
     }
   }
 
@@ -260,10 +302,18 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   }
 
   async flyTo(target: ExploreMapCameraTarget): Promise<void> {
-    this.pendingCameraTarget = { ...target };
+    this.pendingCameraCommand = { target: { ...target }, type: 'flyTo' };
     if (this.map) {
-      this.applyCameraTarget(this.pendingCameraTarget);
-      this.pendingCameraTarget = null;
+      this.applyCameraCommand(this.pendingCameraCommand);
+      this.pendingCameraCommand = null;
+    }
+  }
+
+  async fitOverview(): Promise<void> {
+    this.pendingCameraCommand = { type: 'fitOverview' };
+    if (this.map) {
+      this.applyCameraCommand(this.pendingCameraCommand);
+      this.pendingCameraCommand = null;
     }
   }
 
@@ -280,7 +330,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     ++this.mountGeneration;
     this.destroyMountedMap();
     this.destinationListeners.clear();
-    this.pendingCameraTarget = null;
+    this.pendingCameraCommand = null;
   }
 
   private applyState(): void {
@@ -301,7 +351,52 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     });
   }
 
+  private applyCameraCommand(command: PendingCameraCommand): void {
+    if (command.type === 'flyTo') {
+      this.applyCameraTarget(command.target);
+      return;
+    }
+
+    this.applyOverviewCamera();
+  }
+
+  private applyOverviewCamera(): void {
+    if (!this.map) {
+      return;
+    }
+
+    const coordinates = this.state.destinations.map(
+      (destination) => [destination.longitude, destination.latitude] as ExploreMapCoordinate,
+    );
+    if (coordinates.length === 0) {
+      this.map.flyTo({
+        center: this.options.center ?? DEFAULT_CENTER,
+        duration: this.options.transitionDurationMs ?? DEFAULT_TRANSITION_DURATION,
+        zoom: this.options.zoom ?? DEFAULT_ZOOM,
+      });
+      return;
+    }
+
+    const longitudes = coordinates.map(([longitude]) => longitude);
+    const latitudes = coordinates.map(([, latitude]) => latitude);
+    this.map.fitBounds(
+      [
+        [Math.min(...longitudes), Math.min(...latitudes)],
+        [Math.max(...longitudes), Math.max(...latitudes)],
+      ],
+      {
+        duration: this.options.transitionDurationMs ?? DEFAULT_TRANSITION_DURATION,
+        maxZoom: DEFAULT_OVERVIEW_MAX_ZOOM,
+        padding: DEFAULT_OVERVIEW_PADDING,
+      },
+    );
+  }
+
   private destroyMountedMap(): void {
+    const cancelMapLoad = this.pendingMapLoadCancellation;
+    this.pendingMapLoadCancellation = null;
+    cancelMapLoad?.();
+
     if (this.map) {
       this.map.off('click', DESTINATIONS_LAYER_ID, this.handleDestinationClick);
       this.map.off('click', DESTINATIONS_LABEL_LAYER_ID, this.handleDestinationClick);
@@ -334,3 +429,6 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     }
   }
 }
+
+type PendingCameraCommand =
+  { target: ExploreMapCameraTarget; type: 'flyTo' } | { type: 'fitOverview' };

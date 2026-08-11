@@ -215,4 +215,27 @@ describe('ExploreExperience', () => {
       }),
     );
   });
+
+  it('requests an overview when filtering out the selected destination', async () => {
+    const mapEngine = Object.assign(new FakeExploreMapEngine(), {
+      fitOverview: vi.fn(async () => undefined),
+    });
+    renderExplore(mapEngine);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chọn điểm đến Biển Thiên Cầm' }));
+    await waitFor(() =>
+      expect(mapEngine.calls).toContainEqual({
+        target: { latitude: 18.2771383, longitude: 106.098072, zoom: 13 },
+        type: 'flyTo',
+      }),
+    );
+    mapEngine.fitOverview.mockClear();
+
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Nguyễn Du' } });
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('destination-card-thien-cam-beach')).not.toBeInTheDocument(),
+    );
+    expect(mapEngine.fitOverview).toHaveBeenCalledTimes(1);
+  });
 });

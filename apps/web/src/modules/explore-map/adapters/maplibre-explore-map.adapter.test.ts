@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { ExploreMapDestination, ExploreMapViewportState } from '../model/explore-map.types';
 
@@ -23,17 +23,21 @@ class FakeMap {
   readonly sources = new Map<string, FakeGeoJsonSource>();
   readonly layers: unknown[] = [];
   readonly flyToCalls: unknown[] = [];
+  readonly fitBoundsCalls: unknown[] = [];
   readonly resizeCalls: number[] = [];
   readonly listeners = new Map<string, Set<Listener>>();
   readonly layerListeners = new Map<string, Set<Listener>>();
   removed = false;
 
   static latest: FakeMap | null = null;
+  static autoLoad = true;
 
   constructor(options: unknown) {
     this.options = options;
     FakeMap.latest = this;
-    queueMicrotask(() => this.emit('load'));
+    if (FakeMap.autoLoad) {
+      queueMicrotask(() => this.emit('load'));
+    }
   }
 
   on(event: string, listenerOrLayer: string | Listener, maybeListener?: Listener) {
@@ -88,6 +92,10 @@ class FakeMap {
     this.flyToCalls.push(options);
   }
 
+  fitBounds(bounds: unknown, options: unknown): void {
+    this.fitBoundsCalls.push({ bounds, options });
+  }
+
   resize(): void {
     this.resizeCalls.push(Date.now());
   }
@@ -124,6 +132,11 @@ const state: ExploreMapViewportState = {
 };
 
 describe('MapLibreExploreMapEngine', () => {
+  afterEach(() => {
+    FakeMap.autoLoad = true;
+    FakeMap.latest = null;
+  });
+
   it('reports a missing style without loading the MapLibre runtime', async () => {
     const loadRuntime = vi.fn(async () => runtime);
     const engine = new MapLibreExploreMapEngine({
@@ -225,5 +238,52 @@ describe('MapLibreExploreMapEngine', () => {
 
     expect(map.resizeCalls).toHaveLength(1);
     engine.destroy();
+  });
+
+  it('fits the visible destinations and falls back to the Hà Tĩnh overview', async () => {
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8 },
+    });
+
+    engine.setState(state);
+    await engine.mount(document.createElement('div'));
+    const map = FakeMap.latest!;
+
+    await (engine as unknown as { fitOverview(): Promise<void> }).fitOverview();
+    expect(map.fitBoundsCalls).toContainEqual({
+      bounds: [
+        [105.5871, 18.2942],
+        [106.4217, 18.4328],
+      ],
+      options: { duration: 650, maxZoom: 11, padding: 64 },
+    });
+
+    engine.setState({ destinations: [], selectedDestinationId: null });
+    await (engine as unknown as { fitOverview(): Promise<void> }).fitOverview();
+    expect(map.flyToCalls).toContainEqual({
+      center: [105.9, 18.342],
+      duration: 650,
+      zoom: 9,
+    });
+
+    engine.destroy();
+  });
+
+  it('cancels a deferred map load when the engine is destroyed before load', async () => {
+    FakeMap.autoLoad = false;
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8 },
+    });
+
+    const mountPromise = engine.mount(document.createElement('div'));
+    await vi.waitFor(() => expect(FakeMap.latest).not.toBeNull());
+    const map = FakeMap.latest!;
+
+    engine.destroy();
+
+    await expect(mountPromise).resolves.toBeUndefined();
+    expect(map.removed).toBe(true);
   });
 });

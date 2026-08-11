@@ -103,6 +103,30 @@ describe('ExploreMapViewport', () => {
     );
   });
 
+  it('does not fly while disabled and refocuses the selected destination after reopen', async () => {
+    const engine = new FakeExploreMapEngine();
+    const view = renderViewport(engine, 'thien-cam', vi.fn(), undefined, false);
+
+    expect(engine.calls.filter((call) => call.type === 'flyTo')).toHaveLength(0);
+
+    view.rerender(
+      <ExploreMapViewport
+        destinations={destinations}
+        enabled
+        engine={engine}
+        onDestinationSelected={vi.fn()}
+        selectedDestinationId="thien-cam"
+      />,
+    );
+
+    await waitFor(() =>
+      expect(engine.calls).toContainEqual({
+        target: { latitude: 18.2942, longitude: 106.4217, zoom: 13 },
+        type: 'flyTo',
+      }),
+    );
+  });
+
   it('mounts once while selection changes and forwards the selected camera target', async () => {
     const engine = new FakeExploreMapEngine();
     const view = renderViewport(engine);

@@ -78,4 +78,71 @@ describe('LazyMapLibreExploreMapEngine', () => {
     engine.destroy();
     expect(MockMapLibreExploreMapEngine.latest?.destroyed).toBe(true);
   });
+
+  it('does not let a stale mount consume camera state queued for a newer lifecycle', async () => {
+    class DeferredMapLibreExploreMapEngine {
+      static instances: DeferredMapLibreExploreMapEngine[] = [];
+      readonly mountPromise: Promise<void>;
+      readonly flyToCalls: unknown[] = [];
+      private resolveMountPromise!: () => void;
+
+      constructor() {
+        this.mountPromise = new Promise<void>((resolve) => {
+          this.resolveMountPromise = resolve;
+        });
+        DeferredMapLibreExploreMapEngine.instances.push(this);
+      }
+
+      async mount(): Promise<void> {
+        await this.mountPromise;
+      }
+
+      resolveMount(): void {
+        this.resolveMountPromise();
+      }
+
+      setState(): void {}
+
+      async flyTo(target: unknown): Promise<void> {
+        this.flyToCalls.push(target);
+      }
+
+      async fitOverview(): Promise<void> {}
+
+      subscribeDestinationSelected(): () => void {
+        return () => undefined;
+      }
+
+      resize(): void {}
+
+      destroy(): void {}
+    }
+
+    vi.doMock('./maplibre-explore-map.adapter', () => ({
+      MapLibreExploreMapEngine: DeferredMapLibreExploreMapEngine,
+    }));
+    const { LazyMapLibreExploreMapEngine } = await import('./lazy-maplibre-explore-map.adapter');
+    const engine = new LazyMapLibreExploreMapEngine({ style: { version: 8 } });
+    const firstMount = engine.mount(document.createElement('div'));
+
+    await vi.waitFor(() => expect(DeferredMapLibreExploreMapEngine.instances).toHaveLength(1));
+    const firstInnerEngine = DeferredMapLibreExploreMapEngine.instances[0]!;
+    engine.destroy();
+
+    const secondMount = engine.mount(document.createElement('div'));
+    const target = { latitude: 18.3, longitude: 106.4, zoom: 13 };
+    await engine.flyTo(target);
+
+    await vi.waitFor(() => expect(DeferredMapLibreExploreMapEngine.instances).toHaveLength(2));
+    const secondInnerEngine = DeferredMapLibreExploreMapEngine.instances[1]!;
+
+    firstInnerEngine.resolveMount();
+    await firstMount;
+    expect(firstInnerEngine.flyToCalls).toEqual([]);
+    expect(secondInnerEngine.flyToCalls).toEqual([]);
+
+    secondInnerEngine.resolveMount();
+    await secondMount;
+    expect(secondInnerEngine.flyToCalls).toEqual([target]);
+  });
 });

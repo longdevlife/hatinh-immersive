@@ -76,6 +76,14 @@ describe('FakeExploreMapEngine', () => {
     expect(engine.calls).toContainEqual({ target, type: 'flyTo' });
   });
 
+  it('records overview camera requests deterministically', async () => {
+    const engine = new FakeExploreMapEngine();
+
+    await engine.fitOverview();
+
+    expect(engine.calls).toContainEqual({ type: 'fitOverview' });
+  });
+
   it('can be destroyed repeatedly without throwing or retaining listeners', () => {
     const engine = new FakeExploreMapEngine();
     engine.subscribeDestinationSelected(() => undefined);

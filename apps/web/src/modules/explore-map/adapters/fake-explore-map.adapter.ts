@@ -5,6 +5,7 @@ export type FakeExploreMapCall =
   | { type: 'mount'; container: HTMLElement }
   | { type: 'setState'; state: ExploreMapViewportState }
   | { type: 'flyTo'; target: ExploreMapCameraTarget }
+  | { type: 'fitOverview' }
   | { type: 'resize' }
   | { type: 'destroy' };
 
@@ -31,6 +32,10 @@ export class FakeExploreMapEngine implements ExploreMapEnginePort {
   async flyTo(target: ExploreMapCameraTarget): Promise<void> {
     this.lastFlyToTarget = { ...target };
     this.calls.push({ target: this.lastFlyToTarget, type: 'flyTo' });
+  }
+
+  async fitOverview(): Promise<void> {
+    this.calls.push({ type: 'fitOverview' });
   }
 
   subscribeDestinationSelected(listener: (destinationId: string) => void): () => void {

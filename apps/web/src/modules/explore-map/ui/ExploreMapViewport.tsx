@@ -94,6 +94,15 @@ export function ExploreMapViewport({
   }, [enabled, engine]);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    if (selectedDestinationId === null) {
+      void engine.fitOverview();
+      return;
+    }
+
     const selectedDestination = destinations.find(
       (destination) => destination.id === selectedDestinationId,
     );
@@ -106,7 +115,7 @@ export function ExploreMapViewport({
       longitude: selectedDestination.longitude,
       zoom: DEFAULT_DESTINATION_ZOOM,
     });
-  }, [destinations, engine, selectedDestinationId]);
+  }, [destinations, enabled, engine, selectedDestinationId]);
 
   return (
     <section
