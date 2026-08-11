@@ -5,7 +5,6 @@ import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from '
 import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
 
-import { ExploreExperience } from '../modules/explore';
 import {
   DEMO_DESTINATIONS,
   getDemoManifest,
@@ -16,6 +15,12 @@ import './styles/index.css';
 const LazyImmersiveExperience = lazy(() =>
   import('../modules/immersive-navigation').then(({ ImmersiveExperience }) => ({
     default: ImmersiveExperience,
+  })),
+);
+
+const LazyExploreExperience = lazy(() =>
+  import('../modules/explore').then(({ ExploreExperience }) => ({
+    default: ExploreExperience,
   })),
 );
 
@@ -71,7 +76,11 @@ function PublicImmersiveExperience() {
 function PublicExplore() {
   const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
 
-  return <ExploreExperience {...(destinations ? { destinations } : {})} />;
+  return (
+    <Suspense fallback={<ImmersiveRouteLoading />}>
+      <LazyExploreExperience {...(destinations ? { destinations } : {})} />
+    </Suspense>
+  );
 }
 
 function PublicHome() {

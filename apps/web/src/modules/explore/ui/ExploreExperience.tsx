@@ -5,8 +5,8 @@ import type { DestinationPreviewVm } from '../../../shared/contracts';
 import { DestinationPanel, filterDestinations } from '../../destination-catalog';
 import {
   FakeExploreMapEngine,
+  LazyMapLibreExploreMapEngine,
   ExploreMapViewport,
-  MapLibreExploreMapEngine,
   type ExploreMapDestination,
   type ExploreMapEnginePort,
 } from '../../explore-map';
@@ -43,7 +43,7 @@ function createDefaultExploreMapEngine(): ExploreMapEnginePort {
   const allowDemoFallback =
     import.meta.env.DEV || import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake';
 
-  return new MapLibreExploreMapEngine({
+  return new LazyMapLibreExploreMapEngine({
     ...(styleUrl
       ? { style: styleUrl }
       : allowDemoFallback
