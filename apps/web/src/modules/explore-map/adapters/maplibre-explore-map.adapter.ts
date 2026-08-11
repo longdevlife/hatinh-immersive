@@ -19,7 +19,7 @@ export type ExploreMapCoordinate = [longitude: number, latitude: number];
 
 export interface ExploreMapOptions {
   loadRuntime?: () => Promise<ExploreMapRuntime>;
-  style: ExploreMapStyle;
+  style?: ExploreMapStyle;
   center?: ExploreMapCoordinate;
   transitionDurationMs?: number;
   zoom?: number;
@@ -163,13 +163,14 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   };
 
   constructor(options: ExploreMapOptions) {
-    if (!options?.style) {
-      throw new Error('EXPLORE_MAP_STYLE_REQUIRED');
-    }
     this.options = options;
   }
 
   async mount(container: HTMLElement): Promise<void> {
+    if (!this.options.style) {
+      throw new Error('EXPLORE_MAP_STYLE_REQUIRED');
+    }
+
     const generation = ++this.mountGeneration;
     this.destroyMountedMap();
     this.container = container;

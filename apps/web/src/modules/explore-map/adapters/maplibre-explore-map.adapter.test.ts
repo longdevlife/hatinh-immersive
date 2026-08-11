@@ -124,6 +124,18 @@ const state: ExploreMapViewportState = {
 };
 
 describe('MapLibreExploreMapEngine', () => {
+  it('reports a missing style without loading the MapLibre runtime', async () => {
+    const loadRuntime = vi.fn(async () => runtime);
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime,
+    });
+
+    await expect(engine.mount(document.createElement('div'))).rejects.toThrow(
+      'EXPLORE_MAP_STYLE_REQUIRED',
+    );
+    expect(loadRuntime).not.toHaveBeenCalled();
+  });
+
   it('mounts one interactive map and maps destinations into selected GeoJSON features', async () => {
     const loadRuntime = vi.fn(async () => runtime);
     const engine = new MapLibreExploreMapEngine({
