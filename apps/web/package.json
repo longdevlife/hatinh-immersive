@@ -11,6 +11,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test --config=playwright.config.ts && playwright test --config=playwright.production.config.ts",
+    "test:e2e:explore-map": "playwright test --config=playwright.explore-map.config.ts",
     "test:e2e:minimap": "playwright test --config=playwright.minimap.config.ts"
   },
   "dependencies": {
