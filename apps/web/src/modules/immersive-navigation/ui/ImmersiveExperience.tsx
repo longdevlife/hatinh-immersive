@@ -29,6 +29,7 @@ import type {
   ImmersiveViewVm,
   CameraTarget,
   DestinationPreviewVm,
+  HotspotVm,
   LocationCameraPreset,
   Map3DLocation,
   NetworkQuality,
@@ -260,9 +261,11 @@ function resolveNetworkQuality(): NetworkQuality {
 interface RendererHostProps {
   activeRenderer: ActiveRenderer;
   engine: ActiveEngine | null;
+  hotspots: HotspotVm[];
   initialView: PanoramaView;
   locations: Map3DLocation[];
   mode: ImmersiveMode;
+  onHotspotSelect(hotspotId: string): void;
   onLocationSelected(locationId: string): void;
   onNodeChange(nodeId: string, view: PanoramaView): void;
   onStatusChange(status: RendererStatus): void;
@@ -276,9 +279,11 @@ interface RendererHostProps {
 function RendererHost({
   activeRenderer,
   engine,
+  hotspots,
   initialView,
   locations,
   mode,
+  onHotspotSelect,
   onLocationSelected,
   onNodeChange,
   onStatusChange,
@@ -313,8 +318,10 @@ function RendererHost({
         <LazyPanoramaViewport
           key={`panorama-${retryKey}`}
           engine={engine as PanoramaEnginePort}
+          hotspots={hotspots}
           initialView={initialView}
           node={panoramaNode}
+          onHotspotSelect={onHotspotSelect}
           onNodeChange={onNodeChange}
           onStatusChange={onStatusChange}
           onViewChange={onViewChange}
@@ -791,9 +798,11 @@ export function ImmersiveExperience({
     <RendererHost
       activeRenderer={navigation.activeRenderer}
       engine={activeEngine}
+      hotspots={view.hotspots}
       initialView={panoramaTargetView}
       locations={mapLocations}
       mode={navigation.mode}
+      onHotspotSelect={actions.onSelectHotspot}
       onLocationSelected={selectLocation}
       onNodeChange={onRendererNodeChange}
       onStatusChange={(status) => {
@@ -853,6 +862,7 @@ export function ImmersiveExperience({
         <ImmersiveControlsGroup
           currentSceneId={navigation.committedSceneId}
           destinations={destinationSearchResults}
+          links={view.links}
           locale={locale}
           nodes={view.nodes}
           searchLoading={shouldFetchDestinations && destinationsQuery.isPending}

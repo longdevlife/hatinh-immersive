@@ -29,7 +29,7 @@ export function MinimapViewport({
   const containerRef = useRef<HTMLDivElement>(null);
   const onNodeSelectRef = useRef(onNodeSelect);
   const onStatusChangeRef = useRef(onStatusChange);
-  const [status, setStatus] = useState<RendererStatus>('loading');
+  const [status, setStatus] = useState<RendererStatus>(collapsed ? 'idle' : 'loading');
 
   onNodeSelectRef.current = onNodeSelect;
   onStatusChangeRef.current = onStatusChange;
@@ -41,6 +41,12 @@ export function MinimapViewport({
   }, [currentSceneId, engine, heading, links, nodes]);
 
   useEffect(() => {
+    if (collapsed) {
+      setStatus('idle');
+      onStatusChangeRef.current?.('idle');
+      return undefined;
+    }
+
     const container = containerRef.current;
     if (!container) {
       return undefined;
@@ -72,7 +78,7 @@ export function MinimapViewport({
       unsubscribe();
       engine.destroy();
     };
-  }, [engine]);
+  }, [collapsed, engine]);
 
   return (
     <section
@@ -81,35 +87,71 @@ export function MinimapViewport({
       data-minimap-status={status}
       role="application"
     >
-      <header className="minimap-viewport__header">
-        <div>
-          <p className="immersive-kicker">Bản đồ hành trình</p>
-          {!collapsed ? (
-            <strong>
-              {nodes.filter((node) => node.isVisited).length}/{nodes.length} điểm đã đi
-            </strong>
-          ) : null}
-        </div>
-        {showToggle ? (
+      {collapsed ? (
+        showToggle ? (
           <button
-            aria-expanded={!collapsed}
-            aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
-            className="immersive-icon-button"
+            aria-expanded={false}
+            aria-label="Mở rộng bản đồ"
+            className="minimap-viewport__toggle--standalone immersive-icon-button"
             type="button"
             onClick={onToggle}
           >
-            {collapsed ? '+' : '−'}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+            >
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+              <line x1="9" y1="3" x2="9" y2="21"></line>
+              <line x1="15" y1="3" x2="15" y2="21"></line>
+            </svg>
           </button>
-        ) : null}
-      </header>
-      <div
-        ref={containerRef}
-        aria-hidden={collapsed}
-        className="minimap-viewport__map"
-        role="group"
-        aria-label="Các điểm của tuyến tham quan"
-        style={{ display: collapsed ? 'none' : 'block' }}
-      />
+        ) : null
+      ) : (
+        <>
+          <header className="minimap-viewport__header">
+            <div>
+              <p className="immersive-kicker">Bản đồ hành trình</p>
+              <strong>
+                {nodes.filter((node) => node.isVisited).length}/{nodes.length} điểm đã đi
+              </strong>
+            </div>
+            {showToggle ? (
+              <button
+                aria-expanded={true}
+                aria-label="Thu gọn bản đồ"
+                className="immersive-icon-button"
+                type="button"
+                onClick={onToggle}
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ width: '1rem', height: '1rem' }}
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            ) : null}
+          </header>
+          <div
+            ref={containerRef}
+            aria-hidden={false}
+            className="minimap-viewport__map"
+            role="group"
+            aria-label="Các điểm của tuyến tham quan"
+          />
+        </>
+      )}
       {status === 'error' ? fallback : null}
     </section>
   );

@@ -8,6 +8,7 @@ import {
   type PanoramaManifest,
 } from '@hatinh/immersive-contracts';
 
+import type { HotspotVm } from '../../../shared/contracts';
 import type {
   PanoramaEnginePort,
   PanoramaLink,
@@ -18,6 +19,7 @@ import type {
 const MIN_FOV = 30;
 const MAX_FOV = 120;
 const MAX_ZOOM = 100;
+const HOTSPOT_MARKER_SIZE = 44;
 
 type PhotoSphereViewerEventListener = (event?: unknown) => void;
 
@@ -44,6 +46,19 @@ export interface PhotoSphereVirtualTourPlugin {
   addEventListener?(type: string, listener: PhotoSphereViewerEventListener): void;
   removeEventListener?(type: string, listener: PhotoSphereViewerEventListener): void;
   setCurrentNode(nodeId: string, options?: unknown): Promise<boolean>;
+}
+
+export interface PhotoSphereMarkerConfig {
+  element: HTMLElement;
+  id: string;
+  position: { pitch: number; yaw: number };
+  size: { height: number; width: number };
+}
+
+export interface PhotoSphereMarkersPlugin {
+  addEventListener?(type: string, listener: PhotoSphereViewerEventListener): void;
+  removeEventListener?(type: string, listener: PhotoSphereViewerEventListener): void;
+  setMarkers(markers: PhotoSphereMarkerConfig[]): void;
 }
 
 export interface PhotoSphereVirtualTourLink {
@@ -122,6 +137,40 @@ function toVirtualTourLink(link: PanoramaLink): PhotoSphereVirtualTourLink {
   };
 }
 
+function createHotspotMarkerElement(hotspot: HotspotVm): HTMLButtonElement {
+  const button = document.createElement('button');
+  const label = hotspot.label ?? 'Mở điểm khám phá';
+
+  button.type = 'button';
+  button.className = `panorama-hotspot-marker panorama-hotspot-marker--${hotspot.type}`;
+  button.setAttribute('aria-label', label);
+  button.setAttribute('aria-haspopup', 'dialog');
+  button.dataset.hotspotId = hotspot.id;
+
+  const core = document.createElement('span');
+  core.className = 'panorama-hotspot-marker__core';
+  core.setAttribute('aria-hidden', 'true');
+
+  const text = document.createElement('span');
+  text.className = 'panorama-hotspot-marker__label';
+  text.textContent = label;
+
+  button.append(core, text);
+  return button;
+}
+
+function toHotspotMarker(hotspot: HotspotVm): PhotoSphereMarkerConfig {
+  return {
+    id: hotspot.id,
+    element: createHotspotMarkerElement(hotspot),
+    position: {
+      yaw: degreesToRadians(normalizeHeading(hotspot.yaw)),
+      pitch: degreesToRadians(clamp(hotspot.pitch, -90, 90)),
+    },
+    size: { width: HOTSPOT_MARKER_SIZE, height: HOTSPOT_MARKER_SIZE },
+  };
+}
+
 async function loadPanoramaManifest(node: PanoramaNode): Promise<unknown> {
   if (typeof fetch !== 'function') {
     throw new Error('PANORAMA_FETCH_UNAVAILABLE');
@@ -192,6 +241,10 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   private runtimePromise: Promise<PhotoSphereViewerRuntime> | null = null;
   private viewer: PhotoSphereViewerInstance | null = null;
   private virtualTour: PhotoSphereVirtualTourPlugin | null = null;
+  private markers: PhotoSphereMarkersPlugin | null = null;
+  private hotspots: HotspotVm[] = [];
+  private readonly hotspotElements = new Map<string, HTMLElement>();
+  private readonly hotspotListeners = new Set<(hotspotId: string) => void>();
   private readonly tourNodes = new Map<string, PanoramaNode>();
   private readonly virtualNodes = new Map<string, PhotoSphereVirtualTourNode>();
   private readonly panoramaCache = new Map<string, unknown>();
@@ -201,6 +254,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
   private readonly handlePositionUpdated = () => this.emitView();
   private readonly handleZoomUpdated = () => this.emitView();
   private readonly handleNodeChanged = (event?: unknown) => this.emitNodeChanged(event);
+  private readonly handleHotspotSelected = (event?: unknown) => this.emitHotspotSelected(event);
   private readonly suppressedNodeChangeLoads = new Set<number>();
   private mountGeneration = 0;
   private loadGeneration = 0;
@@ -225,6 +279,11 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     for (const node of nodes) {
       this.tourNodes.set(node.id, node);
     }
+  }
+
+  setHotspots(hotspots: HotspotVm[]): void {
+    this.hotspots = hotspots.map((hotspot) => ({ ...hotspot }));
+    this.applyHotspots();
   }
 
   async loadNode(node: PanoramaNode): Promise<void> {
@@ -308,17 +367,25 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     return () => this.nodeListeners.delete(listener);
   }
 
+  subscribeHotspotSelected(listener: (hotspotId: string) => void): () => void {
+    this.hotspotListeners.add(listener);
+    return () => this.hotspotListeners.delete(listener);
+  }
+
   destroy(): void {
     ++this.mountGeneration;
     this.destroyViewer();
     this.suppressedNodeChangeLoads.clear();
     this.committedNodeId = null;
     this.container = null;
+    this.hotspots = [];
+    this.hotspotElements.clear();
     this.tourNodes.clear();
     this.virtualNodes.clear();
     this.panoramaCache.clear();
     this.viewListeners.clear();
     this.nodeListeners.clear();
+    this.hotspotListeners.clear();
   }
 
   private createViewer(container: HTMLElement, runtime: PhotoSphereViewerRuntime): void {
@@ -343,9 +410,30 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
 
     this.viewer = viewer;
     this.virtualTour = viewer.getPlugin<PhotoSphereVirtualTourPlugin>('virtual-tour');
+    const markerPlugin = viewer.getPlugin<Partial<PhotoSphereMarkersPlugin>>('markers');
+    this.markers =
+      markerPlugin && typeof markerPlugin.setMarkers === 'function'
+        ? (markerPlugin as PhotoSphereMarkersPlugin)
+        : null;
     this.virtualTour.addEventListener?.('node-changed', this.handleNodeChanged);
+    this.markers?.addEventListener?.('select-marker', this.handleHotspotSelected);
     viewer.addEventListener('position-updated', this.handlePositionUpdated);
     viewer.addEventListener('zoom-updated', this.handleZoomUpdated);
+    this.applyHotspots();
+  }
+
+  private applyHotspots(): void {
+    const markers = this.markers;
+    if (!markers) {
+      return;
+    }
+
+    const configs = this.hotspots.map(toHotspotMarker);
+    this.hotspotElements.clear();
+    for (const config of configs) {
+      this.hotspotElements.set(config.id, config.element);
+    }
+    markers.setMarkers(configs);
   }
 
   private async loadVirtualTourNode(nodeId: string): Promise<PhotoSphereVirtualTourNode> {
@@ -450,9 +538,33 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     }
   }
 
+  private emitHotspotSelected(event: unknown): void {
+    if (typeof event !== 'object' || event === null) {
+      return;
+    }
+
+    const marker = 'marker' in event ? event.marker : null;
+    const hotspotId =
+      typeof marker === 'object' &&
+      marker !== null &&
+      'id' in marker &&
+      typeof marker.id === 'string'
+        ? marker.id
+        : null;
+    if (!hotspotId || !this.hotspots.some((hotspot) => hotspot.id === hotspotId)) {
+      return;
+    }
+
+    this.hotspotElements.get(hotspotId)?.focus({ preventScroll: true });
+    for (const listener of this.hotspotListeners) {
+      listener(hotspotId);
+    }
+  }
+
   private destroyViewer(): void {
     if (this.viewer) {
       this.virtualTour?.removeEventListener?.('node-changed', this.handleNodeChanged);
+      this.markers?.removeEventListener?.('select-marker', this.handleHotspotSelected);
       this.viewer.removeEventListener('position-updated', this.handlePositionUpdated);
       this.viewer.removeEventListener('zoom-updated', this.handleZoomUpdated);
       this.viewer.destroy();
@@ -460,6 +572,8 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
 
     this.viewer = null;
     this.virtualTour = null;
+    this.markers = null;
+    this.hotspotElements.clear();
   }
 
   private async getRuntime(): Promise<PhotoSphereViewerRuntime> {

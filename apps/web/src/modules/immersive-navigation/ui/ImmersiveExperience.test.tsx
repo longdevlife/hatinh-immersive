@@ -178,6 +178,7 @@ class NativeNavigatingPanoramaEngine extends FakePanoramaEngine {
 
 describe('ImmersiveExperience', () => {
   beforeEach(() => {
+    window.sessionStorage.clear();
     useImmersiveNavigation.getState().reset();
   });
 
@@ -199,10 +200,9 @@ describe('ImmersiveExperience', () => {
 
     await waitFor(() => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
-    });
-    await waitFor(() => {
       expect(minimap.calls.some((call) => call.type === 'mount')).toBe(true);
     });
+    expect(screen.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeInTheDocument();
     expect(factories.createPanoramaEngine).toHaveBeenCalledTimes(1);
     expect(factories.createMinimapEngine).toHaveBeenCalledTimes(1);
     expect(map3d.calls.at(-1)).toEqual({ type: 'destroy' });
@@ -698,7 +698,9 @@ describe('ImmersiveExperience', () => {
       expect(panorama.loadRequests.get('scene-02')).toBeDefined();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 3' }));
+    act(() => {
+      useImmersiveNavigation.getState().navigateToScene('scene-03');
+    });
     await waitFor(() => {
       expect(panorama.loadRequests.get('scene-03')).toBeDefined();
     });

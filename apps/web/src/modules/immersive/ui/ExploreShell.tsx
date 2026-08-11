@@ -6,6 +6,32 @@ import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
 
 import { RendererState } from './RendererState';
 
+const MINIMAP_SESSION_STATE_KEY = 'hatinh:immersive:minimap:collapsed';
+
+function readMinimapCollapsedPreference(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    return window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY) === 'collapsed';
+  } catch {
+    return false;
+  }
+}
+
+function persistMinimapCollapsedPreference(collapsed: boolean): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(MINIMAP_SESSION_STATE_KEY, collapsed ? 'collapsed' : 'expanded');
+  } catch {
+    // Storage can be unavailable in privacy-restricted contexts; in-memory state still works.
+  }
+}
+
 export interface ExploreShellProps {
   view: ImmersiveViewVm;
   actions: ImmersiveActions;
@@ -20,6 +46,43 @@ export interface ExploreShellProps {
   selectedLocationId?: string | null;
 }
 
+function MapLauncherIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+      aria-hidden="true"
+    >
+      <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+      <line x1="9" y1="3" x2="9" y2="21"></line>
+      <line x1="15" y1="3" x2="15" y2="21"></line>
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ width: '1rem', height: '1rem' }}
+      aria-hidden="true"
+    >
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  );
+}
+
 function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; onToggle(): void }) {
   return (
     <section
@@ -28,21 +91,33 @@ function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; o
       data-minimap-status="loading"
       role="application"
     >
-      <header className="minimap-viewport__header">
-        <div>
-          <p className="immersive-kicker">Bản đồ hành trình</p>
-          {!collapsed ? <strong>Đang tải bản đồ…</strong> : null}
-        </div>
+      {collapsed ? (
         <button
-          aria-expanded={!collapsed}
-          aria-label={collapsed ? 'Mở rộng bản đồ' : 'Thu gọn bản đồ'}
-          className="immersive-icon-button"
+          aria-expanded={false}
+          aria-label="Mở rộng bản đồ"
+          className="minimap-viewport__toggle--standalone immersive-icon-button"
           type="button"
           onClick={onToggle}
         >
-          {collapsed ? '+' : '−'}
+          <MapLauncherIcon />
         </button>
-      </header>
+      ) : (
+        <header className="minimap-viewport__header">
+          <div>
+            <p className="immersive-kicker">Bản đồ hành trình</p>
+            <strong>Đang tải bản đồ…</strong>
+          </div>
+          <button
+            aria-expanded={true}
+            aria-label="Thu gọn bản đồ"
+            className="immersive-icon-button"
+            type="button"
+            onClick={onToggle}
+          >
+            <CloseIcon />
+          </button>
+        </header>
+      )}
     </section>
   );
 }
@@ -63,7 +138,7 @@ export function ExploreShell({
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
-  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
+  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(readMinimapCollapsedPreference);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
 
@@ -88,7 +163,11 @@ export function ExploreShell({
   }
 
   function toggleMinimap() {
-    setIsMinimapCollapsed((collapsed) => !collapsed);
+    setIsMinimapCollapsed((collapsed) => {
+      const nextCollapsed = !collapsed;
+      persistMinimapCollapsedPreference(nextCollapsed);
+      return nextCollapsed;
+    });
     actions.onToggleMinimap();
   }
 
@@ -159,7 +238,6 @@ export function ExploreShell({
               locations={map3dLocations ?? []}
               networkQuality={view.networkQuality}
               selectedLocationId={selectedLocationId}
-
               onShare={() => void shareLocation()}
               onShowInfo={openInfo}
               onToggleFullscreen={() => void toggleFullscreen()}
@@ -173,36 +251,14 @@ export function ExploreShell({
             rendererContent
           )}
         </div>
-        {isPanorama ? (
-          <div className="hotspot-layer" aria-label="Điểm khám phá trong cảnh">
-            {view.hotspots.map((hotspot, index) => (
-              <button
-                key={hotspot.id}
-                className={`hotspot-marker hotspot-marker--${hotspot.type}`}
-                style={{
-                  left: `${12 + ((hotspot.yaw % 360) / 360) * 76}%`,
-                  top: `${42 + hotspot.pitch * 2 + (index % 2) * 7}%`,
-                }}
-                type="button"
-                onClick={() => {
-                  actions.onSelectHotspot(hotspot.id);
-                }}
-                aria-haspopup="dialog"
-                aria-label={hotspot.label ?? 'Mở điểm khám phá'}
-              >
-                <span aria-hidden="true">+</span>
-                <span className="hotspot-marker__label">{hotspot.label}</span>
-              </button>
-            ))}
-          </div>
-        ) : hasMap3DChrome ? null : (
+        {!isPanorama && !hasMap3DChrome ? (
           <div className="overview-marker" aria-label={`Điểm đến ${view.destination.name}`}>
             <span className="overview-marker__pin" aria-hidden="true">
               ⌖
             </span>
             <strong>{view.destination.name}</strong>
           </div>
-        )}
+        ) : null}
         <RendererState
           mode={view.mode}
           status={view.rendererStatus}

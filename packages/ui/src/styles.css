@@ -38,6 +38,15 @@
   --z-index-overlay: 10;
   --z-index-panel: 20;
   --z-index-dialog: 30;
+  --safe-area-spacing: clamp(1rem, 4vw, 4rem);
+  --control-height-base: 2.75rem;
+  --radius-control: 999px;
+  --backdrop-blur-base: 1rem;
+  --elevation-1: 0 4px 12px rgb(0 0 0 / 0.1);
+  --elevation-2: 0 8px 24px rgb(0 0 0 / 0.15);
+  --font-weight-medium: 500;
+  --font-weight-semibold: 650;
+  --icon-size-base: 1.25rem;
   color: var(--color-text-primary);
   background: var(--color-background-panel);
 }

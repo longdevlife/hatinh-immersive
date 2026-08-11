@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { FakeMinimapEngine } from '../adapters/fake-minimap.adapter';
 import type { MinimapProps } from '../../../shared/contracts';
+import { FakeMinimapEngine } from '../adapters/fake-minimap.adapter';
 
 import { MinimapViewport } from './MinimapViewport';
 
@@ -26,6 +27,19 @@ const props: MinimapProps = {
   onToggle: () => undefined,
 };
 
+function CollapsibleHarness({ engine }: { engine: FakeMinimapEngine }) {
+  const [collapsed, setCollapsed] = useState(true);
+
+  return (
+    <MinimapViewport
+      {...props}
+      collapsed={collapsed}
+      engine={engine}
+      onToggle={() => setCollapsed((value) => !value)}
+    />
+  );
+}
+
 describe('MinimapViewport', () => {
   it('mounts the engine and forwards node selection and collapse actions', async () => {
     const engine = new FakeMinimapEngine();
@@ -41,7 +55,7 @@ describe('MinimapViewport', () => {
       />,
     );
 
-    await waitFor(() => expect(engine.calls).toHaveLength(2));
+    await waitFor(() => expect(engine.calls.some((call) => call.type === 'mount')).toBe(true));
     expect(screen.getByRole('application', { name: 'Bản đồ tuyến tham quan' })).toBeInTheDocument();
 
     engine.emitNodeSelected('scene-02');
@@ -49,6 +63,37 @@ describe('MinimapViewport', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
     expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays idle while collapsed and mounts only after expansion', async () => {
+    const engine = new FakeMinimapEngine();
+
+    render(<CollapsibleHarness engine={engine} />);
+
+    const minimap = screen.getByRole('application', { name: 'Bản đồ tuyến tham quan' });
+    expect(minimap).toHaveAttribute('data-minimap-status', 'idle');
+    expect(screen.getByRole('button', { name: 'Mở rộng bản đồ' })).toBeInTheDocument();
+    expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
+    await waitFor(() =>
+      expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(1),
+    );
+    await waitFor(() => expect(minimap).toHaveAttribute('data-minimap-status', 'ready'));
+    expect(screen.getByRole('group', { name: 'Các điểm của tuyến tham quan' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
+    await waitFor(() => expect(engine.calls.some((call) => call.type === 'destroy')).toBe(true));
+    expect(minimap).toHaveAttribute('data-minimap-status', 'idle');
+    expect(
+      screen.queryByRole('group', { name: 'Các điểm của tuyến tham quan' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
+    await waitFor(() =>
+      expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(2),
+    );
+    await waitFor(() => expect(minimap).toHaveAttribute('data-minimap-status', 'ready'));
   });
 
   it('keeps an accessible fallback boundary when MapLibre cannot initialize', async () => {
@@ -69,7 +114,7 @@ describe('MinimapViewport', () => {
 
     render(<MinimapViewport {...props} engine={engine} showToggle={false} variant="overview" />);
 
-    await waitFor(() => expect(engine.calls).toHaveLength(2));
+    await waitFor(() => expect(engine.calls.some((call) => call.type === 'mount')).toBe(true));
     expect(screen.getByRole('application', { name: 'Bản đồ Hà Tĩnh' })).toHaveClass(
       'minimap-viewport--overview',
     );

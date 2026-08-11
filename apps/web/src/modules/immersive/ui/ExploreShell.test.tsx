@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
 
+import type { ImmersiveActions } from '../../../shared/contracts';
 import {
   constrainedNetworkFixture,
   panoramaLoadingFixture,
@@ -8,10 +9,11 @@ import {
   readyImmersiveViewFixture,
   threeDUnavailableFixture,
 } from '../../../shared/fixtures';
-import type { ImmersiveActions } from '../../../shared/contracts';
 import { FakeMinimapEngine } from '../../minimap';
 
 import { ExploreShell } from './ExploreShell';
+
+const MINIMAP_SESSION_STATE_KEY = 'hatinh:immersive:minimap:collapsed';
 
 function createActions(): ImmersiveActions {
   return {
@@ -28,7 +30,11 @@ function createActions(): ImmersiveActions {
 }
 
 describe('ExploreShell', () => {
-  it('mounts the production minimap viewport and forwards map node selection', async () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+  });
+
+  it('opens the minimap on first session entry and forwards map node selection', async () => {
     const actions = createActions();
     const minimapEngine = new FakeMinimapEngine();
 
@@ -43,6 +49,7 @@ describe('ExploreShell', () => {
     await waitFor(() =>
       expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(true),
     );
+    expect(screen.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeInTheDocument();
     expect(minimapEngine.calls).toContainEqual(
       expect.objectContaining({
         type: 'setState',
@@ -57,15 +64,62 @@ describe('ExploreShell', () => {
     expect(actions.onNavigateScene).toHaveBeenCalledWith('scene-02');
   });
 
-  it('exposes hotspot selection through the immersive callbacks', () => {
+  it('remembers minimap collapse and expansion within the browser session', async () => {
+    const actions = createActions();
+    const firstEngine = new FakeMinimapEngine();
+    const firstRender = render(
+      <ExploreShell
+        view={readyImmersiveViewFixture}
+        actions={actions}
+        minimapEngine={firstEngine}
+      />,
+    );
+
+    await waitFor(() => expect(firstEngine.calls.some((call) => call.type === 'mount')).toBe(true));
+    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
+    expect(window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY)).toBe('collapsed');
+    firstRender.unmount();
+
+    const secondEngine = new FakeMinimapEngine();
+    const secondRender = render(
+      <ExploreShell
+        view={readyImmersiveViewFixture}
+        actions={actions}
+        minimapEngine={secondEngine}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Mở rộng bản đồ' })).toBeInTheDocument();
+    expect(secondEngine.calls.some((call) => call.type === 'mount')).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
+    await waitFor(() =>
+      expect(secondEngine.calls.some((call) => call.type === 'mount')).toBe(true),
+    );
+    expect(window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY)).toBe('expanded');
+    secondRender.unmount();
+
+    const thirdEngine = new FakeMinimapEngine();
+    render(
+      <ExploreShell
+        view={readyImmersiveViewFixture}
+        actions={actions}
+        minimapEngine={thirdEngine}
+      />,
+    );
+
+    await waitFor(() => expect(thirdEngine.calls.some((call) => call.type === 'mount')).toBe(true));
+    expect(screen.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeInTheDocument();
+  });
+
+  it('leaves panorama hotspot spatial rendering to the renderer', () => {
     const actions = createActions();
 
     render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
 
     expect(screen.getByRole('heading', { name: 'Lối đi di sản 1' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Câu chuyện địa danh' }));
-
-    expect(actions.onSelectHotspot).toHaveBeenCalledWith('hotspot-story');
+    expect(screen.queryByLabelText('Điểm khám phá trong cảnh')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Câu chuyện địa danh' })).not.toBeInTheDocument();
   });
 
   it('lets the visitor return from a ready panorama to the selected 3D location', () => {
@@ -161,7 +215,7 @@ describe('ExploreShell', () => {
     expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(2);
   });
 
-  it('keeps panorama controls available while loading on a constrained network', () => {
+  it('keeps panorama controls compact while loading on a constrained network', () => {
     const actions = createActions();
 
     render(
@@ -176,8 +230,9 @@ describe('ExploreShell', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Đang tải không gian 360°');
     expect(screen.getByRole('button', { name: 'Quay lại không gian 3D' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
+    expect(screen.getByText('Bản đồ hành trình')).toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
     expect(actions.onToggleMinimap).toHaveBeenCalledTimes(1);
   });
 
@@ -191,19 +246,11 @@ describe('ExploreShell', () => {
     expect(transitionState).toHaveClass('immersive-renderer-state--transitioning');
     expect(transitionState).toHaveTextContent('Đang chuyển cảnh');
   });
-  it('exposes aria-haspopup="dialog" on panorama hotspot buttons', () => {
+
+  it('omits unavailable audio controls from panorama chrome', () => {
     const actions = createActions();
     render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
 
-    const hotspotButton = screen.getByRole('button', { name: 'Câu chuyện địa danh' });
-    expect(hotspotButton).toHaveAttribute('aria-haspopup', 'dialog');
-  });
-
-  it('keeps the panorama interaction layer pass-through and omits unavailable audio controls', () => {
-    const actions = createActions();
-    render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
-
-    expect(screen.getByLabelText('Điểm khám phá trong cảnh')).toHaveClass('hotspot-layer');
     expect(screen.queryByLabelText('Hướng dẫn âm thanh')).not.toBeInTheDocument();
   });
 
@@ -213,10 +260,8 @@ describe('ExploreShell', () => {
       <ExploreShell view={readyImmersiveViewFixture} actions={actions} />,
     );
 
-    // In panorama mode
     expect(screen.getByRole('region', { name: 'Điều khiển trải nghiệm' })).toBeInTheDocument();
 
-    // In 3D overview mode
     rerender(
       <ExploreShell
         view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
