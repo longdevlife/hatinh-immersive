@@ -88,7 +88,16 @@ export class FakePanoramaEngine implements PanoramaEnginePort {
       button.dataset.fakePanoramaHotspot = hotspot.id;
       button.setAttribute('aria-label', label);
       button.setAttribute('aria-haspopup', 'dialog');
-      button.textContent = label;
+
+      const core = document.createElement('span');
+      core.className = 'panorama-hotspot-marker__core';
+      core.setAttribute('aria-hidden', 'true');
+
+      const text = document.createElement('span');
+      text.className = 'panorama-hotspot-marker__label';
+      text.textContent = label;
+
+      button.append(core, text);
       button.addEventListener('click', () => {
         button.focus({ preventScroll: true });
         for (const listener of this.hotspotListeners) {
