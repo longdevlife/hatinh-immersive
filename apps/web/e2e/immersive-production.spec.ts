@@ -238,15 +238,14 @@ test('keeps one 3D world while selecting a destination and round-tripping throug
   );
   await expect(page.getByRole('heading', { name: 'Toàn cảnh Thành cổ' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Quay lại không gian 3D' }).click();
-  await expect(page).toHaveURL(
-    /\/explore\/thanh-co-ha-tinh\/immersive\?mode=overview3d&location=destination-c$/,
-  );
+  await page.getByRole('button', { name: `Quay lại ${destinationC.name}` }).click();
+  await expect(page).toHaveURL(/\/explore\/thanh-co-ha-tinh$/);
+  await expect(page.getByRole('main', { name: 'Thông tin điểm đến' })).toBeVisible();
   await expect(page.getByRole('heading', { name: destinationC.name })).toBeVisible();
+  await expect(page.getByRole('application', { name: 'Không gian bản đồ 3D' })).toHaveCount(0);
 
   await page.reload();
+  await expect(page.getByRole('main', { name: 'Thông tin điểm đến' })).toBeVisible();
   await expect(page.getByRole('heading', { name: destinationC.name })).toBeVisible();
-  await expect(page).toHaveURL(
-    /\/explore\/thanh-co-ha-tinh\/immersive\?mode=overview3d&location=destination-c$/,
-  );
+  await expect(page).toHaveURL(/\/explore\/thanh-co-ha-tinh$/);
 });
