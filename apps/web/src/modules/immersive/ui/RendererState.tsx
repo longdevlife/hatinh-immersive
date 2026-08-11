@@ -5,6 +5,7 @@ interface RendererStateProps {
   status: RendererStatus;
   onRetry(): void;
   onFallback(): void;
+  fallbackLabel?: string;
   isTransitioning?: boolean;
   showFallback?: boolean;
 }
@@ -14,6 +15,7 @@ export function RendererState({
   status,
   onRetry,
   onFallback,
+  fallbackLabel,
   isTransitioning = false,
   showFallback = true,
 }: RendererStateProps) {
@@ -90,7 +92,7 @@ export function RendererState({
           type="button"
           onClick={onFallback}
         >
-          {mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại không gian 3D'}
+          {fallbackLabel ?? (mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại')}
         </button>
       ) : null}
     </div>

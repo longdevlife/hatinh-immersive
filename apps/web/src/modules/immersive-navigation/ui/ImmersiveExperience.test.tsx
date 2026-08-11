@@ -18,7 +18,7 @@ function LocationProbe() {
   return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
 }
 
-function RoutedExperience({
+function RoutedImmersiveExperience({
   destinations,
   factories,
   manifests,
@@ -35,6 +35,12 @@ function RoutedExperience({
   ) : null;
 }
 
+function DestinationDetailRoute() {
+  const { destinationSlug = '' } = useParams<{ destinationSlug: string }>();
+
+  return <main data-testid="destination-detail">Destination detail: {destinationSlug}</main>;
+}
+
 function renderRoutedExperience(
   initialEntry: string,
   factories: ImmersiveExperienceFactories,
@@ -47,20 +53,11 @@ function renderRoutedExperience(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[initialEntry]}>
         <Routes>
-          <Route
-            path="/explore/:destinationSlug"
-            element={
-              <RoutedExperience
-                destinations={destinations}
-                factories={factories}
-                manifests={manifests}
-              />
-            }
-          />
+          <Route path="/explore/:destinationSlug" element={<DestinationDetailRoute />} />
           <Route
             path="/explore/:destinationSlug/immersive"
             element={
-              <RoutedExperience
+              <RoutedImmersiveExperience
                 destinations={destinations}
                 factories={factories}
                 manifests={manifests}
@@ -468,7 +465,7 @@ describe('ImmersiveExperience', () => {
     }
   });
 
-  it('enters the selected destination tour and returns to its 3D camera', async () => {
+  it('enters the selected destination tour and exits to its destination detail path', async () => {
     const { factories, map3d, panorama } = createFactories();
     const manifestA = createFakeImmersiveManifest();
     const destinationB: DestinationPreviewVm = {
@@ -544,23 +541,15 @@ describe('ImmersiveExperience', () => {
       );
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Quay lại không gian 3D' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại Điểm B' }));
 
     await waitFor(() => {
-      expect(useImmersiveNavigation.getState()).toMatchObject({
-        mode: 'overview3d',
-        selectedLocationId: destinationB.id,
-      });
-      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
-        preset: { center: { lat: 18.4, lng: 105.9 } },
-      });
-      expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/location-b/immersive?mode=overview3d&location=destination-b',
-      );
+      expect(screen.getByTestId('destination-detail')).toHaveTextContent('location-b');
+      expect(screen.getByTestId('location')).toHaveTextContent('/explore/location-b');
     });
   });
 
-  it('enters the real Nguyễn Du demo tour and returns to its selected 3D location', async () => {
+  it('enters the real Nguyễn Du demo tour and exits to its destination detail path', async () => {
     const { factories, map3d, panorama } = createFactories();
     const thienCamManifest = getDemoManifest('bien-thien-cam');
     const nguyenDuManifest = getDemoManifest('khu-luu-niem-nguyen-du');
@@ -591,19 +580,11 @@ describe('ImmersiveExperience', () => {
       );
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Quay lại không gian 3D' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại Khu lưu niệm Nguyễn Du' }));
 
     await waitFor(() => {
-      expect(useImmersiveNavigation.getState()).toMatchObject({
-        mode: 'overview3d',
-        selectedLocationId: 'nguyen-du-memorial',
-      });
-      expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toMatchObject({
-        preset: DEMO_DESTINATIONS[1]?.location.cameraPreset,
-      });
-      expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/khu-luu-niem-nguyen-du/immersive?mode=overview3d&location=nguyen-du-memorial',
-      );
+      expect(screen.getByTestId('destination-detail')).toHaveTextContent('khu-luu-niem-nguyen-du');
+      expect(screen.getByTestId('location')).toHaveTextContent('/explore/khu-luu-niem-nguyen-du');
     });
   });
 

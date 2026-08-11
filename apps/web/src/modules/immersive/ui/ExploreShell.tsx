@@ -263,7 +263,8 @@ export function ExploreShell({
           mode={view.mode}
           status={view.rendererStatus}
           onRetry={actions.onRetryRenderer}
-          onFallback={isPanorama ? actions.onEnter3D : () => actions.onEnterPanorama()}
+          onFallback={isPanorama ? actions.onReturnToDestination : () => actions.onEnterPanorama()}
+          fallbackLabel={isPanorama ? `Quay lại ${view.destination.name}` : 'Mở trải nghiệm 360°'}
           isTransitioning={isPanorama && isSceneTransitioning}
           showFallback={isPanorama || canEnterPanorama}
         />
@@ -326,9 +327,9 @@ export function ExploreShell({
           <button
             className="immersive-button immersive-button--quiet"
             type="button"
-            onClick={actions.onEnter3D}
+            onClick={actions.onReturnToDestination}
           >
-            Quay lại không gian 3D
+            Quay lại {view.destination.name}
           </button>
         </div>
       ) : hasMap3DChrome ? null : (

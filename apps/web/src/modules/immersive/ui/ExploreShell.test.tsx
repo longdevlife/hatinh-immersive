@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, vi } from 'vitest';
 
 import type { ImmersiveActions } from '../../../shared/contracts';
@@ -17,7 +17,7 @@ const MINIMAP_SESSION_STATE_KEY = 'hatinh:immersive:minimap:collapsed';
 
 function createActions(): ImmersiveActions {
   return {
-    onEnter3D: vi.fn(),
+    onReturnToDestination: vi.fn(),
     onEnterPanorama: vi.fn(),
     onNavigateScene: vi.fn(),
     onSelectHotspot: vi.fn(),
@@ -122,14 +122,14 @@ describe('ExploreShell', () => {
     expect(screen.queryByRole('button', { name: 'Câu chuyện địa danh' })).not.toBeInTheDocument();
   });
 
-  it('lets the visitor return from a ready panorama to the selected 3D location', () => {
+  it('returns from a ready panorama to the destination detail context', () => {
     const actions = createActions();
 
     render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Quay lại không gian 3D' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }));
 
-    expect(actions.onEnter3D).toHaveBeenCalledTimes(1);
+    expect(actions.onReturnToDestination).toHaveBeenCalledTimes(1);
   });
 
   it('renders optional presentational renderer content inside the viewport slot', () => {
@@ -191,6 +191,25 @@ describe('ExploreShell', () => {
     expect(actions.onRetryRenderer).toHaveBeenCalledTimes(1);
   });
 
+  it('returns to the destination when the panorama renderer is unavailable', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, rendererStatus: 'unavailable' }}
+        actions={actions}
+      />,
+    );
+
+    fireEvent.click(
+      within(screen.getByRole('alert')).getByRole('button', {
+        name: 'Quay lại Sơn Trang Cổ Đạm',
+      }),
+    );
+
+    expect(actions.onReturnToDestination).toHaveBeenCalledTimes(1);
+  });
+
   it('provides a graceful 3D fallback when the renderer is unavailable', () => {
     const actions = createActions();
 
@@ -229,7 +248,7 @@ describe('ExploreShell', () => {
     );
 
     expect(screen.getByRole('status')).toHaveTextContent('Đang tải không gian 360°');
-    expect(screen.getByRole('button', { name: 'Quay lại không gian 3D' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toBeInTheDocument();
     expect(screen.getByText('Bản đồ hành trình')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));

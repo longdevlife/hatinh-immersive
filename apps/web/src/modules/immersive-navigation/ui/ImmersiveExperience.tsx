@@ -616,21 +616,9 @@ export function ImmersiveExperience({
     [destinationSlug, destinations, manifest, mapLocations, navigate],
   );
 
-  const onEnter3D = useCallback(() => {
-    if (!manifest) {
-      return;
-    }
-
-    const state = useImmersiveNavigation.getState();
-    const locationToRestore =
-      mapLocations.find((candidate) => candidate.id === state.selectedLocationId) ?? routeLocation;
-    if (locationToRestore) {
-      state.selectLocation(locationToRestore);
-    } else {
-      state.enterOverview(manifest.destination.id);
-    }
-    writeDeepLink(navigate, destinationSlug, false);
-  }, [destinationSlug, manifest, mapLocations, navigate, routeLocation]);
+  const onReturnToDestination = useCallback(() => {
+    navigate(`/explore/${destinationSlug}`);
+  }, [destinationSlug, navigate]);
 
   const onEnterPanorama = useCallback(
     (sceneId?: string) => {
@@ -732,7 +720,7 @@ export function ImmersiveExperience({
     () => ({
       onCloseHotspot: () => useImmersiveNavigation.getState().closeHotspot(),
       onCloseDestinationInfo: () => undefined,
-      onEnter3D,
+      onReturnToDestination,
       onEnterPanorama,
       onNavigateScene,
       onOpenDestinationInfo: () => undefined,
@@ -740,7 +728,7 @@ export function ImmersiveExperience({
       onSelectHotspot: (hotspotId) => useImmersiveNavigation.getState().selectHotspot(hotspotId),
       onToggleMinimap: () => useImmersiveNavigation.getState().toggleMinimap(),
     }),
-    [onEnter3D, onEnterPanorama, onNavigateScene, onRetryRenderer],
+    [onEnterPanorama, onNavigateScene, onRetryRenderer, onReturnToDestination],
   );
   const destinationSearchResults = useMemo(() => {
     const query = destinationSearchQuery.trim().toLocaleLowerCase('vi');

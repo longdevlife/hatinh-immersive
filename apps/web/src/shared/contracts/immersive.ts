@@ -63,7 +63,7 @@ export interface ImmersiveViewVm {
 }
 
 export interface ImmersiveActions {
-  onEnter3D(): void;
+  onReturnToDestination(): void;
   onEnterPanorama(sceneId?: string): void;
   onNavigateScene(sceneId: string): void;
   onSelectHotspot(hotspotId: string): void;
