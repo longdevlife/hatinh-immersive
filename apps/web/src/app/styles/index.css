@@ -1,5 +1,6 @@
 @import './immersive.css';
 @import './explore.css';
+@import './son-trang.css';
 
 .public-app {
   min-height: 100vh;

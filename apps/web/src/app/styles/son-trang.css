@@ -1,0 +1,232 @@
+.son-trang-experience {
+  display: flex;
+  flex-direction: column;
+  background-color: #fcfbf9; /* match generic theme background */
+  min-height: 100vh;
+  color: #2c3e35;
+}
+
+.son-trang-experience__header {
+  padding: 1rem clamp(1rem, 4vw, 4rem);
+  display: flex;
+  justify-content: flex-start;
+}
+
+.son-trang-experience__back-button {
+  background: none;
+  border: none;
+  color: #577064;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.son-trang-experience__back-button:focus-visible {
+  outline: 2px solid #577064;
+  outline-offset: 4px;
+}
+
+.son-trang-experience__hero {
+  padding: 2rem clamp(1rem, 4vw, 4rem);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .son-trang-experience__hero {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+  }
+}
+
+.son-trang-experience__hero-content h1 {
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  line-height: 1;
+  margin: 0 0 1rem 0;
+  letter-spacing: -0.04em;
+}
+
+.son-trang-experience__category {
+  display: inline-block;
+  color: #577064;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.son-trang-experience__summary {
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.6;
+  color: #52665b;
+  margin-bottom: 2rem;
+}
+
+.son-trang-experience__hero-media {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border-radius: 8px;
+  background-color: #e2e8f0;
+}
+
+.son-trang-experience__hero-media--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #889990;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.son-trang-experience__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.son-trang-experience__button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+}
+
+.son-trang-experience__button:focus-visible {
+  outline: 2px solid #577064;
+  outline-offset: 2px;
+}
+
+.son-trang-experience__button--primary {
+  background-color: #2c3e35;
+  color: #ffffff;
+}
+
+.son-trang-experience__button--primary:hover {
+  background-color: #1a2520;
+}
+
+.son-trang-experience__button--secondary {
+  background-color: transparent;
+  border-color: #2c3e35;
+  color: #2c3e35;
+}
+
+.son-trang-experience__button--secondary:hover {
+  background-color: rgba(44, 62, 53, 0.05);
+}
+
+.son-trang-experience__quick-facts {
+  padding: 2rem clamp(1rem, 4vw, 4rem);
+  background-color: #f4f0e8;
+}
+
+.son-trang-experience__facts-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  font-size: 0.9375rem;
+  color: #2c3e35;
+}
+
+.son-trang-experience__pillars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.son-trang-experience__pillar {
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.son-trang-experience__pillar-title {
+  font-weight: 700;
+  font-size: 1rem;
+  margin: 0;
+  color: #2c3e35;
+}
+
+.son-trang-experience__section {
+  padding: 4rem clamp(1rem, 4vw, 4rem);
+}
+
+.son-trang-experience__section-title {
+  font-size: 2rem;
+  margin: 0 0 2rem 0;
+  letter-spacing: -0.02em;
+}
+
+.son-trang-experience__zones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+}
+
+.son-trang-experience__zone-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.son-trang-experience__zone-media {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  background-color: #e2e8f0;
+}
+
+.son-trang-experience__zone-media--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #889990;
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+.son-trang-experience__zone-content {
+  padding: 1.5rem;
+  flex: 1;
+}
+
+.son-trang-experience__zone-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.son-trang-experience__zone-summary {
+  font-size: 0.9375rem;
+  color: #52665b;
+  line-height: 1.5;
+  margin: 0;
+}
