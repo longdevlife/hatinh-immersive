@@ -53,7 +53,9 @@ describe('SonTrangExperience', () => {
     render(<SonTrangExperience {...defaultProps} />);
 
     // Main aria-label
-    expect(screen.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toBeInTheDocument();
+    const main = screen.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' });
+    expect(main).toBeInTheDocument();
+    expect(main).toHaveAttribute('tabindex', '-1');
 
     // Hero
     expect(screen.getByText('Khu du lịch sinh thái Sơn Trang')).toBeInTheDocument();

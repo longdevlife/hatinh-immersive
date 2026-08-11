@@ -182,6 +182,71 @@ describe('ExploreShell', () => {
     expect(actions.onEnterPanorama).toHaveBeenCalledTimes(1);
   });
 
+  it('moves focus into the information sheet when it opens', async () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+      />,
+    );
+
+    const launcher = screen.getByRole('button', { name: 'Thông tin' });
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng thông tin' }));
+    expect(screen.getByRole('dialog', { hidden: true })).toHaveAttribute('inert');
+
+    fireEvent.click(launcher);
+
+    await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
+    expect(actions.onOpenDestinationInfo).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the information sheet with Escape and restores launcher focus', async () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+      />,
+    );
+
+    const launcher = screen.getByRole('button', { name: 'Thông tin' });
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng thông tin' }));
+    fireEvent.click(launcher);
+    await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Thông tin' })).toHaveFocus());
+    expect(screen.getByRole('button', { name: 'Thông tin' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(actions.onCloseDestinationInfo).toHaveBeenCalledTimes(2);
+  });
+
+  it('restores focus to the Map3D information launcher after Escape closes the sheet', async () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+        map3dLocations={[{ id: 'destination-01', label: 'Sơn Trang Cổ Đạm' }]}
+      />,
+    );
+
+    const launcher = screen.getByRole('button', { name: 'Thông tin' });
+    fireEvent.click(launcher);
+    await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    await waitFor(() => expect(launcher).toHaveFocus());
+  });
+
   it('offers retry when the panorama renderer reports an error', () => {
     const actions = createActions();
 

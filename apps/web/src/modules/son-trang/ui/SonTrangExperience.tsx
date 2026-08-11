@@ -1,4 +1,5 @@
 import React from 'react';
+import type { RefObject } from 'react';
 import type { DestinationCapabilities } from '../../../shared/contracts';
 import type { SonTrangExperienceVm } from '../model/son-trang.types';
 
@@ -9,6 +10,7 @@ export interface SonTrangExperienceProps {
   onOpenMap(): void;
   onEnterPanorama?(): void;
   onEnterSelected3D?(): void;
+  mainRef?: RefObject<HTMLElement | null>;
 }
 
 export function SonTrangExperience({
@@ -18,11 +20,17 @@ export function SonTrangExperience({
   onOpenMap,
   onEnterPanorama,
   onEnterSelected3D,
+  mainRef,
 }: SonTrangExperienceProps) {
   const { destination, pillars, zones } = experience;
 
   return (
-    <main className="son-trang-experience" aria-label="Trải nghiệm Sơn Trang Cổ Đạm">
+    <main
+      ref={mainRef}
+      className="son-trang-experience"
+      aria-label="Trải nghiệm Sơn Trang Cổ Đạm"
+      tabIndex={-1}
+    >
       <header className="son-trang-experience__header">
         <button
           type="button"

@@ -16,6 +16,15 @@ const DEFAULT_ZOOM = 9;
 const DEFAULT_TRANSITION_DURATION = 650;
 const DEFAULT_OVERVIEW_PADDING = 64;
 const DEFAULT_OVERVIEW_MAX_ZOOM = 11;
+const REDUCED_MOTION_MEDIA_QUERY = '(prefers-reduced-motion: reduce)';
+
+function getTransitionDuration(options: ExploreMapOptions): number {
+  if (typeof window !== 'undefined' && window.matchMedia?.(REDUCED_MOTION_MEDIA_QUERY).matches) {
+    return 0;
+  }
+
+  return options.transitionDurationMs ?? DEFAULT_TRANSITION_DURATION;
+}
 
 export type ExploreMapStyle = string | Record<string, unknown>;
 export type ExploreMapCoordinate = [longitude: number, latitude: number];
@@ -372,7 +381,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
 
     this.map.flyTo({
       center: [target.longitude, target.latitude],
-      duration: this.options.transitionDurationMs ?? DEFAULT_TRANSITION_DURATION,
+      duration: getTransitionDuration(this.options),
       ...(target.zoom === undefined ? {} : { zoom: target.zoom }),
     });
   }
@@ -397,7 +406,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     if (coordinates.length === 0) {
       this.map.flyTo({
         center: this.options.center ?? DEFAULT_CENTER,
-        duration: this.options.transitionDurationMs ?? DEFAULT_TRANSITION_DURATION,
+        duration: getTransitionDuration(this.options),
         zoom: this.options.zoom ?? DEFAULT_ZOOM,
       });
       return;
@@ -411,7 +420,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
         [Math.max(...longitudes), Math.max(...latitudes)],
       ],
       {
-        duration: this.options.transitionDurationMs ?? DEFAULT_TRANSITION_DURATION,
+        duration: getTransitionDuration(this.options),
         maxZoom: DEFAULT_OVERVIEW_MAX_ZOOM,
         padding: DEFAULT_OVERVIEW_PADDING,
       },

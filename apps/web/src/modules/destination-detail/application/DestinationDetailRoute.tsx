@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
@@ -51,6 +52,17 @@ export function DestinationDetailRoute({
   const navigate = useNavigate();
   const destinationsQuery = useImmersiveDestinations('vi', destinationsOverride === undefined);
   const destinations = destinationsOverride ?? destinationsQuery.data;
+  const destination = destinations?.find((candidate) => candidate.slug === destinationSlug);
+  const destinationId = destination?.id;
+  const destinationMainRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!destinationId) {
+      return;
+    }
+
+    destinationMainRef.current?.focus({ preventScroll: true });
+  }, [destinationId]);
 
   if (destinationsOverride === undefined && destinationsQuery.isPending) {
     return <DestinationDetailState kind="loading" />;
@@ -60,7 +72,6 @@ export function DestinationDetailRoute({
     return <DestinationDetailState kind="error" />;
   }
 
-  const destination = destinations.find((candidate) => candidate.slug === destinationSlug);
   if (!destination) {
     return <DestinationDetailState kind="not-found" />;
   }
@@ -82,6 +93,7 @@ export function DestinationDetailRoute({
       <SonTrangExperience
         experience={sonTrangExperience}
         capabilities={capabilities}
+        mainRef={destinationMainRef}
         onBackToExplore={onBackToExplore}
         onOpenMap={onOpenMap}
         {...(onEnterPanorama ? { onEnterPanorama } : {})}
@@ -93,6 +105,7 @@ export function DestinationDetailRoute({
   return (
     <DestinationExperience
       destination={view}
+      mainRef={destinationMainRef}
       onBackToExplore={onBackToExplore}
       onOpenMap={onOpenMap}
       {...(onEnterPanorama ? { onEnterPanorama } : {})}

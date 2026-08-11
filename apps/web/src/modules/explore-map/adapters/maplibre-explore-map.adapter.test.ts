@@ -151,6 +151,7 @@ describe('MapLibreExploreMapEngine', () => {
   afterEach(() => {
     FakeMap.autoLoad = true;
     FakeMap.latest = null;
+    vi.unstubAllGlobals();
   });
 
   it('reports a missing style without loading the MapLibre runtime', async () => {
@@ -311,6 +312,47 @@ describe('MapLibreExploreMapEngine', () => {
       center: [105.9, 18.342],
       duration: 650,
       zoom: 9,
+    });
+
+    engine.destroy();
+  });
+
+  it('uses zero camera duration when prefers-reduced-motion is enabled', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({
+        matches: true,
+        media: '(prefers-reduced-motion: reduce)',
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    );
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8 },
+    });
+
+    engine.setState(state);
+    await engine.mount(document.createElement('div'));
+    const map = FakeMap.latest!;
+
+    await engine.flyTo({ latitude: 18.4328, longitude: 105.5871 });
+    await (engine as unknown as { fitOverview(): Promise<void> }).fitOverview();
+
+    expect(map.flyToCalls).toContainEqual({
+      center: [105.5871, 18.4328],
+      duration: 0,
+    });
+    expect(map.fitBoundsCalls).toContainEqual({
+      bounds: [
+        [105.5871, 18.2942],
+        [106.4217, 18.4328],
+      ],
+      options: { duration: 0, maxZoom: 11, padding: 64 },
     });
 
     engine.destroy();

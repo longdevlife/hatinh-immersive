@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as immersiveApi from '../../../shared/api/immersive';
@@ -14,6 +14,16 @@ const destinations = DEMO_DESTINATIONS.map(({ preview }) => preview);
 function LocationProbe() {
   const location = useLocation();
   return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
+}
+
+function DestinationNavigationHarness() {
+  const navigate = useNavigate();
+
+  return (
+    <button type="button" onClick={() => navigate('/explore/son-trang-co-dam')}>
+      Đi đến Sơn Trang
+    </button>
+  );
 }
 
 function renderRoute(
@@ -42,10 +52,36 @@ describe('DestinationDetailRoute', () => {
   it('renders the focused Sơn Trang experience from the destination route', () => {
     renderRoute('/explore/son-trang-co-dam', [destinationFixture, ...destinations]);
 
-    expect(screen.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toBeInTheDocument();
+    expect(screen.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toHaveFocus();
     expect(screen.getByRole('heading', { name: 'Bốn lớp trải nghiệm' })).toBeInTheDocument();
     expect(screen.getByText('Văn hóa & di sản')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Khám phá 360°' })).toBeInTheDocument();
+  });
+
+  it('focuses the new destination landmark and renders Sơn Trang after SPA navigation is ready', async () => {
+    const routeDestinations = [destinationFixture, ...destinations];
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/explore/bien-thien-cam']}>
+          <Routes>
+            <Route
+              path="/explore/:destinationSlug"
+              element={<DestinationDetailRoute destinations={routeDestinations} />}
+            />
+          </Routes>
+          <DestinationNavigationHarness />
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đi đến Sơn Trang' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toHaveFocus();
+      expect(screen.getByRole('heading', { name: 'Bốn lớp trải nghiệm' })).toBeInTheDocument();
+    });
   });
 
   it('enters the Sơn Trang panorama route from the focused CTA', () => {

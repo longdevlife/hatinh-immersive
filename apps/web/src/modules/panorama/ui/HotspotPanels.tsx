@@ -91,7 +91,6 @@ export function HotspotPanel({
       ref={panelRef}
       className={`hotspot-panel hotspot-panel--${type}`}
       role="dialog"
-      aria-modal="true"
       aria-labelledby="hotspot-panel-title"
     >
       <div className="hotspot-panel__header">

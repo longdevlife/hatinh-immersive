@@ -1,5 +1,10 @@
+import type { RefObject } from 'react';
 import type { DestinationExperienceProps } from '../model/destination-detail.types';
 import '../../../app/styles/destination-detail.css';
+
+export interface DestinationExperienceFocusProps {
+  mainRef?: RefObject<HTMLElement | null>;
+}
 
 export function DestinationExperience({
   destination,
@@ -7,7 +12,8 @@ export function DestinationExperience({
   onOpenMap,
   onEnterPanorama,
   onEnterSelected3D,
-}: DestinationExperienceProps) {
+  mainRef,
+}: DestinationExperienceProps & DestinationExperienceFocusProps) {
   const showPanoramaCta = destination.capabilities.hasPanorama && Boolean(onEnterPanorama);
   const show3dCta =
     destination.capabilities.hasSelected3D &&
@@ -16,7 +22,12 @@ export function DestinationExperience({
   const show3dUnavailableStatus = destination.capabilities.selected3DAvailability === 'unavailable';
 
   return (
-    <main className="destination-detail" aria-label="Thông tin điểm đến">
+    <main
+      ref={mainRef}
+      className="destination-detail"
+      aria-label="Thông tin điểm đến"
+      tabIndex={-1}
+    >
       <header className="destination-detail__navbar">
         <button type="button" className="destination-detail__btn-back" onClick={onBackToExplore}>
           <span aria-hidden="true">

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { ImmersiveActions, ImmersiveLocale, ImmersiveViewVm } from '../../../shared/contracts';
 import { Map3DChrome, type Map3DChromeLocation } from '../../map3d';
@@ -140,6 +140,9 @@ export function ExploreShell({
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(readMinimapCollapsedPreference);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const infoPanelRef = useRef<HTMLElement>(null);
+  const topInfoTriggerRef = useRef<HTMLButtonElement>(null);
+  const infoTriggerRef = useRef<HTMLElement | null>(null);
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
 
   useEffect(() => {
@@ -147,12 +150,41 @@ export function ExploreShell({
   }, [hasMap3DChrome, view.mode]);
 
   useEffect(() => {
+    if (!isInfoOpen) {
+      return undefined;
+    }
+
+    infoPanelRef.current?.focus({ preventScroll: true });
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      event.preventDefault();
+      setIsInfoOpen(false);
+      actions.onCloseDestinationInfo();
+    };
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      infoTriggerRef.current?.focus({ preventScroll: true });
+      infoTriggerRef.current = null;
+    };
+  }, [actions, isInfoOpen]);
+
+  useEffect(() => {
     const syncFullscreenState = () => setIsFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener('fullscreenchange', syncFullscreenState);
     return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
   }, []);
 
-  function openInfo() {
+  function openInfo(trigger?: HTMLElement) {
+    infoTriggerRef.current =
+      trigger ??
+      topInfoTriggerRef.current ??
+      (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     setIsInfoOpen(true);
     actions.onOpenDestinationInfo();
   }
@@ -282,9 +314,10 @@ export function ExploreShell({
               </span>
             ) : null}
             <button
+              ref={topInfoTriggerRef}
               className="immersive-button immersive-button--quiet"
               type="button"
-              onClick={openInfo}
+              onClick={() => openInfo()}
               aria-controls="destination-info-panel"
               aria-expanded={isInfoOpen}
               aria-label="Thông tin"
@@ -361,12 +394,14 @@ export function ExploreShell({
       )}
 
       <aside
+        ref={infoPanelRef}
         id="destination-info-panel"
         className={`info-panel ${isInfoOpen ? 'info-panel--open' : ''}`}
         aria-hidden={!isInfoOpen}
         aria-labelledby="destination-info-title"
         inert={!isInfoOpen}
         role="dialog"
+        tabIndex={-1}
       >
         <div className="info-panel__handle" aria-hidden="true" />
         <div className="info-panel__header">

@@ -70,8 +70,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
   border: none;
   background: transparent;
@@ -87,10 +87,14 @@
   height: 1.1rem;
 }
 
-.map3d-chrome__icon-btn:hover,
+.map3d-chrome__icon-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .map3d-chrome__icon-btn:focus-visible {
   background: rgba(255, 255, 255, 0.12);
-  outline: none;
+  outline: 2px solid var(--chrome-accent);
+  outline-offset: 2px;
 }
 
 .map3d-chrome__network {
@@ -138,6 +142,8 @@
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
   transition: all var(--chrome-transition);
+  min-height: max(44px, 2.75rem);
+  box-sizing: border-box;
 }
 
 .map3d-chrome__launcher-toggle svg:not(.map3d-chrome__chevron) {
@@ -157,11 +163,16 @@
   transform: rotate(180deg);
 }
 
-.map3d-chrome__launcher-toggle:hover,
+.map3d-chrome__launcher-toggle:hover {
+  background: rgba(20, 30, 25, 0.85);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
 .map3d-chrome__launcher-toggle:focus-visible {
   background: rgba(20, 30, 25, 0.85);
   border-color: rgba(255, 255, 255, 0.3);
-  outline: none;
+  outline: 2px solid var(--chrome-accent);
+  outline-offset: 2px;
 }
 
 .map3d-chrome__launcher-dropdown {
@@ -201,11 +212,18 @@
   padding: 0.75rem 1rem;
   color: #fff;
   font-size: 0.9rem;
+  min-height: max(44px, 2.75rem);
+  box-sizing: border-box;
 }
 
 .map3d-chrome__search-input:focus {
   outline: none;
   border-color: var(--chrome-accent);
+}
+
+.map3d-chrome__search-input:focus-visible {
+  outline: 2px solid var(--chrome-accent);
+  outline-offset: 1px;
 }
 
 .map3d-chrome__location-list {
@@ -236,12 +254,18 @@
   text-align: left;
   cursor: pointer;
   transition: background var(--chrome-transition);
+  min-height: max(44px, 2.75rem);
+  box-sizing: border-box;
 }
 
-.map3d-chrome__location-btn:hover,
+.map3d-chrome__location-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .map3d-chrome__location-btn:focus-visible {
   background: rgba(255, 255, 255, 0.08);
-  outline: none;
+  outline: 2px solid var(--chrome-accent);
+  outline-offset: -2px;
 }
 
 .map3d-chrome__location-btn--selected {
@@ -294,6 +318,8 @@
   transition: all var(--chrome-transition);
   font-weight: 700;
   font-size: 0.95rem;
+  min-height: max(44px, 2.75rem);
+  box-sizing: border-box;
 }
 
 .map3d-chrome__retry-btn {
@@ -312,6 +338,8 @@
   cursor: pointer;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
   transition: all var(--chrome-transition);
+  min-height: max(44px, 2.75rem);
+  box-sizing: border-box;
 }
 
 .map3d-chrome__retry-btn svg {
@@ -319,11 +347,16 @@
   height: 1.1rem;
 }
 
-.map3d-chrome__retry-btn:hover,
+.map3d-chrome__retry-btn:hover {
+  background: rgba(239, 68, 68, 1);
+  transform: translateY(-4px) scale(1.02);
+}
+
 .map3d-chrome__retry-btn:focus-visible {
   background: rgba(239, 68, 68, 1);
   transform: translateY(-4px) scale(1.02);
-  outline: none;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 .map3d-chrome__spinner {
@@ -368,11 +401,16 @@
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
-.map3d-chrome__enter-360-btn:hover,
+.map3d-chrome__enter-360-btn:hover {
+  background: var(--chrome-accent-hover);
+  transform: translateY(-4px) scale(1.02);
+}
+
 .map3d-chrome__enter-360-btn:focus-visible {
   background: var(--chrome-accent-hover);
   transform: translateY(-4px) scale(1.02);
-  outline: none;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
 }
 
 /* RESPONSIVE */
@@ -400,5 +438,21 @@
     width: 100%;
     justify-content: center;
     padding: 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map3d-chrome__icon-btn,
+  .map3d-chrome__launcher-toggle,
+  .map3d-chrome__chevron,
+  .map3d-chrome__launcher-dropdown,
+  .map3d-chrome__location-btn,
+  .map3d-chrome__handoff,
+  .map3d-chrome__enter-360-btn,
+  .map3d-chrome__retry-btn,
+  .map3d-chrome__spinner {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
   }
 }

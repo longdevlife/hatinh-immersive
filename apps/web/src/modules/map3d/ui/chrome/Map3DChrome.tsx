@@ -28,7 +28,7 @@ export interface Map3DChromeProps {
   onLanguageToggle?: () => void;
   onShare?: () => void;
   onToggleFullscreen?: () => void;
-  onShowInfo?: () => void;
+  onShowInfo?: (trigger?: HTMLElement) => void;
 
   /** User selects a location from the search/list */
   onLocationSelected?: (id: string) => void;
@@ -58,6 +58,7 @@ export function Map3DChrome({
   const [searchQuery, setSearchQuery] = useState('');
   const [isListOpen, setIsListOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const launcherToggleRef = useRef<HTMLButtonElement>(null);
 
   const filteredLocations = locations.filter((loc) =>
     loc.label.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -101,6 +102,7 @@ export function Map3DChrome({
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsListOpen(false);
+        launcherToggleRef.current?.focus({ preventScroll: true });
       }
     }
     if (isListOpen) {
@@ -109,6 +111,25 @@ export function Map3DChrome({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
+  }, [isListOpen]);
+
+  useEffect(() => {
+    if (!isListOpen) {
+      return undefined;
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      event.preventDefault();
+      setIsListOpen(false);
+      launcherToggleRef.current?.focus({ preventScroll: true });
+    }
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
   }, [isListOpen]);
 
   return (
@@ -152,7 +173,7 @@ export function Map3DChrome({
           <button
             type="button"
             className="map3d-chrome__icon-btn"
-            onClick={onShowInfo}
+            onClick={(event) => onShowInfo?.(event.currentTarget)}
             aria-controls="destination-info-panel"
             aria-expanded={isInfoOpen}
             aria-label={labels.info}
@@ -217,6 +238,7 @@ export function Map3DChrome({
       {/* Floating Launcher (Search & List) */}
       <aside className="map3d-chrome__launcher" ref={dropdownRef}>
         <button
+          ref={launcherToggleRef}
           type="button"
           className="map3d-chrome__launcher-toggle"
           onClick={() => setIsListOpen(!isListOpen)}
@@ -278,6 +300,7 @@ export function Map3DChrome({
                     onClick={() => {
                       onLocationSelected?.(loc.id);
                       setIsListOpen(false);
+                      launcherToggleRef.current?.focus({ preventScroll: true });
                     }}
                   >
                     {loc.label}

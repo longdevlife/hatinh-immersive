@@ -29,8 +29,21 @@ describe('DestinationCard', () => {
     render(<DestinationCard destination={mockDestination} selected={true} onSelect={vi.fn()} />);
 
     const card = screen.getByTestId('destination-card-dest-1');
+    const selectionButton = screen.getByRole('button', {
+      name: /chọn điểm đến sơn trang cổ đạm/i,
+    });
     expect(card.className).toContain('destination-card--selected');
     expect(card.getAttribute('aria-current')).toBe('true');
+    expect(selectionButton).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('exposes an unselected state on the selection control', () => {
+    render(<DestinationCard destination={mockDestination} selected={false} onSelect={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: /chọn điểm đến sơn trang cổ đạm/i })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
   });
 
   it('triggers onSelect when clicked', () => {

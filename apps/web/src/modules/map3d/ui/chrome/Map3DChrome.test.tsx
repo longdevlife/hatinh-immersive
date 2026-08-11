@@ -36,6 +36,30 @@ describe('Map3DChrome', () => {
     expect(screen.getByText('Tháp chuông')).toBeInTheDocument();
   });
 
+  it('closes the location launcher with Escape and restores focus to its toggle', () => {
+    render(<Map3DChrome locations={[{ id: '1', label: 'Tượng đài' }]} />);
+
+    const toggle = screen.getByRole('button', { name: 'Tìm kiếm địa điểm' });
+    fireEvent.click(toggle);
+    expect(screen.getByRole('searchbox', { name: 'Tìm kiếm địa điểm' })).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+  });
+
+  it('restores focus to the location launcher after an outside click closes it', () => {
+    render(<Map3DChrome locations={[{ id: '1', label: 'Tượng đài' }]} />);
+
+    const toggle = screen.getByRole('button', { name: 'Tìm kiếm địa điểm' });
+    fireEvent.click(toggle);
+    fireEvent.mouseDown(document.body);
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+  });
+
   it('triggers callbacks when buttons are clicked', () => {
     const onLanguageToggle = vi.fn();
     const onShare = vi.fn();

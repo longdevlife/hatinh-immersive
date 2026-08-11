@@ -48,6 +48,7 @@ describe('HotspotPanels', () => {
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
     expect(dialog).toHaveAttribute('aria-labelledby', 'hotspot-panel-title');
+    expect(dialog).not.toHaveAttribute('aria-modal');
 
     const title = screen.getByRole('heading', { level: 2 });
     expect(title).toHaveTextContent('Đền thờ');

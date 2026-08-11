@@ -36,6 +36,7 @@
   padding: 0;
   opacity: 0.9;
   transition: opacity 0.2s;
+  min-height: max(44px, 2.75rem);
 }
 
 .destination-detail__btn-back:hover {
@@ -206,7 +207,7 @@
 @media (prefers-reduced-motion: reduce) {
   .destination-detail__cta,
   .destination-detail__btn-back {
-    transition: none;
+    transition: none !important;
   }
 }
 

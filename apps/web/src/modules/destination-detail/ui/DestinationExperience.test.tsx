@@ -40,7 +40,9 @@ describe('DestinationExperience', () => {
   it('renders destination decision content without a renderer surface', () => {
     renderExperience();
 
-    expect(screen.getByRole('main', { name: 'Thông tin điểm đến' })).toBeInTheDocument();
+    const main = screen.getByRole('main', { name: 'Thông tin điểm đến' });
+    expect(main).toBeInTheDocument();
+    expect(main).toHaveAttribute('tabindex', '-1');
     expect(screen.getByRole('heading', { name: 'Sơn Trang Cổ Đạm' })).toBeInTheDocument();
     expect(screen.getByText('Di sản & văn hóa')).toBeInTheDocument();
     expect(screen.getByText(baseDestination.summary)).toBeInTheDocument();

@@ -53,6 +53,7 @@ export function DestinationCard({ destination, selected, onSelect }: Destination
         className="destination-card__action"
         onClick={() => onSelect(destination.id)}
         aria-label={`${copy.selectAction} ${destination.name}`}
+        aria-pressed={selected}
       >
         <span className="sr-only">{copy.selectAction}</span>
       </button>
