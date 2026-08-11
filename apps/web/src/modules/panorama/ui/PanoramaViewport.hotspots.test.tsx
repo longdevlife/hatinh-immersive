@@ -34,13 +34,7 @@ describe('PanoramaViewport hotspot synchronization', () => {
 
     await waitFor(() => expect(setHotspots).toHaveBeenCalledTimes(1));
 
-    rerender(
-      <PanoramaViewport
-        engine={engine}
-        node={node}
-        hotspots={[{ ...hotspot }]}
-      />,
-    );
+    rerender(<PanoramaViewport engine={engine} node={node} hotspots={[{ ...hotspot }]} />);
 
     await waitFor(() => expect(setHotspots).toHaveBeenCalledTimes(1));
   });
