@@ -1,17 +1,23 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 
 import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
 
-import { ImmersiveExperience } from '../modules/immersive-navigation';
+import { ExploreExperience } from '../modules/explore';
 import {
   DEMO_DESTINATIONS,
   getDemoManifest,
 } from '../modules/immersive-navigation/fake-mode/demo-catalog';
 import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
 import './styles/index.css';
+
+const LazyImmersiveExperience = lazy(() =>
+  import('../modules/immersive-navigation').then(({ ImmersiveExperience }) => ({
+    default: ImmersiveExperience,
+  })),
+);
 
 const DEFAULT_PUBLIC_DESTINATION_SLUG = 'bien-thien-cam';
 const e2eFailure =
@@ -39,7 +45,33 @@ function FakeImmersiveExperience() {
     ? DEMO_DESTINATIONS.map(({ preview }) => preview)
     : [manifest.destination, ...DEMO_DESTINATIONS.map(({ preview }) => preview)];
 
-  return <ImmersiveExperience destinations={destinations} manifest={manifest} />;
+  return (
+    <Suspense fallback={<ImmersiveRouteLoading />}>
+      <LazyImmersiveExperience destinations={destinations} manifest={manifest} />
+    </Suspense>
+  );
+}
+
+function ImmersiveRouteLoading() {
+  return (
+    <main className="immersive-manifest-state" aria-live="polite" role="status">
+      <p>Đang mở hành trình…</p>
+    </main>
+  );
+}
+
+function PublicImmersiveExperience() {
+  return (
+    <Suspense fallback={<ImmersiveRouteLoading />}>
+      <LazyImmersiveExperience />
+    </Suspense>
+  );
+}
+
+function PublicExplore() {
+  const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
+
+  return <ExploreExperience {...(destinations ? { destinations } : {})} />;
 }
 
 function PublicHome() {
@@ -61,11 +93,7 @@ function PublicHome() {
             Một nền tảng location-first cho hành trình 3D, 360° và những câu chuyện văn hóa được
             tuyển chọn.
           </p>
-          <UiButton
-            tone="primary"
-            type="button"
-            onClick={() => navigate(`/explore/${DEFAULT_PUBLIC_DESTINATION_SLUG}?mode=overview3d`)}
-          >
+          <UiButton tone="primary" type="button" onClick={() => navigate('/explore')}>
             Bắt đầu khám phá
           </UiButton>
         </section>
@@ -83,13 +111,14 @@ export function App() {
         <div className="public-app">
           <Routes>
             <Route path="/" element={<PublicHome />} />
+            <Route path="/explore" element={<PublicExplore />} />
             <Route
               path="/explore/:destinationSlug"
               element={
                 useFakeData && e2eFailure !== 'manifest' ? (
                   <FakeImmersiveExperience />
                 ) : (
-                  <ImmersiveExperience />
+                  <PublicImmersiveExperience />
                 )
               }
             />
