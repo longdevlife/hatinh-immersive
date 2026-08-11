@@ -4,7 +4,9 @@ export {
 } from './application/DestinationDetailRoute';
 export type { DestinationDetailRouteProps } from './application/DestinationDetailRoute';
 export {
+  canEnterSelected3D,
   getDestinationCapabilities,
+  getSelected3DAvailability,
   resolveDestinationCapabilityConfig,
 } from './model/destination-capabilities';
 export type { DestinationCapabilityConfig } from './model/destination-capabilities';

@@ -21,7 +21,8 @@ export default defineConfig({
       ...process.env,
       VITE_IMMERSIVE_RENDERER_MODE: 'fake',
       VITE_IMMERSIVE_DATA_MODE: 'api',
-      VITE_IMMERSIVE_SELECTED_3D_CAPABILITIES: 'son-trang-co-dam=available',
+      VITE_IMMERSIVE_SELECTED_3D_CAPABILITIES:
+        'son-trang-co-dam=available,bien-thien-cam=unavailable',
     },
     reuseExistingServer: false,
     timeout: 120_000,

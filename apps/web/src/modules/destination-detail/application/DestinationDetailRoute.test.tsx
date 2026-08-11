@@ -102,6 +102,9 @@ describe('DestinationDetailRoute', () => {
     });
 
     expect(screen.queryByRole('button', { name: 'Xem 3D' })).not.toBeInTheDocument();
+    expect(screen.getByText('Mô hình 3D khu vực này đang được cập nhật')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Khám phá 360°' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Xem trên bản đồ' })).toBeInTheDocument();
   });
 
   it('renders a destination detail product page without mounting an immersive renderer', () => {

@@ -49,14 +49,28 @@ export function resolveDestinationCapabilityConfig(
   return { selected3DAvailabilityBySlug };
 }
 
+export function getSelected3DAvailability(
+  destinationSlug: string,
+  config: DestinationCapabilityConfig = DEFAULT_DESTINATION_CAPABILITY_CONFIG,
+): Selected3DAvailability {
+  return (
+    config.selected3DAvailabilityBySlug?.[destinationSlug] ??
+    (config.selected3DSlugs?.has(destinationSlug) ? 'available' : 'disabled')
+  );
+}
+
+export function canEnterSelected3D(
+  destinationSlug: string,
+  config: DestinationCapabilityConfig = DEFAULT_DESTINATION_CAPABILITY_CONFIG,
+): boolean {
+  return getSelected3DAvailability(destinationSlug, config) === 'available';
+}
+
 export function getDestinationCapabilities(
   destination: DestinationPreviewVm,
   config: DestinationCapabilityConfig = DEFAULT_DESTINATION_CAPABILITY_CONFIG,
 ): DestinationCapabilities {
-  const configuredAvailability = config.selected3DAvailabilityBySlug?.[destination.slug];
-  const selected3DAvailability =
-    configuredAvailability ??
-    (config.selected3DSlugs?.has(destination.slug) ? 'available' : 'disabled');
+  const selected3DAvailability = getSelected3DAvailability(destination.slug, config);
 
   return {
     hasPanorama: destination.defaultSceneId !== null,

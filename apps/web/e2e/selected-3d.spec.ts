@@ -11,6 +11,20 @@ const destination = {
   summary: 'Hành trình di sản ở Hà Tĩnh.',
 };
 
+const disabledDestination = {
+  ...destination,
+  id: 'destination-02',
+  name: 'Khu lưu niệm Nguyễn Du',
+  slug: 'khu-luu-niem-nguyen-du',
+};
+
+const unavailableDestination = {
+  ...destination,
+  id: 'destination-03',
+  name: 'Biển Thiên Cầm',
+  slug: 'bien-thien-cam',
+};
+
 const manifest = {
   defaultSceneId: 'scene-01',
   destination: {
@@ -43,10 +57,10 @@ const manifest = {
   hotspots: [],
 };
 
-async function mockSelected3DJourney(page: Page) {
+async function mockSelected3DJourney(page: Page, destinations = [destination]) {
   await page.route('**/api/v1/destinations?*', async (route) => {
     await route.fulfill({
-      body: JSON.stringify([destination]),
+      body: JSON.stringify(destinations),
       contentType: 'application/json',
       status: 200,
     });
@@ -59,6 +73,32 @@ async function mockSelected3DJourney(page: Page) {
     });
   });
 }
+
+test('redirects a disabled direct overview link to detail before creating a renderer', async ({
+  page,
+}) => {
+  await mockSelected3DJourney(page, [destination, disabledDestination, unavailableDestination]);
+  await page.goto('/explore/khu-luu-niem-nguyen-du?mode=overview3d');
+
+  await expect(page).toHaveURL('/explore/khu-luu-niem-nguyen-du');
+  await expect(page.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
+  await expect(page.getByRole('application')).toHaveCount(0);
+});
+
+test('redirects an unavailable direct overview link while keeping detail fallbacks available', async ({
+  page,
+}) => {
+  await mockSelected3DJourney(page, [destination, disabledDestination, unavailableDestination]);
+  await page.goto('/explore/bien-thien-cam?mode=overview3d');
+
+  await expect(page).toHaveURL('/explore/bien-thien-cam');
+  await expect(page.getByRole('heading', { name: 'Biển Thiên Cầm' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Xem 3D' })).toHaveCount(0);
+  await expect(page.getByRole('status')).toContainText('Mô hình 3D khu vực này đang được cập nhật');
+  await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Xem trên bản đồ' })).toBeVisible();
+  await expect(page.getByRole('application')).toHaveCount(0);
+});
 
 test('enters enabled selected 3D with the deterministic fake renderer', async ({ page }) => {
   const externalGoogleRequests: string[] = [];

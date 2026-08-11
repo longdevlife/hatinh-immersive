@@ -15,11 +15,14 @@ import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
 
 import {
+  canEnterSelected3D,
+  resolveDestinationCapabilityConfig,
+} from '../modules/destination-detail';
+import {
   DEMO_DESTINATIONS,
   getDemoManifest,
 } from '../modules/immersive-navigation/fake-mode/demo-catalog';
 import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
-import { resolveDestinationCapabilityConfig } from '../modules/destination-detail';
 import './styles/index.css';
 
 const LazyImmersiveExperience = lazy(() =>
@@ -140,8 +143,16 @@ function hasLegacyImmersiveQuery(search: string): boolean {
 function DestinationRoute() {
   const { destinationSlug = '' } = useParams();
   const location = useLocation();
+  const requestedMode = new URLSearchParams(location.search).get('mode');
 
   if (hasLegacyImmersiveQuery(location.search)) {
+    if (
+      requestedMode === 'overview3d' &&
+      !canEnterSelected3D(destinationSlug, destinationCapabilityConfig)
+    ) {
+      return <Navigate replace to={`/explore/${encodeURIComponent(destinationSlug)}`} />;
+    }
+
     return (
       <Navigate
         replace

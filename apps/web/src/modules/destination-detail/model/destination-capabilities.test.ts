@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { DestinationPreviewVm } from '../../../shared/contracts';
 import {
+  canEnterSelected3D,
   getDestinationCapabilities,
   resolveDestinationCapabilityConfig,
   type DestinationCapabilityConfig,
@@ -55,18 +56,35 @@ describe('destination capabilities', () => {
 
   it('maps unavailable selected 3D separately from disabled and never infers it from geoPoint', () => {
     const unavailable = getDestinationCapabilities(
-      createDestination({ geoPoint: { latitude: 18.4, longitude: 105.9 } }),
+      createDestination({
+        defaultSceneId: 'scene-01',
+        geoPoint: { latitude: 18.4, longitude: 105.9 },
+      }),
       { selected3DAvailabilityBySlug: { 'destination-01': 'unavailable' } },
     );
 
     expect(unavailable).toEqual({
-      hasPanorama: false,
+      hasPanorama: true,
       hasSelected3D: false,
       selected3DAvailability: 'unavailable',
     });
     expect(
       getDestinationCapabilities(createDestination({ geoPoint: null })).selected3DAvailability,
     ).toBe('disabled');
+  });
+
+  it('allows overview entry only for explicitly available selected 3D', () => {
+    expect(
+      canEnterSelected3D('destination-01', {
+        selected3DAvailabilityBySlug: { 'destination-01': 'available' },
+      }),
+    ).toBe(true);
+    expect(
+      canEnterSelected3D('destination-01', {
+        selected3DAvailabilityBySlug: { 'destination-01': 'unavailable' },
+      }),
+    ).toBe(false);
+    expect(canEnterSelected3D('destination-01')).toBe(false);
   });
 
   it('keeps selected3DSlugs as an available compatibility input', () => {
