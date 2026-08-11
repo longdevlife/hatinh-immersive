@@ -93,6 +93,30 @@ function PublicImmersiveExperience() {
   );
 }
 
+function ImmersiveRoute() {
+  const { destinationSlug = '' } = useParams();
+  const location = useLocation();
+  const requestedMode = new URLSearchParams(location.search).get('mode');
+  const canEnterPanorama = requestedMode === 'panorama';
+  const canEnterSelected3D = canEnterSelected3DForSlug(destinationSlug, requestedMode);
+
+  if (!canEnterPanorama && !canEnterSelected3D) {
+    return <Navigate replace to={`/explore/${encodeURIComponent(destinationSlug)}`} />;
+  }
+
+  return useFakeData && e2eFailure !== 'manifest' ? (
+    <FakeImmersiveExperience />
+  ) : (
+    <PublicImmersiveExperience />
+  );
+}
+
+function canEnterSelected3DForSlug(destinationSlug: string, requestedMode: string | null): boolean {
+  return (
+    requestedMode !== 'panorama' && canEnterSelected3D(destinationSlug, destinationCapabilityConfig)
+  );
+}
+
 function PublicExplore() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -202,16 +226,7 @@ export function App() {
           <Routes>
             <Route path="/" element={<PublicHome />} />
             <Route path="/explore" element={<PublicExplore />} />
-            <Route
-              path="/explore/:destinationSlug/immersive"
-              element={
-                useFakeData && e2eFailure !== 'manifest' ? (
-                  <FakeImmersiveExperience />
-                ) : (
-                  <PublicImmersiveExperience />
-                )
-              }
-            />
+            <Route path="/explore/:destinationSlug/immersive" element={<ImmersiveRoute />} />
             <Route path="/explore/:destinationSlug" element={<DestinationRoute />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

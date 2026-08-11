@@ -24,6 +24,8 @@ export default defineConfig({
       VITE_EXPLORE_MAP_MODE: 'fake',
       VITE_IMMERSIVE_RENDERER_MODE: 'fake',
       VITE_IMMERSIVE_DATA_MODE: 'fake',
+      VITE_IMMERSIVE_SELECTED_3D_CAPABILITIES:
+        'son-trang-co-dam=available,bien-thien-cam=available',
     },
     reuseExistingServer: false,
     timeout: 120_000,

@@ -85,6 +85,26 @@ test('redirects a disabled direct overview link to detail before creating a rend
   await expect(page.getByRole('application')).toHaveCount(0);
 });
 
+test('redirects a disabled nested overview link before creating a renderer', async ({ page }) => {
+  await mockSelected3DJourney(page, [destination, disabledDestination, unavailableDestination]);
+  await page.goto('/explore/khu-luu-niem-nguyen-du/immersive?mode=overview3d');
+
+  await expect(page).toHaveURL('/explore/khu-luu-niem-nguyen-du');
+  await expect(page.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
+  await expect(page.getByRole('application')).toHaveCount(0);
+});
+
+test('redirects a disabled nested overview link with no mode before creating a renderer', async ({
+  page,
+}) => {
+  await mockSelected3DJourney(page, [destination, disabledDestination, unavailableDestination]);
+  await page.goto('/explore/khu-luu-niem-nguyen-du/immersive');
+
+  await expect(page).toHaveURL('/explore/khu-luu-niem-nguyen-du');
+  await expect(page.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
+  await expect(page.getByRole('application')).toHaveCount(0);
+});
+
 test('redirects an unavailable direct overview link while keeping detail fallbacks available', async ({
   page,
 }) => {
