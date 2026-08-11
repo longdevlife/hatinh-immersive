@@ -1,5 +1,9 @@
+import { useEffect, useMemo, useState } from 'react';
+
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
+import { filterDestinations } from '../../destination-catalog';
+import { DestinationPanel } from '../../destination-catalog/ui';
 
 export interface ExploreExperienceProps {
   destinations?: readonly DestinationPreviewVm[];
@@ -8,6 +12,33 @@ export interface ExploreExperienceProps {
 export function ExploreExperience({ destinations: destinationsOverride }: ExploreExperienceProps) {
   const destinationsQuery = useImmersiveDestinations('vi', destinationsOverride === undefined);
   const destinations = destinationsOverride ?? destinationsQuery.data;
+  const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('');
+  const [isMobileMapOpen, setIsMobileMapOpen] = useState(false);
+  const filteredDestinations = useMemo(
+    () => filterDestinations(destinations, { query, category }),
+    [category, destinations, query],
+  );
+  const selectedDestination = filteredDestinations.find(
+    (destination) => destination.id === selectedDestinationId,
+  );
+
+  useEffect(() => {
+    setSelectedDestinationId((currentId) => {
+      if (currentId && filteredDestinations.some((destination) => destination.id === currentId)) {
+        return currentId;
+      }
+
+      return filteredDestinations[0]?.id ?? null;
+    });
+  }, [filteredDestinations]);
+
+  function handleSelectDestination(destinationId: string) {
+    if (filteredDestinations.some((destination) => destination.id === destinationId)) {
+      setSelectedDestinationId(destinationId);
+    }
+  }
 
   return (
     <main className="explore-experience" aria-labelledby="explore-title">
@@ -21,27 +52,31 @@ export function ExploreExperience({ destinations: destinationsOverride }: Explor
         <section className="explore-experience__destinations" aria-label="Danh sách điểm đến">
           {destinationsQuery.isLoading && destinationsOverride === undefined ? (
             <p role="status">Đang tải điểm đến…</p>
-          ) : destinations.length > 0 ? (
-            <ul>
-              {destinations.map((destination) => (
-                <li key={destination.id}>
-                  <strong>{destination.name}</strong>
-                  <span>{destination.categoryLabel ?? 'Điểm đến'}</span>
-                </li>
-              ))}
-            </ul>
           ) : (
-            <p role="status">Chưa có điểm đến để hiển thị.</p>
+            <DestinationPanel
+              destinations={filteredDestinations}
+              selectedDestinationId={selectedDestinationId}
+              query={query}
+              category={category}
+              onQueryChange={setQuery}
+              onCategoryChange={setCategory}
+              onSelectDestination={handleSelectDestination}
+              onOpenMap={() => setIsMobileMapOpen(true)}
+            />
           )}
         </section>
 
         <section
           className="explore-experience__map-placeholder"
           aria-label="Bản đồ khám phá"
+          data-map-open={isMobileMapOpen}
           data-testid="explore-map-placeholder"
         >
           <span>Bản đồ khám phá sẽ xuất hiện ở đây.</span>
           <small>MapLibre Explore Map sẽ được tích hợp ở PR2.</small>
+          {selectedDestination ? (
+            <p aria-live="polite">Đang chọn: {selectedDestination.name}</p>
+          ) : null}
         </section>
       </div>
     </main>
