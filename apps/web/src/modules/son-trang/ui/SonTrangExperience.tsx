@@ -52,14 +52,22 @@ export function SonTrangExperience({
               </button>
             )}
 
-            {capabilities.hasSelected3D && onEnterSelected3D && (
-              <button
-                type="button"
-                className="son-trang-experience__button son-trang-experience__button--primary son-trang-experience__touch-target"
-                onClick={onEnterSelected3D}
-              >
-                Xem 3D
-              </button>
+            {capabilities.hasSelected3D &&
+              capabilities.selected3DAvailability === 'available' &&
+              onEnterSelected3D && (
+                <button
+                  type="button"
+                  className="son-trang-experience__button son-trang-experience__button--primary son-trang-experience__touch-target"
+                  onClick={onEnterSelected3D}
+                >
+                  Xem 3D
+                </button>
+              )}
+
+            {capabilities.selected3DAvailability === 'unavailable' && (
+              <p role="status" className="son-trang-experience__status-notice">
+                Mô hình 3D khu vực này đang được cập nhật
+              </p>
             )}
 
             {destination.geoPoint !== null && (

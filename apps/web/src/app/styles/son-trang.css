@@ -95,6 +95,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+  align-items: center;
 }
 
 .son-trang-experience__button {
@@ -109,6 +110,8 @@
   align-items: center;
   justify-content: center;
   min-width: 120px;
+  min-height: max(44px, 2.75rem);
+  box-sizing: border-box;
 }
 
 .son-trang-experience__button:focus-visible {
@@ -133,6 +136,27 @@
 
 .son-trang-experience__button--secondary:hover {
   background-color: rgba(44, 62, 53, 0.05);
+}
+
+.son-trang-experience__status-notice {
+  font-size: 0.95rem;
+  color: #52665b;
+  background-color: rgba(44, 62, 53, 0.04);
+  border: 1px solid rgba(44, 62, 53, 0.08);
+  padding: 0.875rem 1.25rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  min-height: max(44px, 2.75rem);
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .son-trang-experience__button,
+  .son-trang-experience__back-button {
+    transition: none;
+  }
 }
 
 .son-trang-experience__quick-facts {

@@ -9,7 +9,11 @@ export function DestinationExperience({
   onEnterSelected3D,
 }: DestinationExperienceProps) {
   const showPanoramaCta = destination.capabilities.hasPanorama && Boolean(onEnterPanorama);
-  const show3dCta = destination.capabilities.hasSelected3D && Boolean(onEnterSelected3D);
+  const show3dCta =
+    destination.capabilities.hasSelected3D &&
+    destination.capabilities.selected3DAvailability === 'available' &&
+    Boolean(onEnterSelected3D);
+  const show3dUnavailableStatus = destination.capabilities.selected3DAvailability === 'unavailable';
 
   return (
     <main className="destination-detail" aria-label="Thông tin điểm đến">
@@ -96,6 +100,12 @@ export function DestinationExperience({
               >
                 Xem 3D
               </button>
+            )}
+
+            {show3dUnavailableStatus && (
+              <p role="status" className="destination-detail__status-notice">
+                Mô hình 3D khu vực này đang được cập nhật
+              </p>
             )}
 
             {destination.hasMapLocation && (
