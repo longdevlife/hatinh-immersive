@@ -50,4 +50,19 @@ describe('public application shell', () => {
       expect(screen.getByRole('heading', { name: 'Khám phá Hà Tĩnh' })).toBeInTheDocument();
     });
   });
+
+  it('migrates legacy immersive query links to the explicit immersive route', async () => {
+    window.history.pushState(
+      {},
+      '',
+      '/explore/bien-thien-cam?mode=panorama&scene=thien-cam-boardwalk',
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/explore/bien-thien-cam/immersive');
+      expect(window.location.search).toBe('?mode=panorama&scene=thien-cam-boardwalk');
+    });
+  });
 });

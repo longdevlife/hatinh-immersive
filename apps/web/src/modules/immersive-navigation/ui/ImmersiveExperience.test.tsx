@@ -57,6 +57,16 @@ function renderRoutedExperience(
               />
             }
           />
+          <Route
+            path="/explore/:destinationSlug/immersive"
+            element={
+              <RoutedExperience
+                destinations={destinations}
+                factories={factories}
+                manifests={manifests}
+              />
+            }
+          />
         </Routes>
         <LocationProbe />
       </MemoryRouter>
@@ -80,6 +90,16 @@ function renderExperience(
         <Routes>
           <Route
             path="/explore/:destinationSlug"
+            element={
+              <ImmersiveExperience
+                factories={factories}
+                manifest={manifest}
+                {...(destinations === undefined ? {} : { destinations })}
+              />
+            }
+          />
+          <Route
+            path="/explore/:destinationSlug/immersive"
             element={
               <ImmersiveExperience
                 factories={factories}
@@ -188,7 +208,7 @@ describe('ImmersiveExperience', () => {
 
   it('mounts the overview renderer, then hands off to one panorama renderer', async () => {
     const { factories, map3d, minimap, panorama } = createFactories();
-    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories);
+    renderExperience('/explore/son-trang-co-dam/immersive?mode=overview3d', factories);
 
     await waitFor(() => {
       expect(map3d.calls.some((call) => call.type === 'mount')).toBe(true);
@@ -207,7 +227,7 @@ describe('ImmersiveExperience', () => {
     expect(factories.createMinimapEngine).toHaveBeenCalledTimes(1);
     expect(map3d.calls.at(-1)).toEqual({ type: 'destroy' });
     expect(screen.getByTestId('location')).toHaveTextContent(
-      '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
+      '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
@@ -223,7 +243,7 @@ describe('ImmersiveExperience', () => {
     const { factories, map3d } = createFactories();
     const manifest = { ...createFakeImmersiveManifest(), panoramaNodes: [] };
 
-    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories, manifest);
+    renderExperience('/explore/son-trang-co-dam/immersive?mode=overview3d', factories, manifest);
 
     await waitFor(() => {
       expect(map3d.calls.some((call) => call.type === 'mount')).toBe(true);
@@ -234,7 +254,7 @@ describe('ImmersiveExperience', () => {
 
   it('routes a Google 3D marker selection through the location selection state', async () => {
     const { factories, map3d } = createFactories();
-    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories);
+    renderExperience('/explore/son-trang-co-dam/immersive?mode=overview3d', factories);
 
     await waitFor(() => {
       expect(map3d.calls.some((call) => call.type === 'setLocations')).toBe(true);
@@ -250,7 +270,7 @@ describe('ImmersiveExperience', () => {
         selectedLocationId: 'destination-son-trang-co-dam',
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=overview3d&location=destination-son-trang-co-dam',
+        '/explore/son-trang-co-dam/immersive?mode=overview3d&location=destination-son-trang-co-dam',
       );
     });
   });
@@ -269,7 +289,7 @@ describe('ImmersiveExperience', () => {
       geoPoint: { latitude: 18.4, longitude: 105.9 },
     };
 
-    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories, manifest, [
+    renderExperience('/explore/son-trang-co-dam/immersive?mode=overview3d', factories, manifest, [
       manifest.destination,
       destinationWithoutPreset,
     ]);
@@ -360,7 +380,12 @@ describe('ImmersiveExperience', () => {
       },
     ];
 
-    renderExperience('/explore/son-trang-co-dam?mode=overview3d', factories, manifest, locations);
+    renderExperience(
+      '/explore/son-trang-co-dam/immersive?mode=overview3d',
+      factories,
+      manifest,
+      locations,
+    );
 
     await waitFor(() => {
       expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
@@ -374,7 +399,7 @@ describe('ImmersiveExperience', () => {
         preset: { center: { lat: 18.4, lng: 105.9 } },
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=overview3d&location=destination-b',
+        '/explore/son-trang-co-dam/immersive?mode=overview3d&location=destination-b',
       );
     });
 
@@ -388,7 +413,7 @@ describe('ImmersiveExperience', () => {
       });
       expect(screen.getByRole('heading', { name: 'Điểm C' })).toBeInTheDocument();
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=overview3d&location=destination-c',
+        '/explore/son-trang-co-dam/immersive?mode=overview3d&location=destination-c',
       );
     });
   });
@@ -400,7 +425,12 @@ describe('ImmersiveExperience', () => {
     const manifest = getDemoManifest('bien-thien-cam');
     const locations = DEMO_DESTINATIONS.map(({ preview }) => preview);
 
-    renderExperience('/explore/bien-thien-cam?mode=overview3d', factories, manifest, locations);
+    renderExperience(
+      '/explore/bien-thien-cam/immersive?mode=overview3d',
+      factories,
+      manifest,
+      locations,
+    );
 
     try {
       await map3d.locationsStarted;
@@ -428,7 +458,7 @@ describe('ImmersiveExperience', () => {
 
       expect(map3d.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/bien-thien-cam?mode=overview3d&location=dong-loc-junction',
+        '/explore/bien-thien-cam/immersive?mode=overview3d&location=dong-loc-junction',
       );
     } finally {
       await act(async () => {
@@ -489,7 +519,7 @@ describe('ImmersiveExperience', () => {
     const destinations = [manifestA.destination, destinationB];
 
     renderRoutedExperience(
-      '/explore/son-trang-co-dam?mode=overview3d',
+      '/explore/son-trang-co-dam/immersive?mode=overview3d',
       factories,
       {
         'son-trang-co-dam': manifestA,
@@ -510,7 +540,7 @@ describe('ImmersiveExperience', () => {
       expect(panorama.loadedNode?.id).toBe('scene-b');
       expect(panorama.currentView).toEqual(destinationBEntryView);
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/location-b?mode=panorama&location=destination-b&scene=scene-b&h=137&p=-8&fov=76',
+        '/explore/location-b/immersive?mode=panorama&location=destination-b&scene=scene-b&h=137&p=-8&fov=76',
       );
     });
 
@@ -525,7 +555,7 @@ describe('ImmersiveExperience', () => {
         preset: { center: { lat: 18.4, lng: 105.9 } },
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/location-b?mode=overview3d&location=destination-b',
+        '/explore/location-b/immersive?mode=overview3d&location=destination-b',
       );
     });
   });
@@ -537,7 +567,7 @@ describe('ImmersiveExperience', () => {
     const destinations = DEMO_DESTINATIONS.map(({ preview }) => preview);
 
     renderRoutedExperience(
-      '/explore/bien-thien-cam?mode=overview3d',
+      '/explore/bien-thien-cam/immersive?mode=overview3d',
       factories,
       {
         'bien-thien-cam': thienCamManifest,
@@ -557,7 +587,7 @@ describe('ImmersiveExperience', () => {
     await waitFor(() => {
       expect(panorama.loadedNode?.id).toBe('nguyen-du-courtyard');
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/khu-luu-niem-nguyen-du?mode=panorama&location=nguyen-du-memorial&scene=nguyen-du-courtyard',
+        '/explore/khu-luu-niem-nguyen-du/immersive?mode=panorama&location=nguyen-du-memorial&scene=nguyen-du-courtyard',
       );
     });
 
@@ -572,7 +602,7 @@ describe('ImmersiveExperience', () => {
         preset: DEMO_DESTINATIONS[1]?.location.cameraPreset,
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/khu-luu-niem-nguyen-du?mode=overview3d&location=nguyen-du-memorial',
+        '/explore/khu-luu-niem-nguyen-du/immersive?mode=overview3d&location=nguyen-du-memorial',
       );
     });
   });
@@ -580,7 +610,7 @@ describe('ImmersiveExperience', () => {
   it('restores the linked scene and camera after a refresh', async () => {
     const { factories, panorama } = createFactories();
     renderExperience(
-      '/explore/son-trang-co-dam?mode=panorama&scene=scene-02&h=123.4&p=-7&fov=82',
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=scene-02&h=123.4&p=-7&fov=82',
       factories,
     );
 
@@ -609,7 +639,7 @@ describe('ImmersiveExperience', () => {
     });
 
     renderExperience(
-      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
       factories,
     );
 
@@ -625,7 +655,7 @@ describe('ImmersiveExperience', () => {
     });
     await waitFor(() => {
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
+        '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
       );
     });
   });
@@ -634,7 +664,7 @@ describe('ImmersiveExperience', () => {
     const panorama = new DeferredPanoramaEngine();
     const { factories } = createFactories(panorama);
     renderExperience(
-      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=12&p=-3&fov=84',
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=scene-01&h=12&p=-3&fov=84',
       factories,
     );
 
@@ -684,7 +714,7 @@ describe('ImmersiveExperience', () => {
     const panorama = new DeferredPanoramaEngine();
     const { factories } = createFactories(panorama);
     renderExperience(
-      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
       factories,
     );
 
@@ -715,7 +745,7 @@ describe('ImmersiveExperience', () => {
         requestedSceneId: null,
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
+        '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
       );
     });
   });
@@ -724,7 +754,7 @@ describe('ImmersiveExperience', () => {
     const panorama = new DeferredPanoramaEngine();
     const { factories } = createFactories(panorama);
     renderExperience(
-      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
       factories,
     );
 
@@ -739,14 +769,14 @@ describe('ImmersiveExperience', () => {
       expect(panorama.loadRequests.get('scene-02')).toBeDefined();
     });
     expect(screen.getByTestId('location')).toHaveTextContent(
-      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
     );
 
     panorama.loadRequests.get('scene-02')?.resolve();
 
     await waitFor(() => {
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-02&h=31&p=-2&fov=88',
+        '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-02&h=31&p=-2&fov=88',
       );
     });
     expect(panorama.currentView).toEqual({ heading: 31, pitch: -2, fov: 88 });
@@ -762,7 +792,7 @@ describe('ImmersiveExperience', () => {
     const manifest = createFakeImmersiveManifest();
     const { factories } = createFactories(panorama);
     renderExperience(
-      '/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=12&p=-3&fov=84',
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=scene-01&h=12&p=-3&fov=84',
       factories,
     );
 
@@ -785,7 +815,7 @@ describe('ImmersiveExperience', () => {
         requestedSceneId: null,
       });
       expect(screen.getByTestId('location')).toHaveTextContent(
-        '/explore/son-trang-co-dam?mode=panorama&location=destination-son-trang-co-dam&scene=scene-02&h=214&p=-6&fov=73',
+        '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-02&h=214&p=-6&fov=73',
       );
     });
     expect(panorama.currentView).toEqual(rendererView);

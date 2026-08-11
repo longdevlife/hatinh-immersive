@@ -1,0 +1,86 @@
+import { useNavigate, useParams } from 'react-router-dom';
+
+import { useImmersiveDestinations } from '../../../shared/api/immersive';
+import type { DestinationPreviewVm } from '../../../shared/contracts';
+import { getDestinationCapabilities } from '../model/destination-capabilities';
+import {
+  createDestinationImmersiveHref,
+  createExploreMapHref,
+} from '../model/destination-detail-links';
+import { toDestinationDetailViewModel } from '../model/destination-detail.types';
+import { DestinationExperience } from '../ui/DestinationExperience';
+
+export interface DestinationDetailRouteProps {
+  destinations?: readonly DestinationPreviewVm[];
+}
+
+function DestinationDetailState({ kind }: { kind: 'loading' | 'error' | 'not-found' }) {
+  const state = {
+    loading: {
+      message: 'Đang tải thông tin điểm đến…',
+      role: 'status',
+    },
+    error: {
+      message: 'Không thể tải thông tin điểm đến. Vui lòng thử lại sau.',
+      role: 'alert',
+    },
+    'not-found': {
+      message: 'Không tìm thấy điểm đến này.',
+      role: 'alert',
+    },
+  } as const;
+  const current = state[kind];
+
+  return (
+    <main className="destination-detail-state" aria-live="polite" role={current.role}>
+      <p>{current.message}</p>
+    </main>
+  );
+}
+
+export function DestinationDetailRoute({
+  destinations: destinationsOverride,
+}: DestinationDetailRouteProps) {
+  const { destinationSlug } = useParams<{ destinationSlug: string }>();
+  const navigate = useNavigate();
+  const destinationsQuery = useImmersiveDestinations('vi', destinationsOverride === undefined);
+  const destinations = destinationsOverride ?? destinationsQuery.data;
+
+  if (destinationsOverride === undefined && destinationsQuery.isPending) {
+    return <DestinationDetailState kind="loading" />;
+  }
+
+  if (destinationsOverride === undefined && destinationsQuery.isError) {
+    return <DestinationDetailState kind="error" />;
+  }
+
+  const destination = destinations.find((candidate) => candidate.slug === destinationSlug);
+  if (!destination) {
+    return <DestinationDetailState kind="not-found" />;
+  }
+
+  const capabilities = getDestinationCapabilities(destination);
+  const view = toDestinationDetailViewModel(destination, capabilities);
+
+  return (
+    <DestinationExperience
+      destination={view}
+      onBackToExplore={() => navigate('/explore')}
+      onOpenMap={() => navigate(createExploreMapHref(destination.slug))}
+      {...(capabilities.hasPanorama
+        ? {
+            onEnterPanorama: () =>
+              navigate(createDestinationImmersiveHref(destination, 'panorama')),
+          }
+        : {})}
+      {...(capabilities.hasSelected3D
+        ? {
+            onEnterSelected3D: () =>
+              navigate(createDestinationImmersiveHref(destination, 'overview3d')),
+          }
+        : {})}
+    />
+  );
+}
+
+export { DestinationDetailState };

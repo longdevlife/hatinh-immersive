@@ -219,7 +219,7 @@ test('keeps one 3D world while selecting a destination and round-tripping throug
   await expect(renderer).toHaveAttribute('data-e2e-map3d-last-lat', '18.268');
   await expect(renderer).toHaveAttribute('data-e2e-map3d-last-lng', '106.105');
   await expect(page).toHaveURL(
-    /\/explore\/son-trang-co-dam\?mode=overview3d&location=destination-b$/,
+    /\/explore\/son-trang-co-dam\/immersive\?mode=overview3d&location=destination-b$/,
   );
 
   await page.getByRole('button', { name: 'Tìm kiếm địa điểm' }).click();
@@ -234,19 +234,19 @@ test('keeps one 3D world while selecting a destination and round-tripping throug
 
   await page.getByRole('button', { name: 'Khám phá 360°' }).click();
   await expect(page).toHaveURL(
-    /\/explore\/thanh-co-ha-tinh\?mode=panorama&location=destination-c&scene=scene-c&h=0&p=0&fov=90$/,
+    /\/explore\/thanh-co-ha-tinh\/immersive\?mode=panorama&location=destination-c&scene=scene-c&h=0&p=0&fov=90$/,
   );
   await expect(page.getByRole('heading', { name: 'Toàn cảnh Thành cổ' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Quay lại không gian 3D' }).click();
   await expect(page).toHaveURL(
-    /\/explore\/thanh-co-ha-tinh\?mode=overview3d&location=destination-c$/,
+    /\/explore\/thanh-co-ha-tinh\/immersive\?mode=overview3d&location=destination-c$/,
   );
   await expect(page.getByRole('heading', { name: destinationC.name })).toBeVisible();
 
   await page.reload();
   await expect(page.getByRole('heading', { name: destinationC.name })).toBeVisible();
   await expect(page).toHaveURL(
-    /\/explore\/thanh-co-ha-tinh\?mode=overview3d&location=destination-c$/,
+    /\/explore\/thanh-co-ha-tinh\/immersive\?mode=overview3d&location=destination-c$/,
   );
 });

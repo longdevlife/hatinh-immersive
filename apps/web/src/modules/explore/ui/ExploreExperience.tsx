@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
@@ -15,6 +15,8 @@ import {
 export interface ExploreExperienceProps {
   destinations?: readonly DestinationPreviewVm[];
   mapEngine?: ExploreMapEnginePort;
+  initialDestinationSlug?: string;
+  onOpenDestination?(destination: DestinationPreviewVm): void;
 }
 
 const MOBILE_VIEWPORT_QUERY = '(max-width: 768px)';
@@ -93,6 +95,8 @@ function createDefaultExploreMapEngine(): ExploreMapEnginePort {
 export function ExploreExperience({
   destinations: destinationsOverride,
   mapEngine: mapEngineOverride,
+  initialDestinationSlug,
+  onOpenDestination,
 }: ExploreExperienceProps) {
   const destinationsQuery = useImmersiveDestinations('vi', destinationsOverride === undefined);
   const destinations = destinationsOverride ?? destinationsQuery.data;
@@ -104,6 +108,7 @@ export function ExploreExperience({
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [isMobileMapOpen, setIsMobileMapOpen] = useState(false);
+  const appliedInitialDestinationSlug = useRef<string | null>(null);
   const isMobileViewport = useIsMobileViewport();
   const exploreMode = isMobileViewport && !isMobileMapOpen ? 'destination-list' : 'map';
   const filteredDestinations = useMemo(
@@ -131,6 +136,24 @@ export function ExploreExperience({
       return null;
     });
   }, [filteredDestinations]);
+
+  useEffect(() => {
+    if (
+      !initialDestinationSlug ||
+      appliedInitialDestinationSlug.current === initialDestinationSlug ||
+      (destinationsOverride === undefined && destinationsQuery.isLoading)
+    ) {
+      return;
+    }
+
+    const destination = destinations.find(({ slug }) => slug === initialDestinationSlug);
+    if (!destination) {
+      return;
+    }
+
+    appliedInitialDestinationSlug.current = initialDestinationSlug;
+    setSelectedDestinationId(destination.id);
+  }, [destinations, destinationsOverride, destinationsQuery.isLoading, initialDestinationSlug]);
 
   function handleSelectDestination(destinationId: string) {
     if (filteredDestinations.some((destination) => destination.id === destinationId)) {
@@ -192,13 +215,22 @@ export function ExploreExperience({
             selectedDestinationId={selectedDestinationId}
           />
           {selectedDestination ? (
-            <p
+            <div
               aria-live="polite"
               className="explore-experience__selection"
               data-testid="explore-selected-destination"
             >
-              Đang chọn: {selectedDestination.name}
-            </p>
+              <p>Đang chọn: {selectedDestination.name}</p>
+              {onOpenDestination ? (
+                <button
+                  type="button"
+                  className="explore-experience__detail-action"
+                  onClick={() => onOpenDestination(selectedDestination)}
+                >
+                  Xem chi tiết
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </section>
       </div>

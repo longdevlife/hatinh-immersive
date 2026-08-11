@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ComponentProps } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import * as immersiveApi from '../../../shared/api/immersive';
@@ -10,14 +11,17 @@ import { ExploreExperience } from './ExploreExperience';
 
 const destinations = DEMO_DESTINATIONS.map(({ preview }) => preview);
 
-function renderExplore(mapEngine = new FakeExploreMapEngine()) {
+function renderExplore(
+  mapEngine = new FakeExploreMapEngine(),
+  props: Partial<ComponentProps<typeof ExploreExperience>> = {},
+) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <ExploreExperience destinations={destinations} mapEngine={mapEngine} />
+      <ExploreExperience destinations={destinations} mapEngine={mapEngine} {...props} />
     </QueryClientProvider>,
   );
 }
@@ -94,6 +98,30 @@ describe('ExploreExperience', () => {
       'true',
     );
     expect(screen.getByText('Đang chọn: Khu lưu niệm Nguyễn Du')).toBeInTheDocument();
+  });
+
+  it('opens the selected destination through the detail callback', () => {
+    const onOpenDestination = vi.fn();
+    renderExplore(new FakeExploreMapEngine(), { onOpenDestination });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chọn điểm đến Khu lưu niệm Nguyễn Du' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết' }));
+
+    expect(onOpenDestination).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: 'khu-luu-niem-nguyen-du' }),
+    );
+  });
+
+  it('restores a destination selected by the detail map return query', async () => {
+    const mapEngine = new FakeExploreMapEngine();
+    renderExplore(mapEngine, { initialDestinationSlug: 'bien-thien-cam' });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('destination-card-thien-cam-beach')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    );
   });
 
   it('starts with the Hà Tĩnh overview and does not fly to the first destination', async () => {

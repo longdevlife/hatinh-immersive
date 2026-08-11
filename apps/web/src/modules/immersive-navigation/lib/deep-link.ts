@@ -3,7 +3,8 @@ import type { ImmersiveMode } from '../../../shared/contracts';
 import { DEFAULT_NAVIGATION_VIEW, normalizeNavigationView } from '../model/navigation.view';
 import type { NavigationView } from '../model/navigation.types';
 
-const EXPLORE_PATH = /^\/explore\/([^/]+)\/?$/;
+const IMMERSIVE_EXPLORE_PATH = /^\/explore\/([^/]+)\/immersive\/?$/;
+const LEGACY_EXPLORE_PATH = /^\/explore\/([^/]+)\/?$/;
 const DEFAULT_ORIGIN = 'https://immersive.hatinh.local';
 
 export interface ImmersiveDeepLinkState {
@@ -68,7 +69,7 @@ export function encodeImmersiveDeepLink(state: ImmersiveDeepLinkState): string {
     params.set('fov', formatNumber(view.fov));
   }
 
-  return `/explore/${encodeURIComponent(state.destinationSlug)}?${params.toString()}`;
+  return `/explore/${encodeURIComponent(state.destinationSlug)}/immersive?${params.toString()}`;
 }
 
 export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState | null {
@@ -79,7 +80,7 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
     return null;
   }
 
-  const match = EXPLORE_PATH.exec(url.pathname);
+  const match = IMMERSIVE_EXPLORE_PATH.exec(url.pathname) ?? LEGACY_EXPLORE_PATH.exec(url.pathname);
   if (!match?.[1]) {
     return null;
   }

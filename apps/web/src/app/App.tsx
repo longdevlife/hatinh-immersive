@@ -1,6 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { lazy, Suspense, useMemo } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router-dom';
 
 import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
@@ -21,6 +30,12 @@ const LazyImmersiveExperience = lazy(() =>
 const LazyExploreExperience = lazy(() =>
   import('../modules/explore').then(({ ExploreExperience }) => ({
     default: ExploreExperience,
+  })),
+);
+
+const LazyDestinationDetailRoute = lazy(() =>
+  import('../modules/destination-detail').then(({ DestinationDetailRoute }) => ({
+    default: DestinationDetailRoute,
   })),
 );
 
@@ -74,13 +89,63 @@ function PublicImmersiveExperience() {
 }
 
 function PublicExplore() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
+  const initialDestinationSlug = searchParams.get('destination') ?? undefined;
 
   return (
     <Suspense fallback={<ImmersiveRouteLoading />}>
-      <LazyExploreExperience {...(destinations ? { destinations } : {})} />
+      <LazyExploreExperience
+        {...(destinations ? { destinations } : {})}
+        {...(initialDestinationSlug ? { initialDestinationSlug } : {})}
+        onOpenDestination={(destination) =>
+          navigate(`/explore/${encodeURIComponent(destination.slug)}`)
+        }
+      />
     </Suspense>
   );
+}
+
+function PublicDestinationDetail() {
+  const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
+
+  return (
+    <Suspense fallback={<DestinationRouteLoading />}>
+      <LazyDestinationDetailRoute {...(destinations ? { destinations } : {})} />
+    </Suspense>
+  );
+}
+
+function DestinationRouteLoading() {
+  return (
+    <main className="destination-detail-state" aria-live="polite" role="status">
+      <p>Đang tải thông tin điểm đến…</p>
+    </main>
+  );
+}
+
+function hasLegacyImmersiveQuery(search: string): boolean {
+  const params = new URLSearchParams(search);
+  return ['mode', 'location', 'scene', 'h', 'p', 'fov', 'e2eFailure'].some((key) =>
+    params.has(key),
+  );
+}
+
+function DestinationRoute() {
+  const { destinationSlug = '' } = useParams();
+  const location = useLocation();
+
+  if (hasLegacyImmersiveQuery(location.search)) {
+    return (
+      <Navigate
+        replace
+        to={`/explore/${encodeURIComponent(destinationSlug)}/immersive${location.search}`}
+      />
+    );
+  }
+
+  return <PublicDestinationDetail />;
 }
 
 function PublicHome() {
@@ -122,7 +187,7 @@ export function App() {
             <Route path="/" element={<PublicHome />} />
             <Route path="/explore" element={<PublicExplore />} />
             <Route
-              path="/explore/:destinationSlug"
+              path="/explore/:destinationSlug/immersive"
               element={
                 useFakeData && e2eFailure !== 'manifest' ? (
                   <FakeImmersiveExperience />
@@ -131,6 +196,7 @@ export function App() {
                 )
               }
             />
+            <Route path="/explore/:destinationSlug" element={<DestinationRoute />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

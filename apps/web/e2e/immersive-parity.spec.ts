@@ -172,7 +172,7 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
   await expect(page.getByRole('button', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
   await page.getByRole('button', { name: 'Khu lưu niệm Nguyễn Du' }).click();
   await expect(page).toHaveURL(
-    /\/explore\/son-trang-co-dam\?mode=overview3d&location=nguyen-du-memorial$/,
+    /\/explore\/son-trang-co-dam\/immersive\?mode=overview3d&location=nguyen-du-memorial$/,
   );
   await expect(page.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
 });

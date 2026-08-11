@@ -604,7 +604,13 @@ export function ImmersiveExperience({
 
       useImmersiveNavigation.getState().selectLocation(locationToSelect);
       navigate(
-        `/explore/${encodeURIComponent(destinationSlug)}?mode=overview3d&location=${encodeURIComponent(locationId)}`,
+        encodeImmersiveDeepLink({
+          destinationSlug,
+          mode: 'overview3d',
+          locationId,
+          sceneId: null,
+          view: DEFAULT_NAVIGATION_VIEW,
+        }),
       );
     },
     [destinationSlug, destinations, manifest, mapLocations, navigate],
