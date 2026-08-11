@@ -52,6 +52,13 @@ test('loads renderer code only after entering the immersive journey', async ({ p
 
   await page.goto('/');
   await page.getByRole('button', { name: 'Bắt đầu khám phá' }).click();
+  await expect(page).toHaveURL(/\/explore$/);
+  await expect(page.locator('#explore-title')).toBeVisible();
+
+  const discoveryRendererRequests = requests.filter((url) => rendererModuleRequest.test(url));
+  expect(discoveryRendererRequests).toEqual([]);
+
+  await page.goto('/explore/bien-thien-cam?mode=overview3d');
   await expect(page.locator('[data-renderer-status="ready"]')).toHaveCount(1);
 
   expect(requests.filter((url) => rendererModuleRequest.test(url)).length).toBeGreaterThan(0);

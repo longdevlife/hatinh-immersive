@@ -6,7 +6,10 @@ test('explores overview to 360, follows a scene, and restores it after refresh',
   await page.goto('/');
   await page.getByRole('button', { name: 'Bắt đầu khám phá' }).click();
 
-  await expect(page).toHaveURL(/\/explore\/bien-thien-cam\?mode=overview3d$/);
+  await expect(page).toHaveURL(/\/explore$/);
+  await expect(page.locator('#explore-title')).toBeVisible();
+
+  await page.goto('/explore/bien-thien-cam?mode=overview3d');
   await expect(page.getByRole('heading', { name: 'Biển Thiên Cầm' }).first()).toBeVisible();
   await expect(page.locator('[data-renderer-status="ready"]').first()).toBeVisible();
 
