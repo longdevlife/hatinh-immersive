@@ -34,7 +34,7 @@ describe('ExploreShell', () => {
     window.sessionStorage.clear();
   });
 
-  it('opens the production minimap on first session entry and forwards map node selection', async () => {
+  it('opens the minimap on first session entry and forwards map node selection', async () => {
     const actions = createActions();
     const minimapEngine = new FakeMinimapEngine();
 
@@ -75,9 +75,7 @@ describe('ExploreShell', () => {
       />,
     );
 
-    await waitFor(() =>
-      expect(firstEngine.calls.some((call) => call.type === 'mount')).toBe(true),
-    );
+    await waitFor(() => expect(firstEngine.calls.some((call) => call.type === 'mount')).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
     expect(window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY)).toBe('collapsed');
     firstRender.unmount();
@@ -110,9 +108,7 @@ describe('ExploreShell', () => {
       />,
     );
 
-    await waitFor(() =>
-      expect(thirdEngine.calls.some((call) => call.type === 'mount')).toBe(true),
-    );
+    await waitFor(() => expect(thirdEngine.calls.some((call) => call.type === 'mount')).toBe(true));
     expect(screen.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeInTheDocument();
   });
 
