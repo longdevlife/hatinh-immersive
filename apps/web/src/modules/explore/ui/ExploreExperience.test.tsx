@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ComponentProps } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -105,7 +105,9 @@ describe('ExploreExperience', () => {
     renderExplore(new FakeExploreMapEngine(), { onOpenDestination });
 
     fireEvent.click(screen.getByRole('button', { name: 'Chọn điểm đến Khu lưu niệm Nguyễn Du' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết' }));
+    fireEvent.click(
+      within(screen.getByTestId('explore-map')).getByRole('button', { name: 'Xem chi tiết' }),
+    );
 
     expect(onOpenDestination).toHaveBeenCalledWith(
       expect.objectContaining({ slug: 'khu-luu-niem-nguyen-du' }),
@@ -214,6 +216,56 @@ describe('ExploreExperience', () => {
 
     expect(screen.getByTestId('explore-map')).toHaveAttribute('data-map-open', 'true');
     await waitFor(() => expect(mapEngine.calls.some((call) => call.type === 'mount')).toBe(true));
+  });
+
+  it('keeps the selected destination detail action through the mobile list-map round trip', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn().mockReturnValue({
+        addEventListener: vi.fn(),
+        addListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+        matches: true,
+        media: '(max-width: 768px)',
+        removeEventListener: vi.fn(),
+        removeListener: vi.fn(),
+      }),
+    );
+    const mapEngine = new FakeExploreMapEngine();
+    const onOpenDestination = vi.fn();
+    renderExplore(mapEngine, { onOpenDestination });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chọn điểm đến Khu lưu niệm Nguyễn Du' }));
+
+    const destinationList = screen.getByRole('region', { name: 'Danh sách điểm đến' });
+    expect(within(destinationList).getByRole('button', { name: 'Xem chi tiết' })).toBeVisible();
+    fireEvent.click(within(destinationList).getByRole('button', { name: 'Xem chi tiết' }));
+    expect(onOpenDestination).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'nguyen-du-memorial' }),
+    );
+
+    fireEvent.click(within(destinationList).getByRole('button', { name: 'Xem bản đồ' }));
+    await waitFor(() => expect(mapEngine.calls.some((call) => call.type === 'mount')).toBe(true));
+    expect(screen.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+      'data-selected-destination-id',
+      'nguyen-du-memorial',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại danh sách' }));
+    expect(screen.getByTestId('destination-card-nguyen-du-memorial')).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    expect(within(destinationList).getByRole('button', { name: 'Xem chi tiết' })).toBeVisible();
+
+    fireEvent.click(within(destinationList).getByRole('button', { name: 'Xem bản đồ' }));
+    await waitFor(() =>
+      expect(mapEngine.calls.filter((call) => call.type === 'mount')).toHaveLength(2),
+    );
+    expect(screen.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+      'data-selected-destination-id',
+      'nguyen-du-memorial',
+    );
   });
 
   it('synchronizes a map destination click back to the selected card', async () => {

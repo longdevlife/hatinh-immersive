@@ -70,9 +70,25 @@ class FakeMap {
     }
   }
 
-  emitDestinationClick(id: string): void {
-    for (const listener of this.layerListeners.get('explore-destinations') ?? []) {
+  emitDestinationClick(id: string, layerId = 'explore-destinations'): void {
+    for (const listener of this.layerListeners.get(layerId) ?? []) {
       listener({ features: [{ properties: { id } }] });
+    }
+  }
+
+  emitOverlappingDestinationClick(id: string): void {
+    const event = {
+      features: [{ properties: { id } }],
+      originalEvent: {},
+    };
+    for (const layerId of [
+      'explore-destinations',
+      'explore-destinations-hit-targets',
+      'explore-destination-labels',
+    ]) {
+      for (const listener of this.layerListeners.get(layerId) ?? []) {
+        listener(event);
+      }
     }
   }
 
@@ -184,6 +200,15 @@ describe('MapLibreExploreMapEngine', () => {
     expect(map.layers).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: 'explore-destinations', source: 'explore-destinations' }),
+        expect.objectContaining({
+          id: 'explore-destinations-hit-targets',
+          paint: expect.objectContaining({
+            'circle-opacity': 0,
+            'circle-radius': 22,
+          }),
+          source: 'explore-destinations',
+          type: 'circle',
+        }),
       ]),
     );
 
@@ -200,7 +225,7 @@ describe('MapLibreExploreMapEngine', () => {
 
     await engine.mount(document.createElement('div'));
     const map = FakeMap.latest!;
-    map.emitDestinationClick('nguyen-du');
+    map.emitDestinationClick('nguyen-du', 'explore-destinations-hit-targets');
     expect(selected).toEqual(['nguyen-du']);
 
     engine.setState({ ...state, selectedDestinationId: 'nguyen-du' });
@@ -224,6 +249,27 @@ describe('MapLibreExploreMapEngine', () => {
     engine.destroy();
     expect(map.removed).toBe(true);
     expect(map.layerListeners.get('explore-destinations')?.size ?? 0).toBe(0);
+    expect(map.layerListeners.get('explore-destinations-hit-targets')?.size ?? 0).toBe(0);
+  });
+
+  it('emits one selection when one click reaches overlapping destination layers', async () => {
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8 },
+    });
+    const selected: string[] = [];
+    engine.subscribeDestinationSelected((id) => selected.push(id));
+
+    await engine.mount(document.createElement('div'));
+    const map = FakeMap.latest!;
+    expect(map.layerListeners.get('explore-destinations')?.size ?? 0).toBe(0);
+    expect(map.layerListeners.get('explore-destinations-hit-targets')?.size ?? 0).toBe(1);
+    expect(map.layerListeners.get('explore-destination-labels')?.size ?? 0).toBe(1);
+
+    map.emitOverlappingDestinationClick('nguyen-du');
+
+    expect(selected).toEqual(['nguyen-du']);
+    engine.destroy();
   });
 
   it('forwards resize to the mounted map', async () => {

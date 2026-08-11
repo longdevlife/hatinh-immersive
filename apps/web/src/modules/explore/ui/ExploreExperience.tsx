@@ -187,7 +187,9 @@ export function ExploreExperience({
               onQueryChange={setQuery}
               onCategoryChange={setCategory}
               onSelectDestination={handleSelectDestination}
+              onOpenDestination={onOpenDestination}
               onOpenMap={() => setIsMobileMapOpen(true)}
+              selectedDestination={selectedDestination}
             />
           )}
         </section>

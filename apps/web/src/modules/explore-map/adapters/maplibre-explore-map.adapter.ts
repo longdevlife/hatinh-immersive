@@ -9,6 +9,7 @@ import type {
 
 const DESTINATIONS_SOURCE_ID = 'explore-destinations';
 const DESTINATIONS_LAYER_ID = 'explore-destinations';
+const DESTINATIONS_HIT_TARGET_LAYER_ID = 'explore-destinations-hit-targets';
 const DESTINATIONS_LABEL_LAYER_ID = 'explore-destination-labels';
 const DEFAULT_CENTER: ExploreMapCoordinate = [105.9, 18.342];
 const DEFAULT_ZOOM = 9;
@@ -171,6 +172,11 @@ function readDestinationId(event?: unknown): string | null {
   return typeof destinationId === 'string' ? destinationId : null;
 }
 
+function readOriginalEvent(event?: unknown): object | null {
+  const originalEvent = (event as { originalEvent?: unknown } | undefined)?.originalEvent;
+  return typeof originalEvent === 'object' && originalEvent !== null ? originalEvent : null;
+}
+
 export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   private readonly options: ExploreMapOptions;
   private container: HTMLElement | null = null;
@@ -185,10 +191,20 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   private pendingCameraCommand: PendingCameraCommand | null = null;
   private mountGeneration = 0;
   private pendingMapLoadCancellation: (() => void) | null = null;
+  private readonly handledOriginalClickEvents = new WeakSet<object>();
   private readonly handleDestinationClick = (event?: unknown) => {
     const destinationId = readDestinationId(event);
     if (!destinationId) {
       return;
+    }
+
+    const originalEvent = readOriginalEvent(event);
+    if (originalEvent) {
+      if (this.handledOriginalClickEvents.has(originalEvent)) {
+        return;
+      }
+
+      this.handledOriginalClickEvents.add(originalEvent);
     }
 
     for (const listener of this.destinationListeners) {
@@ -268,6 +284,16 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
       type: 'circle',
     });
     map.addLayer({
+      id: DESTINATIONS_HIT_TARGET_LAYER_ID,
+      paint: {
+        'circle-color': '#000000',
+        'circle-opacity': 0,
+        'circle-radius': 22,
+      },
+      source: DESTINATIONS_SOURCE_ID,
+      type: 'circle',
+    });
+    map.addLayer({
       id: DESTINATIONS_LABEL_LAYER_ID,
       layout: {
         'text-anchor': 'top',
@@ -283,7 +309,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
       source: DESTINATIONS_SOURCE_ID,
       type: 'symbol',
     });
-    map.on('click', DESTINATIONS_LAYER_ID, this.handleDestinationClick);
+    map.on('click', DESTINATIONS_HIT_TARGET_LAYER_ID, this.handleDestinationClick);
     map.on('click', DESTINATIONS_LABEL_LAYER_ID, this.handleDestinationClick);
 
     this.applyState();
@@ -398,7 +424,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     cancelMapLoad?.();
 
     if (this.map) {
-      this.map.off('click', DESTINATIONS_LAYER_ID, this.handleDestinationClick);
+      this.map.off('click', DESTINATIONS_HIT_TARGET_LAYER_ID, this.handleDestinationClick);
       this.map.off('click', DESTINATIONS_LABEL_LAYER_ID, this.handleDestinationClick);
       this.map.remove();
     } else if (this.container) {

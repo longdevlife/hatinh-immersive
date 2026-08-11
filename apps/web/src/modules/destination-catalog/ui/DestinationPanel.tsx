@@ -6,11 +6,13 @@ export interface DestinationPanelProps {
   availableDestinations: readonly DestinationPreviewVm[];
   destinations: readonly DestinationPreviewVm[];
   selectedDestinationId: string | null;
+  selectedDestination?: DestinationPreviewVm | undefined;
   query: string;
   category: string;
   onQueryChange(query: string): void;
   onCategoryChange(category: string): void;
   onSelectDestination(destinationId: string): void;
+  onOpenDestination?: ((destination: DestinationPreviewVm) => void) | undefined;
   onOpenMap(): void;
 }
 
@@ -63,11 +65,13 @@ export function DestinationPanel({
   availableDestinations,
   destinations,
   selectedDestinationId,
+  selectedDestination,
   query,
   category,
   onQueryChange,
   onCategoryChange,
   onSelectDestination,
+  onOpenDestination,
   onOpenMap,
 }: DestinationPanelProps) {
   const categories = useMemo(() => {
@@ -138,6 +142,22 @@ export function DestinationPanel({
       </div>
 
       <div className="destination-panel__mobile-actions">
+        {selectedDestination ? (
+          <div className="destination-panel__selected-preview">
+            <div className="destination-panel__preview-info">
+              <span className="destination-panel__preview-title">{selectedDestination.name}</span>
+            </div>
+            {onOpenDestination && (
+              <button
+                type="button"
+                className="explore-experience__detail-action"
+                onClick={() => onOpenDestination(selectedDestination)}
+              >
+                Xem chi tiết
+              </button>
+            )}
+          </div>
+        ) : null}
         <button
           type="button"
           className="destination-panel__map-toggle immersive-button immersive-button--primary"

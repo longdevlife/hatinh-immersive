@@ -36,6 +36,9 @@ test('mobile keeps destination cards primary until Xem bản đồ is activated'
   await expect(destinationList).toBeVisible();
   await expect(mapShell).toBeHidden();
 
+  await page.getByRole('button', { name: 'Chọn điểm đến Khu lưu niệm Nguyễn Du' }).click();
+  await expect(destinationList.getByRole('button', { name: 'Xem chi tiết' })).toBeVisible();
+
   await page.getByRole('button', { name: 'Xem bản đồ' }).click();
 
   await expect(mapShell).toBeVisible();
@@ -48,4 +51,15 @@ test('mobile keeps destination cards primary until Xem bản đồ is activated'
   await page.getByRole('button', { name: 'Quay lại danh sách' }).click();
   await expect(destinationList).toBeVisible();
   await expect(mapShell).toBeHidden();
+  await expect(page.getByTestId('destination-card-nguyen-du-memorial')).toHaveAttribute(
+    'aria-current',
+    'true',
+  );
+
+  await page.getByRole('button', { name: 'Xem bản đồ' }).click();
+  await expect(mapShell).toBeVisible();
+  await expect(page.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+    'data-selected-destination-id',
+    'nguyen-du-memorial',
+  );
 });

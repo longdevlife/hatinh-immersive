@@ -167,4 +167,27 @@ describe('DestinationPanel', () => {
     expect(card1.getAttribute('aria-current')).toBeNull();
     expect(card2.getAttribute('aria-current')).toBe('true');
   });
+
+  it('opens the selected destination from the mobile list actions', () => {
+    const onOpenDestination = vi.fn();
+    render(
+      <DestinationPanel
+        availableDestinations={mockDestinations}
+        destinations={mockDestinations}
+        selectedDestinationId="dest-2"
+        selectedDestination={mockDestinations[1]}
+        query=""
+        category=""
+        onQueryChange={vi.fn()}
+        onCategoryChange={vi.fn()}
+        onSelectDestination={vi.fn()}
+        onOpenDestination={onOpenDestination}
+        onOpenMap={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Xem chi tiết' }));
+
+    expect(onOpenDestination).toHaveBeenCalledWith(mockDestinations[1]);
+  });
 });
