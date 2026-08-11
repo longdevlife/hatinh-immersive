@@ -3,14 +3,60 @@ import { useEffect, useMemo, useState } from 'react';
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
 import { DestinationPanel, filterDestinations } from '../../destination-catalog';
+import {
+  ExploreMapViewport,
+  MapLibreExploreMapEngine,
+  type ExploreMapDestination,
+  type ExploreMapEnginePort,
+} from '../../explore-map';
+import { DEFAULT_HA_TINH_MINIMAP_STYLE } from '../../minimap/config/minimap-style';
 
 export interface ExploreExperienceProps {
   destinations?: readonly DestinationPreviewVm[];
+  mapEngine?: ExploreMapEnginePort;
 }
 
-export function ExploreExperience({ destinations: destinationsOverride }: ExploreExperienceProps) {
+function toExploreMapDestination(destination: DestinationPreviewVm): ExploreMapDestination | null {
+  if (!destination.geoPoint) {
+    return null;
+  }
+
+  return {
+    categoryLabel: destination.categoryLabel,
+    featured: destination.defaultSceneId !== null,
+    id: destination.id,
+    label: destination.name,
+    latitude: destination.geoPoint.latitude,
+    longitude: destination.geoPoint.longitude,
+  };
+}
+
+function createDefaultExploreMapEngine(): ExploreMapEnginePort {
+  const styleUrl =
+    import.meta.env.VITE_EXPLORE_MAP_STYLE_URL?.trim() ||
+    import.meta.env.VITE_MINIMAP_STYLE_URL?.trim();
+  const allowDemoFallback =
+    import.meta.env.DEV || import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake';
+
+  return new MapLibreExploreMapEngine({
+    ...(styleUrl
+      ? { style: styleUrl }
+      : allowDemoFallback
+        ? { style: DEFAULT_HA_TINH_MINIMAP_STYLE }
+        : {}),
+  });
+}
+
+export function ExploreExperience({
+  destinations: destinationsOverride,
+  mapEngine: mapEngineOverride,
+}: ExploreExperienceProps) {
   const destinationsQuery = useImmersiveDestinations('vi', destinationsOverride === undefined);
   const destinations = destinationsOverride ?? destinationsQuery.data;
+  const mapEngine = useMemo(
+    () => mapEngineOverride ?? createDefaultExploreMapEngine(),
+    [mapEngineOverride],
+  );
   const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
@@ -18,6 +64,14 @@ export function ExploreExperience({ destinations: destinationsOverride }: Explor
   const filteredDestinations = useMemo(
     () => filterDestinations(destinations, { query, category }),
     [category, destinations, query],
+  );
+  const mapDestinations = useMemo(
+    () =>
+      filteredDestinations.flatMap((destination) => {
+        const mapDestination = toExploreMapDestination(destination);
+        return mapDestination ? [mapDestination] : [];
+      }),
+    [filteredDestinations],
   );
   const selectedDestination = filteredDestinations.find(
     (destination) => destination.id === selectedDestinationId,
@@ -66,15 +120,20 @@ export function ExploreExperience({ destinations: destinationsOverride }: Explor
         </section>
 
         <section
-          className="explore-experience__map-placeholder"
-          aria-label="Bản đồ khám phá"
+          className="explore-experience__map"
           data-map-open={isMobileMapOpen}
-          data-testid="explore-map-placeholder"
+          data-testid="explore-map"
         >
-          <span>Bản đồ khám phá sẽ xuất hiện ở đây.</span>
-          <small>MapLibre Explore Map sẽ được tích hợp ở PR2.</small>
+          <ExploreMapViewport
+            destinations={mapDestinations}
+            engine={mapEngine}
+            onDestinationSelected={handleSelectDestination}
+            selectedDestinationId={selectedDestinationId}
+          />
           {selectedDestination ? (
-            <p aria-live="polite">Đang chọn: {selectedDestination.name}</p>
+            <p aria-live="polite" className="explore-experience__selection">
+              Đang chọn: {selectedDestination.name}
+            </p>
           ) : null}
         </section>
       </div>
