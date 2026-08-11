@@ -162,11 +162,11 @@ test('preserves the current scene when the browser goes offline', async ({ page 
   await mockManifest(page);
   await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01');
   await expect(page.getByRole('heading', { name: firstSceneHeading })).toBeVisible();
+  const panorama = page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' });
+  await expect(panorama).toHaveAttribute('data-renderer-status', 'ready');
 
   await page.context().setOffline(true);
 
   await expect(page.getByRole('heading', { name: firstSceneHeading })).toBeVisible();
-  await expect(page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' })).toHaveCount(
-    1,
-  );
+  await expect(panorama).toHaveAttribute('data-renderer-status', 'ready');
 });
