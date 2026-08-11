@@ -99,8 +99,8 @@ function PublicHome() {
           <p className="eyebrow">Hà Tĩnh Immersive</p>
           <h1 id="public-title">Di sản mở ra theo cách bạn muốn khám phá.</h1>
           <p>
-            Một nền tảng location-first cho hành trình 3D, 360° và những câu chuyện văn hóa được
-            tuyển chọn.
+            Một không gian khám phá các điểm đến Hà Tĩnh và những câu chuyện văn hóa được tuyển
+            chọn.
           </p>
           <UiButton tone="primary" type="button" onClick={() => navigate('/explore')}>
             Bắt đầu khám phá

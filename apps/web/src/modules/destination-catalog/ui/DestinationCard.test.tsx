@@ -41,4 +41,12 @@ describe('DestinationCard', () => {
     fireEvent.click(button);
     expect(onSelect).toHaveBeenCalledWith('dest-1');
   });
+
+  it('does not render an empty location metadata row', () => {
+    render(<DestinationCard destination={mockDestination} selected={false} onSelect={vi.fn()} />);
+
+    expect(
+      screen.getByTestId('destination-card-dest-1').querySelector('.destination-card__meta'),
+    ).toBeNull();
+  });
 });

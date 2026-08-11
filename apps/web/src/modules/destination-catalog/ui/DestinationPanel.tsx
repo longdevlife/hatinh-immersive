@@ -3,6 +3,7 @@ import { DestinationCard } from './DestinationCard';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
 
 export interface DestinationPanelProps {
+  availableDestinations: readonly DestinationPreviewVm[];
   destinations: readonly DestinationPreviewVm[];
   selectedDestinationId: string | null;
   query: string;
@@ -59,6 +60,7 @@ function MapIcon() {
 }
 
 export function DestinationPanel({
+  availableDestinations,
   destinations,
   selectedDestinationId,
   query,
@@ -70,13 +72,13 @@ export function DestinationPanel({
 }: DestinationPanelProps) {
   const categories = useMemo(() => {
     const uniqueCategories = new Set<string>();
-    destinations.forEach((d) => {
+    availableDestinations.forEach((d) => {
       if (d.categoryLabel) {
         uniqueCategories.add(d.categoryLabel);
       }
     });
     return [copy.allCategory, ...Array.from(uniqueCategories)];
-  }, [destinations]);
+  }, [availableDestinations]);
 
   return (
     <div className="destination-panel">

@@ -18,6 +18,15 @@ describe('public application shell', () => {
     expect(screen.getByRole('main')).toBeInTheDocument();
   });
 
+  it('describes the home entry as destination discovery instead of location-first 3D', () => {
+    render(<App />);
+
+    expect(
+      screen.getByRole('heading', { name: 'Di sản mở ra theo cách bạn muốn khám phá.' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('main')).not.toHaveTextContent('location-first');
+  });
+
   it('renders the Hybrid C discovery entry at /explore', async () => {
     window.history.pushState({}, '', '/explore');
 

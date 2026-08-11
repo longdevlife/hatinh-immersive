@@ -12,24 +12,6 @@ const copy = {
   noImage: 'Chưa có hình ảnh',
 };
 
-function LocationIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{ width: '1rem', height: '1rem', flexShrink: 0 }}
-      aria-hidden="true"
-    >
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-      <circle cx="12" cy="10" r="3"></circle>
-    </svg>
-  );
-}
-
 export function DestinationCard({ destination, selected, onSelect }: DestinationCardProps) {
   const className = `destination-card ${selected ? 'destination-card--selected' : ''}`;
   const ariaCurrent = selected ? 'true' : undefined;
@@ -64,13 +46,6 @@ export function DestinationCard({ destination, selected, onSelect }: Destination
 
         <h3 className="destination-card__title">{destination.name}</h3>
         <p className="destination-card__summary">{destination.summary}</p>
-
-        {destination.geoPoint && (
-          <p className="destination-card__meta">
-            <LocationIcon />
-            <span className="sr-only">Vị trí: </span>
-          </p>
-        )}
       </div>
 
       <button

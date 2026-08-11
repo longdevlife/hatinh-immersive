@@ -8,6 +8,7 @@ import type { ExploreMapDestination, ExploreMapViewportState } from '../model/ex
 export interface ExploreMapViewportProps {
   engine: ExploreMapEnginePort;
   destinations: readonly ExploreMapDestination[];
+  enabled?: boolean;
   selectedDestinationId: string | null;
   onDestinationSelected(destinationId: string): void;
   onStatusChange?(status: RendererStatus): void;
@@ -17,6 +18,7 @@ const DEFAULT_DESTINATION_ZOOM = 13;
 
 export function ExploreMapViewport({
   destinations,
+  enabled = true,
   engine,
   onDestinationSelected,
   onStatusChange,
@@ -25,7 +27,7 @@ export function ExploreMapViewport({
   const containerRef = useRef<HTMLDivElement>(null);
   const onDestinationSelectedRef = useRef(onDestinationSelected);
   const onStatusChangeRef = useRef(onStatusChange);
-  const [status, setStatus] = useState<RendererStatus>('loading');
+  const [status, setStatus] = useState<RendererStatus>(enabled ? 'loading' : 'idle');
 
   onDestinationSelectedRef.current = onDestinationSelected;
   onStatusChangeRef.current = onStatusChange;
@@ -36,6 +38,12 @@ export function ExploreMapViewport({
   }, [destinations, engine, selectedDestinationId]);
 
   useEffect(() => {
+    if (!enabled) {
+      setStatus('idle');
+      onStatusChangeRef.current?.('idle');
+      return undefined;
+    }
+
     const container = containerRef.current;
     if (!container) {
       return undefined;
@@ -56,21 +64,34 @@ export function ExploreMapViewport({
       }
     });
     const onResize = () => engine.resize();
+    let resizeObserver: ResizeObserver | null = null;
 
     reportStatus('loading');
     window.addEventListener('resize', onResize);
     void engine
       .mount(container)
-      .then(() => reportStatus('ready'))
+      .then(() => {
+        if (cancelled) {
+          return;
+        }
+
+        engine.resize();
+        if (typeof ResizeObserver !== 'undefined') {
+          resizeObserver = new ResizeObserver(onResize);
+          resizeObserver.observe(container);
+        }
+        reportStatus('ready');
+      })
       .catch(() => reportStatus('error'));
 
     return () => {
       cancelled = true;
       window.removeEventListener('resize', onResize);
+      resizeObserver?.disconnect();
       unsubscribe();
       engine.destroy();
     };
-  }, [engine]);
+  }, [enabled, engine]);
 
   useEffect(() => {
     const selectedDestination = destinations.find(

@@ -30,6 +30,7 @@ describe('DestinationPanel', () => {
   it('renders unique categories from destinations including "Tất cả"', () => {
     render(
       <DestinationPanel
+        availableDestinations={mockDestinations}
         destinations={mockDestinations}
         selectedDestinationId={null}
         query=""
@@ -53,6 +54,7 @@ describe('DestinationPanel', () => {
     const onQueryChange = vi.fn();
     render(
       <DestinationPanel
+        availableDestinations={mockDestinations}
         destinations={mockDestinations}
         selectedDestinationId={null}
         query=""
@@ -73,6 +75,7 @@ describe('DestinationPanel', () => {
     const onCategoryChange = vi.fn();
     render(
       <DestinationPanel
+        availableDestinations={mockDestinations}
         destinations={mockDestinations}
         selectedDestinationId={null}
         query=""
@@ -88,10 +91,45 @@ describe('DestinationPanel', () => {
     expect(onCategoryChange).toHaveBeenCalledWith('Văn hóa');
   });
 
+  it('keeps every catalog category available after a category filter is selected', () => {
+    const view = render(
+      <DestinationPanel
+        availableDestinations={mockDestinations}
+        destinations={mockDestinations}
+        selectedDestinationId={null}
+        query=""
+        category=""
+        onQueryChange={vi.fn()}
+        onCategoryChange={vi.fn()}
+        onSelectDestination={vi.fn()}
+        onOpenMap={vi.fn()}
+      />,
+    );
+
+    view.rerender(
+      <DestinationPanel
+        availableDestinations={mockDestinations}
+        destinations={[mockDestinations[0]!]}
+        selectedDestinationId={null}
+        query=""
+        category="Văn hóa"
+        onQueryChange={vi.fn()}
+        onCategoryChange={vi.fn()}
+        onSelectDestination={vi.fn()}
+        onOpenMap={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Tất cả' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Văn hóa' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Biển đảo' })).toBeInTheDocument();
+  });
+
   it('triggers onOpenMap when "Xem bản đồ" is clicked', () => {
     const onOpenMap = vi.fn();
     render(
       <DestinationPanel
+        availableDestinations={mockDestinations}
         destinations={mockDestinations}
         selectedDestinationId={null}
         query=""
@@ -111,6 +149,7 @@ describe('DestinationPanel', () => {
   it('highlights selected destination card', () => {
     render(
       <DestinationPanel
+        availableDestinations={mockDestinations}
         destinations={mockDestinations}
         selectedDestinationId="dest-2"
         query=""

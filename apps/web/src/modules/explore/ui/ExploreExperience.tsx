@@ -17,6 +17,44 @@ export interface ExploreExperienceProps {
   mapEngine?: ExploreMapEnginePort;
 }
 
+const MOBILE_VIEWPORT_QUERY = '(max-width: 768px)';
+
+function useIsMobileViewport(): boolean {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return false;
+    }
+
+    return window.matchMedia(MOBILE_VIEWPORT_QUERY).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') {
+      return undefined;
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_VIEWPORT_QUERY);
+    const onChange = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+    setIsMobile(mediaQuery.matches);
+    const usesEventListener = typeof mediaQuery.addEventListener === 'function';
+    if (usesEventListener) {
+      mediaQuery.addEventListener('change', onChange);
+    } else {
+      mediaQuery.addListener?.(onChange);
+    }
+
+    return () => {
+      if (usesEventListener) {
+        mediaQuery.removeEventListener('change', onChange);
+      } else {
+        mediaQuery.removeListener?.(onChange);
+      }
+    };
+  }, []);
+
+  return isMobile;
+}
+
 function toExploreMapDestination(destination: DestinationPreviewVm): ExploreMapDestination | null {
   if (!destination.geoPoint) {
     return null;
@@ -24,7 +62,7 @@ function toExploreMapDestination(destination: DestinationPreviewVm): ExploreMapD
 
   return {
     categoryLabel: destination.categoryLabel,
-    featured: destination.defaultSceneId !== null,
+    featured: false,
     id: destination.id,
     label: destination.name,
     latitude: destination.geoPoint.latitude,
@@ -66,6 +104,7 @@ export function ExploreExperience({
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('');
   const [isMobileMapOpen, setIsMobileMapOpen] = useState(false);
+  const isMobileViewport = useIsMobileViewport();
   const filteredDestinations = useMemo(
     () => filterDestinations(destinations, { query, category }),
     [category, destinations, query],
@@ -88,7 +127,7 @@ export function ExploreExperience({
         return currentId;
       }
 
-      return filteredDestinations[0]?.id ?? null;
+      return null;
     });
   }, [filteredDestinations]);
 
@@ -110,8 +149,13 @@ export function ExploreExperience({
         <section className="explore-experience__destinations" aria-label="Danh sách điểm đến">
           {destinationsQuery.isLoading && destinationsOverride === undefined ? (
             <p role="status">Đang tải điểm đến…</p>
+          ) : destinationsQuery.isError && destinationsOverride === undefined ? (
+            <p role="alert">Không thể tải danh sách điểm đến. Vui lòng thử lại sau.</p>
+          ) : destinations.length === 0 ? (
+            <p role="status">Hiện chưa có điểm đến để khám phá.</p>
           ) : (
             <DestinationPanel
+              availableDestinations={destinations}
               destinations={filteredDestinations}
               selectedDestinationId={selectedDestinationId}
               query={query}
@@ -126,17 +170,32 @@ export function ExploreExperience({
 
         <section
           className="explore-experience__map"
+          data-explore-mode={isMobileViewport && !isMobileMapOpen ? 'destination-list' : 'map'}
           data-map-open={isMobileMapOpen}
           data-testid="explore-map"
         >
+          {isMobileViewport && isMobileMapOpen ? (
+            <button
+              className="explore-experience__back-to-list"
+              type="button"
+              onClick={() => setIsMobileMapOpen(false)}
+            >
+              Quay lại danh sách
+            </button>
+          ) : null}
           <ExploreMapViewport
             destinations={mapDestinations}
+            enabled={!isMobileViewport || isMobileMapOpen}
             engine={mapEngine}
             onDestinationSelected={handleSelectDestination}
             selectedDestinationId={selectedDestinationId}
           />
           {selectedDestination ? (
-            <p aria-live="polite" className="explore-experience__selection">
+            <p
+              aria-live="polite"
+              className="explore-experience__selection"
+              data-testid="explore-selected-destination"
+            >
               Đang chọn: {selectedDestination.name}
             </p>
           ) : null}
