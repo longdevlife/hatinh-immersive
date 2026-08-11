@@ -16,6 +16,7 @@ import {
   type PanoramaEnginePort,
 } from '../../panorama';
 import {
+  FakeMinimapEngine,
   createLazyMapLibreMinimapEngine,
   resolveMinimapStyle,
   type MinimapEnginePort,
@@ -89,10 +90,7 @@ function createDefaultFactories(initialTarget?: CameraTarget): ImmersiveExperien
         : () => createLazyPhotoSphereViewerEngine(),
     createMinimapEngine:
       rendererModes.minimap === 'fake'
-        ? async () => {
-            const { FakeMinimapEngine } = await import('../../minimap');
-            return new FakeMinimapEngine();
-          }
+        ? async () => new FakeMinimapEngine()
         : () =>
             createLazyMapLibreMinimapEngine({
               style: resolveMinimapStyle({

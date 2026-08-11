@@ -17,7 +17,7 @@ import '@hatinh/ui/styles.css';
 import {
   canEnterSelected3D,
   resolveDestinationCapabilityConfig,
-} from '../modules/destination-detail';
+} from '../modules/destination-detail/model/destination-capabilities';
 import {
   DEMO_DESTINATIONS,
   getDemoManifest,
