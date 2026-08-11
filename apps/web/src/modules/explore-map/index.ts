@@ -16,3 +16,5 @@ export type {
   ExploreMapDestination,
   ExploreMapViewportState,
 } from './model/explore-map.types';
+export { ExploreMapViewport } from './ui';
+export type { ExploreMapViewportProps } from './ui';
