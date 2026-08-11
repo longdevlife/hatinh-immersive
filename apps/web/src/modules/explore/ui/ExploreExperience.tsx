@@ -4,6 +4,7 @@ import { useImmersiveDestinations } from '../../../shared/api/immersive';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
 import { DestinationPanel, filterDestinations } from '../../destination-catalog';
 import {
+  FakeExploreMapEngine,
   ExploreMapViewport,
   MapLibreExploreMapEngine,
   type ExploreMapDestination,
@@ -32,6 +33,10 @@ function toExploreMapDestination(destination: DestinationPreviewVm): ExploreMapD
 }
 
 function createDefaultExploreMapEngine(): ExploreMapEnginePort {
+  if (import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake') {
+    return new FakeExploreMapEngine();
+  }
+
   const styleUrl =
     import.meta.env.VITE_EXPLORE_MAP_STYLE_URL?.trim() ||
     import.meta.env.VITE_MINIMAP_STYLE_URL?.trim();

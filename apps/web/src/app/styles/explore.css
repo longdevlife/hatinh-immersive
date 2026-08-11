@@ -72,40 +72,77 @@
   border-right: 0;
 }
 
-.explore-experience__map-placeholder {
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 0.65rem;
+.explore-experience__map {
+  position: relative;
   min-width: 0;
-  padding: clamp(2rem, 6vw, 5rem);
-  color: rgba(255, 255, 255, 0.92);
-  text-align: center;
-  background:
-    linear-gradient(rgba(16, 54, 44, 0.88), rgba(16, 54, 44, 0.92)),
-    radial-gradient(circle at 65% 35%, rgba(222, 174, 91, 0.5), transparent 26rem), #153d32;
+  min-height: 0;
+  overflow: hidden;
+  background: #f4f0e8;
 }
 
-.explore-experience__map-placeholder span {
-  font-size: clamp(1.2rem, 2.5vw, 2rem);
-  font-weight: 750;
-}
-
-.explore-experience__map-placeholder small {
-  max-width: 26rem;
-  color: rgba(255, 255, 255, 0.68);
-  line-height: 1.5;
-}
-
-.explore-experience__map-placeholder p {
-  margin: 1.5rem 0 0;
-  padding: 0.75rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+.explore-experience__selection {
+  position: absolute;
+  z-index: 3;
+  left: 1rem;
+  bottom: 1rem;
+  max-width: min(28rem, calc(100% - 2rem));
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(23, 38, 31, 0.14);
   border-radius: 999px;
-  color: #f0c176;
+  background: rgb(255 253 248 / 0.92);
+  color: #173c31;
+  box-shadow: 0 0.5rem 1.5rem rgb(23 38 31 / 0.14);
+  font-size: 0.875rem;
+  font-weight: 700;
 }
 
-/* ==========================================================================
+/* ============================================================================
+   MapLibre Viewport
+   ============================================================================ */
+
+.explore-map-viewport {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  background: #f4f0e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.explore-map-viewport__map {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.explore-map-viewport > p[role='status'],
+.explore-map-viewport > p[role='alert'] {
+  position: relative;
+  z-index: 2;
+  max-width: 80%;
+  margin: 0;
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--explore-border);
+  border-radius: 0.5rem;
+  background-color: var(--explore-bg);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+  color: var(--explore-text);
+  font-weight: 500;
+  text-align: center;
+}
+
+.explore-map-viewport > p[role='alert'] {
+  border-left: 4px solid #d32f2f;
+  color: #d32f2f;
+}
+
+/* ===========================================================================
    Destination Panel
    ========================================================================== */
 
@@ -400,13 +437,18 @@
     border-radius: 1.25rem 1.25rem 0 0;
   }
 
-  .explore-experience__map-placeholder {
+  .explore-experience__map {
     display: none;
     min-height: 60vh;
   }
 
-  .explore-experience__map-placeholder[data-map-open='true'] {
-    display: grid;
+  .explore-experience__map[data-map-open='true'] {
+    display: block;
+    min-height: 60vh;
+  }
+
+  .explore-experience__map[data-map-open='true'] .explore-map-viewport {
+    min-height: 60vh;
   }
 
   .destination-panel__mobile-actions {

@@ -92,6 +92,7 @@ export function ExploreMapViewport({
       aria-label="Bản đồ khám phá Hà Tĩnh"
       className="explore-map-viewport"
       data-explore-map-status={status}
+      data-selected-destination-id={selectedDestinationId ?? ''}
       role="application"
     >
       <div
