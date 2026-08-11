@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
+import { SonTrangExperience, toSonTrangExperienceVm } from '../../son-trang';
 import { getDestinationCapabilities } from '../model/destination-capabilities';
 import {
   createDestinationImmersiveHref,
@@ -61,24 +62,36 @@ export function DestinationDetailRoute({
 
   const capabilities = getDestinationCapabilities(destination);
   const view = toDestinationDetailViewModel(destination, capabilities);
+  const sonTrangExperience = toSonTrangExperienceVm(destination);
+  const onBackToExplore = () => navigate('/explore');
+  const onOpenMap = () => navigate(createExploreMapHref(destination.slug));
+  const onEnterPanorama = capabilities.hasPanorama
+    ? () => navigate(createDestinationImmersiveHref(destination, 'panorama'))
+    : undefined;
+  const onEnterSelected3D = capabilities.hasSelected3D
+    ? () => navigate(createDestinationImmersiveHref(destination, 'overview3d'))
+    : undefined;
+
+  if (sonTrangExperience) {
+    return (
+      <SonTrangExperience
+        experience={sonTrangExperience}
+        capabilities={capabilities}
+        onBackToExplore={onBackToExplore}
+        onOpenMap={onOpenMap}
+        {...(onEnterPanorama ? { onEnterPanorama } : {})}
+        {...(onEnterSelected3D ? { onEnterSelected3D } : {})}
+      />
+    );
+  }
 
   return (
     <DestinationExperience
       destination={view}
-      onBackToExplore={() => navigate('/explore')}
-      onOpenMap={() => navigate(createExploreMapHref(destination.slug))}
-      {...(capabilities.hasPanorama
-        ? {
-            onEnterPanorama: () =>
-              navigate(createDestinationImmersiveHref(destination, 'panorama')),
-          }
-        : {})}
-      {...(capabilities.hasSelected3D
-        ? {
-            onEnterSelected3D: () =>
-              navigate(createDestinationImmersiveHref(destination, 'overview3d')),
-          }
-        : {})}
+      onBackToExplore={onBackToExplore}
+      onOpenMap={onOpenMap}
+      {...(onEnterPanorama ? { onEnterPanorama } : {})}
+      {...(onEnterSelected3D ? { onEnterSelected3D } : {})}
     />
   );
 }

@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import * as immersiveApi from '../../../shared/api/immersive';
+import { destinationFixture } from '../../../shared/fixtures';
 import { DEMO_DESTINATIONS } from '../../immersive-navigation/fake-mode/demo-catalog';
 import { DestinationDetailRoute } from './DestinationDetailRoute';
 
@@ -33,6 +34,25 @@ function renderRoute(initialEntry: string, routeDestinations = destinations) {
 }
 
 describe('DestinationDetailRoute', () => {
+  it('renders the focused Sơn Trang experience from the destination route', () => {
+    renderRoute('/explore/son-trang-co-dam', [destinationFixture, ...destinations]);
+
+    expect(screen.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Bốn lớp trải nghiệm' })).toBeInTheDocument();
+    expect(screen.getByText('Văn hóa & di sản')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Khám phá 360°' })).toBeInTheDocument();
+  });
+
+  it('enters the Sơn Trang panorama route from the focused CTA', () => {
+    renderRoute('/explore/son-trang-co-dam', [destinationFixture, ...destinations]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Khám phá 360°' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01',
+    );
+  });
+
   it('renders a destination detail product page without mounting an immersive renderer', () => {
     renderRoute('/explore/bien-thien-cam');
 

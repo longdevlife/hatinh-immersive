@@ -1,9 +1,9 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { SonTrangExperience } from './SonTrangExperience';
 import type { SonTrangExperienceVm } from '../model/son-trang.types';
-import type { DestinationCapabilities } from '../../destination-detail/model/destination-detail.types';
+import type { DestinationCapabilities } from '../../../shared/contracts';
 
 describe('SonTrangExperience', () => {
   const defaultExperience: SonTrangExperienceVm = {
@@ -76,6 +76,22 @@ describe('SonTrangExperience', () => {
     expect(screen.getByText('Trải nghiệm thiên nhiên')).toBeInTheDocument();
   });
 
+  it('renders pillars as a semantic list with four items', () => {
+    render(<SonTrangExperience {...defaultProps} />);
+    const pillarsList = screen.getByRole('list', { name: 'Bốn lớp trải nghiệm' });
+    expect(pillarsList).toBeInTheDocument();
+    const listItems = within(pillarsList).getAllByRole('listitem');
+    expect(listItems).toHaveLength(4);
+  });
+
+  it('uses descriptive Vietnamese alt text for images', () => {
+    render(<SonTrangExperience {...defaultProps} />);
+    expect(
+      screen.getByAltText('Ảnh toàn cảnh của Khu du lịch sinh thái Sơn Trang'),
+    ).toBeInTheDocument();
+    expect(screen.getByAltText('Ảnh phân khu Khu trung tâm')).toBeInTheDocument();
+  });
+
   it('handles missing media with fallback treatment', () => {
     const experienceWithoutMedia = {
       ...defaultExperience,
@@ -103,6 +119,14 @@ describe('SonTrangExperience', () => {
 
     fireEvent.click(screen.getByText('Xem 3D'));
     expect(defaultProps.onEnterSelected3D).toHaveBeenCalled();
+  });
+
+  it('uses touch targets for buttons', () => {
+    render(<SonTrangExperience {...defaultProps} />);
+    const buttons = screen.getAllByRole('button');
+    buttons.forEach((btn) => {
+      expect(btn).toHaveClass('son-trang-experience__touch-target');
+    });
   });
 
   it('hides 360 button when capabilities.hasPanorama is false', () => {

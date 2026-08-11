@@ -1,5 +1,5 @@
 import React from 'react';
-import type { DestinationCapabilities } from '../../destination-detail/model/destination-detail.types';
+import type { DestinationCapabilities } from '../../../shared/contracts';
 import type { SonTrangExperienceVm } from '../model/son-trang.types';
 
 export interface SonTrangExperienceProps {
@@ -26,7 +26,7 @@ export function SonTrangExperience({
       <header className="son-trang-experience__header">
         <button
           type="button"
-          className="son-trang-experience__back-button"
+          className="son-trang-experience__back-button son-trang-experience__touch-target"
           onClick={onBackToExplore}
         >
           &larr; Khám phá Hà Tĩnh
@@ -45,7 +45,7 @@ export function SonTrangExperience({
             {capabilities.hasPanorama && onEnterPanorama && (
               <button
                 type="button"
-                className="son-trang-experience__button son-trang-experience__button--primary"
+                className="son-trang-experience__button son-trang-experience__button--primary son-trang-experience__touch-target"
                 onClick={onEnterPanorama}
               >
                 Khám phá 360&deg;
@@ -55,7 +55,7 @@ export function SonTrangExperience({
             {capabilities.hasSelected3D && onEnterSelected3D && (
               <button
                 type="button"
-                className="son-trang-experience__button son-trang-experience__button--primary"
+                className="son-trang-experience__button son-trang-experience__button--primary son-trang-experience__touch-target"
                 onClick={onEnterSelected3D}
               >
                 Xem 3D
@@ -65,7 +65,7 @@ export function SonTrangExperience({
             {destination.geoPoint !== null && (
               <button
                 type="button"
-                className="son-trang-experience__button son-trang-experience__button--secondary"
+                className="son-trang-experience__button son-trang-experience__button--secondary son-trang-experience__touch-target"
                 onClick={onOpenMap}
               >
                 Xem trên bản đồ
@@ -78,7 +78,7 @@ export function SonTrangExperience({
           {destination.coverImageUrl ? (
             <img
               src={destination.coverImageUrl}
-              alt={destination.name}
+              alt={`Ảnh toàn cảnh của ${destination.name}`}
               className="son-trang-experience__hero-media"
             />
           ) : (
@@ -107,13 +107,13 @@ export function SonTrangExperience({
       {pillars && pillars.length > 0 && (
         <section className="son-trang-experience__section">
           <h2 className="son-trang-experience__section-title">Bốn lớp trải nghiệm</h2>
-          <div className="son-trang-experience__pillars">
+          <ul className="son-trang-experience__pillars" aria-label="Bốn lớp trải nghiệm">
             {pillars.map((pillar, index) => (
-              <div key={index} className="son-trang-experience__pillar">
+              <li key={index} className="son-trang-experience__pillar">
                 <h3 className="son-trang-experience__pillar-title">{pillar}</h3>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </section>
       )}
 
@@ -126,7 +126,7 @@ export function SonTrangExperience({
                 {zone.coverImageUrl ? (
                   <img
                     src={zone.coverImageUrl}
-                    alt={zone.name}
+                    alt={`Ảnh phân khu ${zone.name}`}
                     className="son-trang-experience__zone-media"
                   />
                 ) : (

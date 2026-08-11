@@ -32,6 +32,10 @@
   outline-offset: 4px;
 }
 
+.son-trang-experience__touch-target {
+  min-height: 44px;
+}
+
 .son-trang-experience__hero {
   padding: 2rem clamp(1rem, 4vw, 4rem);
   display: grid;
@@ -152,15 +156,14 @@
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
   margin-top: 1rem;
+  list-style: none;
+  padding: 0;
 }
 
 .son-trang-experience__pillar {
-  padding: 1.5rem;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  padding: 1.5rem 0;
+  background: transparent;
+  border-top: 1px solid rgba(87, 112, 100, 0.2);
 }
 
 .son-trang-experience__pillar-title {
@@ -189,12 +192,8 @@
 .son-trang-experience__zone-card {
   display: flex;
   flex-direction: column;
-  border-radius: 12px;
   overflow: hidden;
-  background: #ffffff;
-  box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  background: transparent;
 }
 
 .son-trang-experience__zone-media {
@@ -214,7 +213,7 @@
 }
 
 .son-trang-experience__zone-content {
-  padding: 1.5rem;
+  padding: 1.5rem 0;
   flex: 1;
 }
 
