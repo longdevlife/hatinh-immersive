@@ -178,6 +178,7 @@ class NativeNavigatingPanoramaEngine extends FakePanoramaEngine {
 
 describe('ImmersiveExperience', () => {
   beforeEach(() => {
+    window.sessionStorage.clear();
     useImmersiveNavigation.getState().reset();
   });
 
@@ -199,12 +200,9 @@ describe('ImmersiveExperience', () => {
 
     await waitFor(() => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
-    });
-    expect(minimap.calls.some((call) => call.type === 'mount')).toBe(false);
-    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
-    await waitFor(() => {
       expect(minimap.calls.some((call) => call.type === 'mount')).toBe(true);
     });
+    expect(screen.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeInTheDocument();
     expect(factories.createPanoramaEngine).toHaveBeenCalledTimes(1);
     expect(factories.createMinimapEngine).toHaveBeenCalledTimes(1);
     expect(map3d.calls.at(-1)).toEqual({ type: 'destroy' });
