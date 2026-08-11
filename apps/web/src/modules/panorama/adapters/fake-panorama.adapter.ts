@@ -9,7 +9,6 @@ export type FakePanoramaCall =
   | { type: 'mount'; container: HTMLElement }
   | { type: 'loadNode'; node: PanoramaNode }
   | { type: 'setView'; view: PanoramaView }
-  | { type: 'setHotspots'; hotspots: HotspotVm[] }
   | { type: 'destroy' };
 
 export class FakePanoramaEngine implements PanoramaEnginePort {
@@ -43,9 +42,7 @@ export class FakePanoramaEngine implements PanoramaEnginePort {
   }
 
   setHotspots(hotspots: HotspotVm[]) {
-    const snapshot = hotspots.map((hotspot) => ({ ...hotspot }));
-    this.calls.push({ type: 'setHotspots', hotspots: snapshot });
-    this.renderHotspots(snapshot);
+    this.renderHotspots(hotspots.map((hotspot) => ({ ...hotspot })));
   }
 
   subscribeViewChanged(listener: (view: PanoramaView) => void) {
