@@ -65,13 +65,24 @@ export function RendererState({
           </strong>
           <p>Cảnh hiện tại vẫn được giữ lại. Bạn có thể thử tải lại trải nghiệm.</p>
         </div>
-        <button
-          className="immersive-button immersive-button--light"
-          type="button"
-          onClick={onRetry}
-        >
-          Thử lại
-        </button>
+        <div className="immersive-renderer-state__actions">
+          <button
+            className="immersive-button immersive-button--light"
+            type="button"
+            onClick={onRetry}
+          >
+            Thử lại
+          </button>
+          {showFallback ? (
+            <button
+              className="immersive-button immersive-button--primary"
+              type="button"
+              onClick={onFallback}
+            >
+              {fallbackLabel ?? (mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại')}
+            </button>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -86,15 +97,17 @@ export function RendererState({
         </strong>
         <p>Hãy tiếp tục bằng chế độ còn lại để không ngắt quãng hành trình.</p>
       </div>
-      {showFallback ? (
-        <button
-          className="immersive-button immersive-button--light"
-          type="button"
-          onClick={onFallback}
-        >
-          {fallbackLabel ?? (mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại')}
-        </button>
-      ) : null}
+      <div className="immersive-renderer-state__actions">
+        {showFallback ? (
+          <button
+            className="immersive-button immersive-button--primary"
+            type="button"
+            onClick={onFallback}
+          >
+            {fallbackLabel ?? (mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại')}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }
