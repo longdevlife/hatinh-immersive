@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile, mkdir } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -48,6 +48,61 @@ test('rejects manifest assets that escape the manifest directory', async () => {
     );
   } finally {
     await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('rejects tile templates that escape the manifest directory', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'hatinh-panorama-validate-'));
+  const manifestPath = path.join(root, 'manifest.json');
+  try {
+    await writeManifest(root, 4096);
+    const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as {
+      tileUrlTemplate: string;
+    };
+    manifest.tileUrlTemplate = '../tiles/{level}/{col}-{row}.webp';
+    await writeFile(manifestPath, JSON.stringify(manifest));
+
+    await assert.rejects(
+      validatePanoramaManifest({ manifestPath }),
+      /PANORAMA_ASSET_PATH_OUTSIDE_MANIFEST/,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('rejects a physical tile that is missing', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'hatinh-panorama-validate-'));
+  const manifestPath = path.join(root, 'manifest.json');
+  try {
+    await writeManifest(root, 4096);
+    await rm(path.join(root, 'tiles', '0', '0-0.webp'));
+
+    await assert.rejects(validatePanoramaManifest({ manifestPath }), /PANORAMA_TILE_MISSING/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('rejects a tile directory symlink that escapes the manifest directory', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'hatinh-panorama-validate-'));
+  const outside = await mkdtemp(path.join(tmpdir(), 'hatinh-panorama-outside-'));
+  const manifestPath = path.join(root, 'manifest.json');
+  const outsideTiles = path.join(outside, 'level-0');
+  try {
+    await writeManifest(root, 4096);
+    await mkdir(outsideTiles, { recursive: true });
+    await writeFile(path.join(outsideTiles, '0-0.webp'), 'outside tile');
+    await rm(path.join(root, 'tiles', '0'), { recursive: true, force: true });
+    await symlink(outsideTiles, path.join(root, 'tiles', '0'), 'junction');
+
+    await assert.rejects(
+      validatePanoramaManifest({ manifestPath }),
+      /PANORAMA_ASSET_PATH_OUTSIDE_MANIFEST/,
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(outside, { recursive: true, force: true });
   }
 });
 

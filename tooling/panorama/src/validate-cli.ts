@@ -5,7 +5,6 @@ const HELP = `Usage: pnpm --filter @hatinh/panorama-tooling panorama:validate --
 Options:
   --manifest <file>       Panorama manifest to validate.
   --minimum-width <px>    Minimum useful panorama width (default: 4096).
-  --no-tiles              Skip physical tile checks.
   --help                  Show this help.
 `;
 
@@ -17,7 +16,6 @@ if (argumentsMap.has('help')) {
   const minimumWidth = optionalInteger(argumentsMap, 'minimum-width');
   const options = {
     manifestPath,
-    requireTiles: !argumentsMap.has('no-tiles'),
     ...(minimumWidth === undefined ? {} : { minimumWidth }),
   };
   const result = await validatePanoramaManifest(options);
@@ -32,7 +30,7 @@ function parseArguments(argv: string[]): Map<string, string | true> {
       throw new Error(`Unexpected argument: ${argument ?? ''}\n\n${HELP}`);
     }
     const name = argument.slice(2);
-    if (name === 'help' || name === 'no-tiles') {
+    if (name === 'help') {
       result.set(name, true);
       continue;
     }

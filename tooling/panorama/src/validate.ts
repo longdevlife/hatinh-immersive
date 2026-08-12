@@ -1,4 +1,4 @@
-import { access, readFile, stat } from 'node:fs/promises';
+import { access, readFile, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 import {
@@ -10,7 +10,6 @@ import {
 export interface ValidatePanoramaManifestOptions {
   manifestPath: string;
   minimumWidth?: number;
-  requireTiles?: boolean;
 }
 
 export interface ValidatedPanoramaManifest {
@@ -38,26 +37,24 @@ export async function validatePanoramaManifest(
     throw new Error(`PANORAMA_MAX_WIDTH_BELOW_MINIMUM: ${maximumWidth} < ${minimumWidth}`);
   }
 
-  const manifestDirectory = path.dirname(options.manifestPath);
-  const previewPath = resolveManifestAssetPath(manifestDirectory, manifest.preview);
+  const manifestDirectory = await realpath(path.dirname(options.manifestPath));
+  const previewPath = await resolveManifestAssetPath(manifestDirectory, manifest.preview);
   const previewStats = await stat(previewPath).catch(() => null);
   if (!previewStats?.isFile() || previewStats.size === 0) {
     throw new Error(`PANORAMA_PREVIEW_MISSING: ${manifest.preview}`);
   }
 
   let tileCount = 0;
-  if (options.requireTiles ?? true) {
-    for (const [levelIndex, level] of manifest.levels.entries()) {
-      for (let row = 0; row < level.rows; row += 1) {
-        for (let column = 0; column < level.cols; column += 1) {
-          const relativeTilePath = expandPanoramaTileUrl(manifest, column, row, levelIndex);
-          const tilePath = resolveManifestAssetPath(manifestDirectory, relativeTilePath);
-          const tileStats = await stat(tilePath).catch(() => null);
-          if (!tileStats?.isFile() || tileStats.size === 0) {
-            throw new Error(`PANORAMA_TILE_MISSING: ${relativeTilePath}`);
-          }
-          tileCount += 1;
+  for (const [levelIndex, level] of manifest.levels.entries()) {
+    for (let row = 0; row < level.rows; row += 1) {
+      for (let column = 0; column < level.cols; column += 1) {
+        const relativeTilePath = expandPanoramaTileUrl(manifest, column, row, levelIndex);
+        const tilePath = await resolveManifestAssetPath(manifestDirectory, relativeTilePath);
+        const tileStats = await stat(tilePath).catch(() => null);
+        if (!tileStats?.isFile() || tileStats.size === 0) {
+          throw new Error(`PANORAMA_TILE_MISSING: ${relativeTilePath}`);
         }
+        tileCount += 1;
       }
     }
   }
@@ -65,15 +62,31 @@ export async function validatePanoramaManifest(
   return { manifest, maximumWidth, tileCount };
 }
 
-function resolveManifestAssetPath(manifestDirectory: string, relativePath: string): string {
+async function resolveManifestAssetPath(
+  manifestDirectory: string,
+  relativePath: string,
+): Promise<string> {
   const resolvedPath = path.resolve(manifestDirectory, relativePath);
-  const pathFromManifestDirectory = path.relative(manifestDirectory, resolvedPath);
+  assertInsideManifestDirectory(manifestDirectory, resolvedPath, relativePath);
+
+  const resolvedRealPath = await realpath(resolvedPath).catch(() => null);
+  if (resolvedRealPath !== null) {
+    assertInsideManifestDirectory(manifestDirectory, resolvedRealPath, relativePath);
+  }
+  return resolvedPath;
+}
+
+function assertInsideManifestDirectory(
+  manifestDirectory: string,
+  candidatePath: string,
+  displayPath: string,
+): void {
+  const pathFromManifestDirectory = path.relative(manifestDirectory, candidatePath);
   if (
     path.isAbsolute(pathFromManifestDirectory) ||
     pathFromManifestDirectory === '..' ||
     pathFromManifestDirectory.startsWith(`..${path.sep}`)
   ) {
-    throw new Error(`PANORAMA_ASSET_PATH_OUTSIDE_MANIFEST: ${relativePath}`);
+    throw new Error(`PANORAMA_ASSET_PATH_OUTSIDE_MANIFEST: ${displayPath}`);
   }
-  return resolvedPath;
 }
