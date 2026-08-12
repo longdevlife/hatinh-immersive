@@ -15,8 +15,12 @@ export {
   createExploreMapHref,
 } from './model/destination-detail-links';
 export {
+  toDestinationDetailPresentationVm,
   toDestinationDetailViewModel,
   type DestinationCapabilities,
+  type DestinationDetailFactVm,
+  type DestinationDetailPresentationVm,
+  type DestinationDetailSectionVm,
   type DestinationDetailViewModel,
   type DestinationExperienceProps,
 } from './model/destination-detail.types';

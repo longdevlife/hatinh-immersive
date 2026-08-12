@@ -1,19 +1,19 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { DestinationDetailViewModel } from '../model/destination-detail.types';
+import type { DestinationDetailPresentationVm } from '../model/destination-detail.types';
 import { DestinationExperience } from './DestinationExperience';
 
-const baseDestination: DestinationDetailViewModel = {
+const baseDestination: DestinationDetailPresentationVm = {
   id: 'destination-01',
   slug: 'destination-01',
   name: 'Sơn Trang Cổ Đạm',
   summary: 'Một hành trình qua văn hóa và thiên nhiên Hà Tĩnh.',
   categoryLabel: 'Di sản & văn hóa',
-  coverImageUrl: null,
-  media: { hero: null, gallery: [] },
   locationLabel: 'Hà Tĩnh',
-  hasMapLocation: true,
+  media: { hero: null, gallery: [] },
+  facts: [],
+  sections: [],
   capabilities: {
     hasPanorama: true,
     hasSelected3D: false,
@@ -22,7 +22,7 @@ const baseDestination: DestinationDetailViewModel = {
 };
 
 function renderExperience(
-  destination: DestinationDetailViewModel = baseDestination,
+  destination: DestinationDetailPresentationVm = baseDestination,
   overrides: Partial<Parameters<typeof DestinationExperience>[0]> = {},
 ) {
   return render(
@@ -51,6 +51,38 @@ describe('DestinationExperience', () => {
     expect(screen.queryByTestId('panorama-renderer')).not.toBeInTheDocument();
   });
 
+  it('renders governed hero and editorial content without a missing-image placeholder', () => {
+    const destination: DestinationDetailPresentationVm = {
+      ...baseDestination,
+      media: {
+        hero: {
+          id: 'hero',
+          kind: 'image',
+          src: '/demo/media/son-trang/hero.webp',
+          alt: 'Sơn Trang Cổ Đạm',
+          width: 1774,
+          height: 887,
+          rightsStatus: 'demo-only',
+        },
+        gallery: [],
+      },
+    };
+
+    render(
+      <DestinationExperience
+        destination={destination}
+        onBackToExplore={vi.fn()}
+        onOpenMap={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('img', { name: 'Sơn Trang Cổ Đạm' })).toHaveAttribute(
+      'src',
+      '/demo/media/son-trang/hero.webp',
+    );
+    expect(screen.queryByText('Chưa có hình ảnh')).not.toBeInTheDocument();
+  });
+
   it('shows only actions backed by the supplied capabilities', () => {
     renderExperience();
 
@@ -60,15 +92,17 @@ describe('DestinationExperience', () => {
   });
 
   it('does not render map or panorama actions when the capability is unavailable', () => {
-    renderExperience({
-      ...baseDestination,
-      hasMapLocation: false,
-      capabilities: {
-        hasPanorama: false,
-        hasSelected3D: false,
-        selected3DAvailability: 'disabled',
+    renderExperience(
+      {
+        ...baseDestination,
+        capabilities: {
+          hasPanorama: false,
+          hasSelected3D: false,
+          selected3DAvailability: 'disabled',
+        },
       },
-    });
+      { onOpenMap: undefined },
+    );
 
     expect(screen.queryByRole('button', { name: 'Xem trên bản đồ' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();

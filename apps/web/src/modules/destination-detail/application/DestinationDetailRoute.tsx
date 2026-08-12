@@ -16,7 +16,7 @@ import {
   createDestinationImmersiveHref,
   createExploreMapHref,
 } from '../model/destination-detail-links';
-import { toDestinationDetailViewModel } from '../model/destination-detail.types';
+import { toDestinationDetailPresentationVm } from '../model/destination-detail.types';
 import { DestinationExperience } from '../ui/DestinationExperience';
 
 export interface DestinationDetailRouteProps {
@@ -82,7 +82,7 @@ export function DestinationDetailRoute({
   }
 
   const capabilities = getDestinationCapabilities(destination, capabilityConfig);
-  const view = toDestinationDetailViewModel(destination, capabilities);
+  const view = toDestinationDetailPresentationVm(destination, capabilities);
   const sonTrangExperience = toSonTrangExperienceVm(destination);
   const returnTo = new URLSearchParams(location.search).get('returnTo');
   const exploreReturnContext = returnTo ? parseExploreReturnHref(returnTo) : null;
@@ -90,7 +90,9 @@ export function DestinationDetailRoute({
     ? createExploreReturnHref(exploreReturnContext)
     : createExploreReturnHref({ destinationSlug: destination.slug });
   const onBackToExplore = () => navigate(exploreReturnHref);
-  const onOpenMap = () => navigate(createExploreMapHref(destination.slug));
+  const onOpenMap = destination.geoPoint
+    ? () => navigate(createExploreMapHref(destination.slug))
+    : undefined;
   const onEnterPanorama = capabilities.hasPanorama
     ? () => navigate(createDestinationImmersiveHref(destination, 'panorama'))
     : undefined;
@@ -105,7 +107,7 @@ export function DestinationDetailRoute({
         capabilities={capabilities}
         mainRef={destinationMainRef}
         onBackToExplore={onBackToExplore}
-        onOpenMap={onOpenMap}
+        {...(onOpenMap ? { onOpenMap } : {})}
         {...(onEnterPanorama ? { onEnterPanorama } : {})}
         {...(onEnterSelected3D ? { onEnterSelected3D } : {})}
       />
@@ -117,7 +119,7 @@ export function DestinationDetailRoute({
       destination={view}
       mainRef={destinationMainRef}
       onBackToExplore={onBackToExplore}
-      onOpenMap={onOpenMap}
+      {...(onOpenMap ? { onOpenMap } : {})}
       {...(onEnterPanorama ? { onEnterPanorama } : {})}
       {...(onEnterSelected3D ? { onEnterSelected3D } : {})}
     />

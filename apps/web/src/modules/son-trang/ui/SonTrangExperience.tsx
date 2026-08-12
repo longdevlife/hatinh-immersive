@@ -7,7 +7,7 @@ export interface SonTrangExperienceProps {
   experience: SonTrangExperienceVm;
   capabilities: DestinationCapabilities;
   onBackToExplore(): void;
-  onOpenMap(): void;
+  onOpenMap?: (() => void) | undefined;
   onEnterPanorama?(): void;
   onEnterSelected3D?(): void;
   mainRef?: RefObject<HTMLElement | null>;
@@ -78,7 +78,7 @@ export function SonTrangExperience({
               </p>
             )}
 
-            {destination.geoPoint !== null && (
+            {destination.geoPoint !== null && onOpenMap && (
               <button
                 type="button"
                 className="son-trang-experience__button son-trang-experience__button--secondary son-trang-experience__touch-target"

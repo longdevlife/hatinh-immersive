@@ -1,8 +1,14 @@
 import type { RefObject } from 'react';
-import type { DestinationExperienceProps } from '../model/destination-detail.types';
+import type { DestinationDetailPresentationVm } from '../model/destination-detail.types';
+import { ResponsiveImage } from '../../media';
 import '../../../app/styles/destination-detail.css';
 
-export interface DestinationExperienceFocusProps {
+export interface DestinationDetailPresentationProps {
+  destination: DestinationDetailPresentationVm;
+  onBackToExplore(): void;
+  onOpenMap?: (() => void) | undefined;
+  onEnterPanorama?(): void;
+  onEnterSelected3D?(): void;
   mainRef?: RefObject<HTMLElement | null>;
 }
 
@@ -13,7 +19,7 @@ export function DestinationExperience({
   onEnterPanorama,
   onEnterSelected3D,
   mainRef,
-}: DestinationExperienceProps & DestinationExperienceFocusProps) {
+}: DestinationDetailPresentationProps) {
   const showPanoramaCta = destination.capabilities.hasPanorama && Boolean(onEnterPanorama);
   const show3dCta =
     destination.capabilities.hasSelected3D &&
@@ -49,21 +55,19 @@ export function DestinationExperience({
       </header>
 
       <article className="destination-detail__content">
-        <div className="destination-detail__media-hero">
-          {destination.coverImageUrl ? (
-            <img
-              src={destination.coverImageUrl}
-              alt={`Hình ảnh của ${destination.name}`}
-              className="destination-detail__image"
+        <div className="destination-detail__hero-container">
+          {destination.media.hero ? (
+            <ResponsiveImage
+              asset={destination.media.hero}
+              className="destination-detail__hero-image"
+              loading="eager"
             />
           ) : (
-            <div className="destination-detail__image-empty">
-              <span aria-hidden="true">Chưa có hình ảnh</span>
-            </div>
+            <div className="destination-detail__hero-placeholder" aria-hidden="true"></div>
           )}
         </div>
 
-        <div className="destination-detail__decision-card">
+        <div className="destination-detail__editorial">
           <div className="destination-detail__tags">
             {destination.categoryLabel && (
               <span className="destination-detail__category">{destination.categoryLabel}</span>
@@ -89,7 +93,7 @@ export function DestinationExperience({
             )}
           </div>
 
-          <h1 className="destination-detail__name">{destination.name}</h1>
+          <h1 className="destination-detail__title">{destination.name}</h1>
           <p className="destination-detail__summary">{destination.summary}</p>
 
           <div className="destination-detail__actions">
@@ -119,7 +123,7 @@ export function DestinationExperience({
               </p>
             )}
 
-            {destination.hasMapLocation && (
+            {Boolean(onOpenMap) && (
               <button
                 type="button"
                 className="destination-detail__cta destination-detail__cta--outline"
@@ -129,6 +133,45 @@ export function DestinationExperience({
               </button>
             )}
           </div>
+
+          {destination.facts && destination.facts.length > 0 && (
+            <section className="destination-detail__facts" aria-label="Thông tin nhanh">
+              <dl className="destination-detail__facts-list">
+                {destination.facts.map((fact) => (
+                  <div key={fact.id} className="destination-detail__fact-item">
+                    <dt className="destination-detail__fact-label">{fact.label}</dt>
+                    <dd className="destination-detail__fact-value">{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+
+          {destination.sections && destination.sections.length > 0 && (
+            <div className="destination-detail__sections">
+              {destination.sections.map((section) => (
+                <section key={section.id} className="destination-detail__section">
+                  <h2 className="destination-detail__section-title">{section.title}</h2>
+                  <p className="destination-detail__section-body">{section.body}</p>
+                </section>
+              ))}
+            </div>
+          )}
+
+          {destination.media.gallery && destination.media.gallery.length > 0 && (
+            <section className="destination-detail__gallery" aria-label="Thư viện ảnh">
+              <h2 className="destination-detail__section-title">Thư viện ảnh</h2>
+              <div className="destination-detail__gallery-grid">
+                {destination.media.gallery.map((asset) => (
+                  <ResponsiveImage
+                    key={asset.id}
+                    asset={asset}
+                    className="destination-detail__gallery-image"
+                  />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </article>
     </main>
