@@ -24,6 +24,7 @@ export function toSonTrangExperienceVm(
   return {
     destination,
     pillars: SON_TRANG_PILLARS,
+    gallery: destination.media?.gallery ?? [],
     zones: SON_TRANG_ZONES.map((name) => ({
       id: `son-trang-zone-${name}`,
       name,

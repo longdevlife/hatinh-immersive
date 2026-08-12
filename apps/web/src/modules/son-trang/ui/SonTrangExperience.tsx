@@ -2,6 +2,7 @@ import React from 'react';
 import type { RefObject } from 'react';
 import type { DestinationCapabilities } from '../../../shared/contracts';
 import type { SonTrangExperienceVm } from '../model/son-trang.types';
+import { ResponsiveImage } from '../../media';
 
 export interface SonTrangExperienceProps {
   experience: SonTrangExperienceVm;
@@ -22,7 +23,7 @@ export function SonTrangExperience({
   onEnterSelected3D,
   mainRef,
 }: SonTrangExperienceProps) {
-  const { destination, pillars, zones } = experience;
+  const { destination, pillars, zones, gallery } = experience;
 
   return (
     <main
@@ -157,6 +158,28 @@ export function SonTrangExperience({
                   ) : null}
                 </div>
               </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {gallery.length > 0 && (
+        <section
+          className="son-trang-experience__section son-trang-experience__gallery"
+          aria-label="Thư viện ảnh Sơn Trang"
+        >
+          <div className="son-trang-experience__gallery-heading">
+            <p className="son-trang-experience__gallery-kicker">Hình ảnh tham khảo</p>
+            <h2 className="son-trang-experience__section-title">Những lát cắt của Sơn Trang</h2>
+          </div>
+          <div className="son-trang-experience__gallery-grid">
+            {gallery.map((asset) => (
+              <ResponsiveImage
+                key={asset.id}
+                asset={asset}
+                className="son-trang-experience__gallery-image"
+                sizes="(max-width: 767px) 85vw, (max-width: 1199px) 45vw, 32vw"
+              />
             ))}
           </div>
         </section>

@@ -44,6 +44,7 @@ describe('SonTrangExperience', () => {
         coverImageUrl: null,
       },
     ],
+    gallery: [],
   };
 
   const defaultCapabilities: DestinationCapabilities = {
@@ -98,6 +99,30 @@ describe('SonTrangExperience', () => {
     expect(pillarsList).toBeInTheDocument();
     const listItems = within(pillarsList).getAllByRole('listitem');
     expect(listItems).toHaveLength(4);
+  });
+
+  it('renders a dedicated editorial gallery when gallery media is available', () => {
+    const experienceWithGallery: SonTrangExperienceVm = {
+      ...defaultExperience,
+      gallery: [
+        {
+          id: 'son-trang-gallery-01',
+          kind: 'image',
+          src: '/demo/media/son-trang/gallery-01.webp',
+          alt: 'Hình minh họa demo về lối đi Sơn Trang Cổ Đạm',
+          width: 1536,
+          height: 1024,
+          rightsStatus: 'demo-only',
+          attribution: null,
+          variants: [{ src: '/demo/media/son-trang/gallery-01.webp', width: 1536 }],
+        },
+      ],
+    };
+
+    render(<SonTrangExperience {...defaultProps} experience={experienceWithGallery} />);
+
+    const gallery = screen.getByRole('region', { name: 'Thư viện ảnh Sơn Trang' });
+    expect(within(gallery).getByRole('img', { name: /lối đi Sơn Trang/i })).toBeInTheDocument();
   });
 
   it('uses descriptive Vietnamese alt text for images', () => {

@@ -29,6 +29,7 @@ describe('toSonTrangExperienceVm', () => {
         'Giáo dục trải nghiệm',
         'Tâm linh & đời sống tinh thần',
       ],
+      gallery: [],
       zones: [
         {
           id: 'son-trang-zone-Tâm linh',
@@ -78,6 +79,7 @@ describe('toSonTrangExperienceVm', () => {
         expect.objectContaining({ name: 'Giải trí', coverImageUrl: null, immersiveSceneId: null }),
       ]),
     );
+    expect(toSonTrangExperienceVm(destination)?.gallery).toEqual([]);
   });
 
   it('does not create a Sơn Trang experience for another destination slug', () => {
