@@ -4,6 +4,7 @@ import type {
   SceneLinkVm,
   SceneNodeVm,
 } from '../../../shared/contracts';
+import { hotspotsFixture } from '../../../shared/fixtures';
 import type { Map3DLocation } from '../../map3d';
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
 
@@ -61,6 +62,29 @@ function createDefinition({
 }
 
 export const DEMO_DESTINATIONS = [
+  createDefinition({
+    id: 'son-trang-co-dam',
+    slug: 'son-trang-co-dam',
+    name: 'Sơn Trang Cổ Đạm',
+    summary: 'Một hành trình immersive qua văn hóa, thiên nhiên và những lớp ký ức địa phương.',
+    categoryLabel: 'Di sản & văn hóa',
+    position: { lat: 18.3421, lng: 105.9032 },
+    cameraPreset: {
+      center: { lat: 18.3421, lng: 105.9032, altitude: 420 },
+      heading: 32,
+      tilt: 48,
+      range: 1_800,
+    },
+    scenes: [
+      {
+        id: 'son-trang-gate',
+        name: 'Cổng Sơn Trang Cổ Đạm',
+        lat: 18.3421,
+        lng: 105.9032,
+        heading: 32,
+      },
+    ],
+  }),
   createDefinition({
     id: 'thien-cam-beach',
     slug: 'bien-thien-cam',
@@ -217,6 +241,9 @@ function createManifest(definition: DemoDestinationDefinition): ImmersiveManifes
     nodes,
     panoramaNodes,
     links,
-    hotspots: [],
+    hotspots:
+      definition.preview.slug === 'son-trang-co-dam' || definition.preview.slug === 'bien-thien-cam'
+        ? hotspotsFixture
+        : [],
   };
 }

@@ -42,7 +42,7 @@ test('runs the real Explore MapLibre engine against locally fulfilled style and 
 
   await page.goto('/explore');
 
-  const map = page.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' });
+  const map = page.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' });
   await expect(page.locator('#explore-title')).toBeVisible();
   await expect(map).toHaveAttribute('data-explore-map-status', 'ready');
   await expect(map.locator('canvas.maplibregl-canvas')).toHaveCount(1);

@@ -152,7 +152,9 @@ export function SonTrangExperience({
                 )}
                 <div className="son-trang-experience__zone-content">
                   <h3 className="son-trang-experience__zone-title">{zone.name}</h3>
-                  <p className="son-trang-experience__zone-summary">{zone.summary}</p>
+                  {zone.summary ? (
+                    <p className="son-trang-experience__zone-summary">{zone.summary}</p>
+                  ) : null}
                 </div>
               </article>
             ))}

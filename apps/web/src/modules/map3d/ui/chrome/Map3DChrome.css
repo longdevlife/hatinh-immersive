@@ -52,6 +52,32 @@
   pointer-events: none;
 }
 
+.map3d-chrome__back {
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--chrome-border);
+  border-radius: 999px;
+  background: var(--chrome-bg);
+  color: var(--chrome-text-primary);
+  cursor: pointer;
+  pointer-events: auto;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+}
+
+.map3d-chrome__back:hover,
+.map3d-chrome__back:focus-visible {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.map3d-chrome__back:focus-visible {
+  outline: 2px solid var(--chrome-accent);
+  outline-offset: 2px;
+}
+
 /* ACTIONS */
 .map3d-chrome__actions {
   display: flex;

@@ -146,10 +146,14 @@ function buildDefaultLocationCamera(location: Pick<Map3DLocation['position'], 'l
 function mergeMapLocations(
   manifest: ImmersiveManifestVm,
   destinations: DestinationPreviewVm[],
+  scopeToDestination = false,
 ): Map3DLocation[] {
   const locations = new Map<string, Map3DLocation>();
 
-  for (const destination of destinations) {
+  const candidates = scopeToDestination
+    ? destinations.filter((destination) => destination.id === manifest.destination.id)
+    : destinations;
+  for (const destination of candidates) {
     const location = toMap3DLocation(destination);
     if (location) {
       locations.set(location.id, location);
@@ -157,7 +161,11 @@ function mergeMapLocations(
   }
 
   const manifestLocation = toMap3DLocation(manifest.destination);
-  if (manifestLocation) {
+  if (manifestLocation && !scopeToDestination) {
+    locations.set(manifestLocation.id, manifestLocation);
+  }
+
+  if (scopeToDestination && manifestLocation && locations.size === 0) {
     locations.set(manifestLocation.id, manifestLocation);
   }
 
@@ -450,9 +458,12 @@ export function ImmersiveExperience({
   const destinationsQuery = useImmersiveDestinations(locale, shouldFetchDestinations);
   const destinations = destinationsOverride ?? destinationsQuery.data;
   const manifest = manifestOverride ?? manifestQuery.data;
+  const requestedMode = new URLSearchParams(location.search).get('mode');
+  const isDestinationScopedSelected3D = requestedMode === 'overview3d';
   const mapLocations = useMemo(
-    () => (manifest ? mergeMapLocations(manifest, destinations) : []),
-    [destinations, manifest],
+    () =>
+      manifest ? mergeMapLocations(manifest, destinations, isDestinationScopedSelected3D) : [],
+    [destinations, isDestinationScopedSelected3D, manifest],
   );
   const routeLocation = useMemo(
     () =>
@@ -744,9 +755,17 @@ export function ImmersiveExperience({
   const onSelectDestination = useCallback(
     (destination: DestinationPreviewVm) => {
       setDestinationSearchQuery('');
+
+      if (navigation.mode === 'panorama') {
+        if (destination.id !== manifest?.destination.id) {
+          navigate(`/explore/${encodeURIComponent(destination.slug)}`);
+        }
+        return;
+      }
+
       selectLocation(destination.id);
     },
-    [selectLocation],
+    [manifest, navigate, navigation.mode, selectLocation],
   );
   const onLocaleChange = useCallback((nextLocale: ImmersiveLocale) => {
     setLocale(nextLocale);
@@ -846,6 +865,7 @@ export function ImmersiveExperience({
         minimapEngine={navigation.mode === 'panorama' ? activeMinimapEngine : null}
         onLanguageToggle={() => onLocaleChange(locale === 'vi' ? 'en' : 'vi')}
         onLocationSelected={selectLocation}
+        showLocationBrowser={!isDestinationScopedSelected3D}
         rendererContent={rendererContent}
         selectedLocationId={navigation.selectedLocationId}
         view={view}

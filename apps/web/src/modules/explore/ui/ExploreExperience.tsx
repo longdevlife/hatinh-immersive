@@ -16,7 +16,9 @@ export interface ExploreExperienceProps {
   destinations?: readonly DestinationPreviewVm[];
   mapEngine?: ExploreMapEnginePort;
   initialDestinationSlug?: string;
-  onOpenDestination?(destination: DestinationPreviewVm): void;
+  initialQuery?: string;
+  initialCategory?: string;
+  onOpenDestination?(destination: DestinationPreviewVm, returnHref?: string): void;
 }
 
 const MOBILE_VIEWPORT_QUERY = '(max-width: 768px)';
@@ -96,6 +98,8 @@ export function ExploreExperience({
   destinations: destinationsOverride,
   mapEngine: mapEngineOverride,
   initialDestinationSlug,
+  initialQuery,
+  initialCategory,
   onOpenDestination,
 }: ExploreExperienceProps) {
   const destinationsQuery = useImmersiveDestinations('vi', destinationsOverride === undefined);
@@ -105,8 +109,8 @@ export function ExploreExperience({
     [mapEngineOverride],
   );
   const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('');
+  const [query, setQuery] = useState(initialQuery ?? '');
+  const [category, setCategory] = useState(initialCategory ?? '');
   const [isMobileMapOpen, setIsMobileMapOpen] = useState(false);
   const appliedInitialDestinationSlug = useRef<string | null>(null);
   const isMobileViewport = useIsMobileViewport();
@@ -161,6 +165,18 @@ export function ExploreExperience({
     }
   }
 
+  function openDestination(destination: DestinationPreviewVm) {
+    const params = new URLSearchParams();
+    if (query.trim()) {
+      params.set('q', query.trim());
+    }
+    if (category.trim()) {
+      params.set('category', category.trim());
+    }
+    params.set('destination', destination.slug);
+    onOpenDestination?.(destination, `/explore?${params.toString()}`);
+  }
+
   return (
     <main className="explore-experience" aria-labelledby="explore-title">
       <header className="explore-experience__header">
@@ -187,7 +203,7 @@ export function ExploreExperience({
               onQueryChange={setQuery}
               onCategoryChange={setCategory}
               onSelectDestination={handleSelectDestination}
-              onOpenDestination={onOpenDestination}
+              onOpenDestination={onOpenDestination ? openDestination : undefined}
               onOpenMap={() => setIsMobileMapOpen(true)}
               selectedDestination={selectedDestination}
             />
@@ -227,7 +243,7 @@ export function ExploreExperience({
                 <button
                   type="button"
                   className="explore-experience__detail-action"
-                  onClick={() => onOpenDestination(selectedDestination)}
+                  onClick={() => openDestination(selectedDestination)}
                 >
                   Xem chi tiết
                 </button>

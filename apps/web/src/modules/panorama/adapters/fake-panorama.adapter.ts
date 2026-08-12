@@ -27,7 +27,10 @@ export class FakePanoramaEngine implements PanoramaEnginePort {
 
   async loadNode(node: PanoramaNode) {
     const failure = readFakeFailure();
-    if (failure === 'tile' || (failure === 'next-scene' && node.id === 'scene-02')) {
+    if (
+      failure === 'tile' ||
+      (failure === 'next-scene' && this.loadedNode !== null && node.id !== this.loadedNode.id)
+    ) {
       throw new Error('E2E_PANORAMA_LOAD_FAILURE');
     }
 

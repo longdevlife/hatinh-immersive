@@ -284,6 +284,29 @@ describe('ExploreShell', () => {
     expect(actions.onEnterPanorama).toHaveBeenCalledWith();
   });
 
+  it('also offers a return to destination when 3D fails and 360 is available', () => {
+    const actions = createActions();
+
+    render(<ExploreShell view={threeDUnavailableFixture} actions={actions} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }));
+
+    expect(actions.onReturnToDestination).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns to destination when 3D fails and 360 is unavailable', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell view={threeDUnavailableFixture} actions={actions} canEnterPanorama={false} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }));
+
+    expect(actions.onReturnToDestination).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Mở trải nghiệm 360°' })).not.toBeInTheDocument();
+  });
+
   it('does not advertise a 360 entry while panorama media is unavailable', () => {
     const actions = createActions();
 

@@ -178,6 +178,18 @@ describe('DestinationDetailRoute', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/explore');
   });
 
+  it('restores the durable Explore query, category, and selection context', () => {
+    renderRoute(
+      '/explore/bien-thien-cam?returnTo=%2Fexplore%3Fq%3DNguy%25C4%2595n%26category%3DDi%2Bs%25E1%25BA%25A3n%26destination%3Dbien-thien-cam',
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại khám phá' }));
+
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/explore?q=Nguy%C4%95n&category=Di+s%E1%BA%A3n&destination=bien-thien-cam',
+    );
+  });
+
   it('hides panorama CTA for a destination without a default scene', () => {
     const noPanorama = destinations.map((destination) =>
       destination.slug === 'bien-thien-cam'

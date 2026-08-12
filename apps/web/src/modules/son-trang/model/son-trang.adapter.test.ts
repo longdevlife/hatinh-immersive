@@ -31,12 +31,32 @@ describe('toSonTrangExperienceVm', () => {
       ],
       zones: [
         {
-          id: 'destination-son-trang-co-dam',
-          name: 'Sơn Trang Cổ Đạm',
-          summary:
-            'Một hành trình immersive qua văn hóa, thiên nhiên và những lớp ký ức địa phương.',
-          coverImageUrl: 'https://cdn.example.vn/hatinh/son-trang/cover.webp',
-          immersiveSceneId: 'scene-01',
+          id: 'son-trang-zone-Tâm linh',
+          name: 'Tâm linh',
+          summary: '',
+          coverImageUrl: null,
+          immersiveSceneId: null,
+        },
+        {
+          id: 'son-trang-zone-Văn hóa',
+          name: 'Văn hóa',
+          summary: '',
+          coverImageUrl: null,
+          immersiveSceneId: null,
+        },
+        {
+          id: 'son-trang-zone-Sinh thái',
+          name: 'Sinh thái',
+          summary: '',
+          coverImageUrl: null,
+          immersiveSceneId: null,
+        },
+        {
+          id: 'son-trang-zone-Giải trí',
+          name: 'Giải trí',
+          summary: '',
+          coverImageUrl: null,
+          immersiveSceneId: null,
         },
       ],
     });
@@ -50,12 +70,14 @@ describe('toSonTrangExperienceVm', () => {
       defaultSceneId: null,
     });
 
-    expect(toSonTrangExperienceVm(destination)?.zones).toEqual([
-      expect.objectContaining({
-        coverImageUrl: null,
-        immersiveSceneId: null,
-      }),
-    ]);
+    expect(toSonTrangExperienceVm(destination)?.zones).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Tâm linh', coverImageUrl: null, immersiveSceneId: null }),
+        expect.objectContaining({ name: 'Văn hóa', coverImageUrl: null, immersiveSceneId: null }),
+        expect.objectContaining({ name: 'Sinh thái', coverImageUrl: null, immersiveSceneId: null }),
+        expect.objectContaining({ name: 'Giải trí', coverImageUrl: null, immersiveSceneId: null }),
+      ]),
+    );
   });
 
   it('does not create a Sơn Trang experience for another destination slug', () => {

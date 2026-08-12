@@ -1,8 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
+import {
+  createExploreReturnHref,
+  parseExploreReturnHref,
+} from '../../../shared/navigation/explore-context';
 import { SonTrangExperience, toSonTrangExperienceVm } from '../../son-trang';
 import {
   getDestinationCapabilities,
@@ -50,6 +54,7 @@ export function DestinationDetailRoute({
 }: DestinationDetailRouteProps) {
   const { destinationSlug } = useParams<{ destinationSlug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const destinationsQuery = useImmersiveDestinations('vi', destinationsOverride === undefined);
   const destinations = destinationsOverride ?? destinationsQuery.data;
   const destination = destinations?.find((candidate) => candidate.slug === destinationSlug);
@@ -79,7 +84,12 @@ export function DestinationDetailRoute({
   const capabilities = getDestinationCapabilities(destination, capabilityConfig);
   const view = toDestinationDetailViewModel(destination, capabilities);
   const sonTrangExperience = toSonTrangExperienceVm(destination);
-  const onBackToExplore = () => navigate('/explore');
+  const returnTo = new URLSearchParams(location.search).get('returnTo');
+  const exploreReturnContext = returnTo ? parseExploreReturnHref(returnTo) : null;
+  const exploreReturnHref = exploreReturnContext
+    ? createExploreReturnHref(exploreReturnContext)
+    : createExploreReturnHref({ destinationSlug: destination.slug });
+  const onBackToExplore = () => navigate(exploreReturnHref);
   const onOpenMap = () => navigate(createExploreMapHref(destination.slug));
   const onEnterPanorama = capabilities.hasPanorama
     ? () => navigate(createDestinationImmersiveHref(destination, 'panorama'))

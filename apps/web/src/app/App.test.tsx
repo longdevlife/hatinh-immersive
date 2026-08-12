@@ -65,4 +65,14 @@ describe('public application shell', () => {
       expect(window.location.search).toBe('?mode=panorama&scene=thien-cam-boardwalk');
     });
   });
+
+  it('does not treat a bare immersive route as implicit selected 3D', async () => {
+    window.history.pushState({}, '', '/explore/bien-thien-cam/immersive');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/explore/bien-thien-cam');
+    });
+  });
 });

@@ -14,6 +14,8 @@ import {
 import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
 
+import { createExploreReturnHref } from '../shared/navigation/explore-context';
+
 import {
   canEnterSelected3D,
   resolveDestinationCapabilityConfig,
@@ -113,7 +115,8 @@ function ImmersiveRoute() {
 
 function canEnterSelected3DForSlug(destinationSlug: string, requestedMode: string | null): boolean {
   return (
-    requestedMode !== 'panorama' && canEnterSelected3D(destinationSlug, destinationCapabilityConfig)
+    requestedMode === 'overview3d' &&
+    canEnterSelected3D(destinationSlug, destinationCapabilityConfig)
   );
 }
 
@@ -122,15 +125,22 @@ function PublicExplore() {
   const [searchParams] = useSearchParams();
   const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
   const initialDestinationSlug = searchParams.get('destination') ?? undefined;
+  const initialQuery = searchParams.get('q') ?? undefined;
+  const initialCategory = searchParams.get('category') ?? undefined;
 
   return (
     <Suspense fallback={<ImmersiveRouteLoading />}>
       <LazyExploreExperience
         {...(destinations ? { destinations } : {})}
         {...(initialDestinationSlug ? { initialDestinationSlug } : {})}
-        onOpenDestination={(destination) =>
-          navigate(`/explore/${encodeURIComponent(destination.slug)}`)
-        }
+        {...(initialQuery ? { initialQuery } : {})}
+        {...(initialCategory ? { initialCategory } : {})}
+        onOpenDestination={(destination, returnHref) => {
+          const params = new URLSearchParams({
+            returnTo: returnHref ?? createExploreReturnHref({ destinationSlug: destination.slug }),
+          });
+          navigate(`/explore/${encodeURIComponent(destination.slug)}?${params.toString()}`);
+        }}
       />
     </Suspense>
   );

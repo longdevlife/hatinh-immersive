@@ -51,7 +51,7 @@ describe('ExploreMapViewport', () => {
     const view = renderViewport(engine, 'thien-cam', vi.fn(), undefined, false);
 
     expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(0);
-    expect(screen.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+    expect(screen.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
       'data-explore-map-status',
       'idle',
     );
@@ -84,7 +84,7 @@ describe('ExploreMapViewport', () => {
     await waitFor(() =>
       expect(engine.calls.filter((call) => call.type === 'destroy')).toHaveLength(1),
     );
-    expect(screen.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+    expect(screen.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
       'data-explore-map-status',
       'idle',
     );
@@ -150,7 +150,7 @@ describe('ExploreMapViewport', () => {
       target: { latitude: 18.4328, longitude: 105.5871, zoom: 13 },
       type: 'flyTo',
     });
-    expect(screen.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+    expect(screen.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
       'data-explore-map-status',
       'ready',
     );

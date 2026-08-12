@@ -21,14 +21,26 @@ describe('SonTrangExperience', () => {
     zones: [
       {
         id: 'zone-1',
-        name: 'Khu trung tâm',
-        summary: 'Khu vực chính',
-        coverImageUrl: 'https://example.com/zone1.jpg',
+        name: 'Tâm linh',
+        summary: '',
+        coverImageUrl: null,
       },
       {
         id: 'zone-2',
-        name: 'Khu sinh thái',
-        summary: 'Trải nghiệm thiên nhiên',
+        name: 'Văn hóa',
+        summary: '',
+        coverImageUrl: null,
+      },
+      {
+        id: 'zone-3',
+        name: 'Sinh thái',
+        summary: '',
+        coverImageUrl: null,
+      },
+      {
+        id: 'zone-4',
+        name: 'Giải trí',
+        summary: '',
         coverImageUrl: null,
       },
     ],
@@ -68,15 +80,16 @@ describe('SonTrangExperience', () => {
 
     // Pillars
     expect(screen.getByText('Bốn lớp trải nghiệm')).toBeInTheDocument();
-    expect(screen.getByText('Văn hóa')).toBeInTheDocument();
-    expect(screen.getByText('Tâm linh')).toBeInTheDocument();
-    expect(screen.getByText('Giải trí')).toBeInTheDocument();
+    const pillarsList = screen.getByRole('list', { name: 'Bốn lớp trải nghiệm' });
+    expect(within(pillarsList).getByText('Văn hóa')).toBeInTheDocument();
+    expect(within(pillarsList).getByText('Tâm linh')).toBeInTheDocument();
+    expect(within(pillarsList).getByText('Giải trí')).toBeInTheDocument();
 
     // Zones
-    expect(screen.getByText('Khu trung tâm')).toBeInTheDocument();
-    expect(screen.getByText('Khu vực chính')).toBeInTheDocument();
-    expect(screen.getByText('Khu sinh thái')).toBeInTheDocument(); // zone title
-    expect(screen.getByText('Trải nghiệm thiên nhiên')).toBeInTheDocument();
+    const zones = screen.getByRole('heading', { name: 'Các phân khu trải nghiệm' }).parentElement;
+    expect(zones).not.toBeNull();
+    expect(within(zones!).getByText('Sinh thái')).toBeInTheDocument();
+    expect(within(zones!).getByText('Giải trí')).toBeInTheDocument();
   });
 
   it('renders pillars as a semantic list with four items', () => {
@@ -92,7 +105,7 @@ describe('SonTrangExperience', () => {
     expect(
       screen.getByAltText('Ảnh toàn cảnh của Khu du lịch sinh thái Sơn Trang'),
     ).toBeInTheDocument();
-    expect(screen.getByAltText('Ảnh phân khu Khu trung tâm')).toBeInTheDocument();
+    expect(screen.getAllByText('Chưa có hình ảnh')).toHaveLength(4);
   });
 
   it('handles missing media with fallback treatment', () => {
@@ -103,9 +116,9 @@ describe('SonTrangExperience', () => {
 
     render(<SonTrangExperience {...defaultProps} experience={experienceWithoutMedia} />);
 
-    // Should have 2 fallbacks (one for hero, one for zone-2)
+    // Should have one fallback for the hero and one for each approved zone.
     const fallbacks = screen.getAllByText('Chưa có hình ảnh');
-    expect(fallbacks).toHaveLength(2);
+    expect(fallbacks).toHaveLength(5);
   });
 
   it('wires all callbacks correctly', () => {

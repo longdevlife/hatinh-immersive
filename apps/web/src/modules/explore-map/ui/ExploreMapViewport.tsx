@@ -123,7 +123,7 @@ export function ExploreMapViewport({
       className="explore-map-viewport"
       data-explore-map-status={status}
       data-selected-destination-id={selectedDestinationId ?? ''}
-      role="application"
+      role="region"
     >
       <div
         ref={containerRef}

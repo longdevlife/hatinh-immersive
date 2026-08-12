@@ -111,6 +111,24 @@ describe('ExploreExperience', () => {
 
     expect(onOpenDestination).toHaveBeenCalledWith(
       expect.objectContaining({ slug: 'khu-luu-niem-nguyen-du' }),
+      '/explore?destination=khu-luu-niem-nguyen-du',
+    );
+  });
+
+  it('passes the discovery query, category, and selection into the detail return context', () => {
+    const onOpenDestination = vi.fn();
+    renderExplore(new FakeExploreMapEngine(), { onOpenDestination });
+
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Nguyễn' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Di sản & văn hóa' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Chọn điểm đến Khu lưu niệm Nguyễn Du' }));
+    fireEvent.click(
+      within(screen.getByTestId('explore-map')).getByRole('button', { name: 'Xem chi tiết' }),
+    );
+
+    const [, returnHref] = onOpenDestination.mock.calls.at(-1) ?? [];
+    expect(returnHref).toBe(
+      '/explore?q=Nguy%E1%BB%85n&category=Di+s%E1%BA%A3n+%26+v%C4%83n+h%C3%B3a&destination=khu-luu-niem-nguyen-du',
     );
   });
 
@@ -132,7 +150,7 @@ describe('ExploreExperience', () => {
 
     await waitFor(() => expect(mapEngine.calls.some((call) => call.type === 'mount')).toBe(true));
 
-    expect(screen.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+    expect(screen.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
       'data-selected-destination-id',
       '',
     );
@@ -242,11 +260,12 @@ describe('ExploreExperience', () => {
     fireEvent.click(within(destinationList).getByRole('button', { name: 'Xem chi tiết' }));
     expect(onOpenDestination).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'nguyen-du-memorial' }),
+      '/explore?destination=khu-luu-niem-nguyen-du',
     );
 
     fireEvent.click(within(destinationList).getByRole('button', { name: 'Xem bản đồ' }));
     await waitFor(() => expect(mapEngine.calls.some((call) => call.type === 'mount')).toBe(true));
-    expect(screen.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+    expect(screen.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
       'data-selected-destination-id',
       'nguyen-du-memorial',
     );
@@ -262,7 +281,7 @@ describe('ExploreExperience', () => {
     await waitFor(() =>
       expect(mapEngine.calls.filter((call) => call.type === 'mount')).toHaveLength(2),
     );
-    expect(screen.getByRole('application', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+    expect(screen.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
       'data-selected-destination-id',
       'nguyen-du-memorial',
     );

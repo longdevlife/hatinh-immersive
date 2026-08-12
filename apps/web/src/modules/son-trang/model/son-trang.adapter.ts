@@ -11,6 +11,8 @@ const SON_TRANG_PILLARS = [
   'Tâm linh & đời sống tinh thần',
 ] as const;
 
+const SON_TRANG_ZONES = ['Tâm linh', 'Văn hóa', 'Sinh thái', 'Giải trí'] as const;
+
 export function toSonTrangExperienceVm(
   destination: DestinationPreviewVm,
 ): SonTrangExperienceVm | null {
@@ -21,14 +23,12 @@ export function toSonTrangExperienceVm(
   return {
     destination,
     pillars: SON_TRANG_PILLARS,
-    zones: [
-      {
-        id: destination.id,
-        name: destination.name,
-        summary: destination.summary,
-        coverImageUrl: destination.coverImageUrl,
-        immersiveSceneId: destination.defaultSceneId,
-      },
-    ],
+    zones: SON_TRANG_ZONES.map((name) => ({
+      id: `son-trang-zone-${name}`,
+      name,
+      summary: '',
+      coverImageUrl: null,
+      immersiveSceneId: null,
+    })),
   };
 }

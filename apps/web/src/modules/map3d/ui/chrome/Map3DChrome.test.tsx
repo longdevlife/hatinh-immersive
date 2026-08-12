@@ -132,4 +132,36 @@ describe('Map3DChrome', () => {
     expect(onRetry360).toHaveBeenCalled();
     expect(screen.queryByText('360° đang được chuẩn bị')).not.toBeInTheDocument();
   });
+
+  it('can hide the destination browser for destination-scoped selected 3D', () => {
+    render(
+      <Map3DChrome
+        locations={[{ id: '1', label: 'Sơn Trang Cổ Đạm' }]}
+        selectedLocationId="1"
+        showLocationBrowser={false}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Tìm kiếm địa điểm' })).not.toBeInTheDocument();
+  });
+
+  it('always exposes a destination exit for selected 3D', () => {
+    const onReturnToDestination = vi.fn();
+    render(
+      <Map3DChrome
+        locations={[{ id: '1', label: 'Sơn Trang Cổ Đạm' }]}
+        selectedLocationId="1"
+        onReturnToDestination={onReturnToDestination}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }));
+    expect(onReturnToDestination).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the destination label before a location selection is hydrated', () => {
+    render(<Map3DChrome destinationLabel="Sơn Trang Cổ Đạm" onReturnToDestination={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toBeInTheDocument();
+  });
 });

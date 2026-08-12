@@ -23,10 +23,14 @@ export interface Map3DChromeProps {
   selectedLocationId?: string | null;
   /** List of locations available for search and marker selection */
   locations?: Map3DChromeLocation[];
+  /** Selected 3D is destination-scoped and must not expose the catalog browser. */
+  showLocationBrowser?: boolean;
+  destinationLabel?: string;
 
   // Callbacks
   onLanguageToggle?: () => void;
   onShare?: () => void;
+  onReturnToDestination?: () => void;
   onToggleFullscreen?: () => void;
   onShowInfo?: (trigger?: HTMLElement) => void;
 
@@ -47,8 +51,11 @@ export function Map3DChrome({
 
   selectedLocationId = null,
   locations = [],
+  showLocationBrowser = true,
+  destinationLabel,
   onLanguageToggle,
   onShare,
+  onReturnToDestination,
   onToggleFullscreen,
   onShowInfo,
   onLocationSelected,
@@ -139,6 +146,16 @@ export function Map3DChrome({
 
       {/* Top Chrome: Brand, Title, Actions (Compact) */}
       <header className="map3d-chrome__topbar">
+        {onReturnToDestination ? (
+          <button
+            type="button"
+            className="map3d-chrome__back"
+            onClick={onReturnToDestination}
+            aria-label={`Quay lại ${selectedLocation?.label ?? destinationLabel ?? 'điểm đến'}`}
+          >
+            ← Quay lại {selectedLocation?.label ?? destinationLabel ?? 'điểm đến'}
+          </button>
+        ) : null}
         <div className="map3d-chrome__actions">
           <button
             type="button"
@@ -236,86 +253,92 @@ export function Map3DChrome({
       </header>
 
       {/* Floating Launcher (Search & List) */}
-      <aside className="map3d-chrome__launcher" ref={dropdownRef}>
-        <button
-          ref={launcherToggleRef}
-          type="button"
-          className="map3d-chrome__launcher-toggle"
-          onClick={() => setIsListOpen(!isListOpen)}
-          aria-expanded={isListOpen}
-          aria-label={labels.search}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
+      {showLocationBrowser ? (
+        <aside className="map3d-chrome__launcher" ref={dropdownRef}>
+          <button
+            ref={launcherToggleRef}
+            type="button"
+            className="map3d-chrome__launcher-toggle"
+            onClick={() => setIsListOpen(!isListOpen)}
+            aria-expanded={isListOpen}
+            aria-label={labels.search}
           >
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <span className="map3d-chrome__launcher-text">
-            {selectedLocation ? selectedLocation.label : labels.search}
-          </span>
-          <svg
-            className={`map3d-chrome__chevron ${isListOpen ? 'map3d-chrome__chevron--open' : ''}`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
-        </button>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span className="map3d-chrome__launcher-text">
+              {selectedLocation ? selectedLocation.label : labels.search}
+            </span>
+            <svg
+              className={`map3d-chrome__chevron ${isListOpen ? 'map3d-chrome__chevron--open' : ''}`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </button>
 
-        {isListOpen && (
-          <div className="map3d-chrome__launcher-dropdown">
-            <div className="map3d-chrome__search-container">
-              <input
-                type="search"
-                className="map3d-chrome__search-input"
-                placeholder={labels.searchPlaceholder}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+          {isListOpen && (
+            <div className="map3d-chrome__launcher-dropdown">
+              <div className="map3d-chrome__search-container">
+                <input
+                  type="search"
+                  className="map3d-chrome__search-input"
+                  placeholder={labels.searchPlaceholder}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label={labels.search}
+                  autoFocus
+                />
+              </div>
+              <div
                 aria-label={labels.search}
-                autoFocus
-              />
+                className="map3d-chrome__location-list"
+                role="listbox"
+              >
+                {filteredLocations.map((loc) => {
+                  const isSelected = selectedLocationId === loc.id;
+                  return (
+                    <button
+                      key={loc.id}
+                      role="option"
+                      aria-selected={isSelected}
+                      type="button"
+                      className={`map3d-chrome__location-btn ${isSelected ? 'map3d-chrome__location-btn--selected' : ''}`}
+                      onClick={() => {
+                        onLocationSelected?.(loc.id);
+                        setIsListOpen(false);
+                        launcherToggleRef.current?.focus({ preventScroll: true });
+                      }}
+                    >
+                      {loc.label}
+                    </button>
+                  );
+                })}
+                {filteredLocations.length === 0 && (
+                  <p className="map3d-chrome__location-empty" role="status">
+                    {labels.emptyLocations}
+                  </p>
+                )}
+              </div>
             </div>
-            <div aria-label={labels.search} className="map3d-chrome__location-list" role="listbox">
-              {filteredLocations.map((loc) => {
-                const isSelected = selectedLocationId === loc.id;
-                return (
-                  <button
-                    key={loc.id}
-                    role="option"
-                    aria-selected={isSelected}
-                    type="button"
-                    className={`map3d-chrome__location-btn ${isSelected ? 'map3d-chrome__location-btn--selected' : ''}`}
-                    onClick={() => {
-                      onLocationSelected?.(loc.id);
-                      setIsListOpen(false);
-                      launcherToggleRef.current?.focus({ preventScroll: true });
-                    }}
-                  >
-                    {loc.label}
-                  </button>
-                );
-              })}
-              {filteredLocations.length === 0 && (
-                <p className="map3d-chrome__location-empty" role="status">
-                  {labels.emptyLocations}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-      </aside>
+          )}
+        </aside>
+      ) : null}
 
       {/* Bottom Area: Handoff CTA */}
       {selectedLocationId && (

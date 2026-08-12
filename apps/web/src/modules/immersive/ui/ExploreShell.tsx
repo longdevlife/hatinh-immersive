@@ -39,6 +39,7 @@ export interface ExploreShellProps {
   isSceneTransitioning?: boolean;
   locale?: ImmersiveLocale;
   map3dLocations?: Map3DChromeLocation[];
+  showLocationBrowser?: boolean;
   minimapEngine?: MinimapEnginePort | null;
   onLanguageToggle?: () => void;
   onLocationSelected?: (locationId: string) => void;
@@ -129,6 +130,7 @@ export function ExploreShell({
   isSceneTransitioning = false,
   locale = 'vi',
   map3dLocations,
+  showLocationBrowser = true,
   minimapEngine = null,
   rendererContent,
   onLanguageToggle,
@@ -270,8 +272,11 @@ export function ExploreShell({
               locations={map3dLocations ?? []}
               networkQuality={view.networkQuality}
               selectedLocationId={selectedLocationId}
+              showLocationBrowser={showLocationBrowser}
+              destinationLabel={view.destination.name}
               onShare={() => void shareLocation()}
               onShowInfo={openInfo}
+              onReturnToDestination={actions.onReturnToDestination}
               onToggleFullscreen={() => void toggleFullscreen()}
               {...(canEnterPanorama ? { onEnter360: () => actions.onEnterPanorama() } : {})}
               {...(onLanguageToggle ? { onLanguageToggle } : {})}
@@ -295,10 +300,16 @@ export function ExploreShell({
           mode={view.mode}
           status={view.rendererStatus}
           onRetry={actions.onRetryRenderer}
-          onFallback={isPanorama ? actions.onReturnToDestination : () => actions.onEnterPanorama()}
+          onFallback={
+            isPanorama || !canEnterPanorama
+              ? actions.onReturnToDestination
+              : () => actions.onEnterPanorama()
+          }
           fallbackLabel={isPanorama ? `Quay lại ${view.destination.name}` : 'Mở trải nghiệm 360°'}
+          returnLabel={`Quay lại ${view.destination.name}`}
           isTransitioning={isPanorama && isSceneTransitioning}
           showFallback={isPanorama || canEnterPanorama}
+          {...(isPanorama ? {} : { onReturnToDestination: actions.onReturnToDestination })}
         />
       </section>
 

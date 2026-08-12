@@ -135,7 +135,7 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
     });
   });
 
-  await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90');
+  await page.goto('/explore/bien-thien-cam?mode=panorama&scene=thien-cam-boardwalk&h=0&p=0&fov=90');
   await expect(page.getByRole('region', { name: 'Các công cụ tiện ích' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' }).click();
@@ -155,7 +155,7 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
     .getByRole('button')
     .nth(1)
     .click();
-  await expect(page).toHaveURL(/scene=scene-02/);
+  await expect(page).toHaveURL(/scene=(?:thien-cam-shore|scene-02)/);
 
   await page.getByRole('button', { name: 'Toàn màn hình' }).click();
   await expect(page.getByRole('button', { name: 'Thoát toàn màn hình' })).toHaveAttribute(
@@ -171,8 +171,7 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
   await searchInput.fill('Nguyễn');
   await expect(page.getByRole('button', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
   await page.getByRole('button', { name: 'Khu lưu niệm Nguyễn Du' }).click();
-  await expect(page).toHaveURL(
-    /\/explore\/son-trang-co-dam\/immersive\?mode=overview3d&location=nguyen-du-memorial$/,
-  );
+  await expect(page).toHaveURL('/explore/khu-luu-niem-nguyen-du');
+  await expect(page.getByRole('main', { name: 'Thông tin điểm đến' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
 });

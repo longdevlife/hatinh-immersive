@@ -1,6 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
 
-const destination = {
+interface MockDestination {
+  categoryLabel: string;
+  coverImageUrl: null;
+  defaultSceneId: string | null;
+  geoPoint: { latitude: number; longitude: number };
+  id: string;
+  name: string;
+  slug: string;
+  summary: string;
+}
+
+const destination: MockDestination = {
   categoryLabel: 'Di sản',
   coverImageUrl: null,
   defaultSceneId: 'scene-01',
@@ -25,7 +36,20 @@ const unavailableDestination = {
   slug: 'bien-thien-cam',
 };
 
-const manifest = {
+interface MockManifest {
+  defaultSceneId: string | null;
+  destination: MockDestination & {
+    categoryId: null;
+    coverMediaId: null;
+    description: string;
+    status: string;
+  };
+  nodes: Array<Record<string, unknown>>;
+  links: Array<Record<string, unknown>>;
+  hotspots: Array<Record<string, unknown>>;
+}
+
+const manifest: MockManifest = {
   defaultSceneId: 'scene-01',
   destination: {
     ...destination,
@@ -57,7 +81,11 @@ const manifest = {
   hotspots: [],
 };
 
-async function mockSelected3DJourney(page: Page, destinations = [destination]) {
+async function mockSelected3DJourney(
+  page: Page,
+  destinations: MockDestination[] = [destination],
+  responseManifest: MockManifest = manifest,
+) {
   await page.route('**/api/v1/destinations?*', async (route) => {
     await route.fulfill({
       body: JSON.stringify(destinations),
@@ -67,7 +95,7 @@ async function mockSelected3DJourney(page: Page, destinations = [destination]) {
   });
   await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
     await route.fulfill({
-      body: JSON.stringify(manifest),
+      body: JSON.stringify(responseManifest),
       contentType: 'application/json',
       status: 200,
     });
@@ -94,14 +122,14 @@ test('redirects a disabled nested overview link before creating a renderer', asy
   await expect(page.getByRole('application')).toHaveCount(0);
 });
 
-test('redirects a disabled nested overview link with no mode before creating a renderer', async ({
+test('redirects a bare selected-3D route with no mode before creating a renderer', async ({
   page,
 }) => {
-  await mockSelected3DJourney(page, [destination, disabledDestination, unavailableDestination]);
-  await page.goto('/explore/khu-luu-niem-nguyen-du/immersive');
+  await mockSelected3DJourney(page);
+  await page.goto('/explore/son-trang-co-dam/immersive');
 
-  await expect(page).toHaveURL('/explore/khu-luu-niem-nguyen-du');
-  await expect(page.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
+  await expect(page).toHaveURL('/explore/son-trang-co-dam');
+  await expect(page.getByRole('heading', { name: 'Sơn Trang Cổ Đạm' })).toBeVisible();
   await expect(page.getByRole('application')).toHaveCount(0);
 });
 
@@ -153,4 +181,34 @@ test('falls back to the destination 360 journey when selected 3D provider initia
 
   await expect(page).toHaveURL(/mode=panorama&.*scene=scene-01/);
   await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
+});
+
+test('returns to destination detail when selected 3D fails without panorama capability', async ({
+  page,
+}) => {
+  const noPanoramaDestination = { ...destination, defaultSceneId: null };
+  const noPanoramaManifest = {
+    ...manifest,
+    defaultSceneId: null,
+    destination: { ...manifest.destination, defaultSceneId: null },
+    nodes: [],
+    links: [],
+    hotspots: [],
+  };
+
+  await mockSelected3DJourney(page, [noPanoramaDestination], noPanoramaManifest);
+  await page.goto('/explore/son-trang-co-dam?mode=overview3d&e2eFailure=map3d');
+
+  await expect(page.locator('.immersive-renderer-state[role="alert"]')).toContainText(
+    'Không thể mở không gian 3D',
+  );
+  await expect(page.getByRole('button', { name: 'Mở trải nghiệm 360°' })).toHaveCount(0);
+  await page
+    .locator('.immersive-renderer-state[role="alert"]')
+    .getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })
+    .click();
+
+  await expect(page).toHaveURL('/explore/son-trang-co-dam');
+  await expect(page.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
 });

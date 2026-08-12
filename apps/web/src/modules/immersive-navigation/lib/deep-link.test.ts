@@ -38,22 +38,12 @@ describe('immersive deep link codec', () => {
     });
   });
 
-  it('uses safe defaults for an unknown mode and malformed camera values', () => {
+  it('rejects an unknown mode instead of silently entering selected 3D', () => {
     expect(
       decodeImmersiveDeepLink(
         '/explore/son-trang-co-dam?mode=not-a-mode&scene=&h=invalid&p=NaN&fov=',
       ),
-    ).toEqual({
-      destinationSlug: 'son-trang-co-dam',
-      mode: 'overview3d',
-      locationId: null,
-      sceneId: null,
-      view: {
-        heading: 0,
-        pitch: 0,
-        fov: 90,
-      },
-    });
+    ).toBeNull();
   });
 
   it('supports an overview link without panorama-only query parameters', () => {
@@ -72,17 +62,7 @@ describe('immersive deep link codec', () => {
     expect(encodeImmersiveDeepLink(state)).toBe(
       '/explore/son-trang-co-dam/immersive?mode=overview3d',
     );
-    expect(decodeImmersiveDeepLink('/explore/son-trang-co-dam')).toEqual({
-      destinationSlug: 'son-trang-co-dam',
-      mode: 'overview3d',
-      locationId: null,
-      sceneId: null,
-      view: {
-        heading: 0,
-        pitch: 0,
-        fov: 90,
-      },
-    });
+    expect(decodeImmersiveDeepLink('/explore/son-trang-co-dam')).toBeNull();
   });
 
   it('round-trips an overview location selection', () => {

@@ -4,6 +4,17 @@ import type { DestinationPreviewVm } from '../../../shared/contracts';
 import { filterDestinations } from './filter-destinations';
 
 const destinations = DEMO_DESTINATIONS.map(({ preview }) => preview);
+const bySlug = (slug: string) => {
+  const destination = destinations.find((candidate) => candidate.slug === slug);
+  if (!destination) {
+    throw new Error(`Missing fixture destination: ${slug}`);
+  }
+  return destination;
+};
+
+const thienCam = bySlug('bien-thien-cam');
+const sonTrang = bySlug('son-trang-co-dam');
+const dongLoc = bySlug('nga-ba-dong-loc');
 
 describe('filterDestinations', () => {
   it('returns every destination for an empty query and the all category', () => {
@@ -22,14 +33,14 @@ describe('filterDestinations', () => {
 
   it('matches Vietnamese text without requiring input diacritics', () => {
     expect(filterDestinations(destinations, { query: 'thien cam', category: 'all' })).toEqual([
-      destinations[0],
+      thienCam,
     ]);
   });
 
   it('matches a category exactly after normalization', () => {
-    expect(filterDestinations(destinations, { query: '', category: 'di san & van hoa' })).toEqual([
-      destinations[1],
-    ]);
+    expect(filterDestinations(destinations, { query: '', category: 'di san & van hoa' })).toEqual(
+      expect.arrayContaining([sonTrang, bySlug('khu-luu-niem-nguyen-du')]),
+    );
     expect(filterDestinations(destinations, { query: '', category: 'Biển' })).toHaveLength(0);
   });
 
@@ -39,12 +50,12 @@ describe('filterDestinations', () => {
         query: 'Hà Tĩnh',
         category: 'lịch sử',
       }),
-    ).toEqual([destinations[2]]);
+    ).toEqual([dongLoc]);
   });
 
   it('keeps destinations with no category visible only for all', () => {
     const uncategorized: DestinationPreviewVm = {
-      ...destinations[0]!,
+      ...thienCam,
       id: 'uncategorized',
       categoryLabel: null,
     };

@@ -9,7 +9,7 @@ test('selects a destination, opens its detail decision layer, and enters 360 exp
   await page.getByRole('button', { name: 'Chọn điểm đến Biển Thiên Cầm' }).click();
   await page.getByRole('button', { name: 'Xem chi tiết' }).click();
 
-  await expect(page).toHaveURL(/\/explore\/bien-thien-cam$/);
+  await expect(page).toHaveURL(/\/explore\/bien-thien-cam\?returnTo=/);
   await expect(page.getByRole('main', { name: 'Thông tin điểm đến' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Biển Thiên Cầm' })).toBeVisible();
   await expect(page.locator('[data-renderer-status]')).toHaveCount(0);

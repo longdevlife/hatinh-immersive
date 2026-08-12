@@ -90,8 +90,12 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
     return null;
   }
 
-  const mode: ImmersiveMode =
-    url.searchParams.get('mode') === 'panorama' ? 'panorama' : 'overview3d';
+  const requestedMode = url.searchParams.get('mode');
+  if (requestedMode !== 'panorama' && requestedMode !== 'overview3d') {
+    return null;
+  }
+
+  const mode: ImmersiveMode = requestedMode;
   const locationId = url.searchParams.get('location')?.trim() || null;
   if (mode === 'overview3d') {
     return {
