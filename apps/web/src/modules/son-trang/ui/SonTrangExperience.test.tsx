@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { SonTrangExperience } from './SonTrangExperience';
 import type { SonTrangExperienceVm } from '../model/son-trang.types';
 import type { DestinationCapabilities } from '../../../shared/contracts';
+import type { MediaAsset } from '../../media';
 
 describe('SonTrangExperience', () => {
   const defaultExperience: SonTrangExperienceVm = {
@@ -17,31 +18,40 @@ describe('SonTrangExperience', () => {
       defaultSceneId: null,
       geoPoint: { latitude: 18.0, longitude: 105.0 },
     },
+    hero: {
+      id: 'son-trang-hero-test',
+      kind: 'image',
+      src: '/demo/media/son-trang/hero.webp',
+      alt: 'Ảnh toàn cảnh của Khu du lịch sinh thái Sơn Trang',
+      width: 1774,
+      height: 887,
+      rightsStatus: 'demo-only',
+    },
     pillars: ['Văn hóa', 'Sinh thái', 'Tâm linh', 'Giải trí'],
     zones: [
       {
         id: 'zone-1',
         name: 'Tâm linh',
         summary: '',
-        coverImageUrl: null,
+        media: null,
       },
       {
         id: 'zone-2',
         name: 'Văn hóa',
         summary: '',
-        coverImageUrl: null,
+        media: null,
       },
       {
         id: 'zone-3',
         name: 'Sinh thái',
         summary: '',
-        coverImageUrl: null,
+        media: null,
       },
       {
         id: 'zone-4',
         name: 'Giải trí',
         summary: '',
-        coverImageUrl: null,
+        media: null,
       },
     ],
     gallery: [],
@@ -125,6 +135,45 @@ describe('SonTrangExperience', () => {
     expect(within(gallery).getByRole('img', { name: /lối đi Sơn Trang/i })).toBeInTheDocument();
   });
 
+  it('renders hero and zone media through the MediaAsset image contract', () => {
+    const hero: MediaAsset = {
+      id: 'son-trang-hero-contract',
+      kind: 'image',
+      src: '/demo/media/son-trang/hero.webp',
+      alt: 'Ảnh hero Sơn Trang Cổ Đạm',
+      width: 1774,
+      height: 887,
+      rightsStatus: 'demo-only',
+    };
+    const zoneMedia: MediaAsset = {
+      id: 'son-trang-zone-contract',
+      kind: 'image',
+      src: '/demo/media/son-trang/spiritual.webp',
+      alt: 'Ảnh zone Tâm linh Sơn Trang Cổ Đạm',
+      width: 1774,
+      height: 887,
+      rightsStatus: 'demo-only',
+    };
+    const experienceWithMedia = {
+      ...defaultExperience,
+      hero,
+      zones: defaultExperience.zones.map((zone) => ({ ...zone, media: zoneMedia })),
+    };
+
+    render(<SonTrangExperience {...defaultProps} experience={experienceWithMedia} />);
+
+    const heroImage = screen.getByRole('img', { name: hero.alt });
+    expect(heroImage).toHaveAttribute('src', hero.src);
+    expect(heroImage).toHaveAttribute('width', String(hero.width));
+    expect(heroImage).toHaveAttribute('height', String(hero.height));
+    expect(heroImage).toHaveAttribute('loading', 'eager');
+    const zoneImage = screen.getAllByRole('img', { name: zoneMedia.alt })[0];
+    expect(zoneImage).toHaveAttribute('src', zoneMedia.src);
+    expect(zoneImage).toHaveAttribute('width', String(zoneMedia.width));
+    expect(zoneImage).toHaveAttribute('height', String(zoneMedia.height));
+    expect(zoneImage).toHaveAttribute('loading', 'lazy');
+  });
+
   it('uses descriptive Vietnamese alt text for images', () => {
     render(<SonTrangExperience {...defaultProps} />);
     expect(
@@ -134,9 +183,10 @@ describe('SonTrangExperience', () => {
   });
 
   it('handles missing media with fallback treatment', () => {
-    const experienceWithoutMedia = {
+    const experienceWithoutMedia: SonTrangExperienceVm = {
       ...defaultExperience,
-      destination: { ...defaultExperience.destination, coverImageUrl: null },
+      hero: null,
+      zones: defaultExperience.zones.map((zone) => ({ ...zone, media: null })),
     };
 
     render(<SonTrangExperience {...defaultProps} experience={experienceWithoutMedia} />);

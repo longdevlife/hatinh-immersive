@@ -20,7 +20,6 @@ function createDemoAsset({ id, src, alt, width, height }: DemoAssetInput): Media
     height,
     attribution: null,
     rightsStatus: 'demo-only',
-    variants: [{ src, width }],
   };
 }
 
@@ -35,6 +34,24 @@ function createLicensedAsset(input: DemoAssetInput, source: MediaSourceMetadata)
 
 const COMMONS = 'https://commons.wikimedia.org/wiki/File:';
 
+function licenseUrlFor(license: MediaSourceMetadata['license']): string {
+  switch (license) {
+    case 'CC-BY-SA-4.0':
+      return 'https://creativecommons.org/licenses/by-sa/4.0/';
+    case 'CC-BY-SA-3.0':
+      return 'https://creativecommons.org/licenses/by-sa/3.0/';
+    case 'GFDL':
+      return 'https://www.gnu.org/licenses/fdl-1.3.html';
+    case 'public-domain':
+      return 'https://creativecommons.org/publicdomain/mark/1.0/';
+    case 'customer-owned':
+      return 'https://creativecommons.org/share-your-work/cclicenses/';
+    case 'demo-only':
+    case 'candidate-needs-permission':
+      return 'https://commons.wikimedia.org/';
+  }
+}
+
 function commonsSource(
   fileName: string,
   author: string,
@@ -44,11 +61,12 @@ function commonsSource(
 ): MediaSourceMetadata {
   const attributionText =
     license === 'public-domain'
-      ? `Nguồn lưu trữ: ${author}, public domain theo trang Wikimedia Commons. Đã chuyển đổi sang WebP và tối ưu kích thước.`
-      : `© ${author}, ${license}, via Wikimedia Commons. Đã chuyển đổi sang WebP và tối ưu kích thước.`;
+      ? `Nguồn lưu trữ: ${author}, public domain theo trang Wikimedia Commons.`
+      : `© ${author}, ${license}, via Wikimedia Commons.`;
 
   return {
     sourcePageUrl: `${COMMONS}${fileName}`,
+    licenseUrl: licenseUrlFor(license),
     author,
     license,
     attributionText,

@@ -14,6 +14,7 @@ type AssetWithSource = {
   alt: string;
   source?: {
     sourcePageUrl: string;
+    licenseUrl: string;
     author: string | null;
     license: string;
     attributionText: string | null;
@@ -83,6 +84,7 @@ describe('governed demo media catalog', () => {
     for (const asset of assets.filter((candidate) => candidate.rightsStatus !== 'demo-only')) {
       expect(asset.source, `${asset.id} source metadata`).toBeDefined();
       expect(asset.source?.sourcePageUrl, `${asset.id} source page`).toMatch(/^https:\/\//);
+      expect(asset.source?.licenseUrl, `${asset.id} license link`).toMatch(/^https:\/\//);
       expect(asset.source?.author, `${asset.id} author`).toBeTruthy();
       expect(asset.source?.license, `${asset.id} license`).not.toBe('candidate-needs-permission');
       expect(asset.source?.nativeWidth, `${asset.id} native width`).toBeGreaterThanOrEqual(
@@ -94,6 +96,9 @@ describe('governed demo media catalog', () => {
 
       if (asset.source?.license.startsWith('CC-')) {
         expect(asset.source.attributionText, `${asset.id} attribution`).toBeTruthy();
+        expect(asset.source.licenseUrl, `${asset.id} CC license link`).toMatch(
+          /^https:\/\/creativecommons\.org\/licenses\//,
+        );
       }
     }
   });
@@ -113,6 +118,21 @@ describe('governed demo media catalog', () => {
         for (const variant of asset.variants ?? []) {
           expect(variant.width).toBeLessThanOrEqual(asset.source.nativeWidth);
         }
+      }
+    }
+  });
+
+  it('does not publish fake responsive variants that repeat the source candidate', () => {
+    const assets = Object.values(DEMO_DESTINATION_MEDIA).flatMap((media) => [
+      ...(media.hero ? [media.hero] : []),
+      ...media.gallery,
+      ...Object.values(DEMO_SON_TRANG_ZONE_MEDIA),
+    ]);
+
+    for (const asset of assets) {
+      for (const variant of asset.variants ?? []) {
+        expect(variant.src, `${asset.id} variant source`).not.toBe(asset.src);
+        expect(variant.width, `${asset.id} variant width`).not.toBe(asset.width);
       }
     }
   });

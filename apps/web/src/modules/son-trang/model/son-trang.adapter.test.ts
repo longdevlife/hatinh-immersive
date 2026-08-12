@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { DestinationPreviewVm } from '../../../shared/contracts';
 import { destinationFixture } from '../../../shared/fixtures';
+import { DEMO_SON_TRANG_ZONE_MEDIA } from '../../media';
+import type { SonTrangExperienceMedia } from './son-trang.types';
 
 import { toSonTrangExperienceVm } from './son-trang.adapter';
 
@@ -23,6 +25,7 @@ describe('toSonTrangExperienceVm', () => {
   it('creates the Sơn Trang experience from the existing Sơn Trang destination', () => {
     expect(toSonTrangExperienceVm(destinationFixture)).toEqual({
       destination: destinationFixture,
+      hero: null,
       pillars: [
         'Văn hóa & di sản',
         'Nông nghiệp & sinh thái',
@@ -35,28 +38,28 @@ describe('toSonTrangExperienceVm', () => {
           id: 'son-trang-zone-Tâm linh',
           name: 'Tâm linh',
           summary: '',
-          coverImageUrl: null,
+          media: null,
           immersiveSceneId: null,
         },
         {
           id: 'son-trang-zone-Văn hóa',
           name: 'Văn hóa',
           summary: '',
-          coverImageUrl: null,
+          media: null,
           immersiveSceneId: null,
         },
         {
           id: 'son-trang-zone-Sinh thái',
           name: 'Sinh thái',
           summary: '',
-          coverImageUrl: null,
+          media: null,
           immersiveSceneId: null,
         },
         {
           id: 'son-trang-zone-Giải trí',
           name: 'Giải trí',
           summary: '',
-          coverImageUrl: null,
+          media: null,
           immersiveSceneId: null,
         },
       ],
@@ -73,13 +76,45 @@ describe('toSonTrangExperienceVm', () => {
 
     expect(toSonTrangExperienceVm(destination)?.zones).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ name: 'Tâm linh', coverImageUrl: null, immersiveSceneId: null }),
-        expect.objectContaining({ name: 'Văn hóa', coverImageUrl: null, immersiveSceneId: null }),
-        expect.objectContaining({ name: 'Sinh thái', coverImageUrl: null, immersiveSceneId: null }),
-        expect.objectContaining({ name: 'Giải trí', coverImageUrl: null, immersiveSceneId: null }),
+        expect.objectContaining({ name: 'Tâm linh', media: null, immersiveSceneId: null }),
+        expect.objectContaining({ name: 'Văn hóa', media: null, immersiveSceneId: null }),
+        expect.objectContaining({ name: 'Sinh thái', media: null, immersiveSceneId: null }),
+        expect.objectContaining({ name: 'Giải trí', media: null, immersiveSceneId: null }),
       ]),
     );
     expect(toSonTrangExperienceVm(destination)?.gallery).toEqual([]);
+  });
+
+  it('does not inject demo zone media when adapting generic destination data', () => {
+    const destination = {
+      ...destinationFixture,
+      media: { hero: null, gallery: [] },
+    };
+
+    const experience = toSonTrangExperienceVm(destination);
+
+    expect(experience?.zones.every((zone) => zone.media === null)).toBe(true);
+    expect(
+      experience?.zones.some((zone) =>
+        Object.values(DEMO_SON_TRANG_ZONE_MEDIA).some((asset) => asset.src === zone.media?.src),
+      ),
+    ).toBe(false);
+  });
+
+  it('accepts explicit demo media from the fixture composition boundary', () => {
+    const media: SonTrangExperienceMedia = {
+      hero: DEMO_SON_TRANG_ZONE_MEDIA['Tâm linh'],
+      zoneMedia: DEMO_SON_TRANG_ZONE_MEDIA,
+    };
+    const experience = toSonTrangExperienceVm(destinationFixture, media);
+
+    expect(experience?.hero).toBe(DEMO_SON_TRANG_ZONE_MEDIA['Tâm linh']);
+    expect(experience?.zones).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Tâm linh', media: DEMO_SON_TRANG_ZONE_MEDIA['Tâm linh'] }),
+        expect.objectContaining({ name: 'Văn hóa', media: DEMO_SON_TRANG_ZONE_MEDIA['Văn hóa'] }),
+      ]),
+    );
   });
 
   it('does not create a Sơn Trang experience for another destination slug', () => {

@@ -83,6 +83,49 @@ describe('DestinationExperience', () => {
     expect(screen.queryByText('Chưa có hình ảnh')).not.toBeInTheDocument();
   });
 
+  it('exposes one clean media credits disclosure for licensed imagery', () => {
+    const destination: DestinationDetailPresentationVm = {
+      ...baseDestination,
+      media: {
+        hero: {
+          id: 'licensed-hero',
+          kind: 'image',
+          src: '/demo/media/thien-cam/hero-real.webp',
+          alt: 'Bãi biển Thiên Cầm',
+          width: 1774,
+          height: 998,
+          rightsStatus: 'licensed',
+          source: {
+            sourcePageUrl: 'https://commons.wikimedia.org/wiki/File:Thiencambeach.jpg',
+            licenseUrl: 'https://creativecommons.org/licenses/by-sa/4.0/',
+            author: 'Khoitran1957',
+            license: 'CC-BY-SA-4.0',
+            attributionText: '© Khoitran1957, CC BY-SA 4.0, via Wikimedia Commons.',
+            modifiedFromSource: true,
+            nativeWidth: 2816,
+            nativeHeight: 1584,
+          },
+        },
+        gallery: [],
+      },
+    };
+
+    renderExperience(destination);
+
+    expect(
+      screen.getByRole('group', { name: 'Thông tin hình ảnh và bản quyền' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Nguồn ảnh: Khoitran1957' })).toHaveAttribute(
+      'href',
+      'https://commons.wikimedia.org/wiki/File:Thiencambeach.jpg',
+    );
+    expect(screen.getByRole('link', { name: 'Giấy phép CC-BY-SA-4.0' })).toHaveAttribute(
+      'href',
+      'https://creativecommons.org/licenses/by-sa/4.0/',
+    );
+    expect(screen.getByText(/Đã chuyển đổi sang WebP/i)).toBeInTheDocument();
+  });
+
   it('shows only actions backed by the supplied capabilities', () => {
     renderExperience();
 

@@ -24,6 +24,10 @@ import {
   DEMO_DESTINATIONS,
   getDemoManifest,
 } from '../modules/immersive-navigation/fake-mode/demo-catalog';
+import {
+  DEMO_SON_TRANG_ZONE_MEDIA,
+  getDemoDestinationMedia,
+} from '../modules/immersive-navigation/fake-mode/demo-media';
 import { PUBLIC_NAV_ITEMS, PublicLayout } from '../modules/site-shell';
 import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
 import './styles/index.css';
@@ -159,12 +163,19 @@ function PublicPageLayout({ children }: { children: ReactNode }) {
 
 function PublicDestinationDetail() {
   const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
+  const sonTrangMedia = useFakeData
+    ? {
+        hero: getDemoDestinationMedia('son-trang-co-dam')?.hero ?? null,
+        zoneMedia: DEMO_SON_TRANG_ZONE_MEDIA,
+      }
+    : undefined;
 
   return (
     <Suspense fallback={<DestinationRouteLoading />}>
       <LazyDestinationDetailRoute
         {...(destinations ? { destinations } : {})}
         capabilityConfig={destinationCapabilityConfig}
+        {...(sonTrangMedia ? { sonTrangMedia } : {})}
       />
     </Suspense>
   );

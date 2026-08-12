@@ -1,6 +1,6 @@
 import type { RefObject } from 'react';
 import type { DestinationDetailPresentationVm } from '../model/destination-detail.types';
-import { ResponsiveImage } from '../../media';
+import { MediaCredits, ResponsiveImage } from '../../media';
 import '../../../app/styles/destination-detail.css';
 
 export interface DestinationDetailPresentationProps {
@@ -26,6 +26,9 @@ export function DestinationExperience({
     destination.capabilities.selected3DAvailability === 'available' &&
     Boolean(onEnterSelected3D);
   const show3dUnavailableStatus = destination.capabilities.selected3DAvailability === 'unavailable';
+  const creditedAssets = [destination.media.hero, ...destination.media.gallery].filter(
+    (asset): asset is NonNullable<typeof asset> => asset !== null,
+  );
 
   return (
     <main
@@ -172,6 +175,8 @@ export function DestinationExperience({
               </div>
             </section>
           )}
+
+          <MediaCredits assets={creditedAssets} />
         </div>
       </article>
     </main>

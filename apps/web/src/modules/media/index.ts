@@ -15,3 +15,5 @@ export type {
 } from './model/media.types';
 export { ResponsiveImage } from './ui/ResponsiveImage';
 export type { ResponsiveImageProps } from './ui/ResponsiveImage';
+export { MediaCredits } from './ui/MediaCredits';
+export type { MediaCreditsProps } from './ui/MediaCredits';

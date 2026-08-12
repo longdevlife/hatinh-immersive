@@ -14,6 +14,7 @@ export type MediaSourceLicense =
 
 export interface MediaSourceMetadata {
   sourcePageUrl: string;
+  licenseUrl: string;
   author: string | null;
   license: MediaSourceLicense;
   attributionText: string | null;

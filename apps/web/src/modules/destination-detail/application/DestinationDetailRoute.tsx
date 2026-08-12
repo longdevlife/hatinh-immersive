@@ -7,7 +7,11 @@ import {
   createExploreReturnHref,
   parseExploreReturnHref,
 } from '../../../shared/navigation/explore-context';
-import { SonTrangExperience, toSonTrangExperienceVm } from '../../son-trang';
+import {
+  SonTrangExperience,
+  toSonTrangExperienceVm,
+  type SonTrangExperienceMedia,
+} from '../../son-trang';
 import {
   getDestinationCapabilities,
   type DestinationCapabilityConfig,
@@ -22,6 +26,7 @@ import { DestinationExperience } from '../ui/DestinationExperience';
 export interface DestinationDetailRouteProps {
   destinations?: readonly DestinationPreviewVm[];
   capabilityConfig?: DestinationCapabilityConfig;
+  sonTrangMedia?: SonTrangExperienceMedia;
 }
 
 function DestinationDetailState({ kind }: { kind: 'loading' | 'error' | 'not-found' }) {
@@ -51,6 +56,7 @@ function DestinationDetailState({ kind }: { kind: 'loading' | 'error' | 'not-fou
 export function DestinationDetailRoute({
   destinations: destinationsOverride,
   capabilityConfig,
+  sonTrangMedia,
 }: DestinationDetailRouteProps) {
   const { destinationSlug } = useParams<{ destinationSlug: string }>();
   const navigate = useNavigate();
@@ -83,7 +89,7 @@ export function DestinationDetailRoute({
 
   const capabilities = getDestinationCapabilities(destination, capabilityConfig);
   const view = toDestinationDetailPresentationVm(destination, capabilities);
-  const sonTrangExperience = toSonTrangExperienceVm(destination);
+  const sonTrangExperience = toSonTrangExperienceVm(destination, sonTrangMedia);
   const returnTo = new URLSearchParams(location.search).get('returnTo');
   const exploreReturnContext = returnTo ? parseExploreReturnHref(returnTo) : null;
   const exploreReturnHref = exploreReturnContext

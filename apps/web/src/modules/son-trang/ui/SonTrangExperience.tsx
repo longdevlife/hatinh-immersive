@@ -2,7 +2,7 @@ import React from 'react';
 import type { RefObject } from 'react';
 import type { DestinationCapabilities } from '../../../shared/contracts';
 import type { SonTrangExperienceVm } from '../model/son-trang.types';
-import { ResponsiveImage } from '../../media';
+import { MediaCredits, ResponsiveImage } from '../../media';
 
 export interface SonTrangExperienceProps {
   experience: SonTrangExperienceVm;
@@ -23,7 +23,10 @@ export function SonTrangExperience({
   onEnterSelected3D,
   mainRef,
 }: SonTrangExperienceProps) {
-  const { destination, pillars, zones, gallery } = experience;
+  const { destination, hero, pillars, zones, gallery } = experience;
+  const creditedAssets = [hero, ...zones.map((zone) => zone.media), ...gallery].filter(
+    (asset): asset is NonNullable<typeof asset> => asset !== null,
+  );
 
   return (
     <main
@@ -92,11 +95,11 @@ export function SonTrangExperience({
         </div>
 
         <div className="son-trang-experience__hero-media-wrapper">
-          {destination.coverImageUrl ? (
-            <img
-              src={destination.coverImageUrl}
-              alt={`Ảnh toàn cảnh của ${destination.name}`}
+          {hero ? (
+            <ResponsiveImage
+              asset={hero}
               className="son-trang-experience__hero-media"
+              loading="eager"
             />
           ) : (
             <div className="son-trang-experience__hero-media son-trang-experience__hero-media--empty">
@@ -140,11 +143,11 @@ export function SonTrangExperience({
           <div className="son-trang-experience__zones">
             {zones.map((zone) => (
               <article key={zone.id} className="son-trang-experience__zone-card">
-                {zone.coverImageUrl ? (
-                  <img
-                    src={zone.coverImageUrl}
-                    alt={`Ảnh phân khu ${zone.name}`}
+                {zone.media ? (
+                  <ResponsiveImage
+                    asset={zone.media}
                     className="son-trang-experience__zone-media"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="son-trang-experience__zone-media son-trang-experience__zone-media--empty">
@@ -184,6 +187,8 @@ export function SonTrangExperience({
           </div>
         </section>
       )}
+
+      <MediaCredits assets={creditedAssets} />
     </main>
   );
 }
