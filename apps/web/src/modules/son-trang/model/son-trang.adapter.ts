@@ -1,4 +1,5 @@
 import type { DestinationPreviewVm } from '../../../shared/contracts';
+import { DEMO_SON_TRANG_ZONE_MEDIA } from '../../media';
 
 import type { SonTrangExperienceVm } from './son-trang.types';
 
@@ -27,7 +28,7 @@ export function toSonTrangExperienceVm(
       id: `son-trang-zone-${name}`,
       name,
       summary: '',
-      coverImageUrl: null,
+      coverImageUrl: destination.media ? (DEMO_SON_TRANG_ZONE_MEDIA[name]?.src ?? null) : null,
       immersiveSceneId: null,
     })),
   };

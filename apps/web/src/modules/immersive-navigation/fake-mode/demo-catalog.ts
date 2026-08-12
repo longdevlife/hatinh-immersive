@@ -6,6 +6,7 @@ import type {
 } from '../../../shared/contracts';
 import { hotspotsFixture } from '../../../shared/fixtures';
 import type { Map3DLocation } from '../../map3d';
+import { getDemoDestinationMedia } from './demo-media';
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
 
 interface DemoSceneDefinition {
@@ -43,6 +44,7 @@ function createDefinition({
 }): DemoDestinationDefinition {
   const defaultSceneId = scenes[0]?.id ?? null;
   const location: Map3DLocation = { id, label: name, position, cameraPreset };
+  const media = getDemoDestinationMedia(slug);
 
   return {
     location,
@@ -51,7 +53,8 @@ function createDefinition({
       slug,
       name,
       summary,
-      coverImageUrl: null,
+      coverImageUrl: media?.hero?.src ?? null,
+      ...(media ? { media } : {}),
       categoryLabel,
       defaultSceneId,
       geoPoint: { latitude: position.lat, longitude: position.lng },

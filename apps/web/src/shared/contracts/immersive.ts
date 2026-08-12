@@ -1,3 +1,5 @@
+import type { DestinationMediaVm } from './media';
+
 export type ImmersiveMode = 'overview3d' | 'panorama';
 
 export type ImmersiveLocale = 'vi' | 'en';
@@ -12,6 +14,7 @@ export interface DestinationPreviewVm {
   name: string;
   summary: string;
   coverImageUrl: string | null;
+  media?: DestinationMediaVm;
   categoryLabel: string | null;
   defaultSceneId: string | null;
   geoPoint: { latitude: number; longitude: number } | null;

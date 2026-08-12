@@ -1,4 +1,5 @@
 import type { DestinationPreviewVm } from '../../../shared/contracts';
+import { ResponsiveImage } from '../../media';
 
 export interface DestinationCardProps {
   destination: DestinationPreviewVm;
@@ -23,7 +24,9 @@ export function DestinationCard({ destination, selected, onSelect }: Destination
       data-testid={`destination-card-${destination.id}`}
     >
       <div className="destination-card__media">
-        {destination.coverImageUrl ? (
+        {destination.media?.hero ? (
+          <ResponsiveImage asset={destination.media.hero} className="destination-card__image" />
+        ) : destination.coverImageUrl ? (
           <img
             src={destination.coverImageUrl}
             alt={copy.coverImageAlt(destination.name)}

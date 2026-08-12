@@ -11,6 +11,7 @@ const baseDestination: DestinationDetailViewModel = {
   summary: 'Một hành trình qua văn hóa và thiên nhiên Hà Tĩnh.',
   categoryLabel: 'Di sản & văn hóa',
   coverImageUrl: null,
+  media: { hero: null, gallery: [] },
   locationLabel: 'Hà Tĩnh',
   hasMapLocation: true,
   capabilities: {

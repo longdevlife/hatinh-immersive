@@ -1,4 +1,8 @@
-import type { DestinationCapabilities, DestinationPreviewVm } from '../../../shared/contracts';
+import type {
+  DestinationCapabilities,
+  DestinationMediaVm,
+  DestinationPreviewVm,
+} from '../../../shared/contracts';
 
 export type { DestinationCapabilities } from '../../../shared/contracts';
 
@@ -9,6 +13,7 @@ export interface DestinationDetailViewModel {
   summary: string;
   categoryLabel: string | null;
   coverImageUrl: string | null;
+  media?: DestinationMediaVm;
   locationLabel: string | null;
   hasMapLocation: boolean;
   capabilities: DestinationCapabilities;
@@ -33,6 +38,7 @@ export function toDestinationDetailViewModel(
     summary: destination.summary,
     categoryLabel: destination.categoryLabel,
     coverImageUrl: destination.coverImageUrl,
+    media: destination.media ?? { hero: null, gallery: [] },
     locationLabel: destination.geoPoint ? 'Hà Tĩnh' : null,
     hasMapLocation: destination.geoPoint !== null,
     capabilities,

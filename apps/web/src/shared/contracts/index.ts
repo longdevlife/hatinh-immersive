@@ -22,3 +22,10 @@ export type {
   SceneNodeVm,
 } from './immersive';
 export type { DestinationCapabilities, Selected3DAvailability } from './destination-capabilities';
+export type {
+  DestinationMediaVm,
+  MediaAsset,
+  MediaKind,
+  MediaRightsStatus,
+  MediaVariant,
+} from './media';
