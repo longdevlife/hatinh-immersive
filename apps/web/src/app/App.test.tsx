@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { App } from './App';
@@ -16,6 +16,45 @@ describe('public application shell', () => {
     render(<App />);
 
     expect(screen.getByRole('main')).toBeInTheDocument();
+  });
+
+  it('renders the production public header without foundation preview copy', () => {
+    render(<App />);
+
+    const header = screen.getByRole('banner');
+
+    expect(within(header).getByRole('link', { name: /Hà Tĩnh/i })).toBeInTheDocument();
+    expect(header).not.toHaveTextContent('Foundation preview');
+  });
+
+  it('marks Khám phá active on the Explore route', async () => {
+    window.history.pushState({}, '', '/explore');
+
+    render(<App />);
+
+    await waitFor(
+      () => {
+        expect(screen.getByRole('link', { name: 'Khám phá' })).toHaveAttribute(
+          'aria-current',
+          'page',
+        );
+      },
+      { timeout: 5000 },
+    );
+  });
+
+  it('keeps the public header on a destination detail route', async () => {
+    window.history.pushState({}, '', '/explore/son-trang-co-dam');
+
+    render(<App />);
+
+    await waitFor(
+      () => {
+        expect(screen.getByRole('banner')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: /Hà Tĩnh/i })).toBeInTheDocument();
+      },
+      { timeout: 5000 },
+    );
   });
 
   it('describes the home entry as destination discovery instead of location-first 3D', () => {

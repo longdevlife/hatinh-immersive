@@ -1,29 +1,13 @@
 @import './immersive.css';
 @import './explore.css';
 @import './son-trang.css';
+@import './site-shell.css';
 
 .public-app {
   min-height: 100vh;
   background: #f4f0e8;
 }
 
-.public-app__topbar {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  padding: 1rem clamp(1rem, 4vw, 4rem);
-}
-
-.public-app__brand {
-  color: inherit;
-  font-size: 0.8rem;
-  font-weight: 750;
-  letter-spacing: 0.08em;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.public-app__status,
 .eyebrow {
   color: #577064;
   font-size: 0.75rem;

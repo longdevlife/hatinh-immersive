@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { lazy, Suspense, useMemo } from 'react';
+import { lazy, Suspense, useMemo, type ReactNode } from 'react';
 import {
   BrowserRouter,
   Navigate,
@@ -24,6 +24,7 @@ import {
   DEMO_DESTINATIONS,
   getDemoManifest,
 } from '../modules/immersive-navigation/fake-mode/demo-catalog';
+import { PUBLIC_NAV_ITEMS, PublicLayout } from '../modules/site-shell';
 import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
 import './styles/index.css';
 
@@ -146,6 +147,16 @@ function PublicExplore() {
   );
 }
 
+function PublicPageLayout({ children }: { children: ReactNode }) {
+  const location = useLocation();
+
+  return (
+    <PublicLayout activePath={location.pathname} items={PUBLIC_NAV_ITEMS}>
+      {children}
+    </PublicLayout>
+  );
+}
+
 function PublicDestinationDetail() {
   const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
 
@@ -202,27 +213,18 @@ function PublicHome() {
   const navigate = useNavigate();
 
   return (
-    <>
-      <header className="public-app__topbar">
-        <a className="public-app__brand" href="/">
-          Hà Tĩnh / Immersive
-        </a>
-        <span className="public-app__status">Foundation preview</span>
-      </header>
-      <main className="public-home">
-        <section className="public-home__intro" aria-labelledby="public-title">
-          <p className="eyebrow">Hà Tĩnh Immersive</p>
-          <h1 id="public-title">Di sản mở ra theo cách bạn muốn khám phá.</h1>
-          <p>
-            Một không gian khám phá các điểm đến Hà Tĩnh và những câu chuyện văn hóa được tuyển
-            chọn.
-          </p>
-          <UiButton tone="primary" type="button" onClick={() => navigate('/explore')}>
-            Bắt đầu khám phá
-          </UiButton>
-        </section>
-      </main>
-    </>
+    <main className="public-home">
+      <section className="public-home__intro" aria-labelledby="public-title">
+        <p className="eyebrow">Hà Tĩnh Immersive</p>
+        <h1 id="public-title">Di sản mở ra theo cách bạn muốn khám phá.</h1>
+        <p>
+          Một không gian khám phá các điểm đến Hà Tĩnh và những câu chuyện văn hóa được tuyển chọn.
+        </p>
+        <UiButton tone="primary" type="button" onClick={() => navigate('/explore')}>
+          Bắt đầu khám phá
+        </UiButton>
+      </section>
+    </main>
   );
 }
 
@@ -234,10 +236,31 @@ export function App() {
       <BrowserRouter>
         <div className="public-app">
           <Routes>
-            <Route path="/" element={<PublicHome />} />
-            <Route path="/explore" element={<PublicExplore />} />
+            <Route
+              path="/"
+              element={
+                <PublicPageLayout>
+                  <PublicHome />
+                </PublicPageLayout>
+              }
+            />
+            <Route
+              path="/explore"
+              element={
+                <PublicPageLayout>
+                  <PublicExplore />
+                </PublicPageLayout>
+              }
+            />
             <Route path="/explore/:destinationSlug/immersive" element={<ImmersiveRoute />} />
-            <Route path="/explore/:destinationSlug" element={<DestinationRoute />} />
+            <Route
+              path="/explore/:destinationSlug"
+              element={
+                <PublicPageLayout>
+                  <DestinationRoute />
+                </PublicPageLayout>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
