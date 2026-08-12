@@ -9,15 +9,18 @@ function createDemoAsset(
   width: number,
   height: number,
 ): MediaAsset {
+  const optimizedSrc = src.replace(/\.png$/, '.webp');
+
   return {
     id,
     kind: 'image',
-    src,
+    src: optimizedSrc,
     alt,
     width,
     height,
     attribution: null,
     rightsStatus: 'demo-only',
+    variants: [{ src: optimizedSrc, width }],
   };
 }
 
