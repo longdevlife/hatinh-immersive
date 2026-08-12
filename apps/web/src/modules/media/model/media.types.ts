@@ -3,5 +3,7 @@ export type {
   MediaAsset,
   MediaKind,
   MediaRightsStatus,
+  MediaSourceLicense,
+  MediaSourceMetadata,
   MediaVariant,
 } from '../../../shared/contracts/media';

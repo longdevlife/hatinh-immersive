@@ -9,6 +9,8 @@ export type {
   MediaAsset,
   MediaKind,
   MediaRightsStatus,
+  MediaSourceLicense,
+  MediaSourceMetadata,
   MediaVariant,
 } from './model/media.types';
 export { ResponsiveImage } from './ui/ResponsiveImage';

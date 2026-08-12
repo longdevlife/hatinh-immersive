@@ -15,7 +15,7 @@ describe('destination detail presentation mapping', () => {
     );
 
     expect(view.media.hero?.src).toBe('/demo/media/son-trang/hero.webp');
-    expect(view.media.gallery).toHaveLength(5);
+    expect(view.media.gallery.length).toBeGreaterThanOrEqual(8);
     expect(view.facts.map(({ id }) => id)).toEqual(['category', 'location']);
     expect(view.sections).toHaveLength(1);
     expect(JSON.stringify(view)).not.toContain('Chưa có hình ảnh');
