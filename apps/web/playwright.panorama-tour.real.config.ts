@@ -1,14 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/**
+ * Media/runtime smoke gate. The orchestration E2E uses the fake panorama
+ * adapter for deterministic transition assertions; this gate leaves the
+ * Photo Sphere Viewer adapter enabled and only fakes unrelated providers.
+ */
 export default defineConfig({
   testDir: './e2e',
   testMatch: /panorama-tour\.spec\.ts/,
+  grep: /walks the explicit Sơn Trang graph with one persistent viewer/,
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:4178',
+    baseURL: 'http://127.0.0.1:4179',
     trace: 'retain-on-failure',
   },
   projects: [
@@ -19,19 +25,19 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      'pnpm --filter @hatinh/web build && pnpm --filter @hatinh/web exec vite preview --host 127.0.0.1 --port 4178',
+      'pnpm --filter @hatinh/web build && pnpm --filter @hatinh/web exec vite preview --host 127.0.0.1 --port 4179',
     env: {
       ...process.env,
       VITE_EXPLORE_MAP_MODE: 'fake',
       VITE_IMMERSIVE_DATA_MODE: 'api',
       VITE_IMMERSIVE_MAP3D_MODE: 'fake',
       VITE_IMMERSIVE_MINIMAP_MODE: 'fake',
-      VITE_IMMERSIVE_PANORAMA_MODE: 'fake',
+      VITE_IMMERSIVE_PANORAMA_MODE: 'photo-sphere-viewer',
       VITE_IMMERSIVE_PANORAMA_TOUR_SOURCE: 'demo',
       VITE_IMMERSIVE_SELECTED_3D_CAPABILITIES: 'son-trang-co-dam=available',
     },
     reuseExistingServer: false,
     timeout: 120_000,
-    url: 'http://127.0.0.1:4178',
+    url: 'http://127.0.0.1:4179',
   },
 });

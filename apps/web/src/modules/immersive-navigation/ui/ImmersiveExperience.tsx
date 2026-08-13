@@ -61,11 +61,13 @@ import {
   type Selected3DAnchorSource,
 } from '../model/selected-3d-anchor-source';
 import {
+  composePanoramaTourDestination,
   composePanoramaTourManifest,
   type PanoramaTourSource,
 } from '../model/panorama-tour-source';
 import {
   buildPanoramaTourPresentationVm,
+  getPanoramaRenderableNodes,
   getPanoramaTourLinks,
   isPanoramaSceneUsable,
   resolvePanoramaSceneForAnchor,
@@ -203,12 +205,12 @@ function buildImmersiveView(
   destinationSlug: string,
   navigation: ImmersiveNavigationState,
   overviewDestination?: DestinationPreviewVm,
+  displaySceneId: string | null = navigation.committedSceneId,
 ): ImmersiveViewVm {
-  const currentScene =
-    manifest.nodes.find((node) => node.id === navigation.committedSceneId) ?? null;
+  const currentScene = manifest.nodes.find((node) => node.id === displaySceneId) ?? null;
   const nodes = manifest.nodes.map((node) => ({
     ...node,
-    isCurrent: node.id === navigation.committedSceneId,
+    isCurrent: node.id === displaySceneId,
     isVisited: navigation.visitedSceneIds.includes(node.id),
   }));
 
@@ -223,15 +225,11 @@ function buildImmersiveView(
           },
     currentScene: navigation.mode === 'panorama' ? currentScene : null,
     nodes,
-    links:
-      navigation.mode === 'panorama'
-        ? getSceneLinks(manifest.links, navigation.committedSceneId)
-        : [],
+    links: navigation.mode === 'panorama' ? getSceneLinks(manifest.links, displaySceneId) : [],
     hotspots:
       navigation.mode === 'panorama'
         ? manifest.hotspots.filter(
-            (hotspot) =>
-              hotspot.sceneId === undefined || hotspot.sceneId === navigation.committedSceneId,
+            (hotspot) => hotspot.sceneId === undefined || hotspot.sceneId === displaySceneId,
           )
         : [],
     heading: navigation.committedView.heading,
@@ -240,7 +238,7 @@ function buildImmersiveView(
     rendererStatus:
       navigation.activeRenderer === 'map3d'
         ? navigation.map3dStatus
-        : navigation.activeRenderer === 'panorama'
+        : navigation.mode === 'panorama'
           ? navigation.panoramaStatus
           : 'idle',
     networkQuality: navigation.networkQuality,
@@ -253,6 +251,7 @@ function writeDeepLink(
   replace: boolean,
   returnTo?: string,
   routeState?: PanoramaEntryRouteState | null,
+  expectedHrefRef?: { current: string | null },
 ) {
   const state = useImmersiveNavigation.getState();
   const href = encodeImmersiveDeepLink({
@@ -263,6 +262,10 @@ function writeDeepLink(
     view: state.committedView,
     ...(returnTo ? { returnTo } : {}),
   });
+
+  if (expectedHrefRef) {
+    expectedHrefRef.current = href;
+  }
 
   navigate(href, { replace, ...(routeState ? { state: routeState } : {}) });
 }
@@ -296,7 +299,7 @@ interface RendererHostProps {
   onCameraTransitionChange(isTransitioning: boolean): void;
   onLocationSelected(locationId: string): void;
   onNodeChange(nodeId: string, view: PanoramaView): void;
-  onStatusChange(status: RendererStatus): void;
+  onStatusChange(status: RendererStatus, nodeId?: string): void;
   onViewChange(view: PanoramaView): void;
   panoramaNode: PanoramaNode | null;
   panoramaNodes: PanoramaNode[];
@@ -519,6 +522,10 @@ export function ImmersiveExperience({
     () => (manifest ? getPanoramaTourLinks(manifest.panoramaNodes, manifest.links) : []),
     [manifest],
   );
+  const panoramaRenderableNodes = useMemo(
+    () => (manifest ? getPanoramaRenderableNodes(manifest.panoramaNodes) : []),
+    [manifest],
+  );
   const panoramaTourGraph = useMemo(
     () =>
       manifest
@@ -568,6 +575,7 @@ export function ImmersiveExperience({
   const resolvedFactories = factories ?? defaultFactories;
   const [retryKey, setRetryKey] = useState(0);
   const pendingUrlFrame = useRef<number | null>(null);
+  const expectedDeepLinkRef = useRef<string | null>(null);
   const trustedExploreReturnHref = useMemo(() => {
     const rawReturnTo = new URLSearchParams(location.search).get('returnTo');
     const context = rawReturnTo ? parseExploreReturnHref(rawReturnTo) : null;
@@ -587,6 +595,14 @@ export function ImmersiveExperience({
       return;
     }
 
+    const currentHref = `${location.pathname}${location.search}`;
+    if (expectedDeepLinkRef.current) {
+      if (expectedDeepLinkRef.current !== currentHref) {
+        return;
+      }
+      expectedDeepLinkRef.current = null;
+    }
+
     const current = useImmersiveNavigation.getState();
     const selectedLocation =
       mapLocations.find((candidate) => candidate.id === deepLink.locationId) ??
@@ -600,7 +616,14 @@ export function ImmersiveExperience({
           current.selectLocation(selectedLocation, manifest.destination.id);
         }
         if (deepLink.locationId !== selectedLocation.id) {
-          writeDeepLink(navigate, destinationSlug, true, trustedExploreReturnHref, location.state);
+          writeDeepLink(
+            navigate,
+            destinationSlug,
+            true,
+            trustedExploreReturnHref,
+            location.state,
+            expectedDeepLinkRef,
+          );
         }
       } else if (
         current.destinationId !== manifest.destination.id ||
@@ -612,6 +635,18 @@ export function ImmersiveExperience({
     }
 
     if (!sceneId) {
+      if (current.mode !== 'panorama' || current.panoramaStatus !== 'unavailable') {
+        current.markPanoramaUnavailable();
+      }
+      return;
+    }
+
+    if (
+      current.mode === 'panorama' &&
+      current.panoramaStatus === 'error' &&
+      current.committedSceneId === null &&
+      current.requestedSceneId === null
+    ) {
       return;
     }
 
@@ -622,15 +657,31 @@ export function ImmersiveExperience({
     }
 
     const afterOverview = useImmersiveNavigation.getState();
-    if (afterOverview.committedSceneId !== sceneId || afterOverview.mode !== 'panorama') {
-      afterOverview.enterPanorama(sceneId);
+    if (afterOverview.mode !== 'panorama') {
+      afterOverview.requestPanoramaEntry(sceneId, deepLink.view);
+    } else if (
+      afterOverview.committedSceneId !== sceneId &&
+      afterOverview.requestedSceneId !== sceneId
+    ) {
+      if (afterOverview.committedSceneId) {
+        afterOverview.navigateToScene(sceneId);
+      } else {
+        afterOverview.requestPanoramaEntry(sceneId, deepLink.view);
+      }
     }
 
     const entrySceneView =
       (location.state as PanoramaEntryRouteState | null)?.entrySceneId === sceneId
         ? manifest.panoramaNodes.find((node) => node.id === sceneId)?.initialView
         : undefined;
-    useImmersiveNavigation.getState().updateView(entrySceneView ?? deepLink.view);
+    const stateBeforeViewSync = useImmersiveNavigation.getState();
+    const canSyncDeepLinkedView =
+      stateBeforeViewSync.requestedSceneId === null ||
+      stateBeforeViewSync.requestedSceneId === sceneId ||
+      stateBeforeViewSync.committedSceneId === sceneId;
+    if (canSyncDeepLinkedView) {
+      stateBeforeViewSync.updateView(entrySceneView ?? deepLink.view);
+    }
     const canonicalLocationId = selectedLocation?.id ?? null;
     const needsCanonicalization =
       deepLink.locationId !== canonicalLocationId ||
@@ -639,8 +690,18 @@ export function ImmersiveExperience({
         (deepLink.view.heading !== entrySceneView.heading ||
           deepLink.view.pitch !== entrySceneView.pitch ||
           deepLink.view.fov !== entrySceneView.fov));
-    if (needsCanonicalization) {
-      writeDeepLink(navigate, destinationSlug, true, trustedExploreReturnHref, location.state);
+    const entryIsPending =
+      useImmersiveNavigation.getState().requestedSceneId === sceneId &&
+      useImmersiveNavigation.getState().committedSceneId !== sceneId;
+    if (needsCanonicalization && !entryIsPending) {
+      writeDeepLink(
+        navigate,
+        destinationSlug,
+        true,
+        trustedExploreReturnHref,
+        location.state,
+        expectedDeepLinkRef,
+      );
     }
   }, [
     destinationSlug,
@@ -650,6 +711,7 @@ export function ImmersiveExperience({
     manifest,
     mapLocations,
     navigate,
+    retryKey,
     routeLocation,
     destinationAnchors,
     trustedExploreReturnHref,
@@ -680,7 +742,14 @@ export function ImmersiveExperience({
 
     pendingUrlFrame.current = window.requestAnimationFrame(() => {
       pendingUrlFrame.current = null;
-      writeDeepLink(navigate, destinationSlug, true, trustedExploreReturnHref, location.state);
+      writeDeepLink(
+        navigate,
+        destinationSlug,
+        true,
+        trustedExploreReturnHref,
+        location.state,
+        expectedDeepLinkRef,
+      );
     });
   }, [destinationSlug, location.state, navigate, trustedExploreReturnHref]);
 
@@ -737,11 +806,13 @@ export function ImmersiveExperience({
       if (!state.selectedLocationId && routeLocation) {
         state.selectLocation(routeLocation);
       }
+      const currentState = useImmersiveNavigation.getState();
 
-      const selectedDestination =
-        destinations.find(
-          (destination) => destination.id === useImmersiveNavigation.getState().selectedLocationId,
-        ) ?? manifest.destination;
+      const selectedDestination = composePanoramaTourDestination(
+        destinations.find((destination) => destination.id === currentState.selectedLocationId) ??
+          manifest.destination,
+        panoramaTourSource,
+      );
 
       if (selectedDestination.id !== manifest.destination.id) {
         const destinationSceneId = sceneId ?? selectedDestination.defaultSceneId;
@@ -777,14 +848,23 @@ export function ImmersiveExperience({
         return;
       }
 
-      const replaceModeTransition = state.mode === 'overview3d';
-      useImmersiveNavigation.getState().enterPanorama(resolvedSceneId);
-      writeDeepLink(
-        navigate,
-        destinationSlug,
-        replaceModeTransition,
-        trustedExploreReturnHref,
-        location.state,
+      if (currentState.mode === 'panorama' && currentState.committedSceneId) {
+        currentState.navigateToScene(resolvedSceneId);
+        return;
+      }
+
+      const replaceModeTransition = currentState.mode === 'overview3d';
+      currentState.requestPanoramaEntry(resolvedSceneId, DEFAULT_NAVIGATION_VIEW);
+      navigate(
+        encodeImmersiveDeepLink({
+          destinationSlug,
+          mode: 'panorama',
+          locationId: currentState.selectedLocationId,
+          sceneId: null,
+          view: DEFAULT_NAVIGATION_VIEW,
+          ...(trustedExploreReturnHref ? { returnTo: trustedExploreReturnHref } : {}),
+        }),
+        { replace: replaceModeTransition, state: location.state },
       );
     },
     [
@@ -793,6 +873,7 @@ export function ImmersiveExperience({
       location.state,
       manifest,
       navigate,
+      panoramaTourSource,
       routeLocation,
       trustedExploreReturnHref,
     ],
@@ -809,7 +890,13 @@ export function ImmersiveExperience({
       }
 
       const state = useImmersiveNavigation.getState();
-      if (sceneId === state.committedSceneId || sceneId === state.requestedSceneId) {
+      if (
+        (state.requestedSceneId &&
+          state.requestedSceneId !== sceneId &&
+          state.committedSceneId !== null) ||
+        sceneId === state.committedSceneId ||
+        sceneId === state.requestedSceneId
+      ) {
         return;
       }
 
@@ -834,7 +921,14 @@ export function ImmersiveExperience({
 
       state.commitRendererScene(sceneId, rendererView);
       if (useImmersiveNavigation.getState().committedSceneId === sceneId) {
-        writeDeepLink(navigate, destinationSlug, true, trustedExploreReturnHref, location.state);
+        writeDeepLink(
+          navigate,
+          destinationSlug,
+          true,
+          trustedExploreReturnHref,
+          location.state,
+          expectedDeepLinkRef,
+        );
       }
     },
     [destinationSlug, location.state, manifest, navigate, trustedExploreReturnHref],
@@ -843,7 +937,9 @@ export function ImmersiveExperience({
   const onRetryRenderer = useCallback(() => {
     const state = useImmersiveNavigation.getState();
     state.clearError();
-    if (state.activeRenderer !== 'none') {
+    if (state.mode === 'panorama') {
+      state.setRendererStatus('panorama', 'loading');
+    } else if (state.activeRenderer !== 'none') {
       state.setRendererStatus(state.activeRenderer, 'loading');
     }
     setRetryKey((current) => current + 1);
@@ -951,9 +1047,11 @@ export function ImmersiveExperience({
     return <ManifestState kind={manifestQuery.isPending ? 'loading' : 'error'} />;
   }
 
-  const selectedDestination =
+  const selectedDestination = composePanoramaTourDestination(
     destinations.find((candidate) => candidate.id === navigation.selectedLocationId) ??
-    manifest.destination;
+      manifest.destination,
+    panoramaTourSource,
+  );
   const selectedAnchor = destinationAnchors.find(
     (anchor) => anchor.id === navigation.selectedLocationId,
   );
@@ -999,18 +1097,31 @@ export function ImmersiveExperience({
     : undefined;
 
   const currentPanoramaNode =
-    manifest.panoramaNodes.find(
+    panoramaRenderableNodes.find(
       (node) => node.id === (navigation.requestedSceneId ?? navigation.committedSceneId),
     ) ?? null;
   const panoramaTargetView = navigation.requestedSceneId
-    ? (currentPanoramaNode?.initialView ?? navigation.committedView)
+    ? (navigation.requestedView ?? currentPanoramaNode?.initialView ?? navigation.committedView)
     : navigation.committedView;
   const selectedLocationPreset =
     navigation.selectedLocationPreset ??
     mapLocations.find((candidate) => candidate.id === navigation.selectedLocationId)
       ?.cameraPreset ??
     routeLocation?.cameraPreset;
-  const view = buildImmersiveView(manifest, destinationSlug, navigation, selectedDestination);
+  const deepLinkForPresentation = decodeImmersiveDeepLink(`${location.pathname}${location.search}`);
+  const failedSceneForPresentation =
+    navigation.mode === 'panorama' &&
+    navigation.panoramaStatus === 'error' &&
+    navigation.committedSceneId === null
+      ? resolveSceneId(manifest, deepLinkForPresentation?.sceneId ?? null)
+      : null;
+  const view = buildImmersiveView(
+    manifest,
+    destinationSlug,
+    navigation,
+    selectedDestination,
+    failedSceneForPresentation ?? navigation.committedSceneId,
+  );
   const selectedHotspot = view.hotspots.find(
     (hotspot) => hotspot.id === navigation.selectedHotspotId,
   );
@@ -1032,8 +1143,27 @@ export function ImmersiveExperience({
       onCameraTransitionChange={setIsCameraTransitioning}
       onLocationSelected={selectLocation}
       onNodeChange={onRendererNodeChange}
-      onStatusChange={(status) => {
+      onStatusChange={(status, statusNodeId) => {
         const state = useImmersiveNavigation.getState();
+        if (state.activeRenderer === 'panorama' && statusNodeId) {
+          const isCurrentScene =
+            state.requestedSceneId === statusNodeId || state.committedSceneId === statusNodeId;
+          const isInitialRendererReady =
+            status === 'ready' &&
+            state.committedSceneId === null &&
+            state.requestedSceneId === null;
+          if (!isCurrentScene && !isInitialRendererReady) {
+            return;
+          }
+        }
+        if (
+          state.activeRenderer === 'panorama' &&
+          statusNodeId &&
+          state.requestedSceneId &&
+          statusNodeId !== state.requestedSceneId
+        ) {
+          return;
+        }
         const transitionId = state.transitionId;
         const requestedSceneId = state.requestedSceneId;
         if (state.activeRenderer === 'panorama' && requestedSceneId) {
@@ -1050,18 +1180,23 @@ export function ImmersiveExperience({
                   true,
                   trustedExploreReturnHref,
                   location.state,
+                  expectedDeepLinkRef,
                 );
               }
             }
           } else if (status === 'error') {
+            const hadCommittedScene = state.committedSceneId !== null;
             state.rollbackSceneTransition(transitionId);
-            writeDeepLink(
-              navigate,
-              destinationSlug,
-              true,
-              trustedExploreReturnHref,
-              location.state,
-            );
+            if (hadCommittedScene) {
+              writeDeepLink(
+                navigate,
+                destinationSlug,
+                true,
+                trustedExploreReturnHref,
+                location.state,
+                expectedDeepLinkRef,
+              );
+            }
           }
         }
         if (
@@ -1076,7 +1211,7 @@ export function ImmersiveExperience({
         scheduleUrlSync();
       }}
       panoramaNode={currentPanoramaNode}
-      panoramaNodes={manifest.panoramaNodes}
+      panoramaNodes={panoramaRenderableNodes}
       cameraPreset={selectedLocationPreset}
       retryKey={retryKey}
     />

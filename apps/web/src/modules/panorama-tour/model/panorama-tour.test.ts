@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { PanoramaNode, SceneLinkVm } from '../../../shared/contracts';
 import {
   buildPanoramaTourPresentationVm,
+  getPanoramaRenderableNodes,
   getPanoramaTourLinks,
   isPanoramaSceneUsable,
   resolvePanoramaSceneForAnchor,
@@ -56,7 +57,25 @@ describe('Sơn Trang panorama tour model', () => {
       pitch: 0,
     };
 
-    expect(getPanoramaTourLinks(nodes, [...links, staleLink])).toEqual(links);
+    expect(getPanoramaTourLinks(nodes, [...links, staleLink])).toEqual([]);
+
+    const usableNodes = nodes.map((node) =>
+      node.id === 'culture' ? { ...node, mediaAvailability: 'demo-only' as const } : node,
+    );
+    expect(getPanoramaTourLinks(usableNodes, [...links, staleLink])).toEqual(links);
+  });
+
+  it('sanitizes node links before renderer consumption', () => {
+    const renderableNodes = [
+      { ...nodes[0]!, links: [{ targetNodeId: 'missing', yaw: 10, pitch: -2 }] },
+      { ...nodes[1]!, mediaAvailability: 'demo-only' as const, links: [] },
+      { ...nodes[1]!, id: 'missing', mediaAvailability: 'missing' as const, links: [] },
+    ];
+
+    expect(getPanoramaRenderableNodes(renderableNodes)).toEqual([
+      { ...renderableNodes[0]!, links: [] },
+      renderableNodes[1],
+    ]);
   });
 
   it('validates a graph and rejects links to unknown scenes', () => {

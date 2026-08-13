@@ -27,12 +27,23 @@ export function mapImmersiveManifest(dto: GetImmersiveManifest200): ImmersiveMan
     .sort((left, right) => left.sortOrder - right.sortOrder);
   const links = dto.links.flatMap(toSceneLinks);
   const nodes = orderedNodes.map(toSceneNode);
+  const panoramaNodeIds = new Set(
+    orderedNodes
+      .filter((node) => node.panoramaManifestUrl !== null && node.panoramaAssetStatus === 'ready')
+      .map((node) => node.id),
+  );
+  const panoramaLinks = links.filter(
+    (link) =>
+      Boolean(link.sourceSceneId) &&
+      panoramaNodeIds.has(link.sourceSceneId!) &&
+      panoramaNodeIds.has(link.targetSceneId),
+  );
   const panoramaNodes = orderedNodes.flatMap((node) => {
     if (node.panoramaManifestUrl === null) {
       return [];
     }
 
-    return [toPanoramaNode(node, links)];
+    return [toPanoramaNode(node, panoramaLinks)];
   });
 
   return {

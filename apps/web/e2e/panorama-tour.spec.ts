@@ -87,6 +87,14 @@ const missingMediaManifest = {
   ],
 };
 
+const unavailableMediaManifest = {
+  ...missingMediaManifest,
+  nodes: missingMediaManifest.nodes.map((node) => ({
+    ...node,
+    panoramaAssetStatus: null,
+  })),
+};
+
 const SON_TRANG_TOUR_SCENE_IDS = [
   'son-trang-gate',
   'son-trang-entrance-path',
@@ -193,4 +201,25 @@ test('canonicalizes a missing-media deep link to the available scene without tra
   await page.goto('/explore/bien-thien-cam/immersive?mode=panorama&scene=unknown-scene');
   await expect(page.getByRole('heading', { name: 'Lối dạo Thiên Cầm' })).toBeVisible();
   await expect(page).toHaveURL(/scene=thien-cam-gate/);
+});
+
+test('shows a recoverable unavailable state when every panorama scene lacks media', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/destinations/bien-thien-cam/immersive-manifest*', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(unavailableMediaManifest),
+      status: 200,
+    });
+  });
+
+  await page.goto('/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-missing');
+
+  await expect(page.getByText('Trải nghiệm 360° chưa khả dụng')).toBeVisible();
+  await expect(
+    page
+      .getByLabel('Không gian 360 độ tại Toàn cảnh điểm đến')
+      .getByRole('button', { name: 'Quay lại Biển Thiên Cầm' }),
+  ).toBeVisible();
 });

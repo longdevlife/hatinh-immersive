@@ -127,6 +127,9 @@ jobs:
       - name: Production-build panorama tour end-to-end test
         run: pnpm --filter @hatinh/web test:e2e:panorama-tour
 
+      - name: Production-build Photo Sphere Viewer panorama smoke test
+        run: pnpm --filter @hatinh/web test:e2e:panorama-tour:real
+
       - name: Production manifest end-to-end smoke tests
         run: pnpm --filter @hatinh/web exec playwright test --config=playwright.production.config.ts
 

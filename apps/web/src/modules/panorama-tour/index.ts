@@ -1,5 +1,6 @@
 export {
   buildPanoramaTourPresentationVm,
+  getPanoramaRenderableNodes,
   getPanoramaTourLinks,
   isPanoramaSceneUsable,
   resolvePanoramaSceneForAnchor,

@@ -1,5 +1,6 @@
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
 import { createDemoPanoramaTourManifest } from '../fake-mode/panorama-tour-demo';
+import type { DestinationPreviewVm } from '../../../shared/contracts';
 
 export type PanoramaTourSource = 'demo' | 'none';
 
@@ -26,4 +27,23 @@ export function composePanoramaTourManifest(
   }
 
   return createDemoPanoramaTourManifest(manifest);
+}
+
+/**
+ * The public demo source may also need to reconcile a catalog preview with
+ * the explicit demo manifest entry scene. This never changes the API source
+ * when the source is `none`.
+ */
+export function composePanoramaTourDestination(
+  destination: DestinationPreviewVm,
+  source: PanoramaTourSource,
+): DestinationPreviewVm {
+  if (source !== 'demo' || destination.slug !== 'son-trang-co-dam') {
+    return destination;
+  }
+
+  return {
+    ...destination,
+    defaultSceneId: 'son-trang-gate',
+  };
 }

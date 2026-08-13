@@ -17,7 +17,7 @@ export interface PanoramaViewportProps {
   initialView?: PanoramaView;
   node: PanoramaNode;
   onHotspotSelect?: (hotspotId: string) => void;
-  onStatusChange?: (status: RendererStatus) => void;
+  onStatusChange?: (status: RendererStatus, nodeId?: string) => void;
   onNodeChange?: (nodeId: string, view: PanoramaView) => void;
   onViewChange?: (view: PanoramaView) => void;
   tourNodes?: PanoramaNode[];
@@ -86,6 +86,7 @@ export function PanoramaViewport({
     }
 
     let cancelled = false;
+    const mountNodeId = nodeRef.current.id;
     lastNodeReportedByEngineRef.current = null;
     installedHotspotsRef.current = null;
     const unsubscribeViewChanged = engine.subscribeViewChanged((view) => {
@@ -111,13 +112,13 @@ export function PanoramaViewport({
         onHotspotSelectRef.current?.(hotspotId);
       }
     });
-    const reportStatus = (nextStatus: RendererStatus) => {
+    const reportStatus = (nextStatus: RendererStatus, nodeId = mountNodeId) => {
       if (cancelled) {
         return;
       }
 
       setStatus(nextStatus);
-      onStatusChangeRef.current?.(nextStatus);
+      onStatusChangeRef.current?.(nextStatus, nodeId);
     };
 
     engine.setTour?.(tourNodesRef.current ?? [nodeRef.current]);
@@ -151,13 +152,13 @@ export function PanoramaViewport({
 
   useEffect(() => {
     let cancelled = false;
-    const reportStatus = (nextStatus: RendererStatus) => {
+    const reportStatus = (nextStatus: RendererStatus, nodeId = node.id) => {
       if (cancelled) {
         return;
       }
 
       setStatus(nextStatus);
-      onStatusChangeRef.current?.(nextStatus);
+      onStatusChangeRef.current?.(nextStatus, nodeId);
     };
 
     reportStatus('loading');

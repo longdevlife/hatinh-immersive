@@ -213,10 +213,17 @@ describe('ImmersiveExperience', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Mở 360° cho Cổng' }));
 
-    await waitFor(() => expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true));
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      'mode=panorama&location=son-trang-gate&scene=son-trang-gate',
-    );
+    await waitFor(() => {
+      expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        mode: 'panorama',
+        committedSceneId: 'son-trang-gate',
+        requestedSceneId: null,
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        'mode=panorama&location=son-trang-gate&scene=son-trang-gate',
+      );
+    });
   });
 
   it('routes a Google 3D marker selection through the location selection state', async () => {
@@ -616,6 +623,9 @@ describe('ImmersiveExperience', () => {
       expect(panorama.loadRequests.get('scene-01')).toBeDefined();
     });
     panorama.loadRequests.get('scene-01')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
     await waitFor(() => {
@@ -656,6 +666,9 @@ describe('ImmersiveExperience', () => {
       expect(panorama.loadRequests.get('scene-01')).toBeDefined();
     });
     panorama.loadRequests.get('scene-01')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
 
@@ -692,6 +705,7 @@ describe('ImmersiveExperience', () => {
 
     await waitFor(() => {
       expect(panorama.loadedNode?.id).toBe('scene-01');
+      expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
     });
 
     const targetNode = manifest.panoramaNodes.find((node) => node.id === 'scene-02');

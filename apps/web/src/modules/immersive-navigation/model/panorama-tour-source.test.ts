@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import { getDemoManifest } from '../fake-mode/demo-catalog';
-import { composePanoramaTourManifest, resolvePanoramaTourSource } from './panorama-tour-source';
+import {
+  composePanoramaTourDestination,
+  composePanoramaTourManifest,
+  resolvePanoramaTourSource,
+} from './panorama-tour-source';
 
 describe('panorama tour source boundary', () => {
   it('fails closed unless demo is explicitly enabled', () => {
@@ -36,5 +40,23 @@ describe('panorama tour source boundary', () => {
     expect(composed.destination.id).toBe('api-destination-uuid');
     expect(composed.destination.defaultSceneId).toBe('son-trang-gate');
     expect(composed.defaultSceneId).toBe('son-trang-gate');
+  });
+
+  it('normalizes the API catalog destination default only for the explicit demo source', () => {
+    const apiDestination = getDemoManifest('son-trang-co-dam').destination;
+    const destinationWithApiScene = {
+      ...apiDestination,
+      id: 'api-destination-uuid',
+      defaultSceneId: 'api-scene-uuid',
+    };
+
+    expect(composePanoramaTourDestination(destinationWithApiScene, 'demo')).toMatchObject({
+      id: 'api-destination-uuid',
+      defaultSceneId: 'son-trang-gate',
+    });
+    expect(composePanoramaTourDestination(destinationWithApiScene, 'none')).toMatchObject({
+      id: 'api-destination-uuid',
+      defaultSceneId: 'api-scene-uuid',
+    });
   });
 });

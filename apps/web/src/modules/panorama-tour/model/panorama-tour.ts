@@ -63,13 +63,24 @@ export function getPanoramaTourLinks(
   nodes: readonly PanoramaNode[],
   links: readonly SceneLinkVm[],
 ): SceneLinkVm[] {
-  const nodeIds = new Set(nodes.map((node) => node.id));
+  const nodeIds = new Set(nodes.filter(isPanoramaSceneUsable).map((node) => node.id));
   return links.filter(
     (link) =>
       Boolean(link.sourceSceneId) &&
       nodeIds.has(link.sourceSceneId!) &&
       nodeIds.has(link.targetSceneId),
   );
+}
+
+export function getPanoramaRenderableNodes(nodes: readonly PanoramaNode[]): PanoramaNode[] {
+  const usableNodeIds = new Set(nodes.filter(isPanoramaSceneUsable).map((node) => node.id));
+
+  return nodes.filter(isPanoramaSceneUsable).map((node) => ({
+    ...node,
+    ...(node.links
+      ? { links: node.links.filter((link) => usableNodeIds.has(link.targetNodeId)) }
+      : {}),
+  }));
 }
 
 export function validatePanoramaTourGraph(

@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "check:bundle": "node ../../tooling/scripts/check-web-bundle.mjs",
-    "lint": "eslint src e2e playwright.config.ts playwright.explore-map.config.ts playwright.minimap.config.ts playwright.navigation.config.ts playwright.panorama-tour.config.ts playwright.production.config.ts playwright.selected-3d.config.ts vite.config.ts vitest.setup.ts",
+    "lint": "eslint src e2e playwright.config.ts playwright.explore-map.config.ts playwright.minimap.config.ts playwright.navigation.config.ts playwright.panorama-tour.config.ts playwright.panorama-tour.real.config.ts playwright.production.config.ts playwright.selected-3d.config.ts vite.config.ts vitest.setup.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test --config=playwright.config.ts && playwright test --config=playwright.production.config.ts",
@@ -15,7 +15,8 @@
     "test:e2e:minimap": "playwright test --config=playwright.minimap.config.ts",
     "test:e2e:selected-3d": "playwright test --config=playwright.selected-3d.config.ts",
     "test:e2e:navigation": "playwright test --config=playwright.navigation.config.ts",
-    "test:e2e:panorama-tour": "playwright test --config=playwright.panorama-tour.config.ts"
+    "test:e2e:panorama-tour": "playwright test --config=playwright.panorama-tour.config.ts",
+    "test:e2e:panorama-tour:real": "playwright test --config=playwright.panorama-tour.real.config.ts"
   },
   "dependencies": {
     "@hatinh/api-client": "workspace:*",
