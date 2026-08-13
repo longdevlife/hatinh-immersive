@@ -23,6 +23,7 @@
     "repo:smoke": "node tooling/scripts/repo-smoke.mjs",
     "api:generate": "pnpm --filter @hatinh/api openapi:export && pnpm --filter @hatinh/api-client generate && prettier --write packages/api-client/openapi.json",
     "panorama:build": "pnpm --filter @hatinh/panorama-tooling panorama:build",
+    "panorama:validate": "pnpm --filter @hatinh/panorama-tooling panorama:validate",
     "panorama:test": "pnpm --filter @hatinh/panorama-tooling test",
     "prepare": "husky"
   },

@@ -77,6 +77,20 @@ The demo generator writes to:
 apps/web/public/demo/360/
 ```
 
+### Validate fullscreen panorama output
+
+The validator rejects a manifest whose highest useful level is below the
+minimum fullscreen demo width (4096 pixels) and checks the preview plus every
+physical tile:
+
+```bash
+pnpm panorama:validate -- --manifest /path/to/output/manifest.json
+```
+
+Use the validator before publishing a panorama manifest. Existing low-resolution
+demo fixtures remain intentionally demo-only and are expected to fail the
+fullscreen quality gate until replaced with an approved source.
+
 Current demo scene IDs include:
 
 ```text

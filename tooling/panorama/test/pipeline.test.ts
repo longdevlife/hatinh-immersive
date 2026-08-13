@@ -10,6 +10,9 @@ import { parsePanoramaManifest } from '@hatinh/immersive-contracts';
 import { generatePanoramaTiles } from '../src/pipeline.js';
 
 const fixturePath = fileURLToPath(new URL('./fixtures/son-trang-fixture.svg', import.meta.url));
+const demoSourcePath = fileURLToPath(
+  new URL('../demo-sources/thien-cam-shore.webp', import.meta.url),
+);
 
 test('generates deterministic preview, levels, tiles, and a viewer manifest', async () => {
   const temporaryRoot = await mkdtemp(path.join(tmpdir(), 'hatinh-panorama-'));
@@ -79,6 +82,24 @@ test('generates deterministic preview, levels, tiles, and a viewer manifest', as
       '3-0.webp',
       '3-1.webp',
     ]);
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
+});
+
+test('does not create a tiled level wider than the native panorama source', async () => {
+  const temporaryRoot = await mkdtemp(path.join(tmpdir(), 'hatinh-panorama-native-width-'));
+
+  try {
+    const result = await generatePanoramaTiles({
+      inputPath: demoSourcePath,
+      outputDir: temporaryRoot,
+      tileSize: 256,
+      previewWidth: 512,
+      quality: 80,
+    });
+
+    assert.equal(result.manifest.levels.at(-1)?.width, 1024);
   } finally {
     await rm(temporaryRoot, { recursive: true, force: true });
   }
