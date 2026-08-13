@@ -65,6 +65,8 @@ export interface ImmersiveExperienceProps {
   selected3DAnchors?: readonly Selected3DAnchor[];
 }
 
+const EMPTY_SELECTED_3D_ANCHORS: readonly Selected3DAnchor[] = [];
+
 type ActiveEngine = Map3DEnginePort | PanoramaEnginePort;
 
 interface PanoramaEntryRouteState {
@@ -449,7 +451,7 @@ export function ImmersiveExperience({
   destinations: destinationsOverride,
   factories,
   manifest: manifestOverride,
-  selected3DAnchors = [],
+  selected3DAnchors = EMPTY_SELECTED_3D_ANCHORS,
 }: ImmersiveExperienceProps) {
   const { destinationSlug: routeDestinationSlug } = useParams<{ destinationSlug: string }>();
   const location = useLocation();
@@ -538,6 +540,9 @@ export function ImmersiveExperience({
       if (selectedLocation) {
         if (current.selectedLocationId !== selectedLocation.id || current.mode !== 'overview3d') {
           current.selectLocation(selectedLocation, manifest.destination.id);
+        }
+        if (deepLink.locationId !== selectedLocation.id) {
+          writeDeepLink(navigate, destinationSlug, true);
         }
       } else if (
         current.destinationId !== manifest.destination.id ||

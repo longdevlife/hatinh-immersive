@@ -16,6 +16,7 @@ export const SON_TRANG_SELECTED_3D_ANCHORS = [
       range: 520,
     },
     panoramaSceneId: 'son-trang-gate',
+    verification: 'demo-unverified',
   },
   {
     id: 'son-trang-culture',
@@ -30,6 +31,7 @@ export const SON_TRANG_SELECTED_3D_ANCHORS = [
       range: 390,
     },
     panoramaSceneId: null,
+    verification: 'demo-unverified',
   },
   {
     id: 'son-trang-ecology',
@@ -44,6 +46,7 @@ export const SON_TRANG_SELECTED_3D_ANCHORS = [
       range: 430,
     },
     panoramaSceneId: null,
+    verification: 'demo-unverified',
   },
   {
     id: 'son-trang-spiritual',
@@ -58,6 +61,7 @@ export const SON_TRANG_SELECTED_3D_ANCHORS = [
       range: 410,
     },
     panoramaSceneId: null,
+    verification: 'demo-unverified',
   },
 ] as const satisfies readonly Selected3DAnchor[];
 

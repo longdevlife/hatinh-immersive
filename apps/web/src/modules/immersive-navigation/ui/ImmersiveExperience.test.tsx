@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FakeMap3DEngine, type Selected3DAnchor } from '../../map3d';
@@ -15,7 +15,13 @@ import { ImmersiveExperience, type ImmersiveExperienceFactories } from './Immers
 
 function LocationProbe() {
   const location = useLocation();
-  return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
+  const navigationType = useNavigationType();
+  return (
+    <>
+      <output data-testid="location">{`${location.pathname}${location.search}`}</output>
+      <output data-testid="navigation-type">{navigationType}</output>
+    </>
+  );
 }
 
 function renderExperience(
@@ -207,6 +213,77 @@ describe('ImmersiveExperience', () => {
       type: 'flyTo',
       preset: SON_TRANG_SELECTED_3D_ANCHORS[1].cameraPreset,
     });
+  });
+
+  it.each([
+    ['missing', '/explore/son-trang-co-dam/immersive?mode=overview3d'],
+    [
+      'destination id',
+      '/explore/son-trang-co-dam/immersive?mode=overview3d&location=son-trang-co-dam',
+    ],
+    ['invalid id', '/explore/son-trang-co-dam/immersive?mode=overview3d&location=unknown-anchor'],
+    [
+      'foreign destination anchor',
+      '/explore/son-trang-co-dam/immersive?mode=overview3d&location=foreign-anchor',
+    ],
+  ])(
+    'canonicalizes a %s selected-3D location to Cổng with replace semantics',
+    async (_case, url) => {
+      const { factories, map3d } = createFactories();
+      const manifest = getDemoManifest('son-trang-co-dam');
+      const foreignAnchor: Selected3DAnchor = {
+        ...SON_TRANG_SELECTED_3D_ANCHORS[0],
+        id: 'foreign-anchor',
+        destinationId: 'another-destination',
+      };
+
+      renderExperience(
+        url,
+        factories,
+        manifest,
+        DEMO_DESTINATIONS.map(({ preview }) => preview),
+        [...SON_TRANG_SELECTED_3D_ANCHORS, foreignAnchor],
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId('location')).toHaveTextContent(
+          '/explore/son-trang-co-dam/immersive?mode=overview3d&location=son-trang-gate',
+        );
+      });
+      expect(screen.getByTestId('navigation-type')).toHaveTextContent('REPLACE');
+      expect(screen.getByRole('button', { name: 'Cổng' })).toHaveAttribute('aria-pressed', 'true');
+      expect(useImmersiveNavigation.getState().selectedLocationId).toBe('son-trang-gate');
+      await waitFor(() => {
+        expect(map3d.calls.filter((call) => call.type === 'flyTo').at(-1)).toEqual({
+          type: 'flyTo',
+          preset: SON_TRANG_SELECTED_3D_ANCHORS[0].cameraPreset,
+        });
+      });
+    },
+  );
+
+  it('preserves a valid local-anchor deep link without replacing it', async () => {
+    const { factories } = createFactories();
+    const manifest = getDemoManifest('son-trang-co-dam');
+
+    renderExperience(
+      '/explore/son-trang-co-dam/immersive?mode=overview3d&location=son-trang-culture',
+      factories,
+      manifest,
+      DEMO_DESTINATIONS.map(({ preview }) => preview),
+      SON_TRANG_SELECTED_3D_ANCHORS,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Văn hóa' })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+    });
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/explore/son-trang-co-dam/immersive?mode=overview3d&location=son-trang-culture',
+    );
+    expect(screen.getByTestId('navigation-type')).toHaveTextContent('POP');
   });
 
   it('only registers the four local Sơn Trang anchors in selected 3D', async () => {

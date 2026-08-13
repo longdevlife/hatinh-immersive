@@ -15,6 +15,12 @@ describe('Selected3DAnchor', () => {
     expect(new Set(SON_TRANG_SELECTED_3D_ANCHORS.map((anchor) => anchor.destinationId))).toEqual(
       new Set(['son-trang-co-dam']),
     );
+    expect(SON_TRANG_SELECTED_3D_ANCHORS.map((anchor) => anchor.verification)).toEqual([
+      'demo-unverified',
+      'demo-unverified',
+      'demo-unverified',
+      'demo-unverified',
+    ]);
   });
 
   it('maps geographic anchors to provider-neutral Map3D locations', () => {

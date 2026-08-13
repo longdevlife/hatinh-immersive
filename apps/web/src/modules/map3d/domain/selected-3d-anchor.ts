@@ -1,5 +1,7 @@
 import type { LocationCameraPreset, Map3DLocation } from './map3d-engine.port';
 
+export type Selected3DAnchorVerification = 'demo-unverified' | 'verified';
+
 export interface Selected3DAnchor {
   id: string;
   destinationId: string;
@@ -12,6 +14,7 @@ export interface Selected3DAnchor {
   };
   cameraPreset: LocationCameraPreset;
   panoramaSceneId?: string | null;
+  verification: Selected3DAnchorVerification;
 }
 
 export function toMap3DLocation(anchor: Selected3DAnchor): Map3DLocation {
