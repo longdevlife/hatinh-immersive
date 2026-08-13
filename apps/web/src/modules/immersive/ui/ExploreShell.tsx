@@ -145,6 +145,7 @@ export function ExploreShell({
 }: ExploreShellProps) {
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
+  const hasScopedSelected3D = selected3DViewpointRail !== undefined;
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(readMinimapCollapsedPreference);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -317,7 +318,7 @@ export function ExploreShell({
           fallbackLabel={isPanorama ? `Quay lại ${view.destination.name}` : 'Mở trải nghiệm 360°'}
           returnLabel={`Quay lại ${view.destination.name}`}
           isTransitioning={isPanorama && isSceneTransitioning}
-          showFallback={isPanorama || canEnterPanorama}
+          showFallback={isPanorama || (!hasScopedSelected3D && canEnterPanorama)}
           {...(isPanorama ? {} : { onReturnToDestination: actions.onReturnToDestination })}
         />
       </section>
