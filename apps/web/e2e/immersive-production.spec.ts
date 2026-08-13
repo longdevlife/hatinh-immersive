@@ -214,7 +214,7 @@ test('keeps selected 3D scoped to its destination before round-tripping through 
 
   await page.getByRole('button', { name: 'Khám phá 360°' }).click();
   await expect(page).toHaveURL(
-    /\/explore\/son-trang-co-dam\/immersive\?mode=panorama&location=destination-01&scene=scene-01&h=0&p=0&fov=90$/,
+    /\/explore\/son-trang-co-dam\/immersive\?mode=panorama&location=son-trang-gate&scene=scene-01&h=0&p=0&fov=90$/,
   );
   await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
 

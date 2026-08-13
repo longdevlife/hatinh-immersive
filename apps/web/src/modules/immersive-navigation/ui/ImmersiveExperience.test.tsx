@@ -10,6 +10,7 @@ import type { DestinationPreviewVm } from '../../../shared/contracts';
 import { DEMO_DESTINATIONS, getDemoManifest } from '../fake-mode/demo-catalog';
 import { SON_TRANG_SELECTED_3D_ANCHORS } from '../fake-mode/selected-3d-demo-anchors';
 import { createFakeImmersiveManifest } from '../fake-mode/manifest';
+import type { Selected3DAnchorSource } from '../model/selected-3d-anchor-source';
 import { useImmersiveNavigation } from '../index';
 import { ImmersiveExperience, type ImmersiveExperienceFactories } from './ImmersiveExperience';
 
@@ -30,6 +31,7 @@ function renderExperience(
   manifest = createFakeImmersiveManifest(),
   destinations?: DestinationPreviewVm[],
   selected3DAnchors: readonly Selected3DAnchor[] = [],
+  selected3DAnchorSource: Selected3DAnchorSource = 'none',
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -47,6 +49,7 @@ function renderExperience(
                 manifest={manifest}
                 {...(destinations === undefined ? {} : { destinations })}
                 selected3DAnchors={selected3DAnchors}
+                selected3DAnchorSource={selected3DAnchorSource}
               />
             }
           />
@@ -58,6 +61,7 @@ function renderExperience(
                 manifest={manifest}
                 {...(destinations === undefined ? {} : { destinations })}
                 selected3DAnchors={selected3DAnchors}
+                selected3DAnchorSource={selected3DAnchorSource}
               />
             }
           />

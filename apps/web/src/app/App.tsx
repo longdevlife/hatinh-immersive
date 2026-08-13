@@ -25,6 +25,7 @@ import {
   getDemoManifest,
 } from '../modules/immersive-navigation/fake-mode/demo-catalog';
 import { getDemoSelected3DAnchors } from '../modules/immersive-navigation/fake-mode/selected-3d-demo-anchors';
+import { resolveSelected3DAnchorSource } from '../modules/immersive-navigation/model/selected-3d-anchor-source';
 import {
   DEMO_SON_TRANG_ZONE_MEDIA,
   getDemoDestinationMedia,
@@ -67,6 +68,7 @@ if (import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake' && e2eFailure) {
 
 const useFakeData = import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake';
 const destinationCapabilityConfig = resolveDestinationCapabilityConfig(import.meta.env);
+const selected3DAnchorSource = resolveSelected3DAnchorSource(import.meta.env);
 
 function FakeImmersiveExperience() {
   const { destinationSlug = DEFAULT_PUBLIC_DESTINATION_SLUG } = useParams();
@@ -100,7 +102,7 @@ function ImmersiveRouteLoading() {
 function PublicImmersiveExperience() {
   return (
     <Suspense fallback={<ImmersiveRouteLoading />}>
-      <LazyImmersiveExperience />
+      <LazyImmersiveExperience selected3DAnchorSource={selected3DAnchorSource} />
     </Suspense>
   );
 }

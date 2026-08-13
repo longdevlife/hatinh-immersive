@@ -348,43 +348,26 @@ export function Map3DChrome({
         </aside>
       ) : null}
 
-      {/* Bottom Area: Handoff CTA or Viewpoint Rail */}
+      {/* Bottom Area: Viewpoint Rail and/or Handoff CTA */}
       {viewpointRail ? (
-        <div className="map3d-chrome__viewpoint-rail-wrapper">
+        <div
+          className="map3d-chrome__viewpoint-rail-wrapper"
+          style={onEnter360 || onRetry360 ? { bottom: '6.5rem' } : undefined}
+        >
           <Selected3DViewpointRail {...viewpointRail} />
         </div>
-      ) : (
-        selectedLocationId && (
-          <div className="map3d-chrome__handoff">
-            {onEnter360 ? (
-              <button
-                type="button"
-                className="map3d-chrome__enter-360-btn"
-                onClick={onEnter360}
-                aria-label={labels.enter360}
-              >
-                <span className="map3d-chrome__handoff-action" aria-hidden="true">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                  </svg>
-                  {labels.enter360}
-                </span>
-              </button>
-            ) : onRetry360 ? (
-              <button
-                type="button"
-                className="map3d-chrome__retry-btn"
-                onClick={onRetry360}
-                aria-label={labels.retry}
-              >
+      ) : null}
+
+      {selectedLocationId && (onEnter360 || onRetry360 || !viewpointRail) ? (
+        <div className="map3d-chrome__handoff">
+          {onEnter360 ? (
+            <button
+              type="button"
+              className="map3d-chrome__enter-360-btn"
+              onClick={onEnter360}
+              aria-label={labels.enter360}
+            >
+              <span className="map3d-chrome__handoff-action" aria-hidden="true">
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -394,20 +377,40 @@ export function Map3DChrome({
                   strokeLinejoin="round"
                   aria-hidden="true"
                 >
-                  <path d="M21 2v6h-6"></path>
-                  <path d="M3 12a9 9 0 1 0 2.13-5.85L21 8"></path>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
-                {labels.retry}
-              </button>
-            ) : (
-              <div className="map3d-chrome__handoff-status" role="status">
-                <span className="map3d-chrome__spinner" aria-hidden="true" />
-                {labels.preparing360}
-              </div>
-            )}
-          </div>
-        )
-      )}
+                {labels.enter360}
+              </span>
+            </button>
+          ) : onRetry360 ? (
+            <button
+              type="button"
+              className="map3d-chrome__retry-btn"
+              onClick={onRetry360}
+              aria-label={labels.retry}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M21 2v6h-6"></path>
+                <path d="M3 12a9 9 0 1 0 2.13-5.85L21 8"></path>
+              </svg>
+              {labels.retry}
+            </button>
+          ) : !viewpointRail ? (
+            <div className="map3d-chrome__handoff-status" role="status">
+              <span className="map3d-chrome__spinner" aria-hidden="true" />
+              {labels.preparing360}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

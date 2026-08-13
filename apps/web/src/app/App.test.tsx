@@ -114,4 +114,15 @@ describe('public application shell', () => {
       expect(window.location.pathname).toBe('/explore/bien-thien-cam');
     });
   });
+
+  it('keeps public selected 3D anchor composition disabled by default', async () => {
+    window.history.pushState({}, '', '/explore/son-trang-co-dam/immersive?mode=overview3d');
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('status')).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('navigation', { name: 'Các góc nhìn 3D' })).not.toBeInTheDocument();
+  });
 });

@@ -51,6 +51,10 @@ import { resolveRendererModes } from '../lib/renderer-mode';
 import { useImmersiveNavigation } from '../model/navigation.store';
 import { DEFAULT_NAVIGATION_VIEW } from '../model/navigation.view';
 import type { ActiveRenderer, ImmersiveNavigationState } from '../model/navigation.types';
+import {
+  resolvePublicSelected3DAnchors,
+  type Selected3DAnchorSource,
+} from '../model/selected-3d-anchor-source';
 
 export interface ImmersiveExperienceFactories {
   createMap3DEngine(): Promise<Map3DEnginePort>;
@@ -63,6 +67,7 @@ export interface ImmersiveExperienceProps {
   factories?: ImmersiveExperienceFactories;
   manifest?: ImmersiveManifestVm;
   selected3DAnchors?: readonly Selected3DAnchor[];
+  selected3DAnchorSource?: Selected3DAnchorSource;
 }
 
 const EMPTY_SELECTED_3D_ANCHORS: readonly Selected3DAnchor[] = [];
@@ -452,6 +457,7 @@ export function ImmersiveExperience({
   factories,
   manifest: manifestOverride,
   selected3DAnchors = EMPTY_SELECTED_3D_ANCHORS,
+  selected3DAnchorSource = 'none',
 }: ImmersiveExperienceProps) {
   const { destinationSlug: routeDestinationSlug } = useParams<{ destinationSlug: string }>();
   const location = useLocation();
@@ -468,14 +474,28 @@ export function ImmersiveExperience({
   const destinationsQuery = useImmersiveDestinations(locale, shouldFetchDestinations);
   const destinations = destinationsOverride ?? destinationsQuery.data;
   const manifest = manifestOverride ?? manifestQuery.data;
+  const composedSelected3DAnchors = useMemo(
+    () =>
+      selected3DAnchors.length > 0
+        ? selected3DAnchors
+        : manifest
+          ? resolvePublicSelected3DAnchors(
+              { id: manifest.destination.id, slug: manifest.destination.slug },
+              selected3DAnchorSource,
+            )
+          : EMPTY_SELECTED_3D_ANCHORS,
+    [manifest, selected3DAnchorSource, selected3DAnchors],
+  );
   const requestedMode = new URLSearchParams(location.search).get('mode');
   const isDestinationScopedSelected3D = requestedMode === 'overview3d';
   const destinationAnchors = useMemo(
     () =>
       manifest
-        ? selected3DAnchors.filter((anchor) => anchor.destinationId === manifest.destination.id)
+        ? composedSelected3DAnchors.filter(
+            (anchor) => anchor.destinationId === manifest.destination.id,
+          )
         : [],
-    [manifest, selected3DAnchors],
+    [composedSelected3DAnchors, manifest],
   );
   const mapLocations = useMemo(() => {
     if (!manifest) {
