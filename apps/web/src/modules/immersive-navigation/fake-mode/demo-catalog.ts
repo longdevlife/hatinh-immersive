@@ -224,6 +224,7 @@ function createManifest(definition: DemoDestinationDefinition): ImmersiveManifes
     name: node.name,
     panoramaUrl: `/demo/360/${node.id}/manifest.json`,
     previewUrl: `/demo/360/${node.id}/preview.webp`,
+    mediaAvailability: definition.preview.slug === 'son-trang-co-dam' ? 'demo-only' : 'ready',
     lat: node.lat,
     lng: node.lng,
     initialView: { heading: node.heading, pitch: 0, fov: 88 },

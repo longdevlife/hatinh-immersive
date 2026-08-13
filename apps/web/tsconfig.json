@@ -9,6 +9,7 @@
     "e2e",
     "playwright.config.ts",
     "playwright.navigation.config.ts",
+    "playwright.panorama-tour.config.ts",
     "playwright.production.config.ts",
     "vite.config.ts",
     "vitest.setup.ts"

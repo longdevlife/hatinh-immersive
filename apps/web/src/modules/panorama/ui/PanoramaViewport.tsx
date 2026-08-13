@@ -68,6 +68,8 @@ export function PanoramaViewport({
   const lastNodeReportedByEngineRef = useRef<string | null>(null);
   const installedHotspotsRef = useRef<HotspotVm[] | null>(null);
   const [status, setStatus] = useState<RendererStatus>('loading');
+  const [mountCount, setMountCount] = useState(0);
+  const [destroyCount, setDestroyCount] = useState(0);
 
   onHotspotSelectRef.current = onHotspotSelect;
   onStatusChangeRef.current = onStatusChange;
@@ -119,6 +121,7 @@ export function PanoramaViewport({
     };
 
     engine.setTour?.(tourNodesRef.current ?? [nodeRef.current]);
+    setMountCount((count) => count + 1);
     const mountPromise = engine.mount(container);
     mountPromiseRef.current = mountPromise;
     void mountPromise.catch(() => {
@@ -130,6 +133,7 @@ export function PanoramaViewport({
       unsubscribeViewChanged();
       unsubscribeNodeChanged?.();
       unsubscribeHotspotSelected?.();
+      setDestroyCount((count) => count + 1);
       engine.destroy();
       mountPromiseRef.current = null;
       installedHotspotsRef.current = null;
@@ -195,6 +199,8 @@ export function PanoramaViewport({
       aria-busy={status === 'loading'}
       aria-label="Không gian toàn cảnh 360 độ"
       data-renderer-status={status}
+      data-e2e-panorama-mount-count={mountCount}
+      data-e2e-panorama-destroy-count={destroyCount}
       role="application"
       style={{ height: '100%', width: '100%' }}
     >

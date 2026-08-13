@@ -1,6 +1,7 @@
 import type { GetImmersiveManifest200 } from '@hatinh/api-client';
 import { describe, expect, it } from 'vitest';
 
+import { getPanoramaTourLinks } from '../../panorama-tour';
 import { getSceneLinks, mapImmersiveManifest } from './immersive-manifest.mapper';
 
 function createManifestDto(): GetImmersiveManifest200 {
@@ -161,6 +162,12 @@ describe('mapImmersiveManifest', () => {
       'scene-04',
     ]);
     expect(getSceneLinks(view.links, 'scene-02')[0]?.yaw).toBe(198);
+    expect(getPanoramaTourLinks(view.panoramaNodes, view.links).map((link) => link.id)).toEqual([
+      'link-01-02',
+      'link-01-02:reverse',
+      'link-02-04',
+      'link-02-04:reverse',
+    ]);
     expect(view.hotspots[0]).toEqual(
       expect.objectContaining({
         id: 'hotspot-01',

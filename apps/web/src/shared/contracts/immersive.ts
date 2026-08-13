@@ -131,6 +131,9 @@ export interface PanoramaView {
   fov: number;
 }
 
+export type PanoramaMediaAvailability =
+  'ready' | 'demo-only' | 'low-resolution' | 'missing' | 'invalid';
+
 export interface PanoramaLink {
   targetNodeId: string;
   yaw: number;
@@ -142,6 +145,11 @@ export interface PanoramaNode {
   name?: string;
   panoramaUrl: string;
   previewUrl: string | null;
+  /**
+   * Media readiness is deliberately separate from scene-graph membership.
+   * A graph can be complete while a scene still has no public-quality media.
+   */
+  mediaAvailability?: PanoramaMediaAvailability;
   lat: number;
   lng: number;
   initialView: PanoramaView;
