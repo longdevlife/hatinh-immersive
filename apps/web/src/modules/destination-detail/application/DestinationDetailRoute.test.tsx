@@ -108,7 +108,7 @@ describe('DestinationDetailRoute', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Xem trên bản đồ' }));
 
     expect(screen.getByTestId('location')).toHaveTextContent(
-      '/explore?destination=son-trang-co-dam',
+      '/explore?destination=son-trang-co-dam&view=map',
     );
   });
 
@@ -157,7 +157,9 @@ describe('DestinationDetailRoute', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Xem trên bản đồ' }));
 
-    expect(screen.getByTestId('location')).toHaveTextContent('/explore?destination=bien-thien-cam');
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/explore?destination=bien-thien-cam&view=map',
+    );
   });
 
   it('enters the explicit immersive route only from the panorama CTA', () => {
@@ -175,7 +177,7 @@ describe('DestinationDetailRoute', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Quay lại khám phá' }));
 
-    expect(screen.getByTestId('location')).toHaveTextContent('/explore');
+    expect(screen.getByTestId('location')).toHaveTextContent('/explore?destination=bien-thien-cam');
   });
 
   it('restores the durable Explore query, category, and selection context', () => {

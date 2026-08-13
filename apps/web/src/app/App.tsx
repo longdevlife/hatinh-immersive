@@ -14,7 +14,10 @@ import {
 import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
 
-import { createExploreReturnHref } from '../shared/navigation/explore-context';
+import {
+  createDestinationDetailHref,
+  createExploreReturnHref,
+} from '../shared/navigation/explore-context';
 
 import {
   canEnterSelected3D,
@@ -110,12 +113,18 @@ function PublicImmersiveExperience() {
 function ImmersiveRoute() {
   const { destinationSlug = '' } = useParams();
   const location = useLocation();
-  const requestedMode = new URLSearchParams(location.search).get('mode');
+  const searchParams = new URLSearchParams(location.search);
+  const requestedMode = searchParams.get('mode');
   const canEnterPanorama = requestedMode === 'panorama';
   const canEnterSelected3D = canEnterSelected3DForSlug(destinationSlug, requestedMode);
 
   if (!canEnterPanorama && !canEnterSelected3D) {
-    return <Navigate replace to={`/explore/${encodeURIComponent(destinationSlug)}`} />;
+    return (
+      <Navigate
+        replace
+        to={createDestinationDetailHref(destinationSlug, searchParams.get('returnTo') ?? undefined)}
+      />
+    );
   }
 
   return useFakeData && e2eFailure !== 'manifest' ? (
@@ -139,6 +148,9 @@ function PublicExplore() {
   const initialDestinationSlug = searchParams.get('destination') ?? undefined;
   const initialQuery = searchParams.get('q') ?? undefined;
   const initialCategory = searchParams.get('category') ?? undefined;
+  const initialViewParam = searchParams.get('view');
+  const initialView =
+    initialViewParam === 'cards' || initialViewParam === 'map' ? initialViewParam : undefined;
 
   return (
     <Suspense fallback={<ImmersiveRouteLoading />}>
@@ -147,11 +159,28 @@ function PublicExplore() {
         {...(initialDestinationSlug ? { initialDestinationSlug } : {})}
         {...(initialQuery ? { initialQuery } : {})}
         {...(initialCategory ? { initialCategory } : {})}
+        {...(initialView ? { initialView } : {})}
+        onDiscoveryStateChange={({ query, category, destinationSlug, view }) => {
+          const params = new URLSearchParams();
+          if (query.trim()) {
+            params.set('q', query.trim());
+          }
+          if (category.trim()) {
+            params.set('category', category.trim());
+          }
+          if (destinationSlug) {
+            params.set('destination', destinationSlug);
+          }
+          params.set('view', view);
+          navigate(`/explore?${params.toString()}`, { replace: true });
+        }}
         onOpenDestination={(destination, returnHref) => {
           const params = new URLSearchParams({
             returnTo: returnHref ?? createExploreReturnHref({ destinationSlug: destination.slug }),
           });
-          navigate(`/explore/${encodeURIComponent(destination.slug)}?${params.toString()}`);
+          navigate(`/explore/${encodeURIComponent(destination.slug)}?${params.toString()}`, {
+            state: { origin: 'explore' },
+          });
         }}
       />
     </Suspense>
@@ -213,7 +242,16 @@ function DestinationRoute() {
       requestedMode === 'overview3d' &&
       !canEnterSelected3D(destinationSlug, destinationCapabilityConfig)
     ) {
-      return <Navigate replace to={`/explore/${encodeURIComponent(destinationSlug)}`} />;
+      const searchParams = new URLSearchParams(location.search);
+      return (
+        <Navigate
+          replace
+          to={createDestinationDetailHref(
+            destinationSlug,
+            searchParams.get('returnTo') ?? undefined,
+          )}
+        />
+      );
     }
 
     return (

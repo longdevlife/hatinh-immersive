@@ -115,6 +115,23 @@ describe('public application shell', () => {
     });
   });
 
+  it('preserves a trusted Explore return context when an immersive mode is invalid', async () => {
+    window.history.pushState(
+      {},
+      '',
+      '/explore/bien-thien-cam/immersive?mode=unsupported&returnTo=%2Fexplore%3Fq%3Dbi%E1%BB%83n%26destination%3Dbien-thien-cam%26view%3Dmap',
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/explore/bien-thien-cam');
+      expect(window.location.search).toBe(
+        '?returnTo=%2Fexplore%3Fq%3Dbi%25E1%25BB%2583n%26destination%3Dbien-thien-cam%26view%3Dmap',
+      );
+    });
+  });
+
   it('keeps public selected 3D anchor composition disabled by default', async () => {
     window.history.pushState({}, '', '/explore/son-trang-co-dam/immersive?mode=overview3d');
 

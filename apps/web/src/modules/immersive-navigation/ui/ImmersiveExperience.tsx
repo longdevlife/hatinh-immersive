@@ -43,6 +43,11 @@ import type {
 
 import { getSceneLinks, type ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
 import {
+  createDestinationDetailHref,
+  createExploreReturnHref,
+  parseExploreReturnHref,
+} from '../../../shared/navigation/explore-context';
+import {
   decodeImmersiveDeepLink,
   encodeImmersiveDeepLink,
   type ImmersiveDeepLinkState,
@@ -76,6 +81,7 @@ type ActiveEngine = Map3DEnginePort | PanoramaEnginePort;
 
 interface PanoramaEntryRouteState {
   entrySceneId: string;
+  origin?: 'destination-detail' | 'explore';
 }
 
 function createDefaultFactories(initialTarget?: CameraTarget): ImmersiveExperienceFactories {
@@ -243,6 +249,8 @@ function writeDeepLink(
   navigate: ReturnType<typeof useNavigate>,
   destinationSlug: string,
   replace: boolean,
+  returnTo?: string,
+  routeState?: PanoramaEntryRouteState | null,
 ) {
   const state = useImmersiveNavigation.getState();
   const href = encodeImmersiveDeepLink({
@@ -251,9 +259,10 @@ function writeDeepLink(
     locationId: state.selectedLocationId,
     sceneId: state.committedSceneId,
     view: state.committedView,
+    ...(returnTo ? { returnTo } : {}),
   });
 
-  navigate(href, { replace });
+  navigate(href, { replace, ...(routeState ? { state: routeState } : {}) });
 }
 
 interface NetworkInformationLike extends EventTarget {
@@ -539,6 +548,14 @@ export function ImmersiveExperience({
   const resolvedFactories = factories ?? defaultFactories;
   const [retryKey, setRetryKey] = useState(0);
   const pendingUrlFrame = useRef<number | null>(null);
+  const trustedExploreReturnHref = useMemo(() => {
+    const rawReturnTo = new URLSearchParams(location.search).get('returnTo');
+    const context = rawReturnTo ? parseExploreReturnHref(rawReturnTo) : null;
+    return context ? createExploreReturnHref(context) : undefined;
+  }, [location.search]);
+  const hasImmersiveEntryHistory = Boolean(
+    (location.state as PanoramaEntryRouteState | null)?.origin === 'destination-detail',
+  );
 
   useEffect(() => {
     if (!manifest) {
@@ -553,6 +570,7 @@ export function ImmersiveExperience({
     const current = useImmersiveNavigation.getState();
     const selectedLocation =
       mapLocations.find((candidate) => candidate.id === deepLink.locationId) ??
+      destinationAnchors.find((candidate) => candidate.id === deepLink.locationId) ??
       (deepLink.mode === 'overview3d' ? mapLocations[0] : routeLocation);
     const sceneId = resolveSceneId(manifest, deepLink.sceneId);
 
@@ -562,7 +580,7 @@ export function ImmersiveExperience({
           current.selectLocation(selectedLocation, manifest.destination.id);
         }
         if (deepLink.locationId !== selectedLocation.id) {
-          writeDeepLink(navigate, destinationSlug, true);
+          writeDeepLink(navigate, destinationSlug, true, trustedExploreReturnHref, location.state);
         }
       } else if (
         current.destinationId !== manifest.destination.id ||
@@ -593,8 +611,16 @@ export function ImmersiveExperience({
         ? manifest.panoramaNodes.find((node) => node.id === sceneId)?.initialView
         : undefined;
     useImmersiveNavigation.getState().updateView(entrySceneView ?? deepLink.view);
-    if (entrySceneView) {
-      writeDeepLink(navigate, destinationSlug, true);
+    const canonicalLocationId = selectedLocation?.id ?? null;
+    const needsCanonicalization =
+      deepLink.locationId !== canonicalLocationId ||
+      deepLink.sceneId !== sceneId ||
+      (entrySceneView !== undefined &&
+        (deepLink.view.heading !== entrySceneView.heading ||
+          deepLink.view.pitch !== entrySceneView.pitch ||
+          deepLink.view.fov !== entrySceneView.fov));
+    if (needsCanonicalization) {
+      writeDeepLink(navigate, destinationSlug, true, trustedExploreReturnHref, location.state);
     }
   }, [
     destinationSlug,
@@ -605,6 +631,8 @@ export function ImmersiveExperience({
     mapLocations,
     navigate,
     routeLocation,
+    destinationAnchors,
+    trustedExploreReturnHref,
   ]);
 
   const onRendererCreateError = useCallback(() => {
@@ -632,9 +660,9 @@ export function ImmersiveExperience({
 
     pendingUrlFrame.current = window.requestAnimationFrame(() => {
       pendingUrlFrame.current = null;
-      writeDeepLink(navigate, destinationSlug, true);
+      writeDeepLink(navigate, destinationSlug, true, trustedExploreReturnHref, location.state);
     });
-  }, [destinationSlug, navigate]);
+  }, [destinationSlug, location.state, navigate, trustedExploreReturnHref]);
 
   useEffect(
     () => () => {
@@ -660,15 +688,24 @@ export function ImmersiveExperience({
           locationId,
           sceneId: null,
           view: DEFAULT_NAVIGATION_VIEW,
+          ...(trustedExploreReturnHref ? { returnTo: trustedExploreReturnHref } : {}),
         }),
+        { replace: true, state: location.state },
       );
     },
-    [destinationSlug, manifest, mapLocations, navigate],
+    [destinationSlug, location.state, manifest, mapLocations, navigate, trustedExploreReturnHref],
   );
 
   const onReturnToDestination = useCallback(() => {
-    navigate(`/explore/${destinationSlug}`);
-  }, [destinationSlug, navigate]);
+    if (hasImmersiveEntryHistory) {
+      navigate(-1);
+      return;
+    }
+
+    navigate(createDestinationDetailHref(destinationSlug, trustedExploreReturnHref), {
+      replace: true,
+    });
+  }, [destinationSlug, hasImmersiveEntryHistory, navigate, trustedExploreReturnHref]);
 
   const onEnterPanorama = useCallback(
     (sceneId?: string) => {
@@ -699,8 +736,15 @@ export function ImmersiveExperience({
             locationId: selectedDestination.id,
             sceneId: destinationSceneId,
             view: DEFAULT_NAVIGATION_VIEW,
+            ...(trustedExploreReturnHref ? { returnTo: trustedExploreReturnHref } : {}),
           }),
-          { state: { entrySceneId: destinationSceneId } satisfies PanoramaEntryRouteState },
+          {
+            state: {
+              ...(location.state as PanoramaEntryRouteState | null),
+              entrySceneId: destinationSceneId,
+              origin: 'destination-detail',
+            } satisfies PanoramaEntryRouteState,
+          },
         );
         return;
       }
@@ -713,10 +757,25 @@ export function ImmersiveExperience({
         return;
       }
 
+      const replaceModeTransition = state.mode === 'overview3d';
       useImmersiveNavigation.getState().enterPanorama(resolvedSceneId);
-      writeDeepLink(navigate, destinationSlug, false);
+      writeDeepLink(
+        navigate,
+        destinationSlug,
+        replaceModeTransition,
+        trustedExploreReturnHref,
+        location.state,
+      );
     },
-    [destinationSlug, destinations, manifest, navigate, routeLocation],
+    [
+      destinationSlug,
+      destinations,
+      location.state,
+      manifest,
+      navigate,
+      routeLocation,
+      trustedExploreReturnHref,
+    ],
   );
 
   const onNavigateScene = useCallback(
@@ -751,10 +810,10 @@ export function ImmersiveExperience({
 
       state.commitRendererScene(sceneId, rendererView);
       if (useImmersiveNavigation.getState().committedSceneId === sceneId) {
-        writeDeepLink(navigate, destinationSlug, true);
+        writeDeepLink(navigate, destinationSlug, true, trustedExploreReturnHref, location.state);
       }
     },
-    [destinationSlug, manifest, navigate],
+    [destinationSlug, location.state, manifest, navigate, trustedExploreReturnHref],
   );
 
   const onRetryRenderer = useCallback(() => {
@@ -799,14 +858,14 @@ export function ImmersiveExperience({
 
       if (navigation.mode === 'panorama') {
         if (destination.id !== manifest?.destination.id) {
-          navigate(`/explore/${encodeURIComponent(destination.slug)}`);
+          navigate(createDestinationDetailHref(destination.slug, trustedExploreReturnHref));
         }
         return;
       }
 
       selectLocation(destination.id);
     },
-    [manifest, navigate, navigation.mode, selectLocation],
+    [manifest, navigate, navigation.mode, selectLocation, trustedExploreReturnHref],
   );
   const onLocaleChange = useCallback((nextLocale: ImmersiveLocale) => {
     setLocale(nextLocale);
@@ -854,6 +913,7 @@ export function ImmersiveExperience({
             anchor?.panoramaSceneId &&
             manifest.panoramaNodes.some((node) => node.id === anchor.panoramaSceneId)
           ) {
+            selectLocation(anchor.id);
             onEnterPanorama(anchor.panoramaSceneId);
           }
         },
@@ -906,12 +966,24 @@ export function ImmersiveExperience({
             if (requestedNode) {
               state.commitSceneTransition(transitionId, requestedNode.initialView);
               if (useImmersiveNavigation.getState().committedSceneId === requestedSceneId) {
-                writeDeepLink(navigate, destinationSlug, true);
+                writeDeepLink(
+                  navigate,
+                  destinationSlug,
+                  true,
+                  trustedExploreReturnHref,
+                  location.state,
+                );
               }
             }
           } else if (status === 'error') {
             state.rollbackSceneTransition(transitionId);
-            writeDeepLink(navigate, destinationSlug, true);
+            writeDeepLink(
+              navigate,
+              destinationSlug,
+              true,
+              trustedExploreReturnHref,
+              location.state,
+            );
           }
         }
         if (

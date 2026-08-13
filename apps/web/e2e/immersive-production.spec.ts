@@ -108,7 +108,7 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
   await page.getByRole('button', { name: 'Xem chi tiết' }).click();
 
   await expect(page).toHaveURL(
-    '/explore/son-trang-co-dam?returnTo=%2Fexplore%3Fdestination%3Dson-trang-co-dam',
+    '/explore/son-trang-co-dam?returnTo=%2Fexplore%3Fdestination%3Dson-trang-co-dam%26view%3Dmap',
   );
   const sonTrangDetail = page.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' });
   await expect(sonTrangDetail).toBeVisible();
@@ -136,7 +136,9 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
   const returnLabel = `Quay lại ${manifest.destination.name}`;
   await page.getByRole('button', { name: returnLabel }).click();
 
-  await expect(page).toHaveURL('/explore/son-trang-co-dam');
+  await expect(page).toHaveURL(
+    '/explore/son-trang-co-dam?returnTo=%2Fexplore%3Fdestination%3Dson-trang-co-dam%26view%3Dmap',
+  );
   await expect(page.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toBeVisible();
   await expect(
     sonTrangDetail.getByRole('heading', { name: manifest.destination.name }).first(),

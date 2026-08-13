@@ -27,7 +27,7 @@ test('returns to Explore with the selected destination from detail', async ({ pa
 
   await page.getByRole('button', { name: 'Xem trên bản đồ' }).click();
 
-  await expect(page).toHaveURL('/explore?destination=bien-thien-cam');
+  await expect(page).toHaveURL('/explore?destination=bien-thien-cam&view=map');
   await expect(page.getByTestId('destination-card-thien-cam-beach')).toHaveAttribute(
     'aria-current',
     'true',

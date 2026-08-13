@@ -82,6 +82,19 @@ describe('immersive deep link codec', () => {
     expect(decodeImmersiveDeepLink(encoded)).toEqual(state);
   });
 
+  it('round-trips the encoded Explore return context', () => {
+    const state: ImmersiveDeepLinkState = {
+      destinationSlug: 'bien-thien-cam',
+      mode: 'panorama',
+      locationId: 'thien-cam-beach',
+      sceneId: 'thien-cam-boardwalk',
+      returnTo: '/explore?q=bi%E1%BB%83n&destination=bien-thien-cam&view=map',
+      view: { heading: 0, pitch: 0, fov: 90 },
+    };
+
+    expect(decodeImmersiveDeepLink(encodeImmersiveDeepLink(state))).toEqual(state);
+  });
+
   it('decodes both the explicit immersive route and the legacy explore route', () => {
     const expected = {
       destinationSlug: 'son-trang-co-dam',

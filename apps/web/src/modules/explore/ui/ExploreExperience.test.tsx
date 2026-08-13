@@ -111,7 +111,7 @@ describe('ExploreExperience', () => {
 
     expect(onOpenDestination).toHaveBeenCalledWith(
       expect.objectContaining({ slug: 'khu-luu-niem-nguyen-du' }),
-      '/explore?destination=khu-luu-niem-nguyen-du',
+      '/explore?destination=khu-luu-niem-nguyen-du&view=map',
     );
   });
 
@@ -128,7 +128,7 @@ describe('ExploreExperience', () => {
 
     const [, returnHref] = onOpenDestination.mock.calls.at(-1) ?? [];
     expect(returnHref).toBe(
-      '/explore?q=Nguy%E1%BB%85n&category=Di+s%E1%BA%A3n+%26+v%C4%83n+h%C3%B3a&destination=khu-luu-niem-nguyen-du',
+      '/explore?q=Nguy%E1%BB%85n&category=Di+s%E1%BA%A3n+%26+v%C4%83n+h%C3%B3a&destination=khu-luu-niem-nguyen-du&view=map',
     );
   });
 
@@ -226,6 +226,23 @@ describe('ExploreExperience', () => {
     expect(screen.queryByText('Khu lưu niệm Nguyễn Du')).not.toBeInTheDocument();
   });
 
+  it('clears the URL selection when a query filters the selected destination out', () => {
+    const onDiscoveryStateChange = vi.fn();
+    renderExplore(new FakeExploreMapEngine(), { onDiscoveryStateChange });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chọn điểm đến Biển Thiên Cầm' }));
+    onDiscoveryStateChange.mockClear();
+
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Nguyễn Du' } });
+
+    expect(onDiscoveryStateChange).toHaveBeenLastCalledWith({
+      query: 'Nguyễn Du',
+      category: '',
+      destinationSlug: null,
+      view: 'map',
+    });
+  });
+
   it('opens the map surface through the mobile map callback', async () => {
     const mapEngine = new FakeExploreMapEngine();
     renderExplore(mapEngine);
@@ -260,7 +277,7 @@ describe('ExploreExperience', () => {
     fireEvent.click(within(destinationList).getByRole('button', { name: 'Xem chi tiết' }));
     expect(onOpenDestination).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'nguyen-du-memorial' }),
-      '/explore?destination=khu-luu-niem-nguyen-du',
+      '/explore?destination=khu-luu-niem-nguyen-du&view=cards',
     );
 
     fireEvent.click(within(destinationList).getByRole('button', { name: 'Xem bản đồ' }));

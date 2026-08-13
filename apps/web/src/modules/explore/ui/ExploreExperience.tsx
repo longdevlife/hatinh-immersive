@@ -18,6 +18,13 @@ export interface ExploreExperienceProps {
   initialDestinationSlug?: string;
   initialQuery?: string;
   initialCategory?: string;
+  initialView?: 'cards' | 'map';
+  onDiscoveryStateChange?(state: {
+    query: string;
+    category: string;
+    destinationSlug: string | null;
+    view: 'cards' | 'map';
+  }): void;
   onOpenDestination?(destination: DestinationPreviewVm, returnHref?: string): void;
 }
 
@@ -100,6 +107,8 @@ export function ExploreExperience({
   initialDestinationSlug,
   initialQuery,
   initialCategory,
+  initialView,
+  onDiscoveryStateChange,
   onOpenDestination,
 }: ExploreExperienceProps) {
   const destinationsQuery = useImmersiveDestinations('vi', destinationsOverride === undefined);
@@ -111,7 +120,7 @@ export function ExploreExperience({
   const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
   const [query, setQuery] = useState(initialQuery ?? '');
   const [category, setCategory] = useState(initialCategory ?? '');
-  const [isMobileMapOpen, setIsMobileMapOpen] = useState(false);
+  const [isMobileMapOpen, setIsMobileMapOpen] = useState(initialView === 'map');
   const appliedInitialDestinationSlug = useRef<string | null>(null);
   const isMobileViewport = useIsMobileViewport();
   const exploreMode = isMobileViewport && !isMobileMapOpen ? 'destination-list' : 'map';
@@ -159,10 +168,69 @@ export function ExploreExperience({
     setSelectedDestinationId(destination.id);
   }, [destinations, destinationsOverride, destinationsQuery.isLoading, initialDestinationSlug]);
 
-  function handleSelectDestination(destinationId: string) {
-    if (filteredDestinations.some((destination) => destination.id === destinationId)) {
-      setSelectedDestinationId(destinationId);
+  useEffect(() => {
+    if (isMobileViewport) {
+      setIsMobileMapOpen(initialView === 'map');
     }
+  }, [initialView, isMobileViewport]);
+
+  function handleSelectDestination(destinationId: string) {
+    const nextDestination = filteredDestinations.find(
+      (destination) => destination.id === destinationId,
+    );
+    if (nextDestination) {
+      setSelectedDestinationId(destinationId);
+      onDiscoveryStateChange?.({
+        query,
+        category,
+        destinationSlug: nextDestination.slug,
+        view: isMobileViewport && !isMobileMapOpen ? 'cards' : 'map',
+      });
+    }
+  }
+
+  function setMobileMapMode(open: boolean) {
+    setIsMobileMapOpen(open);
+    onDiscoveryStateChange?.({
+      query,
+      category,
+      destinationSlug: selectedDestination?.slug ?? null,
+      view: open ? 'map' : 'cards',
+    });
+  }
+
+  function updateQuery(nextQuery: string) {
+    const nextFilteredDestinations = filterDestinations(destinations, {
+      query: nextQuery,
+      category,
+    });
+    const nextSelectedDestination = nextFilteredDestinations.find(
+      (destination) => destination.id === selectedDestinationId,
+    );
+    setQuery(nextQuery);
+    onDiscoveryStateChange?.({
+      query: nextQuery,
+      category,
+      destinationSlug: nextSelectedDestination?.slug ?? null,
+      view: isMobileViewport && !isMobileMapOpen ? 'cards' : 'map',
+    });
+  }
+
+  function updateCategory(nextCategory: string) {
+    const nextFilteredDestinations = filterDestinations(destinations, {
+      query,
+      category: nextCategory,
+    });
+    const nextSelectedDestination = nextFilteredDestinations.find(
+      (destination) => destination.id === selectedDestinationId,
+    );
+    setCategory(nextCategory);
+    onDiscoveryStateChange?.({
+      query,
+      category: nextCategory,
+      destinationSlug: nextSelectedDestination?.slug ?? null,
+      view: isMobileViewport && !isMobileMapOpen ? 'cards' : 'map',
+    });
   }
 
   function openDestination(destination: DestinationPreviewVm) {
@@ -174,6 +242,7 @@ export function ExploreExperience({
       params.set('category', category.trim());
     }
     params.set('destination', destination.slug);
+    params.set('view', isMobileViewport && !isMobileMapOpen ? 'cards' : 'map');
     onOpenDestination?.(destination, `/explore?${params.toString()}`);
   }
 
@@ -199,11 +268,11 @@ export function ExploreExperience({
               selectedDestinationId={selectedDestinationId}
               query={query}
               category={category}
-              onQueryChange={setQuery}
-              onCategoryChange={setCategory}
+              onQueryChange={updateQuery}
+              onCategoryChange={updateCategory}
               onSelectDestination={handleSelectDestination}
               onOpenDestination={onOpenDestination ? openDestination : undefined}
-              onOpenMap={() => setIsMobileMapOpen(true)}
+              onOpenMap={() => setMobileMapMode(true)}
               selectedDestination={selectedDestination}
             />
           )}
@@ -219,7 +288,7 @@ export function ExploreExperience({
             <button
               className="explore-experience__back-to-list"
               type="button"
-              onClick={() => setIsMobileMapOpen(false)}
+              onClick={() => setMobileMapMode(false)}
             >
               Quay lại danh sách
             </button>
