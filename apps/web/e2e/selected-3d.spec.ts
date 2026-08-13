@@ -36,6 +36,14 @@ const unavailableDestination = {
   slug: 'bien-thien-cam',
 };
 
+const genericFallbackDestination = {
+  ...destination,
+  defaultSceneId: 'son-trang-gate',
+  id: 'destination-04',
+  name: 'Điểm đến dự phòng',
+  slug: 'generic-fallback',
+};
+
 interface MockManifest {
   defaultSceneId: string | null;
   destination: MockDestination & {
@@ -93,7 +101,7 @@ async function mockSelected3DJourney(
       status: 200,
     });
   });
-  await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
+  await page.route('**/api/v1/destinations/*/immersive-manifest*', async (route) => {
     await route.fulfill({
       body: JSON.stringify(responseManifest),
       contentType: 'application/json',
@@ -171,19 +179,32 @@ test('enters enabled selected 3D with the deterministic fake renderer', async ({
 test('falls back to the destination 360 journey when selected 3D provider initialization fails', async ({
   page,
 }) => {
-  const selected3DFallbackManifest = {
+  const genericFallbackManifest = {
     ...manifest,
-    defaultSceneId: 'son-trang-gate',
-    destination: { ...manifest.destination, defaultSceneId: 'son-trang-gate' },
+    destination: {
+      ...manifest.destination,
+      ...genericFallbackDestination,
+    },
     nodes: manifest.nodes.map((node) => ({
+      ...node,
+      destinationId: genericFallbackDestination.id,
+      lat: genericFallbackDestination.geoPoint.latitude,
+      lng: genericFallbackDestination.geoPoint.longitude,
+    })),
+  };
+  const selected3DFallbackManifest = {
+    ...genericFallbackManifest,
+    defaultSceneId: 'son-trang-gate',
+    destination: { ...genericFallbackManifest.destination, defaultSceneId: 'son-trang-gate' },
+    nodes: genericFallbackManifest.nodes.map((node) => ({
       ...node,
       id: 'son-trang-gate',
       panoramaManifestUrl: 'https://media.example.vn/son-trang-gate/manifest.json',
       panoramaPreviewUrl: 'https://media.example.vn/son-trang-gate/preview.webp',
     })),
   };
-  await mockSelected3DJourney(page, [destination], selected3DFallbackManifest);
-  await page.goto('/explore/son-trang-co-dam?mode=overview3d&e2eFailure=map3d');
+  await mockSelected3DJourney(page, [genericFallbackDestination], selected3DFallbackManifest);
+  await page.goto('/explore/generic-fallback?mode=overview3d&e2eFailure=map3d');
 
   await expect(page.locator('.immersive-renderer-state[role="alert"]')).toContainText(
     'Không thể mở không gian 3D',
