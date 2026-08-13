@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { ImmersiveActions, ImmersiveLocale, ImmersiveViewVm } from '../../../shared/contracts';
-import { Map3DChrome, type Map3DChromeLocation } from '../../map3d';
+import {
+  Map3DChrome,
+  type Map3DChromeLocation,
+  type Selected3DViewpointRailProps,
+} from '../../map3d';
 import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
 
 import { RendererState } from './RendererState';
@@ -45,6 +49,7 @@ export interface ExploreShellProps {
   onLocationSelected?: (locationId: string) => void;
   rendererContent?: ReactNode;
   selectedLocationId?: string | null;
+  selected3DViewpointRail?: Selected3DViewpointRailProps;
 }
 
 function MapLauncherIcon() {
@@ -136,6 +141,7 @@ export function ExploreShell({
   onLanguageToggle,
   onLocationSelected,
   selectedLocationId = null,
+  selected3DViewpointRail,
 }: ExploreShellProps) {
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
@@ -272,6 +278,7 @@ export function ExploreShell({
               locations={map3dLocations ?? []}
               networkQuality={view.networkQuality}
               selectedLocationId={selectedLocationId}
+              {...(selected3DViewpointRail ? { viewpointRail: selected3DViewpointRail } : {})}
               showLocationBrowser={showLocationBrowser}
               destinationLabel={view.destination.name}
               onShare={() => void shareLocation()}

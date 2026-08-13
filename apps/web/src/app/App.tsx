@@ -24,6 +24,7 @@ import {
   DEMO_DESTINATIONS,
   getDemoManifest,
 } from '../modules/immersive-navigation/fake-mode/demo-catalog';
+import { getDemoSelected3DAnchors } from '../modules/immersive-navigation/fake-mode/selected-3d-demo-anchors';
 import {
   DEMO_SON_TRANG_ZONE_MEDIA,
   getDemoDestinationMedia,
@@ -79,7 +80,11 @@ function FakeImmersiveExperience() {
 
   return (
     <Suspense fallback={<ImmersiveRouteLoading />}>
-      <LazyImmersiveExperience destinations={destinations} manifest={manifest} />
+      <LazyImmersiveExperience
+        destinations={destinations}
+        manifest={manifest}
+        selected3DAnchors={getDemoSelected3DAnchors(destinationSlug)}
+      />
     </Suspense>
   );
 }

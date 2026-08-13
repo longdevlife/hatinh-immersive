@@ -51,9 +51,9 @@ function withCommittedScene(sceneId: string | null, view: NavigationView) {
   };
 }
 
-function withSelectedLocation(location: Map3DLocation) {
+function withSelectedLocation(location: Map3DLocation, destinationId = location.id) {
   return {
-    destinationId: location.id,
+    destinationId,
     selectedLocationId: location.id,
     selectedLocationPreset: {
       ...location.cameraPreset,
@@ -75,18 +75,18 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
       map3dStatus: 'loading',
     })),
 
-  selectLocation: (location) =>
+  selectLocation: (location, destinationId) =>
     set((state) =>
       state.mode === 'overview3d' && state.activeRenderer === 'map3d'
         ? {
-            ...withSelectedLocation(location),
+            ...withSelectedLocation(location, destinationId),
             transition: 'idle' as const,
             selectedHotspotId: null,
             error: null,
           }
         : {
             ...createInitialNavigationState(),
-            ...withSelectedLocation(location),
+            ...withSelectedLocation(location, destinationId),
             minimapOpen: state.minimapOpen,
             networkQuality: state.networkQuality,
             activeRenderer: 'map3d' as const,
