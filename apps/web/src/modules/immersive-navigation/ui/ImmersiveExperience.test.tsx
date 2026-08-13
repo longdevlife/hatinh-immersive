@@ -151,6 +151,9 @@ describe('ImmersiveExperience', () => {
     await waitFor(() => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
       expect(minimap.calls.some((call) => call.type === 'mount')).toBe(true);
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
+      );
     });
     expect(screen.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeInTheDocument();
     expect(factories.createPanoramaEngine).toHaveBeenCalledTimes(1);
