@@ -285,7 +285,9 @@ export function ExploreShell({
               onShowInfo={openInfo}
               onReturnToDestination={actions.onReturnToDestination}
               onToggleFullscreen={() => void toggleFullscreen()}
-              {...(canEnterPanorama ? { onEnter360: () => actions.onEnterPanorama() } : {})}
+              {...(canEnterPanorama && !selected3DViewpointRail
+                ? { onEnter360: () => actions.onEnterPanorama() }
+                : {})}
               {...(onLanguageToggle ? { onLanguageToggle } : {})}
               {...(onLocationSelected ? { onLocationSelected } : {})}
             >

@@ -182,6 +182,30 @@ describe('ExploreShell', () => {
     expect(actions.onEnterPanorama).toHaveBeenCalledTimes(1);
   });
 
+  it('does not expose destination-level 360 handoff beside a local viewpoint rail', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+        canEnterPanorama
+        map3dLocations={[{ id: 'destination-01', label: 'Sơn Trang Cổ Đạm' }]}
+        selectedLocationId="son-trang-gate"
+        selected3DViewpointRail={{
+          anchors: [{ id: 'son-trang-gate', label: 'Cổng', hasPanorama: true }],
+          selectedAnchorId: 'son-trang-gate',
+          isTransitioning: false,
+          onSelectAnchor: vi.fn(),
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(actions.onEnterPanorama).not.toHaveBeenCalled();
+  });
+
   it('moves focus into the information sheet when it opens', async () => {
     const actions = createActions();
 

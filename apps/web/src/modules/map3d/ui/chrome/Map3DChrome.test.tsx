@@ -115,7 +115,7 @@ describe('Map3DChrome', () => {
     expect(screen.getByRole('status', { name: '' })).toHaveTextContent('360° đang được chuẩn bị');
   });
 
-  it('keeps the 360 handoff visible alongside the local viewpoint rail', () => {
+  it('does not render a generic destination 360 handoff when the local rail is active', () => {
     const onEnter360 = vi.fn();
 
     render(
@@ -135,8 +135,8 @@ describe('Map3DChrome', () => {
     );
 
     expect(screen.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Khám phá 360°' }));
-    expect(onEnter360).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(onEnter360).not.toHaveBeenCalled();
   });
 
   it('hides 360 handoff entirely if no location is selected', () => {

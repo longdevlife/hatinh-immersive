@@ -171,7 +171,18 @@ test('enters enabled selected 3D with the deterministic fake renderer', async ({
 test('falls back to the destination 360 journey when selected 3D provider initialization fails', async ({
   page,
 }) => {
-  await mockSelected3DJourney(page);
+  const selected3DFallbackManifest = {
+    ...manifest,
+    defaultSceneId: 'son-trang-gate',
+    destination: { ...manifest.destination, defaultSceneId: 'son-trang-gate' },
+    nodes: manifest.nodes.map((node) => ({
+      ...node,
+      id: 'son-trang-gate',
+      panoramaManifestUrl: 'https://media.example.vn/son-trang-gate/manifest.json',
+      panoramaPreviewUrl: 'https://media.example.vn/son-trang-gate/preview.webp',
+    })),
+  };
+  await mockSelected3DJourney(page, [destination], selected3DFallbackManifest);
   await page.goto('/explore/son-trang-co-dam?mode=overview3d&e2eFailure=map3d');
 
   await expect(page.locator('.immersive-renderer-state[role="alert"]')).toContainText(
@@ -179,7 +190,7 @@ test('falls back to the destination 360 journey when selected 3D provider initia
   );
   await page.getByRole('button', { name: 'Mở trải nghiệm 360°' }).click();
 
-  await expect(page).toHaveURL(/mode=panorama&.*scene=scene-01/);
+  await expect(page).toHaveURL(/mode=panorama&.*scene=son-trang-gate/);
   await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
 });
 

@@ -27,10 +27,12 @@ describe('selected 3D anchor source boundary', () => {
     ).toEqual([]);
   });
 
-  it('does not silently inject demo anchors for none or api source', () => {
+  it('fails closed for none and unsupported api source', () => {
     expect(resolveSelected3DAnchorSource({})).toBe('none');
+    expect(resolveSelected3DAnchorSource({ VITE_IMMERSIVE_SELECTED_3D_ANCHOR_SOURCE: 'api' })).toBe(
+      'none',
+    );
     const destination = { id: 'destination-01', slug: 'son-trang-co-dam' };
     expect(resolvePublicSelected3DAnchors(destination, 'none')).toEqual([]);
-    expect(resolvePublicSelected3DAnchors(destination, 'api')).toEqual([]);
   });
 });

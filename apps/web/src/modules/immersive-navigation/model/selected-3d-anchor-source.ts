@@ -1,7 +1,11 @@
 import type { Selected3DAnchor } from '../../map3d';
 import { getDemoSelected3DAnchors } from '../fake-mode/selected-3d-demo-anchors';
 
-export type Selected3DAnchorSource = 'demo' | 'api' | 'none';
+/**
+ * API-backed anchors are intentionally not selectable until an API contract
+ * and loader exist. Unknown values fail closed to `none` below.
+ */
+export type Selected3DAnchorSource = 'demo' | 'none';
 
 export interface Selected3DAnchorDestinationIdentity {
   id: string;
@@ -16,7 +20,7 @@ export function resolveSelected3DAnchorSource(environment: unknown): Selected3DA
   const source = (environment as Selected3DAnchorSourceEnvironment)
     .VITE_IMMERSIVE_SELECTED_3D_ANCHOR_SOURCE;
 
-  return source === 'demo' || source === 'api' || source === 'none' ? source : 'none';
+  return source === 'demo' || source === 'none' ? source : 'none';
 }
 
 export function resolvePublicSelected3DAnchors(

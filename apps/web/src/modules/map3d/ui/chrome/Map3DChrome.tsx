@@ -358,7 +358,7 @@ export function Map3DChrome({
         </div>
       ) : null}
 
-      {selectedLocationId && (onEnter360 || onRetry360 || !viewpointRail) ? (
+      {selectedLocationId && !viewpointRail ? (
         <div className="map3d-chrome__handoff">
           {onEnter360 ? (
             <button

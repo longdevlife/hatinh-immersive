@@ -819,38 +819,46 @@ export function ImmersiveExperience({
   const selectedDestination =
     destinations.find((candidate) => candidate.id === navigation.selectedLocationId) ??
     manifest.destination;
-  const canEnterSelectedPanorama =
-    selectedDestination.defaultSceneId !== null &&
-    (selectedDestination.id !== manifest.destination.id ||
-      manifest.panoramaNodes.some((node) => node.id === selectedDestination.defaultSceneId));
   const selectedAnchor = destinationAnchors.find(
     (anchor) => anchor.id === navigation.selectedLocationId,
   );
-  const selected3DViewpointRail =
-    navigation.mode === 'overview3d' && destinationAnchors.length > 0
-      ? {
-          anchors: destinationAnchors.map((anchor) => ({
-            id: anchor.id,
-            label: anchor.label,
-            ...(anchor.shortLabel ? { shortLabel: anchor.shortLabel } : {}),
-            hasPanorama:
-              Boolean(anchor.panoramaSceneId) &&
-              manifest.panoramaNodes.some((node) => node.id === anchor.panoramaSceneId),
-          })),
-          selectedAnchorId: selectedAnchor?.id ?? destinationAnchors[0]?.id ?? '',
-          isTransitioning: isCameraTransitioning,
-          onSelectAnchor: selectLocation,
-          onOpenPanorama: (anchorId: string) => {
-            const anchor = destinationAnchors.find((candidate) => candidate.id === anchorId);
-            if (
-              anchor?.panoramaSceneId &&
-              manifest.panoramaNodes.some((node) => node.id === anchor.panoramaSceneId)
-            ) {
-              onEnterPanorama(anchor.panoramaSceneId);
-            }
-          },
-        }
-      : undefined;
+  const hasDestinationScopedSelected3D =
+    isDestinationScopedSelected3D && destinationAnchors.length > 0;
+  const selectedAnchorHasPanorama = Boolean(
+    selectedAnchor?.panoramaSceneId &&
+    manifest.panoramaNodes.some((node) => node.id === selectedAnchor.panoramaSceneId),
+  );
+  const canEnterDestinationPanorama =
+    selectedDestination.defaultSceneId !== null &&
+    (selectedDestination.id !== manifest.destination.id ||
+      manifest.panoramaNodes.some((node) => node.id === selectedDestination.defaultSceneId));
+  const canEnterSelectedPanorama = hasDestinationScopedSelected3D
+    ? selectedAnchorHasPanorama
+    : canEnterDestinationPanorama;
+  const selected3DViewpointRail = hasDestinationScopedSelected3D
+    ? {
+        anchors: destinationAnchors.map((anchor) => ({
+          id: anchor.id,
+          label: anchor.label,
+          ...(anchor.shortLabel ? { shortLabel: anchor.shortLabel } : {}),
+          hasPanorama:
+            Boolean(anchor.panoramaSceneId) &&
+            manifest.panoramaNodes.some((node) => node.id === anchor.panoramaSceneId),
+        })),
+        selectedAnchorId: selectedAnchor?.id ?? destinationAnchors[0]?.id ?? '',
+        isTransitioning: isCameraTransitioning,
+        onSelectAnchor: selectLocation,
+        onOpenPanorama: (anchorId: string) => {
+          const anchor = destinationAnchors.find((candidate) => candidate.id === anchorId);
+          if (
+            anchor?.panoramaSceneId &&
+            manifest.panoramaNodes.some((node) => node.id === anchor.panoramaSceneId)
+          ) {
+            onEnterPanorama(anchor.panoramaSceneId);
+          }
+        },
+      }
+    : undefined;
 
   const currentPanoramaNode =
     manifest.panoramaNodes.find(

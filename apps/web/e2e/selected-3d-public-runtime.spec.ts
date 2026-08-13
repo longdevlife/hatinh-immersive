@@ -2,13 +2,13 @@ import { expect, test } from '@playwright/test';
 
 test('public API destination runtime receives explicit demo local anchors', async ({ page }) => {
   const manifest = {
-    defaultSceneId: null,
+    defaultSceneId: 'son-trang-gate',
     destination: {
       categoryId: null,
       categoryLabel: 'Di sản',
       coverImageUrl: null,
       coverMediaId: null,
-      defaultSceneId: null,
+      defaultSceneId: 'son-trang-gate',
       description: 'Một hành trình di sản.',
       geoPoint: { latitude: 18.3421, longitude: 105.9032 },
       cameraPreset: {
@@ -23,7 +23,25 @@ test('public API destination runtime receives explicit demo local anchors', asyn
       status: 'published',
       summary: 'Hành trình di sản ở Hà Tĩnh.',
     },
-    nodes: [],
+    nodes: [
+      {
+        altitude: 12,
+        destinationId: 'destination-01',
+        id: 'son-trang-gate',
+        initialFov: 90,
+        initialHeading: 0,
+        initialPitch: 0,
+        lat: 18.3421,
+        lng: 105.9032,
+        name: 'Cổng Sơn Trang',
+        panoramaAssetId: 'asset-01',
+        panoramaAssetStatus: 'ready',
+        panoramaManifestUrl: '/demo/360/son-trang-gate/manifest.json',
+        panoramaPreviewUrl: '/demo/360/son-trang-gate/preview.webp',
+        sortOrder: 0,
+        status: 'published',
+      },
+    ],
     panoramaNodes: [],
     links: [],
     hotspots: [],
@@ -45,6 +63,8 @@ test('public API destination runtime receives explicit demo local anchors', asyn
   await expect(viewpoints.getByRole('button', { name: 'Văn hóa', exact: true })).toBeVisible();
   await expect(viewpoints.getByRole('button', { name: 'Sinh thái', exact: true })).toBeVisible();
   await expect(viewpoints.getByRole('button', { name: 'Tâm linh', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
+  await expect(viewpoints.getByRole('button', { name: 'Mở 360° cho Cổng' })).toBeVisible();
   await expect(renderer).toHaveAttribute('data-e2e-map3d-mount-count', '1');
 
   for (const [name, location, lat, lng] of [
@@ -60,8 +80,16 @@ test('public API destination runtime receives explicit demo local anchors', asyn
     await expect(page).toHaveURL(new RegExp(`location=${location}`));
     await expect(renderer).toHaveAttribute('data-e2e-map3d-last-lat', lat);
     await expect(renderer).toHaveAttribute('data-e2e-map3d-last-lng', lng);
+    await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
+    await expect(viewpoints.getByRole('button', { name: `Mở 360° cho ${name}` })).toHaveCount(0);
   }
 
-  await expect(renderer).toHaveAttribute('data-e2e-map3d-mount-count', '1');
-  await expect(renderer).toHaveAttribute('data-e2e-map3d-destroy-count', '0');
+  await viewpoints.getByRole('button', { name: 'Cổng', exact: true }).click();
+  await expect(viewpoints.getByRole('button', { name: 'Cổng', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await viewpoints.getByRole('button', { name: 'Mở 360° cho Cổng' }).click();
+  await expect(page).toHaveURL(/mode=panorama&location=son-trang-gate&scene=son-trang-gate/);
+  await expect(page.getByRole('heading', { name: 'Cổng Sơn Trang' })).toBeVisible();
 });

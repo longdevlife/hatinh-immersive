@@ -182,6 +182,31 @@ describe('ImmersiveExperience', () => {
     expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(1);
   });
 
+  it('uses the selected local anchor mapping as the only 360 handoff', async () => {
+    const { factories, map3d, panorama } = createFactories();
+    const manifest = getDemoManifest('son-trang-co-dam');
+    const mappedAnchors = SON_TRANG_SELECTED_3D_ANCHORS;
+
+    renderExperience(
+      '/explore/son-trang-co-dam/immersive?mode=overview3d',
+      factories,
+      manifest,
+      DEMO_DESTINATIONS.map(({ preview }) => preview),
+      mappedAnchors,
+    );
+
+    await waitFor(() => expect(map3d.calls.some((call) => call.type === 'mount')).toBe(true));
+    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mở 360° cho Cổng' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở 360° cho Cổng' }));
+
+    await waitFor(() => expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true));
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      'mode=panorama&location=son-trang-gate&scene=son-trang-gate',
+    );
+  });
+
   it('routes a Google 3D marker selection through the location selection state', async () => {
     const { factories, map3d } = createFactories();
     const manifest = getDemoManifest('son-trang-co-dam');
