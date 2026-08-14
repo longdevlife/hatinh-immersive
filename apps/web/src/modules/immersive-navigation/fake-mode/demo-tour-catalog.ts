@@ -351,7 +351,10 @@ function toTourScene(
     initialView: { heading: definition.heading, pitch: 0, fov: 88 },
     panoramaUrl: mediaPath,
     previewUrl: mediaPath ? mediaPath.replace('/manifest.json', '/preview.webp') : null,
-    thumbnailUrl: mediaPath ? mediaPath.replace('/manifest.json', '/preview.webp') : null,
+    thumbnailUrl:
+      mode === 'synthetic' || !mediaPath
+        ? null
+        : mediaPath.replace('/manifest.json', '/preview.webp'),
     mediaQuality,
     mediaRights,
     narrationTrackId: `narration:${destinationSlug}:intro`,

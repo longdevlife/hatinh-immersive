@@ -70,6 +70,13 @@ describe('Hà Tĩnh demo catalog', () => {
     }
   });
 
+  it('does not point synthetic scene thumbnails at non-existent public files', () => {
+    const manifest = getDemoManifest('son-trang-co-dam', 'synthetic');
+
+    expect(manifest.panoramaNodes).toHaveLength(8);
+    expect(manifest.panoramaNodes.every((node) => node.thumbnailUrl === null)).toBe(true);
+  });
+
   it('rejects an unknown demo destination slug', () => {
     expect(() => getDemoManifest('khong-ton-tai')).toThrow(
       'DEMO_DESTINATION_NOT_FOUND:khong-ton-tai',
