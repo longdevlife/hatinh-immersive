@@ -1,6 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
+import '../../../app/styles/immersive.css';
 import { ExploreShell } from '../../immersive';
 import {
   createLazyGoogleMaps3DEngine,

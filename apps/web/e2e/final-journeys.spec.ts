@@ -4,7 +4,7 @@ test('desktop completes home to filtered destination detail without entering a r
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Bắt đầu khám phá' }).click();
+  await page.getByRole('link', { name: 'Mở bản đồ khám phá' }).click();
 
   await expect(page).toHaveURL('/explore');
   await page.getByRole('button', { name: 'Di sản & văn hóa' }).click();

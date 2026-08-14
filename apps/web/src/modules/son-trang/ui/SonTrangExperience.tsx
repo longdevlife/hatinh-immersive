@@ -1,5 +1,6 @@
 import React from 'react';
 import type { RefObject } from 'react';
+import '../../../app/styles/son-trang.css';
 import type { DestinationCapabilities } from '../../../shared/contracts';
 import type { SonTrangExperienceVm } from '../model/son-trang.types';
 import { MediaCredits, ResponsiveImage } from '../../media';

@@ -4,7 +4,7 @@ test('explores overview to 360, follows a scene, and restores it after refresh',
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Bắt đầu khám phá' }).click();
+  await page.getByRole('link', { name: 'Mở bản đồ khám phá' }).click();
 
   await expect(page).toHaveURL(/\/explore$/);
   await expect(page.locator('#explore-title')).toBeVisible();

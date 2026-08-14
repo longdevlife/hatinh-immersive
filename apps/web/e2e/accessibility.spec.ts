@@ -8,7 +8,7 @@ async function expectAxeClean(page: Page) {
 
 test('public landing page passes the axe smoke check', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Di sản mở ra/ })).toBeVisible();
+  await expect(page.getByTestId('home-cinematic-hero')).toBeVisible();
 
   await expectAxeClean(page);
 });
