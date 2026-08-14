@@ -72,10 +72,22 @@
 
 .destination-detail__hero-container {
   width: 100%;
-  height: 55vh;
+  height: 60vh;
   min-height: 400px;
   background-color: #e3e0d8;
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 0;
+}
+
+.destination-detail__hero-image-btn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: zoom-in;
 }
 
 .destination-detail__hero-image {
@@ -85,10 +97,77 @@
   display: block;
 }
 
+.destination-detail__hero-image--animated {
+  animation: dd-image-fade 0.4s ease;
+}
+
+@keyframes dd-image-fade {
+  from {
+    opacity: 0.6;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
 .destination-detail__hero-placeholder {
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #e8e3da 0%, #fdfcf9 100%);
+}
+
+.destination-detail__thumbnails {
+  position: absolute;
+  bottom: 8rem;
+  left: 0;
+  width: 100%;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0 2rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  z-index: 5;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.destination-detail__thumbnails::-webkit-scrollbar {
+  display: none;
+}
+
+.destination-detail__thumbnail-btn {
+  flex: 0 0 auto;
+  width: 80px;
+  height: 60px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: transparent;
+}
+
+.destination-detail__thumbnail-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.destination-detail__thumbnail-btn.is-active {
+  opacity: 1;
+  border-color: #ffffff;
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.destination-detail__thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .destination-detail__editorial {
@@ -282,18 +361,34 @@
   margin-top: 2rem;
 }
 
-.destination-detail__gallery-image {
+.destination-detail__gallery-btn {
   width: 100%;
   height: 100%;
   min-height: 240px;
-  object-fit: cover;
   border-radius: 12px;
   background-color: var(--dd-color-border);
   transition: transform 0.3s ease;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  overflow: hidden;
 }
 
-.destination-detail__gallery-image:hover {
+.destination-detail__gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.destination-detail__gallery-btn:hover .destination-detail__gallery-image {
   transform: scale(1.02);
+}
+
+.destination-detail__gallery-btn:focus-visible {
+  outline: 3px solid #00884f;
+  outline-offset: 2px;
 }
 
 /* DESKTOP ASYMMETRIC GALLERY */
@@ -305,36 +400,36 @@
   }
 
   /* Safe default for other counts */
-  .destination-detail__gallery-image {
+  .destination-detail__gallery-btn {
     grid-column: span 4;
     grid-row: span 1;
   }
 
   /* Common structure for the first 3 items */
-  .destination-detail__gallery-image:first-child {
+  .destination-detail__gallery-btn:first-child {
     grid-column: span 6;
     grid-row: span 2;
   }
-  .destination-detail__gallery-image:nth-child(2),
-  .destination-detail__gallery-image:nth-child(3) {
+  .destination-detail__gallery-btn:nth-child(2),
+  .destination-detail__gallery-btn:nth-child(3) {
     grid-column: span 3;
   }
 
   /* Exactly 5 children */
-  .destination-detail__gallery-image:first-child:nth-last-child(5)
-    ~ .destination-detail__gallery-image:nth-child(n + 4) {
+  .destination-detail__gallery-btn:first-child:nth-last-child(5)
+    ~ .destination-detail__gallery-btn:nth-child(n + 4) {
     grid-column: span 6;
   }
 
   /* Exactly 6 children */
-  .destination-detail__gallery-image:first-child:nth-last-child(6)
-    ~ .destination-detail__gallery-image:nth-child(n + 4) {
+  .destination-detail__gallery-btn:first-child:nth-last-child(6)
+    ~ .destination-detail__gallery-btn:nth-child(n + 4) {
     grid-column: span 4;
   }
 
   /* Exactly 8 children */
-  .destination-detail__gallery-image:first-child:nth-last-child(8)
-    ~ .destination-detail__gallery-image:nth-child(n + 4) {
+  .destination-detail__gallery-btn:first-child:nth-last-child(8)
+    ~ .destination-detail__gallery-btn:nth-child(n + 4) {
     grid-column: span 3;
   }
 }
@@ -342,7 +437,7 @@
 @media (prefers-reduced-motion: reduce) {
   .destination-detail__cta,
   .destination-detail__btn-back,
-  .destination-detail__gallery-image,
+  .destination-detail__gallery-btn,
   .media-credits summary,
   .media-credits__item a {
     transition: none !important;
@@ -496,16 +591,73 @@
     display: none;
   }
 
-  .destination-detail__gallery-image {
+  .destination-detail__gallery-btn {
     flex: 0 0 80vw;
     scroll-snap-align: center;
     height: 280px;
     min-height: auto;
   }
 
-  .destination-detail__gallery-image:first-child {
+  .destination-detail__gallery-btn:first-child {
     flex: 0 0 85vw;
     height: 360px;
     scroll-snap-align: start; /* align the large lead to start */
+  }
+}
+
+.destination-detail__fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: dd-fade-in 0.3s ease;
+  cursor: zoom-out;
+}
+
+.destination-detail__fullscreen-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10000;
+}
+
+.destination-detail__fullscreen-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.destination-detail__fullscreen-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  cursor: default;
+}
+
+@keyframes dd-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

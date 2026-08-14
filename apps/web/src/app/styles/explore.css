@@ -70,7 +70,22 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   border-right: 1px solid rgba(23, 38, 31, 0.08);
+}
+
+.explore-experience__destinations::-webkit-scrollbar {
+  display: none;
+}
+
+html {
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
 }
 
 .explore-experience__destinations > .destination-panel {
@@ -305,7 +320,7 @@
 
 .destination-panel__list-container {
   flex: 1;
-  overflow-y: auto;
+  overflow: visible;
   padding: var(--explore-gap);
 }
 
@@ -509,17 +524,36 @@
 /* Mobile behavior: Destination list is the default view.
    We show the mobile action bar to allow switching to the map. */
 @media (max-width: 768px) {
+  .explore-experience {
+    height: calc(100dvh - 4.5rem);
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .explore-experience__header {
     padding-bottom: 0.75rem;
   }
 
   .explore-experience__layout {
     display: block;
+    height: 100%;
     min-height: 0;
     margin: 0 0 0.75rem;
+    overflow: hidden;
     border-right: 0;
     border-left: 0;
     border-radius: 1.25rem 1.25rem 0 0;
+  }
+
+  .explore-experience__layout[data-explore-mode='destination-list']
+    .explore-experience__destinations,
+  .explore-experience__layout[data-explore-mode='destination-list'] .destination-panel {
+    height: 100%;
+  }
+
+  .explore-experience__layout[data-explore-mode='destination-list']
+    .destination-panel__list-container {
+    overflow: visible;
   }
 
   .explore-experience__layout[data-explore-mode='map'] .explore-experience__destinations {

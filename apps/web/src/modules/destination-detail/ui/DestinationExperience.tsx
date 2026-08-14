@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import type { DestinationDetailPresentationVm } from '../model/destination-detail.types';
 import { MediaCredits, ResponsiveImage } from '../../media';
@@ -30,6 +31,18 @@ export function DestinationExperience({
     (asset): asset is NonNullable<typeof asset> => asset !== null,
   );
 
+  const [activeImage, setActiveImage] = useState(destination.media.hero);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const heroContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setActiveImage(destination.media.hero);
+  }, [destination.media.hero]);
+
+  const handleImageSelect = (asset: NonNullable<typeof destination.media.hero>) => {
+    setActiveImage(asset);
+  };
+
   return (
     <main
       ref={mainRef}
@@ -58,15 +71,39 @@ export function DestinationExperience({
       </header>
 
       <article className="destination-detail__content">
-        <div className="destination-detail__hero-container">
-          {destination.media.hero ? (
-            <ResponsiveImage
-              asset={destination.media.hero}
-              className="destination-detail__hero-image"
-              loading="eager"
-            />
+        <div className="destination-detail__hero-container" ref={heroContainerRef}>
+          {activeImage ? (
+            <button
+              className="destination-detail__hero-image-btn"
+              onClick={() => setIsFullscreen(true)}
+              aria-label="Xem ảnh toàn màn hình"
+            >
+              <ResponsiveImage
+                key={activeImage.id}
+                asset={activeImage}
+                className="destination-detail__hero-image destination-detail__hero-image--animated"
+                loading="eager"
+              />
+            </button>
           ) : (
             <div className="destination-detail__hero-placeholder" aria-hidden="true"></div>
+          )}
+
+          {destination.media.gallery && destination.media.gallery.length > 0 && (
+            <div className="destination-detail__thumbnails">
+              {[destination.media.hero, ...destination.media.gallery]
+                .filter((a): a is NonNullable<typeof a> => a !== null)
+                .map((asset) => (
+                  <button
+                    key={asset.id}
+                    className={`destination-detail__thumbnail-btn ${activeImage?.id === asset.id ? 'is-active' : ''}`}
+                    onClick={() => handleImageSelect(asset)}
+                    aria-label="Xem hình ảnh này"
+                  >
+                    <ResponsiveImage asset={asset} className="destination-detail__thumbnail-img" />
+                  </button>
+                ))}
+            </div>
           )}
         </div>
 
@@ -166,11 +203,14 @@ export function DestinationExperience({
               <h2 className="destination-detail__section-title">Thư viện ảnh</h2>
               <div className="destination-detail__gallery-grid">
                 {destination.media.gallery.map((asset) => (
-                  <ResponsiveImage
+                  <button
                     key={asset.id}
-                    asset={asset}
-                    className="destination-detail__gallery-image"
-                  />
+                    className="destination-detail__gallery-btn"
+                    onClick={() => handleImageSelect(asset)}
+                    aria-label="Xem hình ảnh này ở kích thước lớn"
+                  >
+                    <ResponsiveImage asset={asset} className="destination-detail__gallery-image" />
+                  </button>
                 ))}
               </div>
             </section>
@@ -179,6 +219,34 @@ export function DestinationExperience({
           <MediaCredits assets={creditedAssets} />
         </div>
       </article>
+
+      {isFullscreen && activeImage && (
+        <div className="destination-detail__fullscreen" onClick={() => setIsFullscreen(false)}>
+          <button
+            className="destination-detail__fullscreen-close"
+            onClick={() => setIsFullscreen(false)}
+            aria-label="Đóng"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ width: '1.5rem', height: '1.5rem' }}
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <ResponsiveImage
+            asset={activeImage}
+            className="destination-detail__fullscreen-image"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </main>
   );
 }
