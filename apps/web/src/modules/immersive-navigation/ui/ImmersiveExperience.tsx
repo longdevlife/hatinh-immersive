@@ -952,23 +952,17 @@ export function ImmersiveExperience({
         onNavigate: (sceneId) => onNavigateScene(sceneId, true),
         onStateChange: setAutoTourState,
         getNextSceneId: (sceneId) => {
-          const outgoingLink = panoramaTourLinks.find(
-            (link) =>
-              link.sourceSceneId === sceneId &&
-              panoramaRenderableNodes.some((node) => node.id === link.targetSceneId),
-          );
-          if (outgoingLink) {
-            return outgoingLink.targetSceneId;
-          }
-
           const currentIndex = panoramaRenderableNodes.findIndex((node) => node.id === sceneId);
-          if (currentIndex < 0 || panoramaRenderableNodes.length < 2) {
+          const nextNode =
+            currentIndex >= 0 ? panoramaRenderableNodes[currentIndex + 1] : undefined;
+          if (!nextNode) {
             return null;
           }
 
-          return (
-            panoramaRenderableNodes[(currentIndex + 1) % panoramaRenderableNodes.length]?.id ?? null
+          const hasForwardLink = panoramaTourLinks.some(
+            (link) => link.sourceSceneId === sceneId && link.targetSceneId === nextNode.id,
           );
+          return hasForwardLink ? nextNode.id : null;
         },
       }),
     [onNavigateScene, panoramaRenderableNodes, panoramaTourLinks],
