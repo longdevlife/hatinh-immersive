@@ -895,13 +895,7 @@ export function ImmersiveExperience({
       }
 
       const state = useImmersiveNavigation.getState();
-      if (
-        (state.requestedSceneId &&
-          state.requestedSceneId !== sceneId &&
-          state.committedSceneId !== null) ||
-        sceneId === state.committedSceneId ||
-        sceneId === state.requestedSceneId
-      ) {
+      if (sceneId === state.committedSceneId || sceneId === state.requestedSceneId) {
         return;
       }
 

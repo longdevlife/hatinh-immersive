@@ -687,6 +687,80 @@ describe('ImmersiveExperience', () => {
     });
   });
 
+  it('lets a newer scene request supersede a pending request and commits only the latest scene', async () => {
+    const panorama = new DeferredPanoramaEngine();
+    const { factories } = createFactories(panorama);
+    const baseManifest = createFakeImmersiveManifest();
+    const firstLink = baseManifest.links.find((link) => link.sourceSceneId === 'scene-01');
+    if (!firstLink) {
+      throw new Error('The fake panorama graph must contain a scene-01 link.');
+    }
+    const manifest = {
+      ...baseManifest,
+      links: [
+        ...baseManifest.links,
+        { ...firstLink, id: 'link-scene-01-scene-03', targetSceneId: 'scene-03' },
+      ],
+      panoramaNodes: baseManifest.panoramaNodes.map((node) =>
+        node.id === 'scene-01'
+          ? {
+              ...node,
+              links: [...(node.links ?? []), { targetNodeId: 'scene-03', yaw: 0, pitch: 0 }],
+            }
+          : node,
+      ),
+    };
+    renderExperience(
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      factories,
+      manifest,
+    );
+
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-01')).toBeDefined();
+    });
+    panorama.loadRequests.get('scene-01')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-02')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 3' }));
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-03')).toBeDefined();
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        committedSceneId: 'scene-01',
+        requestedSceneId: 'scene-03',
+      });
+    });
+
+    panorama.loadRequests.get('scene-02')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        committedSceneId: 'scene-01',
+        requestedSceneId: 'scene-03',
+      });
+    });
+
+    panorama.loadRequests.get('scene-03')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        committedSceneId: 'scene-03',
+        requestedSceneId: null,
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-03&h=62&p=-2&fov=88',
+      );
+    });
+
+    expect(panorama.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+    expect(panorama.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
+  });
+
   it('keeps the committed URL while a requested panorama is pending', async () => {
     const panorama = new DeferredPanoramaEngine();
     const { factories } = createFactories(panorama);
