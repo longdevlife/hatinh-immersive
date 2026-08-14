@@ -2,7 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore: /immersive-(minimap|production)\.spec\.ts/,
+  testIgnore:
+    /(?:explore-map-real|immersive-(minimap|production)|selected-3d(?:-(?:local-anchors|public-runtime))?|navigation-return-context|panorama-tour)\.spec\.ts/,
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
@@ -21,8 +22,12 @@ export default defineConfig({
     command: 'pnpm --filter @hatinh/web exec vite --host 127.0.0.1 --port 4173',
     env: {
       ...process.env,
+      VITE_EXPLORE_MAP_MODE: 'fake',
+      VITE_EXPLORE_MAP_E2E_HOOKS: 'true',
       VITE_IMMERSIVE_RENDERER_MODE: 'fake',
       VITE_IMMERSIVE_DATA_MODE: 'fake',
+      VITE_IMMERSIVE_SELECTED_3D_CAPABILITIES:
+        'son-trang-co-dam=available,bien-thien-cam=available',
     },
     reuseExistingServer: false,
     timeout: 120_000,

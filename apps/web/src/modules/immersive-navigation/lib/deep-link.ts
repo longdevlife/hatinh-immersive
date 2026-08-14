@@ -3,7 +3,8 @@ import type { ImmersiveMode } from '../../../shared/contracts';
 import { DEFAULT_NAVIGATION_VIEW, normalizeNavigationView } from '../model/navigation.view';
 import type { NavigationView } from '../model/navigation.types';
 
-const EXPLORE_PATH = /^\/explore\/([^/]+)\/?$/;
+const IMMERSIVE_EXPLORE_PATH = /^\/explore\/([^/]+)\/immersive\/?$/;
+const LEGACY_EXPLORE_PATH = /^\/explore\/([^/]+)\/?$/;
 const DEFAULT_ORIGIN = 'https://immersive.hatinh.local';
 
 export interface ImmersiveDeepLinkState {
@@ -12,6 +13,7 @@ export interface ImmersiveDeepLinkState {
   locationId: string | null;
   sceneId: string | null;
   view: NavigationView;
+  returnTo?: string;
 }
 
 function parseFiniteNumber(value: string | null): number | undefined {
@@ -67,8 +69,11 @@ export function encodeImmersiveDeepLink(state: ImmersiveDeepLinkState): string {
     params.set('p', formatNumber(view.pitch));
     params.set('fov', formatNumber(view.fov));
   }
+  if (state.returnTo) {
+    params.set('returnTo', state.returnTo);
+  }
 
-  return `/explore/${encodeURIComponent(state.destinationSlug)}?${params.toString()}`;
+  return `/explore/${encodeURIComponent(state.destinationSlug)}/immersive?${params.toString()}`;
 }
 
 export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState | null {
@@ -79,7 +84,7 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
     return null;
   }
 
-  const match = EXPLORE_PATH.exec(url.pathname);
+  const match = IMMERSIVE_EXPLORE_PATH.exec(url.pathname) ?? LEGACY_EXPLORE_PATH.exec(url.pathname);
   if (!match?.[1]) {
     return null;
   }
@@ -89,9 +94,14 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
     return null;
   }
 
-  const mode: ImmersiveMode =
-    url.searchParams.get('mode') === 'panorama' ? 'panorama' : 'overview3d';
+  const requestedMode = url.searchParams.get('mode');
+  if (requestedMode !== 'panorama' && requestedMode !== 'overview3d') {
+    return null;
+  }
+
+  const mode: ImmersiveMode = requestedMode;
   const locationId = url.searchParams.get('location')?.trim() || null;
+  const returnTo = url.searchParams.get('returnTo')?.trim() || undefined;
   if (mode === 'overview3d') {
     return {
       destinationSlug,
@@ -99,6 +109,7 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
       locationId,
       sceneId: null,
       view: { ...DEFAULT_NAVIGATION_VIEW },
+      ...(returnTo ? { returnTo } : {}),
     };
   }
 
@@ -116,5 +127,6 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
       ...(pitch === undefined ? {} : { pitch }),
       ...(fov === undefined ? {} : { fov }),
     }),
+    ...(returnTo ? { returnTo } : {}),
   };
 }

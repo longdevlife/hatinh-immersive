@@ -5,6 +5,9 @@ interface RendererStateProps {
   status: RendererStatus;
   onRetry(): void;
   onFallback(): void;
+  onReturnToDestination?(): void;
+  fallbackLabel?: string;
+  returnLabel?: string;
   isTransitioning?: boolean;
   showFallback?: boolean;
 }
@@ -14,6 +17,9 @@ export function RendererState({
   status,
   onRetry,
   onFallback,
+  onReturnToDestination,
+  fallbackLabel,
+  returnLabel,
   isTransitioning = false,
   showFallback = true,
 }: RendererStateProps) {
@@ -63,13 +69,33 @@ export function RendererState({
           </strong>
           <p>Cảnh hiện tại vẫn được giữ lại. Bạn có thể thử tải lại trải nghiệm.</p>
         </div>
-        <button
-          className="immersive-button immersive-button--light"
-          type="button"
-          onClick={onRetry}
-        >
-          Thử lại
-        </button>
+        <div className="immersive-renderer-state__actions">
+          <button
+            className="immersive-button immersive-button--light"
+            type="button"
+            onClick={onRetry}
+          >
+            Thử lại
+          </button>
+          {showFallback ? (
+            <button
+              className="immersive-button immersive-button--primary"
+              type="button"
+              onClick={onFallback}
+            >
+              {fallbackLabel ?? (mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại')}
+            </button>
+          ) : null}
+          {mode === 'overview3d' && onReturnToDestination ? (
+            <button
+              className="immersive-button immersive-button--light"
+              type="button"
+              onClick={onReturnToDestination}
+            >
+              {returnLabel ?? 'Quay lại điểm đến'}
+            </button>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -84,15 +110,26 @@ export function RendererState({
         </strong>
         <p>Hãy tiếp tục bằng chế độ còn lại để không ngắt quãng hành trình.</p>
       </div>
-      {showFallback ? (
-        <button
-          className="immersive-button immersive-button--light"
-          type="button"
-          onClick={onFallback}
-        >
-          {mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại không gian 3D'}
-        </button>
-      ) : null}
+      <div className="immersive-renderer-state__actions">
+        {showFallback ? (
+          <button
+            className="immersive-button immersive-button--primary"
+            type="button"
+            onClick={onFallback}
+          >
+            {fallbackLabel ?? (mode === 'overview3d' ? 'Mở trải nghiệm 360°' : 'Quay lại')}
+          </button>
+        ) : null}
+        {mode === 'overview3d' && onReturnToDestination ? (
+          <button
+            className="immersive-button immersive-button--light"
+            type="button"
+            onClick={onReturnToDestination}
+          >
+            {returnLabel ?? 'Quay lại điểm đến'}
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

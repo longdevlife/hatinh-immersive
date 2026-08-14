@@ -36,6 +36,30 @@ describe('Map3DChrome', () => {
     expect(screen.getByText('Tháp chuông')).toBeInTheDocument();
   });
 
+  it('closes the location launcher with Escape and restores focus to its toggle', () => {
+    render(<Map3DChrome locations={[{ id: '1', label: 'Tượng đài' }]} />);
+
+    const toggle = screen.getByRole('button', { name: 'Tìm kiếm địa điểm' });
+    fireEvent.click(toggle);
+    expect(screen.getByRole('searchbox', { name: 'Tìm kiếm địa điểm' })).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+  });
+
+  it('restores focus to the location launcher after an outside click closes it', () => {
+    render(<Map3DChrome locations={[{ id: '1', label: 'Tượng đài' }]} />);
+
+    const toggle = screen.getByRole('button', { name: 'Tìm kiếm địa điểm' });
+    fireEvent.click(toggle);
+    fireEvent.mouseDown(document.body);
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+  });
+
   it('triggers callbacks when buttons are clicked', () => {
     const onLanguageToggle = vi.fn();
     const onShare = vi.fn();
@@ -91,6 +115,30 @@ describe('Map3DChrome', () => {
     expect(screen.getByRole('status', { name: '' })).toHaveTextContent('360° đang được chuẩn bị');
   });
 
+  it('does not render a generic destination 360 handoff when the local rail is active', () => {
+    const onEnter360 = vi.fn();
+
+    render(
+      <Map3DChrome
+        selectedLocationId="gate"
+        onEnter360={onEnter360}
+        viewpointRail={{
+          anchors: [
+            { id: 'gate', label: 'Cổng', hasPanorama: true },
+            { id: 'culture', label: 'Văn hóa', hasPanorama: false },
+          ],
+          selectedAnchorId: 'gate',
+          isTransitioning: false,
+          onSelectAnchor: vi.fn(),
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(onEnter360).not.toHaveBeenCalled();
+  });
+
   it('hides 360 handoff entirely if no location is selected', () => {
     render(<Map3DChrome selectedLocationId={null} onEnter360={vi.fn()} />);
 
@@ -107,5 +155,37 @@ describe('Map3DChrome', () => {
     fireEvent.click(retryBtn);
     expect(onRetry360).toHaveBeenCalled();
     expect(screen.queryByText('360° đang được chuẩn bị')).not.toBeInTheDocument();
+  });
+
+  it('can hide the destination browser for destination-scoped selected 3D', () => {
+    render(
+      <Map3DChrome
+        locations={[{ id: '1', label: 'Sơn Trang Cổ Đạm' }]}
+        selectedLocationId="1"
+        showLocationBrowser={false}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Tìm kiếm địa điểm' })).not.toBeInTheDocument();
+  });
+
+  it('always exposes a destination exit for selected 3D', () => {
+    const onReturnToDestination = vi.fn();
+    render(
+      <Map3DChrome
+        locations={[{ id: '1', label: 'Sơn Trang Cổ Đạm' }]}
+        selectedLocationId="1"
+        onReturnToDestination={onReturnToDestination}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }));
+    expect(onReturnToDestination).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the destination label before a location selection is hydrated', () => {
+    render(<Map3DChrome destinationLabel="Sơn Trang Cổ Đạm" onReturnToDestination={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toBeInTheDocument();
   });
 });

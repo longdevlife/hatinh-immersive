@@ -1,7 +1,11 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { ImmersiveActions, ImmersiveLocale, ImmersiveViewVm } from '../../../shared/contracts';
-import { Map3DChrome, type Map3DChromeLocation } from '../../map3d';
+import {
+  Map3DChrome,
+  type Map3DChromeLocation,
+  type Selected3DViewpointRailProps,
+} from '../../map3d';
 import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
 
 import { RendererState } from './RendererState';
@@ -39,11 +43,14 @@ export interface ExploreShellProps {
   isSceneTransitioning?: boolean;
   locale?: ImmersiveLocale;
   map3dLocations?: Map3DChromeLocation[];
+  showLocationBrowser?: boolean;
   minimapEngine?: MinimapEnginePort | null;
   onLanguageToggle?: () => void;
   onLocationSelected?: (locationId: string) => void;
   rendererContent?: ReactNode;
   selectedLocationId?: string | null;
+  selected3DViewpointRail?: Selected3DViewpointRailProps;
+  hasPanoramaTourControls?: boolean;
 }
 
 function MapLauncherIcon() {
@@ -129,17 +136,26 @@ export function ExploreShell({
   isSceneTransitioning = false,
   locale = 'vi',
   map3dLocations,
+  showLocationBrowser = true,
   minimapEngine = null,
   rendererContent,
   onLanguageToggle,
   onLocationSelected,
   selectedLocationId = null,
+  selected3DViewpointRail,
+  hasPanoramaTourControls = false,
 }: ExploreShellProps) {
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
+  const isUnavailablePanoramaTour =
+    isPanorama && hasPanoramaTourControls && view.rendererStatus === 'unavailable';
+  const hasScopedSelected3D = selected3DViewpointRail !== undefined;
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(readMinimapCollapsedPreference);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const infoPanelRef = useRef<HTMLElement>(null);
+  const topInfoTriggerRef = useRef<HTMLButtonElement>(null);
+  const infoTriggerRef = useRef<HTMLElement | null>(null);
   const currentSceneName = view.currentScene?.name ?? 'Toàn cảnh điểm đến';
 
   useEffect(() => {
@@ -147,12 +163,41 @@ export function ExploreShell({
   }, [hasMap3DChrome, view.mode]);
 
   useEffect(() => {
+    if (!isInfoOpen) {
+      return undefined;
+    }
+
+    infoPanelRef.current?.focus({ preventScroll: true });
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      event.preventDefault();
+      setIsInfoOpen(false);
+      actions.onCloseDestinationInfo();
+    };
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      infoTriggerRef.current?.focus({ preventScroll: true });
+      infoTriggerRef.current = null;
+    };
+  }, [actions, isInfoOpen]);
+
+  useEffect(() => {
     const syncFullscreenState = () => setIsFullscreen(Boolean(document.fullscreenElement));
     document.addEventListener('fullscreenchange', syncFullscreenState);
     return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
   }, []);
 
-  function openInfo() {
+  function openInfo(trigger?: HTMLElement) {
+    infoTriggerRef.current =
+      trigger ??
+      topInfoTriggerRef.current ??
+      (document.activeElement instanceof HTMLElement ? document.activeElement : null);
     setIsInfoOpen(true);
     actions.onOpenDestinationInfo();
   }
@@ -238,10 +283,16 @@ export function ExploreShell({
               locations={map3dLocations ?? []}
               networkQuality={view.networkQuality}
               selectedLocationId={selectedLocationId}
+              {...(selected3DViewpointRail ? { viewpointRail: selected3DViewpointRail } : {})}
+              showLocationBrowser={showLocationBrowser}
+              destinationLabel={view.destination.name}
               onShare={() => void shareLocation()}
               onShowInfo={openInfo}
+              onReturnToDestination={actions.onReturnToDestination}
               onToggleFullscreen={() => void toggleFullscreen()}
-              {...(canEnterPanorama ? { onEnter360: () => actions.onEnterPanorama() } : {})}
+              {...(canEnterPanorama && !selected3DViewpointRail
+                ? { onEnter360: () => actions.onEnterPanorama() }
+                : {})}
               {...(onLanguageToggle ? { onLanguageToggle } : {})}
               {...(onLocationSelected ? { onLocationSelected } : {})}
             >
@@ -259,14 +310,23 @@ export function ExploreShell({
             <strong>{view.destination.name}</strong>
           </div>
         ) : null}
-        <RendererState
-          mode={view.mode}
-          status={view.rendererStatus}
-          onRetry={actions.onRetryRenderer}
-          onFallback={isPanorama ? actions.onEnter3D : () => actions.onEnterPanorama()}
-          isTransitioning={isPanorama && isSceneTransitioning}
-          showFallback={isPanorama || canEnterPanorama}
-        />
+        {!isUnavailablePanoramaTour ? (
+          <RendererState
+            mode={view.mode}
+            status={view.rendererStatus}
+            onRetry={actions.onRetryRenderer}
+            onFallback={
+              isPanorama || !canEnterPanorama
+                ? actions.onReturnToDestination
+                : () => actions.onEnterPanorama()
+            }
+            fallbackLabel={isPanorama ? `Quay lại ${view.destination.name}` : 'Mở trải nghiệm 360°'}
+            returnLabel={`Quay lại ${view.destination.name}`}
+            isTransitioning={isPanorama && isSceneTransitioning}
+            showFallback={isPanorama || (!hasScopedSelected3D && canEnterPanorama)}
+            {...(isPanorama ? {} : { onReturnToDestination: actions.onReturnToDestination })}
+          />
+        ) : null}
       </section>
 
       {!hasMap3DChrome && !isPanorama ? (
@@ -281,9 +341,10 @@ export function ExploreShell({
               </span>
             ) : null}
             <button
+              ref={topInfoTriggerRef}
               className="immersive-button immersive-button--quiet"
               type="button"
-              onClick={openInfo}
+              onClick={() => openInfo()}
               aria-controls="destination-info-panel"
               aria-expanded={isInfoOpen}
               aria-label="Thông tin"
@@ -302,7 +363,7 @@ export function ExploreShell({
         </section>
       ) : null}
 
-      {isPanorama ? (
+      {isPanorama && !isUnavailablePanoramaTour ? (
         <div className="explore-shell__minimap">
           {minimapEngine ? (
             <MinimapViewport
@@ -322,15 +383,33 @@ export function ExploreShell({
       ) : null}
 
       {isPanorama ? (
-        <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
-          <button
-            className="immersive-button immersive-button--quiet"
-            type="button"
-            onClick={actions.onEnter3D}
+        hasPanoramaTourControls ? null : (
+          <div
+            className="explore-shell__controls"
+            role="region"
+            aria-label="Điều khiển trải nghiệm"
           >
-            Quay lại không gian 3D
-          </button>
-        </div>
+            <button
+              className="immersive-button--back"
+              type="button"
+              onClick={actions.onReturnToDestination}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              Quay lại {view.destination.name}
+            </button>
+          </div>
+        )
       ) : hasMap3DChrome ? null : (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
           {canEnterPanorama ? (
@@ -348,12 +427,14 @@ export function ExploreShell({
       )}
 
       <aside
+        ref={infoPanelRef}
         id="destination-info-panel"
         className={`info-panel ${isInfoOpen ? 'info-panel--open' : ''}`}
         aria-hidden={!isInfoOpen}
         aria-labelledby="destination-info-title"
         inert={!isInfoOpen}
         role="dialog"
+        tabIndex={-1}
       >
         <div className="info-panel__handle" aria-hidden="true" />
         <div className="info-panel__header">

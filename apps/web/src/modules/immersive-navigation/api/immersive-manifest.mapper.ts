@@ -27,12 +27,23 @@ export function mapImmersiveManifest(dto: GetImmersiveManifest200): ImmersiveMan
     .sort((left, right) => left.sortOrder - right.sortOrder);
   const links = dto.links.flatMap(toSceneLinks);
   const nodes = orderedNodes.map(toSceneNode);
+  const panoramaNodeIds = new Set(
+    orderedNodes
+      .filter((node) => node.panoramaManifestUrl !== null && node.panoramaAssetStatus === 'ready')
+      .map((node) => node.id),
+  );
+  const panoramaLinks = links.filter(
+    (link) =>
+      Boolean(link.sourceSceneId) &&
+      panoramaNodeIds.has(link.sourceSceneId!) &&
+      panoramaNodeIds.has(link.targetSceneId),
+  );
   const panoramaNodes = orderedNodes.flatMap((node) => {
     if (node.panoramaManifestUrl === null) {
       return [];
     }
 
-    return [toPanoramaNode(node, links)];
+    return [toPanoramaNode(node, panoramaLinks)];
   });
 
   return {
@@ -95,6 +106,7 @@ function toPanoramaNode(
     name: node.name,
     panoramaUrl: node.panoramaManifestUrl,
     previewUrl: node.panoramaPreviewUrl ?? derivePreviewUrl(node.panoramaManifestUrl),
+    ...(resolveMediaQuality(node) ? { mediaQuality: resolveMediaQuality(node) } : {}),
     lat: node.lat,
     lng: node.lng,
     initialView: {
@@ -108,6 +120,16 @@ function toPanoramaNode(
       pitch: link.pitch,
     })),
   };
+}
+
+function resolveMediaQuality(
+  node: GetImmersiveManifest200['nodes'][number],
+): Exclude<PanoramaNode['mediaQuality'], undefined> {
+  if (node.panoramaAssetStatus !== 'ready') {
+    return node.panoramaAssetStatus === null ? 'missing' : 'invalid';
+  }
+
+  return 'ready';
 }
 
 function toSceneLinks(link: GetImmersiveManifest200['links'][number]): SceneLinkVm[] {

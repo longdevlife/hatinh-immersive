@@ -1,7 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "exclude": ["exports", "types", "duplicates"],
-  "ignore": ["tooling/scripts/architecture-fixture.test.mjs"],
+  "ignore": ["tooling/scripts/architecture-fixture.test.mjs", ".husky/pre-commit"],
+  "ignoreDependencies": ["lint-staged"],
   "workspaces": {
     "apps/web": {
       "entry": [

@@ -44,19 +44,17 @@ export async function generatePanoramaTiles(
       throw new Error('PANORAMA_SOURCE_MUST_BE_EQUIRECTANGULAR');
     }
 
-    const fullColumns = nextPowerOfTwo(Math.max(1, Math.ceil(sourceWidth / tileSize)));
-    const fullWidth = fullColumns * tileSize;
-    const levels = createLevels(fullWidth, tileSize);
+    const levels = createLevels(sourceWidth, tileSize);
     const previewWidth = normalizePreviewWidth(
       options.previewWidth ?? DEFAULT_PREVIEW_WIDTH,
-      fullWidth,
+      sourceWidth,
     );
 
     await mkdir(options.outputDir, { recursive: true });
     await renderImage(source, options.outputDir, 'preview.webp', previewWidth, quality);
 
     for (const [levelIndex, level] of levels.entries()) {
-      await renderLevel(source, options.outputDir, level, levelIndex, tileSize, quality);
+      await renderLevel(source, options.outputDir, level, levelIndex, quality);
     }
 
     const manifest = parsePanoramaManifest({
@@ -75,9 +73,13 @@ export async function generatePanoramaTiles(
   }
 }
 
-function createLevels(fullWidth: number, tileSize: number): PanoramaTileLevel[] {
+function createLevels(sourceWidth: number, tileSize: number): PanoramaTileLevel[] {
+  const maximumWidth = largestPowerOfTwoAtMost(sourceWidth);
+  if (maximumWidth < tileSize) {
+    throw new Error('PANORAMA_SOURCE_MUST_BE_AT_LEAST_ONE_TILE_WIDE');
+  }
   const levels: PanoramaTileLevel[] = [];
-  for (let width = tileSize; width <= fullWidth; width *= 2) {
+  for (let width = tileSize; width <= maximumWidth; width *= 2) {
     const cols = width / tileSize;
     levels.push({
       width,
@@ -108,11 +110,11 @@ async function renderLevel(
   outputDir: string,
   level: PanoramaTileLevel,
   levelIndex: number,
-  tileSize: number,
   quality: number,
 ): Promise<void> {
   const levelDirectory = path.join(outputDir, 'tiles', String(levelIndex));
   await mkdir(levelDirectory, { recursive: true });
+  const tileWidth = level.width / level.cols;
   const tileHeight = level.width / 2 / level.rows;
   const resized = source.clone().resize({
     width: level.width,
@@ -124,9 +126,9 @@ async function renderLevel(
     for (let row = 0; row < level.rows; row += 1) {
       for (let column = 0; column < level.cols; column += 1) {
         const tile = resized.clone().extract({
-          left: column * tileSize,
+          left: column * tileWidth,
           top: row * tileHeight,
-          width: tileSize,
+          width: tileWidth,
           height: tileHeight,
         });
         try {
@@ -161,14 +163,14 @@ function assertQuality(quality: number): void {
   }
 }
 
-function nextPowerOfTwo(value: number): number {
+function isPowerOfTwo(value: number): boolean {
+  return (value & (value - 1)) === 0;
+}
+
+function largestPowerOfTwoAtMost(value: number): number {
   let result = 1;
-  while (result < value) {
+  while (result * 2 <= value) {
     result *= 2;
   }
   return result;
-}
-
-function isPowerOfTwo(value: number): boolean {
-  return (value & (value - 1)) === 0;
 }

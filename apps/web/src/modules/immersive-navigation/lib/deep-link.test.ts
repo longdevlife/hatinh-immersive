@@ -23,7 +23,7 @@ describe('immersive deep link codec', () => {
     const encoded = encodeImmersiveDeepLink(state);
 
     expect(encoded).toBe(
-      '/explore/son-trang-co-dam?mode=panorama&location=destination-01&scene=scene-02&h=123.4&p=-90&fov=120',
+      '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-01&scene=scene-02&h=123.4&p=-90&fov=120',
     );
     expect(decodeImmersiveDeepLink(encoded)).toEqual({
       destinationSlug: 'son-trang-co-dam',
@@ -38,22 +38,12 @@ describe('immersive deep link codec', () => {
     });
   });
 
-  it('uses safe defaults for an unknown mode and malformed camera values', () => {
+  it('rejects an unknown mode instead of silently entering selected 3D', () => {
     expect(
       decodeImmersiveDeepLink(
         '/explore/son-trang-co-dam?mode=not-a-mode&scene=&h=invalid&p=NaN&fov=',
       ),
-    ).toEqual({
-      destinationSlug: 'son-trang-co-dam',
-      mode: 'overview3d',
-      locationId: null,
-      sceneId: null,
-      view: {
-        heading: 0,
-        pitch: 0,
-        fov: 90,
-      },
-    });
+    ).toBeNull();
   });
 
   it('supports an overview link without panorama-only query parameters', () => {
@@ -69,18 +59,10 @@ describe('immersive deep link codec', () => {
       },
     };
 
-    expect(encodeImmersiveDeepLink(state)).toBe('/explore/son-trang-co-dam?mode=overview3d');
-    expect(decodeImmersiveDeepLink('/explore/son-trang-co-dam')).toEqual({
-      destinationSlug: 'son-trang-co-dam',
-      mode: 'overview3d',
-      locationId: null,
-      sceneId: null,
-      view: {
-        heading: 0,
-        pitch: 0,
-        fov: 90,
-      },
-    });
+    expect(encodeImmersiveDeepLink(state)).toBe(
+      '/explore/son-trang-co-dam/immersive?mode=overview3d',
+    );
+    expect(decodeImmersiveDeepLink('/explore/son-trang-co-dam')).toBeNull();
   });
 
   it('round-trips an overview location selection', () => {
@@ -94,8 +76,42 @@ describe('immersive deep link codec', () => {
 
     const encoded = encodeImmersiveDeepLink(state);
 
-    expect(encoded).toBe('/explore/cau-ba-son?mode=overview3d&location=destination-ba-son');
+    expect(encoded).toBe(
+      '/explore/cau-ba-son/immersive?mode=overview3d&location=destination-ba-son',
+    );
     expect(decodeImmersiveDeepLink(encoded)).toEqual(state);
+  });
+
+  it('round-trips the encoded Explore return context', () => {
+    const state: ImmersiveDeepLinkState = {
+      destinationSlug: 'bien-thien-cam',
+      mode: 'panorama',
+      locationId: 'thien-cam-beach',
+      sceneId: 'thien-cam-boardwalk',
+      returnTo: '/explore?q=bi%E1%BB%83n&destination=bien-thien-cam&view=map',
+      view: { heading: 0, pitch: 0, fov: 90 },
+    };
+
+    expect(decodeImmersiveDeepLink(encodeImmersiveDeepLink(state))).toEqual(state);
+  });
+
+  it('decodes both the explicit immersive route and the legacy explore route', () => {
+    const expected = {
+      destinationSlug: 'son-trang-co-dam',
+      mode: 'overview3d' as const,
+      locationId: 'destination-01',
+      sceneId: null,
+      view: { heading: 0, pitch: 0, fov: 90 },
+    };
+
+    expect(
+      decodeImmersiveDeepLink(
+        '/explore/son-trang-co-dam/immersive?mode=overview3d&location=destination-01',
+      ),
+    ).toEqual(expected);
+    expect(
+      decodeImmersiveDeepLink('/explore/son-trang-co-dam?mode=overview3d&location=destination-01'),
+    ).toEqual(expected);
   });
 
   it('returns null for a URL outside the public explore route', () => {

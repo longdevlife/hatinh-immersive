@@ -19,8 +19,18 @@ export type {
   Map3DLocation,
   ModelPlacement,
 } from './domain/map3d-engine.port';
+export {
+  toDestinationMap3DLocations,
+  toMap3DLocation,
+  toMap3DLocations,
+} from './domain/selected-3d-anchor';
+export type { Selected3DAnchor } from './domain/selected-3d-anchor';
 export { LazyMap3DViewport as Map3DViewport } from './ui/lazy-map3d-viewport';
 export { LazyMap3DViewport } from './ui/lazy-map3d-viewport';
 export type { Map3DViewportProps } from './ui/Map3DViewport';
 export { Map3DChrome } from './ui/chrome';
-export type { Map3DChromeLocation, Map3DChromeProps } from './ui/chrome';
+export type {
+  Map3DChromeLocation,
+  Map3DChromeProps,
+  Selected3DViewpointRailProps,
+} from './ui/chrome';

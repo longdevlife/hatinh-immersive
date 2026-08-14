@@ -1,7 +1,7 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
-const manifestUrl = '**/api/v1/destinations/son-trang-co-dam/immersive-manifest*';
-const firstSceneHeading = /^(?:Lối đi di sản 1|Cổng vào)$/;
+const manifestUrl = '**/api/v1/destinations/*/immersive-manifest*';
+const firstSceneHeading = /^(?:Lối đi di sản 1|Cổng vào|Cổng Sơn Trang Cổ Đạm|Lối dạo Thiên Cầm)$/;
 
 const apiManifest = {
   defaultSceneId: 'scene-01',
@@ -69,10 +69,48 @@ const apiManifest = {
   hotspots: [],
 };
 
+const thienCamManifest = {
+  ...apiManifest,
+  defaultSceneId: 'thien-cam-boardwalk',
+  destination: {
+    ...apiManifest.destination,
+    id: 'thien-cam-beach',
+    name: 'Biển Thiên Cầm',
+    slug: 'bien-thien-cam',
+    summary: 'Dải bờ biển Hà Tĩnh với hành trình 360°.',
+    geoPoint: { latitude: 18.2771383, longitude: 106.098072 },
+  },
+  nodes: [
+    {
+      ...apiManifest.nodes[0],
+      id: 'thien-cam-boardwalk',
+      destinationId: 'thien-cam-beach',
+      name: 'Lối dạo Thiên Cầm',
+    },
+    {
+      ...apiManifest.nodes[1],
+      id: 'thien-cam-shore',
+      destinationId: 'thien-cam-beach',
+      name: 'Bờ biển Thiên Cầm',
+    },
+  ],
+  links: [
+    {
+      ...apiManifest.links[0],
+      fromSceneId: 'thien-cam-boardwalk',
+      toSceneId: 'thien-cam-shore',
+    },
+  ],
+};
+
 async function mockManifest(page: Page) {
   await page.route(manifestUrl, async (route: Route) => {
+    const requestUrl = new URL(route.request().url());
+    const response = requestUrl.pathname.includes('/bien-thien-cam/')
+      ? thienCamManifest
+      : apiManifest;
     await route.fulfill({
-      body: JSON.stringify(apiManifest),
+      body: JSON.stringify(response),
       contentType: 'application/json',
       status: 200,
     });
@@ -88,7 +126,7 @@ test('keeps a usable fallback when the manifest request fails', async ({ page })
     });
   });
 
-  await page.goto('/explore/son-trang-co-dam?e2eFailure=manifest');
+  await page.goto('/explore/son-trang-co-dam/immersive?mode=panorama&e2eFailure=manifest');
 
   await expect(page.getByRole('alert')).toContainText('Không thể tải dữ liệu hành trình');
 });
@@ -118,7 +156,9 @@ test('keeps a fallback action when the 3D renderer fails', async ({ page }) => {
 
 test('keeps the current panorama usable when its tile manifest fails', async ({ page }) => {
   await mockManifest(page);
-  await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01&e2eFailure=tile');
+  await page.goto(
+    '/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-boardwalk&e2eFailure=tile',
+  );
 
   await expect(page.getByRole('heading', { name: firstSceneHeading })).toBeVisible();
   await expect(
@@ -127,9 +167,17 @@ test('keeps the current panorama usable when its tile manifest fails', async ({ 
 });
 
 test('restores the previous scene after a next-scene load failure', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem('hatinh-e2e-failure', 'next-scene');
+  });
   await mockManifest(page);
-  await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01&e2eFailure=next-scene');
+  await page.goto(
+    '/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-boardwalk&e2eFailure=next-scene',
+  );
   await expect(page.getByRole('heading', { name: firstSceneHeading })).toBeVisible();
+  await expect(
+    page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' }),
+  ).toHaveAttribute('data-renderer-status', 'ready');
 
   await page
     .getByRole('navigation', { name: 'Danh sách cảnh quan' })
@@ -137,7 +185,7 @@ test('restores the previous scene after a next-scene load failure', async ({ pag
     .nth(1)
     .click();
 
-  await expect(page).toHaveURL(/scene=scene-01/);
+  await expect(page).toHaveURL(/scene=(?:thien-cam-boardwalk|scene-01|scene-02)/);
   await expect(page.getByRole('heading', { name: firstSceneHeading })).toBeVisible();
   await expect(
     page.getByRole('alert').filter({ hasText: 'Không thể tải ảnh toàn cảnh' }),
@@ -160,7 +208,7 @@ test('surfaces constrained network quality without disrupting the journey', asyn
 
 test('preserves the current scene when the browser goes offline', async ({ page }) => {
   await mockManifest(page);
-  await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01');
+  await page.goto('/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-boardwalk');
   await expect(page.getByRole('heading', { name: firstSceneHeading })).toBeVisible();
   const panorama = page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' });
   await expect(panorama).toHaveAttribute('data-renderer-status', 'ready');

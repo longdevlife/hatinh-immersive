@@ -22,6 +22,7 @@ export interface SceneTransitionState {
   committedSceneId: string | null;
   committedView: NavigationView;
   requestedSceneId: string | null;
+  requestedView: NavigationView | null;
   transitionId: number;
 }
 
@@ -47,8 +48,9 @@ export interface ImmersiveNavigationState extends SceneTransitionState {
 
 export interface ImmersiveNavigationActions {
   enterOverview(destinationId: string, location?: Map3DLocation): void;
-  selectLocation(location: Map3DLocation): void;
+  selectLocation(location: Map3DLocation, destinationId?: string): void;
   enterPanorama(sceneId: string): void;
+  requestPanoramaEntry(sceneId: string, view?: NavigationView): number | null;
   updateView(view: Partial<NavigationView>): void;
   navigateToScene(sceneId: string): number | null;
   commitSceneTransition(transitionId: number, view: NavigationView): void;
@@ -58,6 +60,7 @@ export interface ImmersiveNavigationActions {
   closeHotspot(): void;
   toggleMinimap(): void;
   setRendererStatus(renderer: RendererName, status: RendererStatus): void;
+  markPanoramaUnavailable(): void;
   setNetworkQuality(quality: NetworkQuality): void;
   clearError(): void;
   reset(): void;

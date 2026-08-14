@@ -153,11 +153,13 @@ describe('Map3DViewport', () => {
   it('keeps one mounted map element while the selected location changes', async () => {
     const engine = new FakeMap3DEngine();
     const onLocationSelected = vi.fn();
+    const onCameraTransitionChange = vi.fn();
     const firstPreset = { ...cameraPreset, center: { lat: 18.3421, lng: 105.9032 } };
     const secondPreset = { ...cameraPreset, center: { lat: 18.401, lng: 105.91 } };
     const { rerender, unmount } = render(
       <Map3DViewport
         engine={engine}
+        onCameraTransitionChange={onCameraTransitionChange}
         onLocationSelected={onLocationSelected}
         cameraPreset={firstPreset}
       />,
@@ -170,6 +172,7 @@ describe('Map3DViewport', () => {
     rerender(
       <Map3DViewport
         engine={engine}
+        onCameraTransitionChange={onCameraTransitionChange}
         onLocationSelected={onLocationSelected}
         cameraPreset={secondPreset}
       />,
@@ -181,6 +184,7 @@ describe('Map3DViewport', () => {
 
     expect(engine.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
     expect(engine.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
+    expect(onCameraTransitionChange.mock.calls).toEqual([[true], [false], [true], [false]]);
 
     engine.emitLocationSelected('destination-b');
     expect(onLocationSelected).toHaveBeenCalledWith('destination-b');

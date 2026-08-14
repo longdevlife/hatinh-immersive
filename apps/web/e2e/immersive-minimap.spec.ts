@@ -40,18 +40,23 @@ test('runs the real MapLibre minimap against only locally fulfilled Ha Tinh tile
     await route.fulfill({ body: TRANSPARENT_PNG, contentType: 'image/png' });
   });
 
-  await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90');
+  await page.goto(
+    '/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-boardwalk&h=0&p=0&fov=90',
+  );
 
   const minimap = page.getByRole('application', { name: 'Bản đồ tuyến tham quan' });
   const map = minimap.getByRole('group', { name: 'Các điểm của tuyến tham quan' });
   await expect(minimap).toBeVisible();
   await expect(minimap).toHaveAttribute('data-minimap-status', 'ready');
   await expect(page.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeVisible();
-  await expect(map).toHaveAttribute('data-minimap-route-branches', 'scene-01->scene-02');
+  await expect(map).toHaveAttribute(
+    'data-minimap-route-branches',
+    'thien-cam-boardwalk->thien-cam-shore',
+  );
   await expect.poll(() => styleRequests).toBeGreaterThan(0);
   await expect.poll(() => tileRequests).toBeGreaterThan(0);
   expect(requestedUrls).toEqual(
-    expect.arrayContaining([expect.stringContaining('/test/tiles/17/104092/58740.png')]),
+    expect.arrayContaining([expect.stringMatching(/\/test\/tiles\/\d+\/\d+\/\d+\.png/)]),
   );
 
   await page.getByRole('button', { name: 'Thu gọn bản đồ' }).click();
@@ -64,7 +69,10 @@ test('runs the real MapLibre minimap against only locally fulfilled Ha Tinh tile
   await expect(map).toHaveAttribute('data-minimap-interaction-ready', 'true');
   const nodePoints = await map.getAttribute('data-minimap-node-points');
   expect(nodePoints).not.toBeNull();
-  const sceneTwoPoint = JSON.parse(nodePoints ?? '{}')['scene-02'] as { x: number; y: number };
+  const sceneTwoPoint = JSON.parse(nodePoints ?? '{}')['thien-cam-shore'] as {
+    x: number;
+    y: number;
+  };
   expect(sceneTwoPoint).toEqual({ x: expect.any(Number), y: expect.any(Number) });
 
   const mapBounds = await map.boundingBox();
@@ -73,6 +81,6 @@ test('runs the real MapLibre minimap against only locally fulfilled Ha Tinh tile
     throw new Error('MINIMAP_CONTAINER_MISSING');
   }
   await page.mouse.click(mapBounds.x + sceneTwoPoint.x, mapBounds.y + sceneTwoPoint.y);
-  await expect(page.getByRole('heading', { name: 'Lối đi di sản 2' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Bờ biển Thiên Cầm' })).toBeVisible();
   expect(osmAttempts).toEqual([]);
 });

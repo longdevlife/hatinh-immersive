@@ -1,23 +1,8 @@
+import { DEFAULT_HA_TINH_RASTER_STYLE } from '../../../shared/map/ha-tinh-raster-style';
+
 export type MinimapStyle = string | Record<string, unknown>;
 
-export const DEFAULT_HA_TINH_MINIMAP_STYLE: Record<string, unknown> = {
-  layers: [
-    {
-      id: 'openstreetmap',
-      source: 'openstreetmap',
-      type: 'raster',
-    },
-  ],
-  sources: {
-    openstreetmap: {
-      attribution: '© OpenStreetMap contributors',
-      tileSize: 256,
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      type: 'raster',
-    },
-  },
-  version: 8,
-};
+export { DEFAULT_HA_TINH_RASTER_STYLE as DEFAULT_HA_TINH_MINIMAP_STYLE } from '../../../shared/map/ha-tinh-raster-style';
 
 export function requireMinimapStyle(
   style: MinimapStyle | undefined,
@@ -41,5 +26,5 @@ export function resolveMinimapStyle(input: {
     throw new Error('MINIMAP_PRODUCTION_STYLE_REQUIRED');
   }
 
-  return DEFAULT_HA_TINH_MINIMAP_STYLE;
+  return DEFAULT_HA_TINH_RASTER_STYLE;
 }

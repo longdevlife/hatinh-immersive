@@ -1,3 +1,5 @@
+import type { DestinationMediaVm } from './media';
+
 export type ImmersiveMode = 'overview3d' | 'panorama';
 
 export type ImmersiveLocale = 'vi' | 'en';
@@ -12,6 +14,7 @@ export interface DestinationPreviewVm {
   name: string;
   summary: string;
   coverImageUrl: string | null;
+  media?: DestinationMediaVm;
   categoryLabel: string | null;
   defaultSceneId: string | null;
   geoPoint: { latitude: number; longitude: number } | null;
@@ -63,7 +66,7 @@ export interface ImmersiveViewVm {
 }
 
 export interface ImmersiveActions {
-  onEnter3D(): void;
+  onReturnToDestination(): void;
   onEnterPanorama(sceneId?: string): void;
   onNavigateScene(sceneId: string): void;
   onSelectHotspot(hotspotId: string): void;
@@ -128,6 +131,10 @@ export interface PanoramaView {
   fov: number;
 }
 
+export type PanoramaMediaQuality = 'ready' | 'low-resolution' | 'missing' | 'invalid';
+
+export type PanoramaMediaRights = 'customer-owned' | 'licensed' | 'demo-only';
+
 export interface PanoramaLink {
   targetNodeId: string;
   yaw: number;
@@ -139,6 +146,12 @@ export interface PanoramaNode {
   name?: string;
   panoramaUrl: string;
   previewUrl: string | null;
+  /**
+   * Media quality is deliberately separate from scene-graph membership and
+   * rights/intended-use. A complete graph can still lack public-quality media.
+   */
+  mediaQuality?: PanoramaMediaQuality;
+  mediaRights?: PanoramaMediaRights;
   lat: number;
   lng: number;
   initialView: PanoramaView;

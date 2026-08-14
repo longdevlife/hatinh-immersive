@@ -4,7 +4,9 @@ import type {
   SceneLinkVm,
   SceneNodeVm,
 } from '../../../shared/contracts';
+import { hotspotsFixture } from '../../../shared/fixtures';
 import type { Map3DLocation } from '../../map3d';
+import { getDemoDestinationMedia } from './demo-media';
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
 
 interface DemoSceneDefinition {
@@ -42,6 +44,7 @@ function createDefinition({
 }): DemoDestinationDefinition {
   const defaultSceneId = scenes[0]?.id ?? null;
   const location: Map3DLocation = { id, label: name, position, cameraPreset };
+  const media = getDemoDestinationMedia(slug);
 
   return {
     location,
@@ -50,7 +53,8 @@ function createDefinition({
       slug,
       name,
       summary,
-      coverImageUrl: null,
+      coverImageUrl: media?.hero?.src ?? null,
+      ...(media ? { media } : {}),
       categoryLabel,
       defaultSceneId,
       geoPoint: { latitude: position.lat, longitude: position.lng },
@@ -61,6 +65,29 @@ function createDefinition({
 }
 
 export const DEMO_DESTINATIONS = [
+  createDefinition({
+    id: 'son-trang-co-dam',
+    slug: 'son-trang-co-dam',
+    name: 'Sơn Trang Cổ Đạm',
+    summary: 'Một hành trình immersive qua văn hóa, thiên nhiên và những lớp ký ức địa phương.',
+    categoryLabel: 'Di sản & văn hóa',
+    position: { lat: 18.3421, lng: 105.9032 },
+    cameraPreset: {
+      center: { lat: 18.3421, lng: 105.9032, altitude: 420 },
+      heading: 32,
+      tilt: 48,
+      range: 1_800,
+    },
+    scenes: [
+      {
+        id: 'son-trang-gate',
+        name: 'Cổng Sơn Trang Cổ Đạm',
+        lat: 18.3421,
+        lng: 105.9032,
+        heading: 32,
+      },
+    ],
+  }),
   createDefinition({
     id: 'thien-cam-beach',
     slug: 'bien-thien-cam',
@@ -197,6 +224,12 @@ function createManifest(definition: DemoDestinationDefinition): ImmersiveManifes
     name: node.name,
     panoramaUrl: `/demo/360/${node.id}/manifest.json`,
     previewUrl: `/demo/360/${node.id}/preview.webp`,
+    // Fake mode uses a deterministic synthetic renderer fixture. Public
+    // panorama-tour composition applies its own low-resolution quality gate.
+    mediaQuality: 'ready',
+    ...(definition.preview.slug === 'son-trang-co-dam'
+      ? { mediaRights: 'demo-only' as const }
+      : {}),
     lat: node.lat,
     lng: node.lng,
     initialView: { heading: node.heading, pitch: 0, fov: 88 },
@@ -217,6 +250,9 @@ function createManifest(definition: DemoDestinationDefinition): ImmersiveManifes
     nodes,
     panoramaNodes,
     links,
-    hotspots: [],
+    hotspots:
+      definition.preview.slug === 'son-trang-co-dam' || definition.preview.slug === 'bien-thien-cam'
+        ? hotspotsFixture
+        : [],
   };
 }

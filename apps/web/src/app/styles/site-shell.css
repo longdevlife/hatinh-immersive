@@ -1,0 +1,216 @@
+/* apps/web/src/app/styles/site-shell.css */
+
+.site-shell-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: #ffffff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.site-shell-header__container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(1rem, 4vw, 2.5rem);
+  height: 4.5rem;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+.site-shell-header__brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 4px;
+}
+
+.site-shell-header__brand-link:focus-visible {
+  outline: 2px solid #00884f;
+  outline-offset: 4px;
+}
+
+.site-shell-header__logo-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.site-shell-header__brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.site-shell-header__brand-name {
+  color: #00884f;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.site-shell-header__brand-slogan {
+  color: #555555;
+  font-size: 0.65rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.site-shell-header__mobile-toggle {
+  display: none;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  border-radius: 4px;
+}
+
+.site-shell-header__mobile-toggle:focus-visible {
+  outline: 2px solid #00884f;
+  outline-offset: 2px;
+}
+
+.site-shell-header__nav {
+  display: flex;
+  align-items: center;
+}
+
+.site-shell-header__nav-list {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.site-shell-header__nav-item {
+  display: flex;
+}
+
+.site-shell-header__nav-link {
+  color: #333333;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 1.625rem 0;
+  position: relative;
+  transition: color 0.2s ease;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 2px;
+}
+
+.site-shell-header__nav-link:hover {
+  color: #00884f;
+}
+
+.site-shell-header__nav-link:focus-visible {
+  outline: 2px solid #00884f;
+  outline-offset: -4px;
+}
+
+.site-shell-header__nav-link[aria-current='page'] {
+  color: #00884f;
+}
+
+.site-shell-header__nav-link[aria-current='page']::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: #00884f;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .site-shell-header__nav-link {
+    transition: none;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .site-shell-header__container {
+    height: 4rem;
+  }
+
+  .site-shell-header__nav {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid #eaeaea;
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0;
+    display: none;
+  }
+
+  .site-shell-header__nav--open {
+    display: block;
+  }
+
+  .site-shell-header__nav-list {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .site-shell-header__nav-item {
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .site-shell-header__nav-item:last-child {
+    border-bottom: none;
+  }
+
+  .site-shell-header__nav-link {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    min-height: 48px; /* Touch target minimum 44px, 48px is safer */
+  }
+
+  .site-shell-header__nav-link[aria-current='page']::after {
+    bottom: auto;
+    top: 0;
+    left: 0;
+    right: auto;
+    height: 100%;
+    width: 4px;
+    border-radius: 0;
+  }
+
+  .site-shell-header__mobile-toggle {
+    display: flex;
+  }
+}
+
+/* PublicLayout */
+.site-shell-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.site-shell-layout__content {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}

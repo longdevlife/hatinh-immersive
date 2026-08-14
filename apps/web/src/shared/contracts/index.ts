@@ -15,9 +15,21 @@ export type {
   NetworkQuality,
   PanoramaEnginePort,
   PanoramaLink,
+  PanoramaMediaQuality,
+  PanoramaMediaRights,
   PanoramaNode,
   PanoramaView,
   RendererStatus,
   SceneLinkVm,
   SceneNodeVm,
 } from './immersive';
+export type { DestinationCapabilities, Selected3DAvailability } from './destination-capabilities';
+export type {
+  DestinationMediaVm,
+  MediaAsset,
+  MediaKind,
+  MediaRightsStatus,
+  MediaSourceLicense,
+  MediaSourceMetadata,
+  MediaVariant,
+} from './media';

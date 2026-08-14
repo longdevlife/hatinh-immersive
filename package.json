@@ -12,7 +12,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
+    "test": "turbo run test && pnpm test:tooling",
+    "test:tooling": "node --test tooling/scripts/check-web-bundle.test.mjs",
     "test:integration": "turbo run test:integration",
     "test:e2e": "turbo run test:e2e",
     "format": "prettier --write .",
@@ -22,6 +23,7 @@
     "repo:smoke": "node tooling/scripts/repo-smoke.mjs",
     "api:generate": "pnpm --filter @hatinh/api openapi:export && pnpm --filter @hatinh/api-client generate && prettier --write packages/api-client/openapi.json",
     "panorama:build": "pnpm --filter @hatinh/panorama-tooling panorama:build",
+    "panorama:validate": "pnpm --filter @hatinh/panorama-tooling panorama:validate",
     "panorama:test": "pnpm --filter @hatinh/panorama-tooling test",
     "prepare": "husky"
   },

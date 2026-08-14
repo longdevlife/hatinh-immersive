@@ -21,6 +21,7 @@ export function createInitialNavigationState(): ImmersiveNavigationState {
     committedSceneId: null,
     committedView: { ...DEFAULT_NAVIGATION_VIEW },
     requestedSceneId: null,
+    requestedView: null,
     transitionId: 0,
     sceneId: null,
     selectedHotspotId: null,
@@ -51,9 +52,9 @@ function withCommittedScene(sceneId: string | null, view: NavigationView) {
   };
 }
 
-function withSelectedLocation(location: Map3DLocation) {
+function withSelectedLocation(location: Map3DLocation, destinationId = location.id) {
   return {
-    destinationId: location.id,
+    destinationId,
     selectedLocationId: location.id,
     selectedLocationPreset: {
       ...location.cameraPreset,
@@ -75,18 +76,18 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
       map3dStatus: 'loading',
     })),
 
-  selectLocation: (location) =>
+  selectLocation: (location, destinationId) =>
     set((state) =>
       state.mode === 'overview3d' && state.activeRenderer === 'map3d'
         ? {
-            ...withSelectedLocation(location),
+            ...withSelectedLocation(location, destinationId),
             transition: 'idle' as const,
             selectedHotspotId: null,
             error: null,
           }
         : {
             ...createInitialNavigationState(),
-            ...withSelectedLocation(location),
+            ...withSelectedLocation(location, destinationId),
             minimapOpen: state.minimapOpen,
             networkQuality: state.networkQuality,
             activeRenderer: 'map3d' as const,
@@ -104,6 +105,7 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
       transition: 'entering-panorama',
       ...withCommittedScene(sceneId, resetView()),
       requestedSceneId: null,
+      requestedView: null,
       selectedHotspotId: null,
       visitedSceneIds: withVisitedScene(state.visitedSceneIds, sceneId),
       map3dStatus: 'idle',
@@ -111,10 +113,52 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
       error: null,
     })),
 
+  requestPanoramaEntry: (sceneId, view) => {
+    let transitionId: number | null = null;
+
+    set((state) => {
+      if (
+        state.mode === 'panorama' &&
+        (state.requestedSceneId === sceneId || state.committedSceneId === sceneId)
+      ) {
+        return state;
+      }
+
+      transitionId = state.transitionId + 1;
+      return {
+        destinationId: state.destinationId,
+        selectedLocationId: state.selectedLocationId,
+        selectedLocationPreset: state.selectedLocationPreset,
+        mode: 'panorama' as const,
+        activeRenderer: 'panorama' as const,
+        transition: 'entering-panorama' as const,
+        requestedSceneId: sceneId,
+        transitionId,
+        requestedView: normalizeNavigationView(
+          DEFAULT_NAVIGATION_VIEW,
+          view ?? DEFAULT_NAVIGATION_VIEW,
+        ),
+        selectedHotspotId: null,
+        map3dStatus: 'idle' as const,
+        panoramaStatus: 'loading' as const,
+        error: null,
+      };
+    });
+
+    return transitionId;
+  },
+
   updateView: (view) =>
     set((state) =>
       state.requestedSceneId
-        ? state
+        ? state.requestedView
+          ? {
+              requestedView: normalizeNavigationView(
+                state.requestedView ?? state.committedView,
+                view,
+              ),
+            }
+          : state
         : {
             ...withCommittedScene(
               state.committedSceneId,
@@ -142,6 +186,7 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
         activeRenderer: 'panorama' as const,
         transition: 'navigating-scene' as const,
         requestedSceneId: sceneId,
+        requestedView: null,
         transitionId,
         selectedHotspotId: null,
         panoramaStatus: 'loading' as const,
@@ -163,11 +208,13 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
       }
 
       const sceneId = state.requestedSceneId;
-      const committedView = normalizeNavigationView(state.committedView, view);
+      const committedView =
+        state.requestedView ?? normalizeNavigationView(state.committedView, view);
 
       return {
         ...withCommittedScene(sceneId, committedView),
         requestedSceneId: null,
+        requestedView: null,
         transition: 'idle' as const,
         panoramaStatus: 'ready' as const,
         error: null,
@@ -180,9 +227,10 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
       state.mode === 'panorama' && state.transitionId === transitionId && state.requestedSceneId
         ? {
             requestedSceneId: null,
+            requestedView: null,
             transition: 'idle' as const,
-            panoramaStatus: 'ready' as const,
-            error: null,
+            panoramaStatus: state.committedSceneId ? ('ready' as const) : ('error' as const),
+            error: state.committedSceneId ? null : 'PANORAMA_SCENE_LOAD_FAILED',
           }
         : state,
     ),
@@ -202,6 +250,7 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
       return {
         ...withCommittedScene(sceneId, committedView),
         requestedSceneId: null,
+        requestedView: null,
         transition: 'idle' as const,
         panoramaStatus: 'ready' as const,
         error: null,
@@ -251,6 +300,22 @@ export const useImmersiveNavigation = create<ImmersiveNavigationStore>((set) => 
             error: nextError,
           };
     }),
+
+  markPanoramaUnavailable: () =>
+    set((state) => ({
+      ...state,
+      mode: 'panorama' as const,
+      activeRenderer: 'none' as const,
+      transition: 'idle' as const,
+      committedSceneId: null,
+      committedView: { ...DEFAULT_NAVIGATION_VIEW },
+      requestedSceneId: null,
+      requestedView: null,
+      sceneId: null,
+      view: { ...DEFAULT_NAVIGATION_VIEW },
+      panoramaStatus: 'unavailable' as const,
+      error: 'PANORAMA_UNAVAILABLE',
+    })),
 
   setNetworkQuality: (networkQuality) =>
     set({

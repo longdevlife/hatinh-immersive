@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { beforeEach, vi } from 'vitest';
 
 import type { ImmersiveActions } from '../../../shared/contracts';
@@ -17,7 +18,7 @@ const MINIMAP_SESSION_STATE_KEY = 'hatinh:immersive:minimap:collapsed';
 
 function createActions(): ImmersiveActions {
   return {
-    onEnter3D: vi.fn(),
+    onReturnToDestination: vi.fn(),
     onEnterPanorama: vi.fn(),
     onNavigateScene: vi.fn(),
     onSelectHotspot: vi.fn(),
@@ -122,14 +123,14 @@ describe('ExploreShell', () => {
     expect(screen.queryByRole('button', { name: 'Câu chuyện địa danh' })).not.toBeInTheDocument();
   });
 
-  it('lets the visitor return from a ready panorama to the selected 3D location', () => {
+  it('returns from a ready panorama to the destination detail context', () => {
     const actions = createActions();
 
     render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Quay lại không gian 3D' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }));
 
-    expect(actions.onEnter3D).toHaveBeenCalledTimes(1);
+    expect(actions.onReturnToDestination).toHaveBeenCalledTimes(1);
   });
 
   it('renders optional presentational renderer content inside the viewport slot', () => {
@@ -182,6 +183,126 @@ describe('ExploreShell', () => {
     expect(actions.onEnterPanorama).toHaveBeenCalledTimes(1);
   });
 
+  it('does not expose destination-level 360 handoff beside a local viewpoint rail', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+        canEnterPanorama
+        map3dLocations={[{ id: 'destination-01', label: 'Sơn Trang Cổ Đạm' }]}
+        selectedLocationId="son-trang-gate"
+        selected3DViewpointRail={{
+          anchors: [{ id: 'son-trang-gate', label: 'Cổng', hasPanorama: true }],
+          selectedAnchorId: 'son-trang-gate',
+          isTransitioning: false,
+          onSelectAnchor: vi.fn(),
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(actions.onEnterPanorama).not.toHaveBeenCalled();
+  });
+
+  it('does not expose a generic 360 fallback when scoped 3D fails beside the local rail', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d', rendererStatus: 'error' }}
+        actions={actions}
+        canEnterPanorama
+        map3dLocations={[{ id: 'destination-01', label: 'Sơn Trang Cổ Đạm' }]}
+        selectedLocationId="son-trang-gate"
+        selected3DViewpointRail={{
+          anchors: [{ id: 'son-trang-gate', label: 'Cổng', hasPanorama: true }],
+          selectedAnchorId: 'son-trang-gate',
+          isTransitioning: false,
+          onSelectAnchor: vi.fn(),
+          onOpenPanorama: vi.fn(),
+        }}
+      />,
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toBeInTheDocument();
+    expect(
+      within(alert).queryByRole('button', { name: 'Mở trải nghiệm 360°' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(alert).getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mở 360° cho Cổng' })).toBeInTheDocument();
+  });
+
+  it('moves focus into the information sheet when it opens', async () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+      />,
+    );
+
+    const launcher = screen.getByRole('button', { name: 'Thông tin' });
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng thông tin' }));
+    expect(screen.getByRole('dialog', { hidden: true })).toHaveAttribute('inert');
+
+    fireEvent.click(launcher);
+
+    await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
+    expect(actions.onOpenDestinationInfo).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the information sheet with Escape and restores launcher focus', async () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+      />,
+    );
+
+    const launcher = screen.getByRole('button', { name: 'Thông tin' });
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng thông tin' }));
+    fireEvent.click(launcher);
+    await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Thông tin' })).toHaveFocus());
+    expect(screen.getByRole('button', { name: 'Thông tin' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    expect(actions.onCloseDestinationInfo).toHaveBeenCalledTimes(2);
+  });
+
+  it('restores focus to the Map3D information launcher after Escape closes the sheet', async () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+        map3dLocations={[{ id: 'destination-01', label: 'Sơn Trang Cổ Đạm' }]}
+      />,
+    );
+
+    const launcher = screen.getByRole('button', { name: 'Thông tin' });
+    fireEvent.click(launcher);
+    await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus());
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    await waitFor(() => expect(launcher).toHaveFocus());
+  });
+
   it('offers retry when the panorama renderer reports an error', () => {
     const actions = createActions();
 
@@ -191,6 +312,25 @@ describe('ExploreShell', () => {
     expect(actions.onRetryRenderer).toHaveBeenCalledTimes(1);
   });
 
+  it('returns to the destination when the panorama renderer is unavailable', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, rendererStatus: 'unavailable' }}
+        actions={actions}
+      />,
+    );
+
+    fireEvent.click(
+      within(screen.getByRole('alert')).getByRole('button', {
+        name: 'Quay lại Sơn Trang Cổ Đạm',
+      }),
+    );
+
+    expect(actions.onReturnToDestination).toHaveBeenCalledTimes(1);
+  });
+
   it('provides a graceful 3D fallback when the renderer is unavailable', () => {
     const actions = createActions();
 
@@ -198,6 +338,29 @@ describe('ExploreShell', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mở trải nghiệm 360°' }));
 
     expect(actions.onEnterPanorama).toHaveBeenCalledWith();
+  });
+
+  it('also offers a return to destination when 3D fails and 360 is available', () => {
+    const actions = createActions();
+
+    render(<ExploreShell view={threeDUnavailableFixture} actions={actions} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }));
+
+    expect(actions.onReturnToDestination).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns to destination when 3D fails and 360 is unavailable', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell view={threeDUnavailableFixture} actions={actions} canEnterPanorama={false} />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }));
+
+    expect(actions.onReturnToDestination).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: 'Mở trải nghiệm 360°' })).not.toBeInTheDocument();
   });
 
   it('does not advertise a 360 entry while panorama media is unavailable', () => {
@@ -229,11 +392,44 @@ describe('ExploreShell', () => {
     );
 
     expect(screen.getByRole('status')).toHaveTextContent('Đang tải không gian 360°');
-    expect(screen.getByRole('button', { name: 'Quay lại không gian 3D' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toBeInTheDocument();
     expect(screen.getByText('Bản đồ hành trình')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
     expect(actions.onToggleMinimap).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not render the legacy bottom back control when tour chrome owns navigation', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell view={panoramaLoadingFixture} actions={actions} hasPanoramaTourControls />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('360° đang được chuẩn bị')).not.toBeInTheDocument();
+  });
+
+  it('suppresses generic renderer state and minimap for an unavailable panorama tour', async () => {
+    const actions = createActions();
+    const minimapEngine = new FakeMinimapEngine();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, rendererStatus: 'unavailable' }}
+        actions={actions}
+        hasPanoramaTourControls
+        minimapEngine={minimapEngine}
+      />,
+    );
+
+    expect(screen.queryByText('Trải nghiệm 360° chưa khả dụng')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bản đồ hành trình')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(false),
+    );
   });
 
   it('keeps the committed panorama visible during a requested scene transition', () => {

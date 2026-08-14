@@ -1,0 +1,593 @@
+/*
+  Hybrid C Explore Map styles
+  These styles define the Destination Panel and Destination Card layout.
+  The parent container (ExploreShell or ExploreLayout) will be responsible for the split layout.
+*/
+
+:root {
+  --explore-panel-width: 32%;
+  --explore-panel-min-width: 320px;
+  --explore-panel-max-width: 420px;
+  --explore-card-radius: 12px;
+  --explore-gap: 16px;
+  --explore-bg: var(--color-surface, #ffffff);
+  --explore-text: var(--color-text, #111111);
+  --explore-text-muted: var(--color-text-muted, #666666);
+  --explore-border: var(--color-border, #e5e5e5);
+  --explore-primary: var(--color-primary, #00875a);
+  --explore-primary-bg: rgba(0, 135, 90, 0.08);
+}
+
+/* ============================================================================
+   Explore composition
+   ============================================================================ */
+
+.explore-experience {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 4.5rem);
+  height: calc(100dvh - 4.5rem);
+  background: #f4f0e8;
+  color: #17261f;
+  overflow: hidden;
+}
+
+.explore-experience__layout {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(20rem, 32%) minmax(0, 1fr);
+  min-height: 0;
+  margin: 1rem clamp(1rem, 2vw, 2rem) 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(23, 38, 31, 0.12);
+  border-radius: 1.25rem;
+  background: #fffdf8;
+  box-shadow: 0 1rem 3rem rgba(23, 38, 31, 0.08);
+}
+
+.explore-experience__header {
+  padding: 1.5rem 1.5rem 0.5rem;
+  flex-shrink: 0;
+}
+
+.explore-experience__header h1 {
+  margin: 0.25rem 0;
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+
+.explore-experience__header > p:last-child {
+  margin: 0;
+  color: #52665b;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+
+.explore-experience__destinations {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid rgba(23, 38, 31, 0.08);
+}
+
+.explore-experience__destinations > .destination-panel {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: 100%;
+  border-right: 0;
+}
+
+.explore-experience__map {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #f4f0e8;
+}
+
+.explore-experience__selection {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 2rem;
+  transform: translateX(-50%);
+  max-width: min(28rem, calc(100% - 2rem));
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid rgba(23, 38, 31, 0.14);
+  border-radius: 999px;
+  background: rgb(255 253 248 / 0.92);
+  color: #173c31;
+  box-shadow: 0 0.5rem 1.5rem rgb(23 38 31 / 0.14);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.explore-experience__selection p {
+  margin: 0;
+}
+
+.explore-experience__detail-action {
+  border: 0;
+  border-radius: 999px;
+  background: #173c31;
+  color: #fffdf8;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0 1rem;
+  white-space: nowrap;
+  min-height: max(44px, 2.75rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 0.2s cubic-bezier(0.2, 0, 0, 1),
+    background-color 0.2s ease;
+}
+
+.explore-experience__detail-action:hover {
+  background: #235445;
+}
+
+.explore-experience__detail-action:focus-visible {
+  outline: 3px solid #f3c46b;
+  outline-offset: 3px;
+}
+
+.explore-experience__back-to-list {
+  display: none;
+}
+
+/* ============================================================================
+   MapLibre Viewport
+   ============================================================================ */
+
+.explore-map-viewport {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  background: #f4f0e8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.explore-map-viewport__map {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.explore-map-viewport > p[role='status'],
+.explore-map-viewport > p[role='alert'] {
+  position: relative;
+  z-index: 2;
+  max-width: 80%;
+  margin: 0;
+  padding: 1rem 1.5rem;
+  border: 1px solid var(--explore-border);
+  border-radius: 0.5rem;
+  background-color: var(--explore-bg);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+  color: var(--explore-text);
+  font-weight: 500;
+  text-align: center;
+}
+
+.explore-map-viewport > p[role='alert'] {
+  border-left: 4px solid #d32f2f;
+  color: #d32f2f;
+}
+
+/* ===========================================================================
+   Destination Panel
+   ========================================================================== */
+
+.destination-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: var(--explore-bg);
+  box-sizing: border-box;
+}
+
+.destination-panel__header {
+  padding: 24px var(--explore-gap) 16px;
+  border-bottom: 1px solid var(--explore-border);
+  flex-shrink: 0;
+}
+
+.destination-panel__title {
+  margin: 0 0 16px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--explore-text);
+  letter-spacing: -0.02em;
+}
+
+.destination-panel__search {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.destination-panel__search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--explore-text-muted);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.destination-panel__search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 12px 0 36px;
+  border: 1px solid var(--explore-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--explore-text);
+  background-color: var(--color-surface-sunken, #f9f9f9);
+  min-height: max(44px, 2.75rem);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.destination-panel__search-input:focus {
+  outline: none;
+  border-color: var(--explore-primary);
+  box-shadow: 0 0 0 3px var(--explore-primary-bg);
+  background-color: var(--explore-bg);
+}
+
+.destination-panel__filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.destination-panel__filters::-webkit-scrollbar {
+  display: none;
+}
+
+.destination-panel__filter-chip {
+  padding: 0 16px;
+  border: 1px solid var(--explore-border);
+  border-radius: 24px;
+  background: transparent;
+  color: var(--explore-text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  min-height: max(44px, 2.75rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.destination-panel__filter-chip:hover {
+  background-color: var(--color-surface-hover, #f0f0f0);
+}
+
+.destination-panel__filter-chip--active {
+  background-color: var(--explore-text);
+  color: var(--explore-bg);
+  border-color: var(--explore-text);
+}
+
+.destination-panel__list-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--explore-gap);
+}
+
+.destination-panel__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--explore-gap);
+}
+
+.destination-panel__empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--explore-text-muted);
+  font-size: 0.95rem;
+}
+
+.destination-panel__mobile-actions {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px var(--explore-gap);
+  border-top: 1px solid rgba(23, 38, 31, 0.08);
+  background-color: var(--explore-bg);
+  flex-shrink: 0;
+  box-shadow: 0 -8px 24px rgba(23, 38, 31, 0.04);
+}
+
+.destination-panel__selected-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px 8px 16px;
+  background-color: rgba(23, 38, 31, 0.03);
+  border-radius: 12px;
+}
+
+.destination-panel__preview-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.destination-panel__preview-title {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--explore-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.destination-panel__map-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: max(44px, 2.75rem);
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Destination Card
+   ========================================================================== */
+
+.destination-card {
+  position: relative;
+  display: flex;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--explore-card-radius);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+  box-shadow: none;
+  padding: 8px;
+  gap: 16px;
+}
+
+.destination-card:hover {
+  background-color: rgba(23, 38, 31, 0.03);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.destination-card:focus-within {
+  outline: 2px solid var(--explore-primary);
+  outline-offset: 2px;
+  border-radius: calc(var(--explore-card-radius) + 2px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .destination-card:active {
+    transform: scale(0.98);
+  }
+}
+
+.destination-card--selected {
+  background-color: rgba(23, 38, 31, 0.05);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.destination-card__media {
+  width: 96px;
+  height: 96px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background-color: var(--color-surface-sunken, #f5f5f5);
+  position: relative;
+  overflow: hidden;
+}
+
+.destination-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.destination-card__placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--explore-text-muted);
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.destination-card__content {
+  padding: 4px 0;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.destination-card__header {
+  margin-bottom: 4px;
+}
+
+.destination-card__category {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--explore-primary);
+  background-color: rgba(0, 135, 90, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.destination-card__title {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--explore-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.destination-card__summary {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--explore-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.destination-card__action {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.destination-card__action:focus {
+  outline: none; /* Focus handled by :focus-within on card */
+}
+
+/* ==========================================================================
+   Responsive / Hybrid Layout Support
+   ========================================================================== */
+
+/* Mobile behavior: Destination list is the default view.
+   We show the mobile action bar to allow switching to the map. */
+@media (max-width: 768px) {
+  .explore-experience__header {
+    padding-bottom: 0.75rem;
+  }
+
+  .explore-experience__layout {
+    display: block;
+    min-height: 0;
+    margin: 0 0 0.75rem;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 1.25rem 1.25rem 0 0;
+  }
+
+  .explore-experience__layout[data-explore-mode='map'] .explore-experience__destinations {
+    display: none;
+  }
+
+  .explore-experience__layout[data-explore-mode='destination-list'] .explore-experience__map {
+    display: none;
+  }
+
+  .explore-experience__layout[data-explore-mode='map'] .explore-experience__map {
+    display: block;
+    height: calc(100dvh - 8rem);
+    min-height: 24rem;
+  }
+
+  .explore-experience__layout[data-explore-mode='map'] .explore-map-viewport {
+    height: 100%;
+  }
+
+  .explore-experience__back-to-list {
+    position: absolute;
+    z-index: 4;
+    top: 1rem;
+    left: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: max(44px, 2.75rem);
+    padding: 0 1.25rem;
+    border: 1px solid rgba(23, 38, 31, 0.14);
+    border-radius: 999px;
+    background: rgb(255 253 248 / 0.94);
+    color: #173c31;
+    box-shadow: 0 0.5rem 1.5rem rgb(23 38 31 / 0.14);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .destination-panel__mobile-actions {
+    display: flex;
+  }
+
+  .destination-panel {
+    /* Ensure it takes full viewport on mobile when active */
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+  }
+}
+
+/* Desktop behavior: The parent layout will use these classes to compose */
+@media (min-width: 769px) {
+  .destination-panel {
+    width: var(--explore-panel-width);
+    min-width: var(--explore-panel-min-width);
+    max-width: var(--explore-panel-max-width);
+    border-right: 1px solid rgba(23, 38, 31, 0.08); /* softer boundary */
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .destination-panel__filter-chip,
+  .destination-panel__search-input,
+  .destination-card,
+  .explore-experience__detail-action {
+    transition: none !important;
+  }
+}

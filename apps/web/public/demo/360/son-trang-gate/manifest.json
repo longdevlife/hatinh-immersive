@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "type": "equirectangular-tiles",
+  "preview": "preview.webp",
+  "tileUrlTemplate": "tiles/{level}/{col}-{row}.webp",
+  "levels": [
+    {
+      "width": 256,
+      "cols": 1,
+      "rows": 1
+    }
+  ]
+}

@@ -28,6 +28,27 @@ describe('fake renderer adapters', () => {
     ]);
   });
 
+  it('can deterministically fail Map3D initialization for provider-failure tests', async () => {
+    const initialUrl = window.location.href;
+    const failureStorageKey = 'hatinh-e2e-failure';
+    const initialFailure = window.sessionStorage.getItem(failureStorageKey);
+
+    try {
+      window.history.replaceState(null, '', '/?e2eFailure=map3d');
+
+      await expect(new FakeMap3DEngine().mount(document.createElement('div'))).rejects.toThrow(
+        'E2E_MAP3D_FAILURE',
+      );
+    } finally {
+      window.history.replaceState(null, '', initialUrl);
+      if (initialFailure === null) {
+        window.sessionStorage.removeItem(failureStorageKey);
+      } else {
+        window.sessionStorage.setItem(failureStorageKey, initialFailure);
+      }
+    }
+  });
+
   it('publishes panorama view changes and releases listeners on destroy', async () => {
     const engine = new FakePanoramaEngine();
     const container = document.createElement('div');

@@ -7,6 +7,7 @@
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src test",
     "panorama:build": "tsx src/cli.ts",
+    "panorama:validate": "tsx src/validate-cli.ts",
     "panorama:demo": "tsx src/demo.ts",
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
