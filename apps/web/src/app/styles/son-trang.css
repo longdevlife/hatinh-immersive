@@ -1,31 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap');
+
 .son-trang-experience {
   display: flex;
   flex-direction: column;
   background-color: #fcfbf9; /* match generic theme background */
   min-height: 100vh;
   color: #2c3e35;
+  position: relative;
+}
+
+.son-trang-experience__hero-content h1,
+.son-trang-experience__section-title,
+.son-trang-experience__zone-title,
+.son-trang-experience__pillar-title,
+.son-trang-experience__gallery-kicker {
+  font-family: 'Playfair Display', serif;
 }
 
 .son-trang-experience__header {
-  padding: 1rem clamp(1rem, 4vw, 4rem);
+  padding: 1.5rem clamp(1rem, 4vw, 4rem);
   display: flex;
   justify-content: flex-start;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 10;
 }
 
 .son-trang-experience__back-button {
-  background: none;
-  border: none;
-  color: #577064;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 9999px;
+  color: #ffffff;
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.5rem 0;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  padding: 0.5rem 1rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   min-height: max(44px, 2.75rem);
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.son-trang-experience__back-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
 }
 
 .son-trang-experience__back-button:focus-visible {
@@ -38,56 +64,93 @@
 }
 
 .son-trang-experience__hero {
-  padding: 2rem clamp(1rem, 4vw, 4rem);
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
+  position: relative;
+  min-height: 85vh;
+  display: flex;
+  align-items: flex-end;
+  padding: 0;
+  overflow: hidden;
+  animation: son-trang-fade-up 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) both;
 }
 
-@media (min-width: 768px) {
-  .son-trang-experience__hero {
-    grid-template-columns: 1fr 1fr;
-    align-items: center;
-  }
+.son-trang-experience__hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(20, 30, 24, 0.95) 0%,
+    rgba(20, 30, 24, 0.4) 50%,
+    rgba(20, 30, 24, 0.1) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.son-trang-experience__hero-content {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  max-width: 1200px;
+  padding: 4rem clamp(1rem, 4vw, 4rem);
 }
 
 .son-trang-experience__hero-content h1 {
-  font-size: clamp(2.5rem, 5vw, 4.5rem);
-  line-height: 1;
-  margin: 0 0 1rem 0;
-  letter-spacing: -0.04em;
+  font-size: clamp(3.5rem, 8vw, 6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 1.25rem 0;
+  letter-spacing: -0.03em;
+  color: #ffffff;
 }
 
 .son-trang-experience__category {
   display: inline-block;
-  color: #577064;
-  font-size: 0.75rem;
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .son-trang-experience__summary {
-  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-size: clamp(1.125rem, 2.5vw, 1.375rem);
   line-height: 1.6;
-  color: #52665b;
-  margin-bottom: 2rem;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2.5rem;
+  max-width: 800px;
+}
+
+.son-trang-experience__hero-media-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
 }
 
 .son-trang-experience__hero-media {
   width: 100%;
-  aspect-ratio: 4/3;
+  height: 100%;
   object-fit: cover;
-  border-radius: 8px;
-  background-color: #e2e8f0;
+  background-color: #1a2520;
 }
 
 .son-trang-experience__hero-media--empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #889990;
+  width: 100%;
+  height: 100%;
+  background-color: #1a2520;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.875rem;
   font-style: italic;
 }
@@ -100,18 +163,18 @@
 }
 
 .son-trang-experience__button {
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 2rem;
   border-radius: 9999px;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 120px;
-  min-height: max(44px, 2.75rem);
+  min-width: 140px;
+  min-height: max(48px, 3rem);
   box-sizing: border-box;
 }
 
@@ -121,22 +184,28 @@
 }
 
 .son-trang-experience__button--primary {
-  background-color: #2c3e35;
-  color: #ffffff;
+  background-color: #ffffff;
+  color: #1a2520;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
 }
 
 .son-trang-experience__button--primary:hover {
-  background-color: #1a2520;
+  background-color: #f4f0e8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .son-trang-experience__button--secondary {
-  background-color: transparent;
-  border-color: #2c3e35;
-  color: #2c3e35;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  backdrop-filter: blur(8px);
 }
 
 .son-trang-experience__button--secondary:hover {
-  background-color: rgba(44, 62, 53, 0.05);
+  background-color: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
 }
 
 .son-trang-experience__status-notice {
@@ -161,8 +230,27 @@
 }
 
 .son-trang-experience__quick-facts {
-  padding: 2rem clamp(1rem, 4vw, 4rem);
-  background-color: #f4f0e8;
+  padding: 3rem clamp(1rem, 4vw, 4rem);
+  background-color: #ffffff;
+  border-radius: 24px;
+  margin: -3rem clamp(1rem, 4vw, 4rem) 0;
+  position: relative;
+  z-index: 10;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  animation: son-trang-fade-up 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) both;
+  animation-delay: 0.1s;
+}
+
+.son-trang-experience__fact-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  color: #2c3e35;
+  box-shadow: 0 4px 12px rgba(44, 62, 53, 0.08);
 }
 
 .son-trang-experience__facts-list {
@@ -170,88 +258,141 @@
   padding: 0;
   margin: 0;
   display: flex;
-  gap: 2rem;
+  gap: 3rem;
   flex-wrap: wrap;
-  font-size: 0.9375rem;
+  font-size: 1rem;
   color: #2c3e35;
 }
 
 .son-trang-experience__pillars {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 2rem;
   margin-top: 1rem;
   list-style: none;
   padding: 0;
 }
 
 .son-trang-experience__pillar {
-  padding: 1.5rem 0;
-  background: transparent;
-  border-top: 1px solid rgba(87, 112, 100, 0.2);
+  padding: 2.5rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(87, 112, 100, 0.05);
+  border-left: 4px solid #577064;
+  transition: transform 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.son-trang-experience__pillar:hover {
+  transform: translateY(-4px);
 }
 
 .son-trang-experience__pillar-title {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.25rem;
   margin: 0;
-  color: #2c3e35;
+  color: #1a2520;
+  position: relative;
+  z-index: 1;
 }
 
 .son-trang-experience__section {
-  padding: 4rem clamp(1rem, 4vw, 4rem);
+  padding: 5rem clamp(1rem, 4vw, 4rem);
+  animation: son-trang-fade-up 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) both;
+  animation-delay: 0.2s;
 }
 
 .son-trang-experience__section-title {
-  font-size: 2rem;
-  margin: 0 0 2rem 0;
-  letter-spacing: -0.02em;
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 800;
+  margin: 0 0 3rem 0;
+  letter-spacing: -0.03em;
+  color: #1a2520;
 }
 
 .son-trang-experience__zones {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2.5rem;
 }
 
 .son-trang-experience__zone-card {
+  position: relative;
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
   overflow: hidden;
-  background: transparent;
+  background: #1a2520;
+  border-radius: 20px;
+  min-height: 400px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  transition:
+    transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+    box-shadow 0.4s ease;
+}
+
+.son-trang-experience__zone-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(20, 30, 24, 0.95) 0%, rgba(20, 30, 24, 0) 60%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.son-trang-experience__zone-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
 }
 
 .son-trang-experience__zone-media {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
-  aspect-ratio: 16/9;
+  height: 100%;
   object-fit: cover;
-  background-color: #e2e8f0;
+  background-color: #1a2520;
+  z-index: 1;
+  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.son-trang-experience__zone-card:hover .son-trang-experience__zone-media {
+  transform: scale(1.05);
 }
 
 .son-trang-experience__zone-media--empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #889990;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.875rem;
   font-style: italic;
+  z-index: 1;
 }
 
 .son-trang-experience__zone-content {
-  padding: 1.5rem 0;
-  flex: 1;
+  position: relative;
+  z-index: 3;
+  padding: 2.5rem 2rem;
+  flex: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .son-trang-experience__zone-title {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.75rem 0;
+  color: #ffffff;
 }
 
 .son-trang-experience__zone-summary {
-  font-size: 0.9375rem;
-  color: #52665b;
-  line-height: 1.5;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
   margin: 0;
 }
 
@@ -291,18 +432,20 @@
 
 .son-trang-experience__gallery-image {
   flex: 0 0 80vw;
-  height: 280px;
+  height: 320px;
   object-fit: cover;
-  border-radius: 8px; /* matching son-trang-experience__hero-media */
+  border-radius: 16px; /* modern rounded look */
   scroll-snap-align: center;
   background-color: #e2e8f0;
-  transition: transform 0.3s ease;
+  transition:
+    transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+    box-shadow 0.4s ease;
 }
 
 /* Mobile Large Lead */
 .son-trang-experience__gallery-image:first-child {
   flex: 0 0 85vw;
-  height: 380px;
+  height: 400px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -332,7 +475,9 @@
   }
 
   .son-trang-experience__gallery-image:hover {
-    transform: scale(1.02);
+    transform: scale(1.03);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    z-index: 10;
   }
 
   /* Common structure for the first 3 items */
@@ -431,5 +576,25 @@
   .media-credits summary,
   .media-credits__item a {
     transition: none !important;
+  }
+}
+
+/* Animations */
+@keyframes son-trang-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .son-trang-experience__hero,
+  .son-trang-experience__quick-facts,
+  .son-trang-experience__section {
+    animation: none !important;
   }
 }

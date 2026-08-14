@@ -41,7 +41,21 @@ export function SonTrangExperience({
           className="son-trang-experience__back-button son-trang-experience__touch-target"
           onClick={onBackToExplore}
         >
-          &larr; Khám phá Hà Tĩnh
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m12 19-7-7 7-7" />
+            <path d="M19 12H5" />
+          </svg>
+          Khám phá Hà Tĩnh
         </button>
       </header>
 
@@ -60,6 +74,23 @@ export function SonTrangExperience({
                 className="son-trang-experience__button son-trang-experience__button--primary son-trang-experience__touch-target"
                 onClick={onEnterPanorama}
               >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ marginRight: '8px' }}
+                >
+                  <path d="M2 12c0 3.31 4.48 6 10 6s10-2.69 10-6-4.48-6-10-6-10 2.69-10 6Z" />
+                  <path d="M12 6v12" />
+                  <path d="M22 12h-4" />
+                  <path d="M6 12H2" />
+                </svg>
                 Khám phá 360&deg;
               </button>
             )}
@@ -72,6 +103,22 @@ export function SonTrangExperience({
                   className="son-trang-experience__button son-trang-experience__button--primary son-trang-experience__touch-target"
                   onClick={onEnterSelected3D}
                 >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ marginRight: '8px' }}
+                  >
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                    <line x1="12" y1="22.08" x2="12" y2="12" />
+                  </svg>
                   Xem 3D
                 </button>
               )}
@@ -88,6 +135,21 @@ export function SonTrangExperience({
                 className="son-trang-experience__button son-trang-experience__button--secondary son-trang-experience__touch-target"
                 onClick={onOpenMap}
               >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ marginRight: '8px' }}
+                >
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
                 Xem trên bản đồ
               </button>
             )}
@@ -112,13 +174,49 @@ export function SonTrangExperience({
       <section className="son-trang-experience__quick-facts" aria-label="Thông tin nhanh">
         <ul className="son-trang-experience__facts-list">
           {destination.categoryLabel && (
-            <li>
-              <strong>Loại hình:</strong> {destination.categoryLabel}
+            <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="son-trang-experience__fact-icon">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
+                  <circle cx="7.5" cy="7.5" r=".5" fill="currentColor" />
+                </svg>
+              </span>
+              <span>
+                <strong>Loại hình:</strong> {destination.categoryLabel}
+              </span>
             </li>
           )}
           {destination.geoPoint !== null && (
-            <li>
-              <strong>Vị trí:</strong> Đã xác định trên bản đồ
+            <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="son-trang-experience__fact-icon">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+              </span>
+              <span>
+                <strong>Vị trí:</strong> Đã xác định trên bản đồ
+              </span>
             </li>
           )}
         </ul>
