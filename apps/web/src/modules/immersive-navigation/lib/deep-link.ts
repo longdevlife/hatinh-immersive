@@ -13,6 +13,7 @@ export interface ImmersiveDeepLinkState {
   locationId: string | null;
   sceneId: string | null;
   view: NavigationView;
+  returnTo?: string;
 }
 
 function parseFiniteNumber(value: string | null): number | undefined {
@@ -68,6 +69,9 @@ export function encodeImmersiveDeepLink(state: ImmersiveDeepLinkState): string {
     params.set('p', formatNumber(view.pitch));
     params.set('fov', formatNumber(view.fov));
   }
+  if (state.returnTo) {
+    params.set('returnTo', state.returnTo);
+  }
 
   return `/explore/${encodeURIComponent(state.destinationSlug)}/immersive?${params.toString()}`;
 }
@@ -97,6 +101,7 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
 
   const mode: ImmersiveMode = requestedMode;
   const locationId = url.searchParams.get('location')?.trim() || null;
+  const returnTo = url.searchParams.get('returnTo')?.trim() || undefined;
   if (mode === 'overview3d') {
     return {
       destinationSlug,
@@ -104,6 +109,7 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
       locationId,
       sceneId: null,
       view: { ...DEFAULT_NAVIGATION_VIEW },
+      ...(returnTo ? { returnTo } : {}),
     };
   }
 
@@ -121,5 +127,6 @@ export function decodeImmersiveDeepLink(input: string): ImmersiveDeepLinkState |
       ...(pitch === undefined ? {} : { pitch }),
       ...(fov === undefined ? {} : { fov }),
     }),
+    ...(returnTo ? { returnTo } : {}),
   };
 }

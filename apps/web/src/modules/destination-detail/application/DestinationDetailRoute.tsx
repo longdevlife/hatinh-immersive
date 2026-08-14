@@ -29,6 +29,10 @@ export interface DestinationDetailRouteProps {
   sonTrangMedia?: SonTrangExperienceMedia;
 }
 
+interface DestinationRouteState {
+  origin?: 'explore' | 'destination-detail';
+}
+
 function DestinationDetailState({ kind }: { kind: 'loading' | 'error' | 'not-found' }) {
   const state = {
     loading: {
@@ -92,18 +96,37 @@ export function DestinationDetailRoute({
   const sonTrangExperience = toSonTrangExperienceVm(destination, sonTrangMedia);
   const returnTo = new URLSearchParams(location.search).get('returnTo');
   const exploreReturnContext = returnTo ? parseExploreReturnHref(returnTo) : null;
-  const exploreReturnHref = exploreReturnContext
-    ? createExploreReturnHref(exploreReturnContext)
-    : createExploreReturnHref({ destinationSlug: destination.slug });
-  const onBackToExplore = () => navigate(exploreReturnHref);
+  const resolvedExploreReturnContext = exploreReturnContext ?? {
+    destinationSlug: destination.slug,
+  };
+  const exploreReturnHref = createExploreReturnHref(resolvedExploreReturnContext);
+  const cameFromExplore = (location.state as DestinationRouteState | null)?.origin === 'explore';
+  const onBackToExplore = () => {
+    if (cameFromExplore) {
+      navigate(-1);
+      return;
+    }
+
+    navigate(exploreReturnHref, { replace: true });
+  };
   const onOpenMap = destination.geoPoint
-    ? () => navigate(createExploreMapHref(destination.slug))
+    ? () => navigate(createExploreMapHref(destination.slug, resolvedExploreReturnContext))
     : undefined;
   const onEnterPanorama = capabilities.hasPanorama
-    ? () => navigate(createDestinationImmersiveHref(destination, 'panorama'))
+    ? () =>
+        navigate(
+          createDestinationImmersiveHref(destination, 'panorama', { returnTo: exploreReturnHref }),
+          { state: { origin: 'destination-detail' } },
+        )
     : undefined;
   const onEnterSelected3D = capabilities.hasSelected3D
-    ? () => navigate(createDestinationImmersiveHref(destination, 'overview3d'))
+    ? () =>
+        navigate(
+          createDestinationImmersiveHref(destination, 'overview3d', {
+            returnTo: exploreReturnHref,
+          }),
+          { state: { origin: 'destination-detail' } },
+        )
     : undefined;
 
   if (sonTrangExperience) {
