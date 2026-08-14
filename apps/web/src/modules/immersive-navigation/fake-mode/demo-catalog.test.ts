@@ -77,6 +77,18 @@ describe('Hà Tĩnh demo catalog', () => {
     expect(manifest.panoramaNodes.every((node) => node.thumbnailUrl === null)).toBe(true);
   });
 
+  it('keeps a mode-specific demo manifest stable for persistent renderer consumers', () => {
+    expect(getDemoManifest('son-trang-co-dam', 'synthetic')).toBe(
+      getDemoManifest('son-trang-co-dam', 'synthetic'),
+    );
+    expect(getDemoManifest('son-trang-co-dam', 'public')).toBe(
+      getDemoManifest('son-trang-co-dam', 'public'),
+    );
+    expect(getDemoManifest('son-trang-co-dam', 'synthetic')).not.toBe(
+      getDemoManifest('son-trang-co-dam', 'public'),
+    );
+  });
+
   it('rejects an unknown demo destination slug', () => {
     expect(() => getDemoManifest('khong-ton-tai')).toThrow(
       'DEMO_DESTINATION_NOT_FOUND:khong-ton-tai',

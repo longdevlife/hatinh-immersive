@@ -127,9 +127,19 @@ export function getDemoManifest(
   if (!manifest) {
     throw new Error(`DEMO_DESTINATION_NOT_FOUND:${slug}`);
   }
-  return buildDemoManifest(manifest.preview, mode);
+
+  const cacheKey = `${mode}:${slug}`;
+  const cachedManifest = manifestCache.get(cacheKey);
+  if (cachedManifest) {
+    return cachedManifest;
+  }
+
+  const nextManifest = buildDemoManifest(manifest.preview, mode);
+  manifestCache.set(cacheKey, nextManifest);
+  return nextManifest;
 }
 
 const manifests = new Map(
   DEMO_DESTINATIONS.map((definition) => [definition.preview.slug, definition]),
 );
+const manifestCache = new Map<string, ImmersiveManifestVm>();
