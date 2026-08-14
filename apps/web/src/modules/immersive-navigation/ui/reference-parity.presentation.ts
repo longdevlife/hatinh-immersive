@@ -107,7 +107,7 @@ export function buildReferenceParityPresentationVm({
       isCurrent: node.id === currentSceneId,
       isVisited: visited.has(node.id),
       mediaQuality: node.mediaQuality ?? 'ready',
-      thumbnailUrl: node.thumbnailUrl ?? node.previewUrl,
+      thumbnailUrl: node.thumbnailUrl !== undefined ? node.thumbnailUrl : node.previewUrl,
       canNavigate: isPanoramaSceneUsable(node),
     } satisfies ReferenceParitySceneVm;
   });

@@ -87,6 +87,20 @@ describe('reference parity presentation contract', () => {
     expect(vm.autoTour.canStart).toBe(false);
   });
 
+  it('preserves an explicit null thumbnail for synthetic fixtures', () => {
+    const vm = buildReferenceParityPresentationVm({
+      destination: { slug: 'son-trang-co-dam', name: 'Sơn Trang Cổ Đạm' },
+      nodes: [{ ...node('gate'), thumbnailUrl: null }, node('culture')],
+      currentSceneId: 'gate',
+      visitedSceneIds: ['gate'],
+      status: 'ready',
+      isTransitioning: false,
+      autoTour: { isRunning: false, isPaused: false },
+    });
+
+    expect(vm.scenes[0]?.thumbnailUrl).toBeNull();
+  });
+
   it('exposes only supported hotspot types and auto-tour state', () => {
     const vm = buildReferenceParityPresentationVm({
       destination: { slug: 'bien-thien-cam', name: 'Biển Thiên Cầm' },
