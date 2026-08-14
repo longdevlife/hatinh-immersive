@@ -160,7 +160,8 @@ test('walks the explicit Sơn Trang graph with one persistent viewer', async ({ 
   );
   await expect(page).toHaveURL(/scene=son-trang-gate/);
 
-  await page.getByRole('button', { name: 'Đi tới Lối vào Sơn Trang' }).click();
+  // PSV owns directional walking arrows; the rail is the secondary direct-jump control.
+  await rail.getByRole('button', { name: 'Lối vào Sơn Trang' }).click();
   await expect(page).toHaveURL(/scene=son-trang-entrance-path/);
   await expect(page.getByRole('heading', { name: 'Lối vào Sơn Trang' })).toBeVisible();
 

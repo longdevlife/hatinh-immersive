@@ -34,7 +34,6 @@ export {
 export type {
   PanoramaAnchorLike,
   PanoramaTourGraphValidation,
-  PanoramaTourHotspotVm,
   PanoramaTourPresentationActions,
   PanoramaTourPresentationVm,
   PanoramaTourSceneItemVm,

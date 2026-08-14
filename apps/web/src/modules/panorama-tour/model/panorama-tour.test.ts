@@ -158,7 +158,6 @@ describe('Sơn Trang panorama tour model', () => {
     expect(
       buildPanoramaTourPresentationVm({
         nodes,
-        links,
         currentSceneId: 'gate',
         visitedSceneIds: ['gate'],
         status: 'ready',
@@ -185,16 +184,6 @@ describe('Sơn Trang panorama tour model', () => {
           isCurrent: false,
           isVisited: false,
           mediaQuality: 'missing',
-          canNavigate: false,
-        },
-      ],
-      hotspots: [
-        {
-          id: 'gate:culture',
-          label: 'Đi tới Văn hóa',
-          targetSceneId: 'culture',
-          yaw: 90,
-          pitch: 0,
           canNavigate: false,
         },
       ],

@@ -147,6 +147,8 @@ export function ExploreShell({
 }: ExploreShellProps) {
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
+  const isUnavailablePanoramaTour =
+    isPanorama && hasPanoramaTourControls && view.rendererStatus === 'unavailable';
   const hasScopedSelected3D = selected3DViewpointRail !== undefined;
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(readMinimapCollapsedPreference);
@@ -308,21 +310,23 @@ export function ExploreShell({
             <strong>{view.destination.name}</strong>
           </div>
         ) : null}
-        <RendererState
-          mode={view.mode}
-          status={view.rendererStatus}
-          onRetry={actions.onRetryRenderer}
-          onFallback={
-            isPanorama || !canEnterPanorama
-              ? actions.onReturnToDestination
-              : () => actions.onEnterPanorama()
-          }
-          fallbackLabel={isPanorama ? `Quay lại ${view.destination.name}` : 'Mở trải nghiệm 360°'}
-          returnLabel={`Quay lại ${view.destination.name}`}
-          isTransitioning={isPanorama && isSceneTransitioning}
-          showFallback={isPanorama || (!hasScopedSelected3D && canEnterPanorama)}
-          {...(isPanorama ? {} : { onReturnToDestination: actions.onReturnToDestination })}
-        />
+        {!isUnavailablePanoramaTour ? (
+          <RendererState
+            mode={view.mode}
+            status={view.rendererStatus}
+            onRetry={actions.onRetryRenderer}
+            onFallback={
+              isPanorama || !canEnterPanorama
+                ? actions.onReturnToDestination
+                : () => actions.onEnterPanorama()
+            }
+            fallbackLabel={isPanorama ? `Quay lại ${view.destination.name}` : 'Mở trải nghiệm 360°'}
+            returnLabel={`Quay lại ${view.destination.name}`}
+            isTransitioning={isPanorama && isSceneTransitioning}
+            showFallback={isPanorama || (!hasScopedSelected3D && canEnterPanorama)}
+            {...(isPanorama ? {} : { onReturnToDestination: actions.onReturnToDestination })}
+          />
+        ) : null}
       </section>
 
       {!hasMap3DChrome && !isPanorama ? (
@@ -359,7 +363,7 @@ export function ExploreShell({
         </section>
       ) : null}
 
-      {isPanorama ? (
+      {isPanorama && !isUnavailablePanoramaTour ? (
         <div className="explore-shell__minimap">
           {minimapEngine ? (
             <MinimapViewport

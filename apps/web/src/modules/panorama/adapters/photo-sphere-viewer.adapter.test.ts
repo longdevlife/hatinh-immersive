@@ -380,8 +380,10 @@ describe('PhotoSphereViewerEngine', () => {
     expect(runtime.Viewer).toHaveBeenCalledTimes(1);
     expect(fakeViewer.setPanoramaCalls).toHaveLength(0);
     const viewerOptions = vi.mocked(runtime.Viewer).mock.calls.at(-1)?.[0] as {
+      navbar?: unknown;
       panorama?: unknown;
     };
+    expect(viewerOptions.navbar).toBe(false);
     expect(viewerOptions.panorama).toBeUndefined();
     expect(virtualTourPlugin.setCurrentNodeCalls).toEqual(['scene-01']);
 

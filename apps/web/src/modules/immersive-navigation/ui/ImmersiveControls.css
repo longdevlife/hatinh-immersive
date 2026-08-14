@@ -322,73 +322,91 @@
   max-width: clamp(8rem, 20vw, 18rem);
 }
 
+/* Unavailable State — Cinematic Minimal */
+.panorama-controls--unavailable {
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.panorama-tour-unavailable {
+  pointer-events: auto;
+  padding: 1.5rem;
+  max-width: min(90vw, 26rem);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.panorama-tour-unavailable__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: clamp(1.5rem, 4vw, 2rem);
+  background: var(--panorama-surface, rgb(8 22 18 / 0.82));
+  border: 1px solid var(--panorama-border, rgb(255 255 255 / 0.15));
+  border-radius: var(--radius-lg, 1.25rem);
+  backdrop-filter: blur(var(--backdrop-blur-base, 1.25rem));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1.25rem));
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.4);
+}
+
+.panorama-tour-unavailable__title {
+  margin: 0 0 0.5rem;
+  font-family: inherit;
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+  font-weight: 700;
+  color: var(--color-text-inverse, #fff);
+  letter-spacing: -0.01em;
+}
+
+.panorama-tour-unavailable__body {
+  margin: 0 0 1.5rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--color-text-inverse, #fff) 80%, transparent);
+}
+
+.panorama-tour-unavailable__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.75rem 1.5rem;
+  color: #141f18;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  background: var(--color-accent-primary, #e5a95f);
+  border: none;
+  border-radius: var(--radius-control, 999px);
+  cursor: pointer;
+  transition:
+    background-color var(--panorama-motion) var(--panorama-ease),
+    transform 160ms var(--panorama-ease);
+  box-shadow: 0 4px 16px rgba(229, 169, 95, 0.3);
+}
+
+.panorama-tour-unavailable__btn:hover {
+  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 88%, white 12%);
+  transform: translateY(-2px);
+}
+
+.panorama-tour-unavailable__btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.panorama-tour-unavailable__btn:focus-visible {
+  outline: 3px solid var(--panorama-focus, #e5a95f);
+  outline-offset: 3px;
+}
+
 .panorama-tour-layout {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-2, 0.5rem);
   width: 100%;
-}
-
-/* Directional Hotspots (Subordinate / Low-Chrome) */
-.panorama-tour-hotspots {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  pointer-events: auto;
-}
-
-.panorama-tour-hotspots ul {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-2, 0.35rem);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.panorama-tour-hotspot-btn {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  gap: 0.35rem;
-  padding: 0 0.75rem;
-  color: color-mix(in srgb, var(--color-text-inverse, #fff) 88%, transparent);
-  font: inherit;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-  background: color-mix(in srgb, var(--panorama-surface) 55%, transparent);
-  border: 1px solid color-mix(in srgb, var(--panorama-border) 60%, transparent);
-  border-radius: var(--radius-control, 999px);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  cursor: pointer;
-  transition: all var(--panorama-motion) var(--panorama-ease);
-}
-
-.panorama-tour-hotspot-btn svg {
-  width: 0.85rem;
-  height: 0.85rem;
-  flex-shrink: 0;
-  opacity: 0.75;
-}
-
-.panorama-tour-hotspot-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--panorama-surface) 80%, white 12%);
-  border-color: var(--panorama-border);
-  color: #fff;
-}
-
-.panorama-tour-hotspot-btn:focus-visible {
-  outline: 2px solid var(--panorama-focus);
-  outline-offset: -2px;
-}
-
-.panorama-tour-hotspot-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 .panorama-tour-rail-container {
@@ -534,12 +552,6 @@
   backdrop-filter: blur(8px);
 }
 
-.panorama-tour-message--unavailable {
-  background: var(--panorama-surface);
-  border-color: var(--panorama-border);
-  color: color-mix(in srgb, var(--color-text-inverse, #fff) 88%, transparent);
-}
-
 .panorama-tour-message p {
   margin: 0;
 }
@@ -646,7 +658,7 @@
   .panorama-control,
   .panorama-scene-browser button,
   .panorama-tour-rail__btn,
-  .panorama-tour-hotspot-btn,
+  .panorama-tour-unavailable__btn,
   .panorama-tour-retry-btn {
     transition: none;
   }
