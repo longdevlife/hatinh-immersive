@@ -15,8 +15,14 @@ describe('panorama tour source boundary', () => {
     expect(resolvePanoramaTourSource({ VITE_IMMERSIVE_PANORAMA_TOUR_SOURCE: 'demo' })).toBe('demo');
     expect(resolvePanoramaTourMediaMode({})).toBe('public');
     expect(resolvePanoramaTourMediaMode({ VITE_IMMERSIVE_PANORAMA_TOUR_MEDIA: 'synthetic' })).toBe(
-      'synthetic',
+      'public',
     );
+    expect(
+      resolvePanoramaTourMediaMode({
+        VITE_IMMERSIVE_PANORAMA_TOUR_MEDIA: 'synthetic',
+        VITE_IMMERSIVE_PANORAMA_TOUR_TEST_MODE: 'true',
+      }),
+    ).toBe('synthetic');
   });
 
   it('does not inject demo scenes into API/none composition or other destinations', () => {
