@@ -110,14 +110,12 @@ describe('CinematicHome', () => {
     expect(heroImages[0]).toHaveAttribute('src', '/demo/media/son-trang/hero.webp');
   });
 
-  it('moves to the next and previous destination without remounting the home surface', () => {
+  it('does not render manual previous/next arrow buttons in the passive progress bar', () => {
     render(<CinematicHome destinations={destinations} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Điểm đến tiếp theo' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Biển Thiên Cầm' })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Điểm đến trước' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'Sơn Trang Cổ Đạm' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Điểm đến trước' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Điểm đến tiếp theo' })).not.toBeInTheDocument();
+    expect(screen.getByRole('progressbar', { name: 'Tiến trình điểm đến' })).toBeInTheDocument();
   });
 
   it('selects a destination card and updates the hero CTA to its real detail route', () => {
@@ -139,6 +137,9 @@ describe('CinematicHome', () => {
   it('autoplays one destination after five seconds and exposes a real discovery link', () => {
     vi.useFakeTimers();
     render(<CinematicHome destinations={destinations} />);
+
+    expect(screen.queryByRole('button', { name: 'Điểm đến trước' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Điểm đến tiếp theo' })).not.toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(5000);
@@ -188,7 +189,7 @@ describe('CinematicHome', () => {
     const { container } = render(<CinematicHome destinations={destinations} />);
     const initialCopy = container.querySelector('.home-cinematic__hero-copy-content');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Điểm đến tiếp theo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Chọn Biển Thiên Cầm' }));
 
     const nextCopy = container.querySelector('.home-cinematic__hero-copy-content');
     expect(nextCopy).not.toBe(initialCopy);
@@ -207,8 +208,9 @@ describe('CinematicHome', () => {
     rerender(<CinematicHome destinations={destinations} />);
 
     expect(screen.getByRole('region', { name: 'Điểm đến nổi bật Hà Tĩnh' })).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: '1 / 3' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Điểm đến tiếp theo' })).toBeEnabled();
+    expect(screen.getByRole('progressbar', { name: 'Tiến trình điểm đến' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Điểm đến trước' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Điểm đến tiếp theo' })).not.toBeInTheDocument();
   });
 
   it('respects custom exploreHref prop for all discovery links', () => {
@@ -226,20 +228,20 @@ describe('CinematicHome', () => {
     expect(exploreLinks[0]).toHaveAttribute('href', '/custom-explore');
   });
 
-  it('keeps autoplay paused on mouseleave if keyboard focus remains inside the hero', () => {
+  it('keeps autoplay paused when hovering or focusing the interactive card rail', () => {
     vi.useFakeTimers();
     render(<CinematicHome destinations={destinations} />);
 
-    const hero = screen.getByTestId('home-cinematic-hero');
+    const rail = screen.getByRole('list', { name: 'Các điểm đến' });
     const firstButton = screen.getByRole('button', { name: 'Chọn Sơn Trang Cổ Đạm' });
 
-    // Focus inside hero
+    // Focus inside rail
     firstButton.focus();
     fireEvent.focus(firstButton);
 
-    // Mouse enters and leaves
-    fireEvent.mouseEnter(hero);
-    fireEvent.mouseLeave(hero);
+    // Mouse enters and leaves rail
+    fireEvent.mouseEnter(rail);
+    fireEvent.mouseLeave(rail);
 
     // Because focus remains inside, timer should NOT advance the slide
     act(() => {

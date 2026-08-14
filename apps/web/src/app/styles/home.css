@@ -701,39 +701,6 @@ body:has(.home-cinematic) .site-shell-header__mobile-toggle {
   box-sizing: border-box;
 }
 
-.home-cinematic__arrow {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-  font-size: 1.5rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  flex-shrink: 0;
-}
-
-.home-cinematic__arrow:hover {
-  background: #00884f;
-  border-color: #00884f;
-  transform: scale(1.08);
-  box-shadow: 0 6px 18px rgba(0, 136, 79, 0.4);
-}
-
-.home-cinematic__arrow:focus-visible {
-  outline: 2px solid #72b08d;
-  outline-offset: 3px;
-}
-
 .home-cinematic__progress-track {
   flex: 1;
   min-width: 0;
@@ -1103,7 +1070,6 @@ body:has(.home-cinematic) .site-shell-header__mobile-toggle {
   .home-cinematic__editorial-card,
   .home-cinematic__editorial-card img,
   .home-cinematic__button,
-  .home-cinematic__arrow,
   .home-cinematic__progress-value {
     transition: none !important;
     transform: none !important;

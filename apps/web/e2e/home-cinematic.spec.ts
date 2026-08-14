@@ -10,6 +10,8 @@ test.describe('cinematic tourism home', () => {
     const cards = hero.getByTestId('home-cinematic-card');
     await expect(hero).toHaveAttribute('data-active-slug', 'son-trang-co-dam');
     await expect(cards).toHaveCount(4);
+    await expect(hero.getByRole('button', { name: 'Điểm đến trước' })).toHaveCount(0);
+    await expect(hero.getByRole('button', { name: 'Điểm đến tiếp theo' })).toHaveCount(0);
     await expect(
       cards.evaluateAll((elements) =>
         elements.map((element) => element.getAttribute('data-destination-slug')),
@@ -32,7 +34,7 @@ test.describe('cinematic tourism home', () => {
       '/explore/bien-thien-cam',
     );
 
-    await page.getByRole('button', { name: 'Điểm đến trước' }).click();
+    await page.getByRole('button', { name: 'Chọn Sơn Trang Cổ Đạm' }).click();
     await expect(hero).toHaveAttribute('data-active-slug', 'son-trang-co-dam');
     await expect(
       cards.evaluateAll((elements) =>
@@ -47,6 +49,28 @@ test.describe('cinematic tourism home', () => {
 
     await page.getByRole('link', { name: 'Mở bản đồ khám phá' }).click();
     await expect(page).toHaveURL('/explore');
+  });
+
+  test('automatically rotates the deck and moves the first card to the end', async ({ page }) => {
+    await page.goto('/');
+
+    const hero = page.getByTestId('home-cinematic-hero');
+    const cards = hero.getByTestId('home-cinematic-card');
+
+    await expect(hero).toHaveAttribute('data-active-slug', 'son-trang-co-dam');
+    await expect
+      .poll(() => hero.getAttribute('data-active-slug'), { timeout: 7000 })
+      .toBe('bien-thien-cam');
+    await expect(
+      cards.evaluateAll((elements) =>
+        elements.map((element) => element.getAttribute('data-destination-slug')),
+      ),
+    ).resolves.toEqual([
+      'bien-thien-cam',
+      'khu-luu-niem-nguyen-du',
+      'nga-ba-dong-loc',
+      'son-trang-co-dam',
+    ]);
   });
 
   test('keeps the mobile hero and card rail within the viewport', async ({ page }) => {

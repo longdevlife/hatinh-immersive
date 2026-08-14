@@ -94,10 +94,6 @@ export function CinematicHome({ destinations, exploreHref = '/explore' }: Cinema
         aria-label="Điểm đến nổi bật Hà Tĩnh"
         data-testid="home-cinematic-hero"
         data-active-slug={activeDestination.slug}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        onFocusCapture={handleFocusCapture}
-        onBlurCapture={handleBlurCapture}
       >
         {/* Full-bleed photography background layers */}
         <div className="home-cinematic__backdrop" aria-hidden="true">
@@ -169,7 +165,13 @@ export function CinematicHome({ destinations, exploreHref = '/explore' }: Cinema
             </div>
           </div>
 
-          <div className="home-cinematic__rail-wrap">
+          <div
+            className="home-cinematic__rail-wrap"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onFocusCapture={handleFocusCapture}
+            onBlurCapture={handleBlurCapture}
+          >
             <div className="home-cinematic__rail-header">
               <span>Hành trình Hà Tĩnh</span>
               <span className="home-cinematic__rail-count">
@@ -233,7 +235,7 @@ export function CinematicHome({ destinations, exploreHref = '/explore' }: Cinema
           </div>
         </div>
 
-        {/* Bottom bar with Prev/Next buttons and progress track */}
+        {/* Bottom bar with passive index indicator and progress track */}
         <div className="home-cinematic__bottom-bar">
           <div className="home-cinematic__bottom-index" aria-hidden="true">
             <span>{String(carousel.activeIndex + 1).padStart(2, '0')}</span>
@@ -246,14 +248,6 @@ export function CinematicHome({ destinations, exploreHref = '/explore' }: Cinema
             role="group"
             aria-label={`${carousel.activeIndex + 1} / ${destinations.length}`}
           >
-            <button
-              className="home-cinematic__arrow"
-              type="button"
-              aria-label="Điểm đến trước"
-              onClick={carousel.previous}
-            >
-              <span aria-hidden="true">‹</span>
-            </button>
             <div
               className="home-cinematic__progress-track"
               role="progressbar"
@@ -268,14 +262,6 @@ export function CinematicHome({ destinations, exploreHref = '/explore' }: Cinema
                 style={{ width: `${((carousel.activeIndex + 1) / destinations.length) * 100}%` }}
               />
             </div>
-            <button
-              className="home-cinematic__arrow"
-              type="button"
-              aria-label="Điểm đến tiếp theo"
-              onClick={carousel.next}
-            >
-              <span aria-hidden="true">›</span>
-            </button>
           </div>
 
           <div className="home-cinematic__bottom-brand" aria-hidden="true">
