@@ -415,8 +415,45 @@ export function ImmersiveControlsGroup({
     return nodes.filter((node) => visibleIds.has(node.id));
   }, [currentSceneId, links, nodes]);
 
+  const currentTourScene = useMemo(() => {
+    if (!tour) return null;
+    return tour.scenes.find((s) => s.isCurrent) ?? null;
+  }, [tour]);
+
   return (
     <div className="panorama-controls" role="region" aria-label="Các công cụ tiện ích">
+      {tour ? (
+        <div className="panorama-tour-top-bar">
+          <button
+            type="button"
+            className="panorama-control panorama-tour-back-btn"
+            onClick={() => tourActions?.onBack()}
+            aria-label="Quay lại thế giới 3D"
+            disabled={tour.isTransitioning}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+            >
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            <span className="panorama-tour-back-label">3D</span>
+          </button>
+          {currentTourScene ? (
+            <div className="panorama-tour-context" aria-live="polite">
+              <span className="panorama-tour-context__badge">Sơn Trang</span>
+              <span className="panorama-tour-context__title">{currentTourScene.label}</span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="panorama-controls__utilities">
         <DestinationSearch
           destinations={destinations}
@@ -465,42 +502,24 @@ export function ImmersiveControlsGroup({
             )}
 
             <div className="panorama-tour-rail-container">
-              <button
-                type="button"
-                className="panorama-control panorama-tour-back-btn"
-                onClick={() => tourActions?.onBack()}
-                aria-label="Quay lại"
-                disabled={tour.isTransitioning}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
-                >
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-              </button>
-
               <nav className="panorama-tour-rail" aria-label="Hành trình 360 Sơn Trang">
                 <ul role="list">
                   {tour.scenes.map((scene) => {
                     const isUnavailable = scene.mediaQuality !== 'ready';
                     const isDisabled = !scene.canNavigate || tour.isTransitioning;
+                    const isMajor = scene.role === 'major-stop';
 
                     return (
                       <li key={scene.id}>
                         <button
                           type="button"
                           className={`panorama-tour-rail__btn ${
-                            scene.isCurrent ? 'is-current' : ''
-                          } ${scene.isVisited && !scene.isCurrent ? 'is-visited' : ''} ${
-                            isUnavailable ? 'is-unavailable' : ''
-                          }`}
+                            isMajor
+                              ? 'panorama-tour-rail__btn--major'
+                              : 'panorama-tour-rail__btn--connector'
+                          } ${scene.isCurrent ? 'is-current' : ''} ${
+                            scene.isVisited && !scene.isCurrent ? 'is-visited' : ''
+                          } ${isUnavailable ? 'is-unavailable' : ''}`}
                           aria-current={scene.isCurrent ? 'step' : undefined}
                           aria-label={`${scene.label}${isUnavailable ? ' (Chưa có dữ liệu)' : ''}`}
                           disabled={isDisabled}
@@ -510,7 +529,14 @@ export function ImmersiveControlsGroup({
                             }
                           }}
                         >
-                          <span className="panorama-tour-rail__indicator" aria-hidden="true">
+                          <span
+                            className={`panorama-tour-rail__indicator ${
+                              isMajor
+                                ? 'panorama-tour-rail__indicator--major'
+                                : 'panorama-tour-rail__indicator--connector'
+                            }`}
+                            aria-hidden="true"
+                          >
                             {scene.isCurrent ? (
                               <span className="panorama-tour-rail__indicator-inner" />
                             ) : null}

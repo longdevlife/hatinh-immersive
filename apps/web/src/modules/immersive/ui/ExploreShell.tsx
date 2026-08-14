@@ -50,6 +50,7 @@ export interface ExploreShellProps {
   rendererContent?: ReactNode;
   selectedLocationId?: string | null;
   selected3DViewpointRail?: Selected3DViewpointRailProps;
+  hasPanoramaTourControls?: boolean;
 }
 
 function MapLauncherIcon() {
@@ -142,6 +143,7 @@ export function ExploreShell({
   onLocationSelected,
   selectedLocationId = null,
   selected3DViewpointRail,
+  hasPanoramaTourControls = false,
 }: ExploreShellProps) {
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
@@ -377,27 +379,33 @@ export function ExploreShell({
       ) : null}
 
       {isPanorama ? (
-        <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
-          <button
-            className="immersive-button--back"
-            type="button"
-            onClick={actions.onReturnToDestination}
+        hasPanoramaTourControls ? null : (
+          <div
+            className="explore-shell__controls"
+            role="region"
+            aria-label="Điều khiển trải nghiệm"
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+            <button
+              className="immersive-button--back"
+              type="button"
+              onClick={actions.onReturnToDestination}
             >
-              <line x1="19" y1="12" x2="5" y2="12"></line>
-              <polyline points="12 19 5 12 12 5"></polyline>
-            </svg>
-            Quay lại {view.destination.name}
-          </button>
-        </div>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+              </svg>
+              Quay lại {view.destination.name}
+            </button>
+          </div>
+        )
       ) : hasMap3DChrome ? null : (
         <div className="explore-shell__controls" role="region" aria-label="Điều khiển trải nghiệm">
           {canEnterPanorama ? (

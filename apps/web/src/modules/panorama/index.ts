@@ -24,6 +24,7 @@ export type { HotspotPanelProps } from './ui/HotspotPanels';
 export type { PanoramaViewportProps } from './ui/PanoramaViewport';
 export {
   buildPanoramaTourPresentationVm,
+  getPanoramaTourSceneRole,
   isPanoramaSceneUsable,
   resolvePanoramaSceneForAnchor,
   resolveTourNavigationTarget,
@@ -37,4 +38,5 @@ export type {
   PanoramaTourPresentationActions,
   PanoramaTourPresentationVm,
   PanoramaTourSceneItemVm,
+  PanoramaTourSceneRole,
 } from '../panorama-tour';

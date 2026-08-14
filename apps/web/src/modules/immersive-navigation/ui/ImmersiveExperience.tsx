@@ -1229,6 +1229,7 @@ export function ImmersiveExperience({
         onLocationSelected={selectLocation}
         showLocationBrowser={!isDestinationScopedSelected3D}
         rendererContent={rendererContent}
+        hasPanoramaTourControls={panoramaTourPresentation !== undefined}
         selectedLocationId={navigation.selectedLocationId}
         {...(selected3DViewpointRail ? { selected3DViewpointRail } : {})}
         view={view}

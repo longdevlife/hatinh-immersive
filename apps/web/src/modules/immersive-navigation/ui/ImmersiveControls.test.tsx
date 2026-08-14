@@ -72,6 +72,7 @@ describe('ImmersiveControls', () => {
         {
           id: 'gate',
           label: 'Cổng Sơn Trang',
+          role: 'major-stop' as const,
           isCurrent: true,
           isVisited: true,
           mediaQuality: 'ready' as const,
@@ -80,6 +81,7 @@ describe('ImmersiveControls', () => {
         {
           id: 'culture',
           label: 'Không gian Văn hóa',
+          role: 'major-stop' as const,
           isCurrent: false,
           isVisited: false,
           mediaQuality: 'low-resolution' as const,

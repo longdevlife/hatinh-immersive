@@ -8,11 +8,14 @@ import type {
 export interface PanoramaTourSceneItemVm {
   id: string;
   label: string;
+  role: PanoramaTourSceneRole;
   isCurrent: boolean;
   isVisited: boolean;
   mediaQuality: PanoramaMediaQuality;
   canNavigate: boolean;
 }
+
+export type PanoramaTourSceneRole = 'major-stop' | 'connector';
 
 export interface PanoramaTourHotspotVm {
   id: string;
@@ -48,6 +51,21 @@ export interface PanoramaAnchorLike {
 }
 
 const DEFAULT_MEDIA_QUALITY: PanoramaMediaQuality = 'ready';
+
+const MAJOR_STOP_SCENE_IDS = new Set([
+  'gate',
+  'culture',
+  'ecology',
+  'spiritual',
+  'son-trang-gate',
+  'son-trang-culture',
+  'son-trang-ecology',
+  'son-trang-spiritual',
+]);
+
+export function getPanoramaTourSceneRole(sceneId: string): PanoramaTourSceneRole {
+  return MAJOR_STOP_SCENE_IDS.has(sceneId) ? 'major-stop' : 'connector';
+}
 
 export function isPanoramaSceneUsable(node: PanoramaNode): boolean {
   return (node.mediaQuality ?? DEFAULT_MEDIA_QUALITY) === 'ready';
@@ -187,6 +205,7 @@ export function buildPanoramaTourPresentationVm({
   const scenes = nodes.map((node) => ({
     id: node.id,
     label: node.name ?? node.id,
+    role: getPanoramaTourSceneRole(node.id),
     isCurrent: node.id === currentSceneId,
     isVisited: visited.has(node.id),
     mediaQuality: node.mediaQuality ?? DEFAULT_MEDIA_QUALITY,

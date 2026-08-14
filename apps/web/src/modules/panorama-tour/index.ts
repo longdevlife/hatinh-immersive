@@ -1,5 +1,6 @@
 export {
   buildPanoramaTourPresentationVm,
+  getPanoramaTourSceneRole,
   getPanoramaRenderableNodes,
   getPanoramaTourLinks,
   isPanoramaSceneUsable,
@@ -16,4 +17,5 @@ export type {
   PanoramaTourPresentationActions,
   PanoramaTourPresentationVm,
   PanoramaTourSceneItemVm,
+  PanoramaTourSceneRole,
 } from './model/panorama-tour';

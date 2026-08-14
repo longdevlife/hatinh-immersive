@@ -34,7 +34,9 @@ export function Selected3DViewpointRail({
               >
                 <button
                   type="button"
-                  className="selected-3d-rail__button"
+                  className={`selected-3d-rail__button ${
+                    isSelected ? 'selected-3d-rail__button--selected' : ''
+                  }`}
                   aria-label={label}
                   aria-pressed={isSelected}
                   disabled={isTransitioning}
@@ -44,6 +46,7 @@ export function Selected3DViewpointRail({
                     }
                   }}
                 >
+                  <span className="selected-3d-rail__indicator" aria-hidden="true" />
                   <span className="selected-3d-rail__button-label">{label}</span>
                   {isSelected && isTransitioning ? (
                     <span className="selected-3d-rail__spinner" aria-hidden="true" />
@@ -61,7 +64,21 @@ export function Selected3DViewpointRail({
                     }}
                     aria-label={`Mở 360° cho ${label}`}
                   >
-                    Mở 360°
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="selected-3d-rail__pano-icon"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+                      <path d="M2 12h20" />
+                    </svg>
+                    <span>Mở 360°</span>
                   </button>
                 )}
               </div>
