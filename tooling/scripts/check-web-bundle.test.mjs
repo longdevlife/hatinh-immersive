@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { analyzeInitialShell, validateInitialShell } from './check-web-bundle.mjs';
+
+function readRepoFile(relativePath) {
+  return readFileSync(new URL(relativePath, new URL('../../', import.meta.url)), 'utf8');
+}
 
 function fixtureIndexHtml() {
   return `
@@ -80,5 +85,23 @@ test('applies the initial-shell budget to the combined directly loaded assets', 
       assert.match(error.message, /shell\.css/);
       return true;
     },
+  );
+});
+
+test('keeps route-specific styles behind their lazy route boundaries', () => {
+  const initialStyles = readRepoFile('apps/web/src/app/styles/index.css');
+
+  assert.doesNotMatch(initialStyles, /@import ['"]\.\/(immersive|explore|son-trang)\.css['"]/);
+  assert.match(
+    readRepoFile('apps/web/src/modules/explore/ui/ExploreExperience.tsx'),
+    /app\/styles\/explore\.css/,
+  );
+  assert.match(
+    readRepoFile('apps/web/src/modules/immersive-navigation/ui/ImmersiveExperience.tsx'),
+    /app\/styles\/immersive\.css/,
+  );
+  assert.match(
+    readRepoFile('apps/web/src/modules/son-trang/ui/SonTrangExperience.tsx'),
+    /app\/styles\/son-trang\.css/,
   );
 });
