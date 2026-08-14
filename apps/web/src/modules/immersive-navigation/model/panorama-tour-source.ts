@@ -11,6 +11,7 @@ export type PanoramaTourMediaMode = DemoPanoramaMediaMode;
 interface PanoramaTourSourceEnvironment {
   VITE_IMMERSIVE_PANORAMA_TOUR_SOURCE?: string;
   VITE_IMMERSIVE_PANORAMA_TOUR_MEDIA?: string;
+  VITE_IMMERSIVE_PANORAMA_TOUR_TEST_MODE?: string;
 }
 
 export function resolvePanoramaTourSource(environment: unknown): PanoramaTourSource {
@@ -20,8 +21,10 @@ export function resolvePanoramaTourSource(environment: unknown): PanoramaTourSou
 }
 
 export function resolvePanoramaTourMediaMode(environment: unknown): PanoramaTourMediaMode {
-  return (environment as PanoramaTourSourceEnvironment).VITE_IMMERSIVE_PANORAMA_TOUR_MEDIA ===
-    'synthetic'
+  const modes = environment as PanoramaTourSourceEnvironment;
+
+  return modes.VITE_IMMERSIVE_PANORAMA_TOUR_MEDIA === 'synthetic' &&
+    modes.VITE_IMMERSIVE_PANORAMA_TOUR_TEST_MODE === 'true'
     ? 'synthetic'
     : 'public';
 }
