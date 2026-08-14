@@ -415,8 +415,72 @@ export function ImmersiveControlsGroup({
     return nodes.filter((node) => visibleIds.has(node.id));
   }, [currentSceneId, links, nodes]);
 
+  const currentTourScene = useMemo(() => {
+    if (!tour) return null;
+    return tour.scenes.find((s) => s.isCurrent) ?? null;
+  }, [tour]);
+
+  if (tour && tour.status === 'unavailable') {
+    return (
+      <div
+        className="panorama-controls panorama-controls--unavailable"
+        role="region"
+        aria-label="Thông báo 360°"
+      >
+        <div className="panorama-tour-unavailable" role="status" aria-live="polite">
+          <div className="panorama-tour-unavailable__card">
+            <h2 className="panorama-tour-unavailable__title">360° đang được cập nhật</h2>
+            <p className="panorama-tour-unavailable__body">
+              Hình ảnh độ phân giải cao đang được chuẩn bị.
+            </p>
+            <button
+              type="button"
+              className="panorama-tour-unavailable__btn"
+              onClick={() => tourActions?.onBack()}
+              aria-label="Quay lại Sơn Trang Cổ Đạm"
+            >
+              Quay lại Sơn Trang Cổ Đạm
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="panorama-controls" role="region" aria-label="Các công cụ tiện ích">
+      {tour ? (
+        <div className="panorama-tour-top-bar">
+          <button
+            type="button"
+            className="panorama-control panorama-tour-back-btn"
+            onClick={() => tourActions?.onBack()}
+            aria-label="Quay lại thế giới 3D"
+            disabled={tour.isTransitioning}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
+            >
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            <span className="panorama-tour-back-label">3D</span>
+          </button>
+          {currentTourScene ? (
+            <div className="panorama-tour-context" aria-live="polite">
+              <span className="panorama-tour-context__badge">Sơn Trang</span>
+              <span className="panorama-tour-context__title">{currentTourScene.label}</span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="panorama-controls__utilities">
         <DestinationSearch
           destinations={destinations}
@@ -433,74 +497,25 @@ export function ImmersiveControlsGroup({
       <div className="panorama-controls__scenes">
         {tour ? (
           <div className="panorama-tour-layout">
-            {tour.hotspots && tour.hotspots.length > 0 && (
-              <div className="panorama-tour-hotspots" role="group" aria-label="Điểm di chuyển">
-                <ul role="list">
-                  {tour.hotspots.map((hotspot) => (
-                    <li key={hotspot.id}>
-                      <button
-                        type="button"
-                        className="panorama-tour-hotspot-btn"
-                        disabled={!hotspot.canNavigate || tour.isTransitioning}
-                        onClick={() => tourActions?.onSelectHotspot(hotspot.id)}
-                        aria-label={`Đi đến ${hotspot.label}`}
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          aria-hidden="true"
-                        >
-                          <path d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
-                        <span>{hotspot.label}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
             <div className="panorama-tour-rail-container">
-              <button
-                type="button"
-                className="panorama-control panorama-tour-back-btn"
-                onClick={() => tourActions?.onBack()}
-                aria-label="Quay lại"
-                disabled={tour.isTransitioning}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  style={{ width: 'var(--icon-size-base)', height: 'var(--icon-size-base)' }}
-                >
-                  <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-              </button>
-
               <nav className="panorama-tour-rail" aria-label="Hành trình 360 Sơn Trang">
                 <ul role="list">
                   {tour.scenes.map((scene) => {
                     const isUnavailable = scene.mediaQuality !== 'ready';
                     const isDisabled = !scene.canNavigate || tour.isTransitioning;
+                    const isMajor = scene.role === 'major-stop';
 
                     return (
                       <li key={scene.id}>
                         <button
                           type="button"
                           className={`panorama-tour-rail__btn ${
-                            scene.isCurrent ? 'is-current' : ''
-                          } ${scene.isVisited && !scene.isCurrent ? 'is-visited' : ''} ${
-                            isUnavailable ? 'is-unavailable' : ''
-                          }`}
+                            isMajor
+                              ? 'panorama-tour-rail__btn--major'
+                              : 'panorama-tour-rail__btn--connector'
+                          } ${scene.isCurrent ? 'is-current' : ''} ${
+                            scene.isVisited && !scene.isCurrent ? 'is-visited' : ''
+                          } ${isUnavailable ? 'is-unavailable' : ''}`}
                           aria-current={scene.isCurrent ? 'step' : undefined}
                           aria-label={`${scene.label}${isUnavailable ? ' (Chưa có dữ liệu)' : ''}`}
                           disabled={isDisabled}
@@ -510,7 +525,14 @@ export function ImmersiveControlsGroup({
                             }
                           }}
                         >
-                          <span className="panorama-tour-rail__indicator" aria-hidden="true">
+                          <span
+                            className={`panorama-tour-rail__indicator ${
+                              isMajor
+                                ? 'panorama-tour-rail__indicator--major'
+                                : 'panorama-tour-rail__indicator--connector'
+                            }`}
+                            aria-hidden="true"
+                          >
                             {scene.isCurrent ? (
                               <span className="panorama-tour-rail__indicator-inner" />
                             ) : null}
@@ -546,14 +568,6 @@ export function ImmersiveControlsGroup({
                   </svg>
                   Thử lại
                 </button>
-              </div>
-            ) : null}
-            {tour.status === 'unavailable' ? (
-              <div
-                className="panorama-tour-message panorama-tour-message--unavailable"
-                role="status"
-              >
-                <p>Đang cập nhật hình ảnh 360° độ phân giải cao.</p>
               </div>
             ) : null}
           </div>

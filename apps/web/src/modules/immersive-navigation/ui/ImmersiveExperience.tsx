@@ -72,7 +72,6 @@ import {
   getPanoramaTourLinks,
   isPanoramaSceneUsable,
   resolvePanoramaSceneForAnchor,
-  resolveTourNavigationTarget,
   resolveTourSceneId,
   validatePanoramaTourGraph,
 } from '../../panorama-tour';
@@ -992,10 +991,12 @@ export function ImmersiveExperience({
 
   const panoramaTourPresentation = useMemo(
     () =>
-      manifest && navigation.mode === 'panorama' && panoramaTourSource === 'demo'
+      manifest &&
+      manifest.destination.slug === 'son-trang-co-dam' &&
+      navigation.mode === 'panorama' &&
+      panoramaTourSource === 'demo'
         ? buildPanoramaTourPresentationVm({
             nodes: manifest.panoramaNodes,
-            links: panoramaTourLinks,
             currentSceneId: navigation.committedSceneId,
             visitedSceneIds: navigation.visitedSceneIds,
             status: navigation.panoramaStatus,
@@ -1008,40 +1009,9 @@ export function ImmersiveExperience({
       navigation.panoramaStatus,
       navigation.transition,
       navigation.visitedSceneIds,
-      panoramaTourLinks,
       panoramaTourSource,
     ],
   );
-  const onSelectTourHotspot = useCallback(
-    (hotspotId: string) => {
-      if (!manifest || !panoramaTourPresentation) {
-        return;
-      }
-
-      const hotspot = panoramaTourPresentation.hotspots.find((item) => item.id === hotspotId);
-      if (!hotspot || !hotspot.canNavigate) {
-        return;
-      }
-
-      const target = resolveTourNavigationTarget(
-        manifest.panoramaNodes,
-        panoramaTourLinks,
-        navigation.committedSceneId,
-        hotspot.targetSceneId,
-      );
-      if (target) {
-        onNavigateScene(target.id);
-      }
-    },
-    [
-      manifest,
-      navigation.committedSceneId,
-      onNavigateScene,
-      panoramaTourLinks,
-      panoramaTourPresentation,
-    ],
-  );
-
   if (!manifest) {
     return <ManifestState kind={manifestQuery.isPending ? 'loading' : 'error'} />;
   }
@@ -1229,6 +1199,7 @@ export function ImmersiveExperience({
         onLocationSelected={selectLocation}
         showLocationBrowser={!isDestinationScopedSelected3D}
         rendererContent={rendererContent}
+        hasPanoramaTourControls={panoramaTourPresentation !== undefined}
         selectedLocationId={navigation.selectedLocationId}
         {...(selected3DViewpointRail ? { selected3DViewpointRail } : {})}
         view={view}
@@ -1251,7 +1222,6 @@ export function ImmersiveExperience({
                 tourActions: {
                   onBack: actions.onReturnToDestination,
                   onSelectScene: actions.onNavigateScene,
-                  onSelectHotspot: onSelectTourHotspot,
                   onRetry: actions.onRetryRenderer,
                 },
               }

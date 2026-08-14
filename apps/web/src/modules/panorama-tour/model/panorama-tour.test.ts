@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { PanoramaNode, SceneLinkVm } from '../../../shared/contracts';
 import {
   buildPanoramaTourPresentationVm,
+  getPanoramaTourSceneRole,
   getPanoramaRenderableNodes,
   getPanoramaTourLinks,
   isPanoramaSceneUsable,
@@ -48,6 +49,12 @@ const links: SceneLinkVm[] = [
 ];
 
 describe('Sơn Trang panorama tour model', () => {
+  it('keeps major stops distinct from connector scenes for presentation', () => {
+    expect(getPanoramaTourSceneRole('son-trang-gate')).toBe('major-stop');
+    expect(getPanoramaTourSceneRole('son-trang-culture')).toBe('major-stop');
+    expect(getPanoramaTourSceneRole('son-trang-entrance-path')).toBe('connector');
+  });
+
   it('normalizes stale API links after media-only nodes are removed', () => {
     const staleLink: SceneLinkVm = {
       id: 'gate:missing',
@@ -151,7 +158,6 @@ describe('Sơn Trang panorama tour model', () => {
     expect(
       buildPanoramaTourPresentationVm({
         nodes,
-        links,
         currentSceneId: 'gate',
         visitedSceneIds: ['gate'],
         status: 'ready',
@@ -165,6 +171,7 @@ describe('Sơn Trang panorama tour model', () => {
         {
           id: 'gate',
           label: 'Cổng Sơn Trang',
+          role: 'major-stop',
           isCurrent: true,
           isVisited: true,
           mediaQuality: 'ready',
@@ -173,19 +180,10 @@ describe('Sơn Trang panorama tour model', () => {
         {
           id: 'culture',
           label: 'Không gian Văn hóa',
+          role: 'major-stop',
           isCurrent: false,
           isVisited: false,
           mediaQuality: 'missing',
-          canNavigate: false,
-        },
-      ],
-      hotspots: [
-        {
-          id: 'gate:culture',
-          label: 'Đi tới Văn hóa',
-          targetSceneId: 'culture',
-          yaw: 90,
-          pitch: 0,
           canNavigate: false,
         },
       ],

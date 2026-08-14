@@ -26,6 +26,7 @@ type PhotoSphereViewerEventListener = (event?: unknown) => void;
 export interface PhotoSphereViewerOptions {
   adapter: unknown;
   container: HTMLElement;
+  navbar?: false;
   panorama?: unknown;
   plugins: unknown[];
 }
@@ -405,6 +406,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     const viewer = new runtime.Viewer({
       adapter: runtime.EquirectangularTilesAdapter,
       container,
+      navbar: false,
       plugins: [virtualTourConfig, runtime.MarkersPlugin],
     });
 

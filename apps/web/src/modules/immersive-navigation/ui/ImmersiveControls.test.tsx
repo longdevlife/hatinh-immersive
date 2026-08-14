@@ -65,13 +65,13 @@ describe('ImmersiveControls', () => {
     const onSelectScene = vi.fn();
     const tour = {
       currentSceneId: 'gate',
-      status: 'unavailable' as const,
+      status: 'ready' as const,
       isTransitioning: false,
-      hotspots: [],
       scenes: [
         {
           id: 'gate',
           label: 'Cổng Sơn Trang',
+          role: 'major-stop' as const,
           isCurrent: true,
           isVisited: true,
           mediaQuality: 'ready' as const,
@@ -80,6 +80,7 @@ describe('ImmersiveControls', () => {
         {
           id: 'culture',
           label: 'Không gian Văn hóa',
+          role: 'major-stop' as const,
           isCurrent: false,
           isVisited: false,
           mediaQuality: 'low-resolution' as const,
@@ -95,7 +96,6 @@ describe('ImmersiveControls', () => {
         tourActions={{
           onBack: vi.fn(),
           onRetry: vi.fn(),
-          onSelectHotspot: vi.fn(),
           onSelectScene,
         }}
       />,
@@ -109,11 +109,9 @@ describe('ImmersiveControls', () => {
     expect(
       screen.getByRole('button', { name: 'Không gian Văn hóa (Chưa có dữ liệu)' }),
     ).toBeDisabled();
-    expect(screen.getByText('Đang cập nhật hình ảnh 360° độ phân giải cao.')).toBeInTheDocument();
   });
 
-  it('dispatches a valid directional hotspot through the presentation action', () => {
-    const onSelectHotspot = vi.fn();
+  it('does not render external walk buttons because PSV owns directional navigation', () => {
     render(
       <ImmersiveControlsGroup
         nodes={[]}
@@ -122,14 +120,40 @@ describe('ImmersiveControls', () => {
           status: 'ready',
           isTransitioning: false,
           scenes: [],
-          hotspots: [
+        }}
+        tourActions={{
+          onBack: vi.fn(),
+          onRetry: vi.fn(),
+          onSelectScene: vi.fn(),
+        }}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Đi đến Lối vào Sơn Trang' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Đi tiếp Lối vào Sơn Trang' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders one intentional escape composition when every tour scene is unavailable', () => {
+    render(
+      <ImmersiveControlsGroup
+        nodes={[]}
+        tour={{
+          currentSceneId: null,
+          status: 'unavailable',
+          isTransitioning: false,
+          scenes: [
             {
-              id: 'gate:entrance-path',
-              label: 'Lối vào Sơn Trang',
-              targetSceneId: 'entrance-path',
-              yaw: 32,
-              pitch: 0,
-              canNavigate: true,
+              id: 'gate',
+              label: 'Cổng Sơn Trang',
+              role: 'major-stop',
+              isCurrent: false,
+              isVisited: false,
+              mediaQuality: 'low-resolution',
+              canNavigate: false,
             },
           ],
         }}
@@ -137,12 +161,19 @@ describe('ImmersiveControls', () => {
           onBack: vi.fn(),
           onRetry: vi.fn(),
           onSelectScene: vi.fn(),
-          onSelectHotspot,
         }}
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Đi đến Lối vào Sơn Trang' }));
-    expect(onSelectHotspot).toHaveBeenCalledWith('gate:entrance-path');
+    expect(screen.getByText('360° đang được cập nhật')).toBeInTheDocument();
+    expect(screen.getByText('Hình ảnh độ phân giải cao đang được chuẩn bị.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('navigation', { name: 'Hành trình 360 Sơn Trang' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Điểm di chuyển' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Đang cập nhật hình ảnh 360° độ phân giải cao.'),
+    ).not.toBeInTheDocument();
   });
 });

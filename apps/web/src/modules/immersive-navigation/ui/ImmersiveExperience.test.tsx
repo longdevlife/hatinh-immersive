@@ -205,7 +205,7 @@ describe('ImmersiveExperience', () => {
   });
 
   it('shows a truthful unavailable state for the explicit public low-resolution tour source', async () => {
-    const { factories, panorama } = createFactories();
+    const { factories, minimap, panorama } = createFactories();
 
     renderExperience(
       '/explore/son-trang-co-dam/immersive?mode=panorama&scene=son-trang-gate',
@@ -219,12 +219,19 @@ describe('ImmersiveExperience', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Đang cập nhật hình ảnh 360° độ phân giải cao.')).toBeVisible();
+      expect(screen.getByText('360° đang được cập nhật')).toBeVisible();
     });
+    expect(screen.getByText('Hình ảnh độ phân giải cao đang được chuẩn bị.')).toBeVisible();
+    expect(screen.getAllByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toHaveLength(1);
+    expect(screen.queryByText('Trải nghiệm 360° chưa khả dụng')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Đang cập nhật hình ảnh 360° độ phân giải cao.'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('navigation', { name: 'Hành trình 360 Sơn Trang' }),
+    ).not.toBeInTheDocument();
+    expect(minimap.calls.some((call) => call.type === 'mount')).toBe(false);
     expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(false);
-    expect(screen.getAllByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).not.toHaveLength(
-      0,
-    );
   });
 
   it('uses the selected local anchor mapping as the only 360 handoff', async () => {

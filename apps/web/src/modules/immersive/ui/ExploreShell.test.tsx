@@ -399,6 +399,39 @@ describe('ExploreShell', () => {
     expect(actions.onToggleMinimap).toHaveBeenCalledTimes(1);
   });
 
+  it('does not render the legacy bottom back control when tour chrome owns navigation', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell view={panoramaLoadingFixture} actions={actions} hasPanoramaTourControls />,
+    );
+
+    expect(
+      screen.queryByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('360° đang được chuẩn bị')).not.toBeInTheDocument();
+  });
+
+  it('suppresses generic renderer state and minimap for an unavailable panorama tour', async () => {
+    const actions = createActions();
+    const minimapEngine = new FakeMinimapEngine();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, rendererStatus: 'unavailable' }}
+        actions={actions}
+        hasPanoramaTourControls
+        minimapEngine={minimapEngine}
+      />,
+    );
+
+    expect(screen.queryByText('Trải nghiệm 360° chưa khả dụng')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bản đồ hành trình')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(false),
+    );
+  });
+
   it('keeps the committed panorama visible during a requested scene transition', () => {
     const actions = createActions();
 

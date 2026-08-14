@@ -8,33 +8,25 @@ import type {
 export interface PanoramaTourSceneItemVm {
   id: string;
   label: string;
+  role: PanoramaTourSceneRole;
   isCurrent: boolean;
   isVisited: boolean;
   mediaQuality: PanoramaMediaQuality;
   canNavigate: boolean;
 }
 
-export interface PanoramaTourHotspotVm {
-  id: string;
-  label: string;
-  targetSceneId: string;
-  yaw: number;
-  pitch: number;
-  canNavigate: boolean;
-}
+export type PanoramaTourSceneRole = 'major-stop' | 'connector';
 
 export interface PanoramaTourPresentationVm {
   currentSceneId: string | null;
   status: RendererStatus;
   isTransitioning: boolean;
   scenes: PanoramaTourSceneItemVm[];
-  hotspots: PanoramaTourHotspotVm[];
 }
 
 export interface PanoramaTourPresentationActions {
   onBack(): void;
   onSelectScene(sceneId: string): void;
-  onSelectHotspot(hotspotId: string): void;
   onRetry(): void;
 }
 
@@ -48,6 +40,21 @@ export interface PanoramaAnchorLike {
 }
 
 const DEFAULT_MEDIA_QUALITY: PanoramaMediaQuality = 'ready';
+
+const MAJOR_STOP_SCENE_IDS = new Set([
+  'gate',
+  'culture',
+  'ecology',
+  'spiritual',
+  'son-trang-gate',
+  'son-trang-culture',
+  'son-trang-ecology',
+  'son-trang-spiritual',
+]);
+
+export function getPanoramaTourSceneRole(sceneId: string): PanoramaTourSceneRole {
+  return MAJOR_STOP_SCENE_IDS.has(sceneId) ? 'major-stop' : 'connector';
+}
 
 export function isPanoramaSceneUsable(node: PanoramaNode): boolean {
   return (node.mediaQuality ?? DEFAULT_MEDIA_QUALITY) === 'ready';
@@ -170,14 +177,12 @@ export function resolveTourNavigationTarget(
 
 export function buildPanoramaTourPresentationVm({
   nodes,
-  links,
   currentSceneId,
   visitedSceneIds,
   status,
   isTransitioning,
 }: {
   nodes: readonly PanoramaNode[];
-  links: readonly SceneLinkVm[];
   currentSceneId: string | null;
   visitedSceneIds: readonly string[];
   status: RendererStatus;
@@ -187,25 +192,11 @@ export function buildPanoramaTourPresentationVm({
   const scenes = nodes.map((node) => ({
     id: node.id,
     label: node.name ?? node.id,
+    role: getPanoramaTourSceneRole(node.id),
     isCurrent: node.id === currentSceneId,
     isVisited: visited.has(node.id),
     mediaQuality: node.mediaQuality ?? DEFAULT_MEDIA_QUALITY,
     canNavigate: isPanoramaSceneUsable(node),
   }));
-  const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  const hotspots = links
-    .filter((link) => link.sourceSceneId === currentSceneId)
-    .map((link) => ({
-      id: link.id,
-      label: link.label ?? nodeById.get(link.targetSceneId)?.name ?? link.targetSceneId,
-      targetSceneId: link.targetSceneId,
-      yaw: link.yaw,
-      pitch: link.pitch,
-      canNavigate: Boolean(
-        nodeById.get(link.targetSceneId) &&
-        isPanoramaSceneUsable(nodeById.get(link.targetSceneId)!),
-      ),
-    }));
-
-  return { currentSceneId, status, isTransitioning, scenes, hotspots };
+  return { currentSceneId, status, isTransitioning, scenes };
 }
