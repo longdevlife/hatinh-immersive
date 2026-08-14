@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { App } from './App';
@@ -57,12 +57,22 @@ describe('public application shell', () => {
     );
   });
 
-  it('describes the home entry as destination discovery instead of location-first 3D', () => {
+  it('renders the cinematic destination home from the governed catalog', () => {
     render(<App />);
 
+    expect(screen.getByTestId('home-cinematic-hero')).toHaveAttribute(
+      'data-active-slug',
+      'son-trang-co-dam',
+    );
     expect(
-      screen.getByRole('heading', { name: 'Di sản mở ra theo cách bạn muốn khám phá.' }),
+      within(screen.getByTestId('home-cinematic-hero')).getByRole('heading', {
+        name: 'Sơn Trang Cổ Đạm',
+      }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Khám phá Sơn Trang Cổ Đạm' })).toHaveAttribute(
+      'href',
+      '/explore/son-trang-co-dam',
+    );
     expect(screen.getByRole('main')).not.toHaveTextContent('location-first');
   });
 
@@ -79,15 +89,13 @@ describe('public application shell', () => {
     );
   });
 
-  it('takes the home call to action to /explore', async () => {
+  it('exposes a real home discovery link to /explore', () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu khám phá' }));
-
-    expect(window.location.pathname).toBe('/explore');
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Khám phá Hà Tĩnh' })).toBeInTheDocument();
-    });
+    expect(screen.getByRole('link', { name: 'Mở bản đồ khám phá' })).toHaveAttribute(
+      'href',
+      '/explore',
+    );
   });
 
   it('migrates legacy immersive query links to the explicit immersive route', async () => {

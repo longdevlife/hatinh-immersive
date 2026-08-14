@@ -7,7 +7,7 @@ test('keeps heavy renderer downloads out of the public landing shell', async ({ 
   page.on('request', (request) => requests.push(request.url()));
 
   await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Bắt đầu khám phá' })).toBeVisible();
+  await expect(page.getByTestId('home-cinematic-hero')).toBeVisible();
   await page.waitForLoadState('networkidle');
 
   expect(requests.filter((url) => heavyRendererRequest.test(url))).toEqual([]);

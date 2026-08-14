@@ -85,7 +85,7 @@ test('keeps the public shell light and records a first-contentful-paint metric',
   page.on('request', (request) => requests.push(request.url()));
 
   await page.goto('/');
-  await expect(page.getByRole('button', { name: 'Bắt đầu khám phá' })).toBeVisible();
+  await expect(page.getByTestId('home-cinematic-hero')).toBeVisible();
   await page.waitForLoadState('networkidle');
 
   expect(requests.filter((url) => heavyRendererRequest.test(url))).toEqual([]);
@@ -112,7 +112,7 @@ test('loads renderer code only after entering the immersive journey', async ({ p
   page.on('request', (request) => requests.push(request.url()));
 
   await page.goto('/');
-  await page.getByRole('button', { name: 'Bắt đầu khám phá' }).click();
+  await page.getByRole('link', { name: 'Mở bản đồ khám phá' }).click();
   await expect(page).toHaveURL(/\/explore$/);
   await expect(page.locator('#explore-title')).toBeVisible();
 

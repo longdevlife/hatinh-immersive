@@ -11,7 +11,6 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 
-import { UiButton } from '@hatinh/ui';
 import '@hatinh/ui/styles.css';
 
 import {
@@ -37,6 +36,8 @@ import {
   DEMO_SON_TRANG_ZONE_MEDIA,
   getDemoDestinationMedia,
 } from '../modules/immersive-navigation/fake-mode/demo-media';
+import { CinematicHome } from '../modules/home/ui';
+import { createHomeDestinationVms } from '../modules/home/model/home-destination';
 import { PUBLIC_NAV_ITEMS, PublicLayout } from '../modules/site-shell';
 import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
 import './styles/index.css';
@@ -78,6 +79,7 @@ const destinationCapabilityConfig = resolveDestinationCapabilityConfig(import.me
 const selected3DAnchorSource = resolveSelected3DAnchorSource(import.meta.env);
 const panoramaTourSource = resolvePanoramaTourSource(import.meta.env);
 const panoramaTourMediaMode = resolvePanoramaTourMediaMode(import.meta.env);
+const HOME_DESTINATIONS = createHomeDestinationVms(DEMO_DESTINATIONS.map(({ preview }) => preview));
 
 function FakeImmersiveExperience() {
   const { destinationSlug = DEFAULT_PUBLIC_DESTINATION_SLUG } = useParams();
@@ -278,22 +280,7 @@ function DestinationRoute() {
 }
 
 function PublicHome() {
-  const navigate = useNavigate();
-
-  return (
-    <main className="public-home">
-      <section className="public-home__intro" aria-labelledby="public-title">
-        <p className="eyebrow">Hà Tĩnh Immersive</p>
-        <h1 id="public-title">Di sản mở ra theo cách bạn muốn khám phá.</h1>
-        <p>
-          Một không gian khám phá các điểm đến Hà Tĩnh và những câu chuyện văn hóa được tuyển chọn.
-        </p>
-        <UiButton tone="primary" type="button" onClick={() => navigate('/explore')}>
-          Bắt đầu khám phá
-        </UiButton>
-      </section>
-    </main>
-  );
+  return <CinematicHome destinations={HOME_DESTINATIONS} exploreHref="/explore" />;
 }
 
 export function App() {
