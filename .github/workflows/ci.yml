@@ -127,6 +127,9 @@ jobs:
       - name: Production-build panorama tour end-to-end test
         run: pnpm --filter @hatinh/web test:e2e:panorama-tour
 
+      - name: Production-build public panorama media quality end-to-end test
+        run: pnpm --filter @hatinh/web test:e2e:panorama-tour:public
+
       - name: Production-build Photo Sphere Viewer panorama smoke test
         run: pnpm --filter @hatinh/web test:e2e:panorama-tour:real
 

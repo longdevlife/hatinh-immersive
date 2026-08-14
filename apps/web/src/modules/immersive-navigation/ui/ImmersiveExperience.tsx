@@ -1152,6 +1152,49 @@ export function ImmersiveExperience({
     setLocale(nextLocale);
   }, []);
 
+  const referenceParityActions = useMemo<ReferenceParityPresentationActions>(
+    () => ({
+      onBack: onReturnToDestination,
+      onSelectScene: onNavigateScene,
+      onSelectHotspot,
+      onToggleMinimap,
+      onToggleMasterMute,
+      onEnableAudio,
+      onToggleAmbient,
+      onToggleNarration,
+      onToggleAutoTour,
+      onRetry: onRetryRenderer,
+      onShare: () =>
+        shareImmersiveScene({
+          title: manifest?.destination.name ?? destinationSlug,
+          url: window.location.href,
+          ...(typeof navigator.share === 'function'
+            ? { share: (data) => navigator.share(data) }
+            : {}),
+          ...(navigator.clipboard
+            ? { copy: (text: string) => navigator.clipboard.writeText(text) }
+            : {}),
+        }),
+      onFullscreen: () => {
+        void toggleImmersiveFullscreen(document);
+      },
+    }),
+    [
+      destinationSlug,
+      manifest,
+      onEnableAudio,
+      onNavigateScene,
+      onRetryRenderer,
+      onReturnToDestination,
+      onSelectHotspot,
+      onToggleAmbient,
+      onToggleAutoTour,
+      onToggleMasterMute,
+      onToggleMinimap,
+      onToggleNarration,
+    ],
+  );
+
   if (!manifest) {
     return <ManifestState kind={manifestQuery.isPending ? 'loading' : 'error'} />;
   }
@@ -1255,47 +1298,6 @@ export function ImmersiveExperience({
           hotspots: view.hotspots,
         })
       : undefined;
-  const referenceParityActions = useMemo<ReferenceParityPresentationActions>(
-    () => ({
-      onBack: onReturnToDestination,
-      onSelectScene: onNavigateScene,
-      onSelectHotspot,
-      onToggleMinimap,
-      onToggleMasterMute,
-      onEnableAudio,
-      onToggleAmbient,
-      onToggleNarration,
-      onToggleAutoTour,
-      onRetry: onRetryRenderer,
-      onShare: () =>
-        shareImmersiveScene({
-          title: manifest.destination.name,
-          url: window.location.href,
-          ...(typeof navigator.share === 'function'
-            ? { share: (data) => navigator.share(data) }
-            : {}),
-          ...(navigator.clipboard
-            ? { copy: (text: string) => navigator.clipboard.writeText(text) }
-            : {}),
-        }),
-      onFullscreen: () => {
-        void toggleImmersiveFullscreen(document);
-      },
-    }),
-    [
-      onNavigateScene,
-      onReturnToDestination,
-      onRetryRenderer,
-      onSelectHotspot,
-      onToggleAmbient,
-      onToggleAutoTour,
-      onToggleMasterMute,
-      onEnableAudio,
-      onToggleMinimap,
-      onToggleNarration,
-      manifest,
-    ],
-  );
   const rendererContent = (
     <RendererHost
       activeRenderer={navigation.activeRenderer}

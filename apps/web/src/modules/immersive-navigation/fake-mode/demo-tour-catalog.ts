@@ -367,6 +367,14 @@ function resolveMediaPath(
   mode: DemoTourBuildMode,
 ): string | null {
   if (mode === 'synthetic') {
+    if (definition.mediaPath) {
+      const directory =
+        definition.mediaPath === 'son-trang-tour'
+          ? `son-trang-tour/${definition.id}`
+          : definition.id;
+      return `/demo/360/${directory}/manifest.json`;
+    }
+
     return `/demo/test/360/${destinationSlug}/${definition.id}/manifest.json`;
   }
   if (!definition.mediaPath) {

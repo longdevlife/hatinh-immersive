@@ -75,6 +75,11 @@ describe('Hà Tĩnh demo catalog', () => {
 
     expect(manifest.panoramaNodes).toHaveLength(8);
     expect(manifest.panoramaNodes.every((node) => node.thumbnailUrl === null)).toBe(true);
+    expect(
+      manifest.panoramaNodes.every((node) =>
+        node.panoramaUrl.startsWith('/demo/360/son-trang-tour/'),
+      ),
+    ).toBe(true);
   });
 
   it('keeps a mode-specific demo manifest stable for persistent renderer consumers', () => {
