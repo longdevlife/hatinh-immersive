@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { FakeMap3DEngine } from '../../map3d';
@@ -9,6 +9,11 @@ import { FakePanoramaEngine } from '../../panorama';
 import { DEMO_DESTINATIONS, getDemoManifest } from '../fake-mode/demo-catalog';
 import { useImmersiveNavigation } from '../index';
 import { ImmersiveExperience, type ImmersiveExperienceFactories } from './ImmersiveExperience';
+
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
+}
 
 function createFactories() {
   const map3d = new FakeMap3DEngine();
@@ -49,6 +54,7 @@ function renderTour(factories: ImmersiveExperienceFactories) {
             }
           />
         </Routes>
+        <LocationProbe />
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -84,13 +90,13 @@ describe('ImmersiveExperience Auto Tour progression', () => {
     };
 
     await advanceAutoTour();
-    expect(useImmersiveNavigation.getState().committedSceneId).toBe('thien-cam-shore');
+    expect(screen.getByTestId('location')).toHaveTextContent(/scene=thien-cam-shore/);
 
     await advanceAutoTour();
-    expect(useImmersiveNavigation.getState().committedSceneId).toBe('thien-cam-lookout');
+    expect(screen.getByTestId('location')).toHaveTextContent(/scene=thien-cam-lookout/);
 
     await advanceAutoTour();
-    expect(useImmersiveNavigation.getState().committedSceneId).toBe('thien-cam-lookout');
+    expect(screen.getByTestId('location')).toHaveTextContent(/scene=thien-cam-lookout/);
     expect(panorama.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
     expect(panorama.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
   });
