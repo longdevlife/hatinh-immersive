@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './Map3DChrome.css';
+import {
+  Selected3DViewpointRail,
+  type Selected3DViewpointRailProps,
+} from './Selected3DViewpointRail';
 
 export interface Map3DChromeLocation {
   id: string;
@@ -40,6 +44,9 @@ export interface Map3DChromeProps {
   onEnter360?: () => void;
   /** User clicks to retry loading the 360 view */
   onRetry360?: () => void;
+
+  /** Rail for switching viewpoint anchors in destination-scoped Map3D */
+  viewpointRail?: Selected3DViewpointRailProps;
 }
 
 export function Map3DChrome({
@@ -61,6 +68,7 @@ export function Map3DChrome({
   onLocationSelected,
   onEnter360,
   onRetry360,
+  viewpointRail,
 }: Map3DChromeProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isListOpen, setIsListOpen] = useState(false);
@@ -340,8 +348,17 @@ export function Map3DChrome({
         </aside>
       ) : null}
 
-      {/* Bottom Area: Handoff CTA */}
-      {selectedLocationId && (
+      {/* Bottom Area: Viewpoint Rail and/or Handoff CTA */}
+      {viewpointRail ? (
+        <div
+          className="map3d-chrome__viewpoint-rail-wrapper"
+          style={onEnter360 || onRetry360 ? { bottom: '6.5rem' } : undefined}
+        >
+          <Selected3DViewpointRail {...viewpointRail} />
+        </div>
+      ) : null}
+
+      {selectedLocationId && !viewpointRail ? (
         <div className="map3d-chrome__handoff">
           {onEnter360 ? (
             <button
@@ -386,14 +403,14 @@ export function Map3DChrome({
               </svg>
               {labels.retry}
             </button>
-          ) : (
+          ) : !viewpointRail ? (
             <div className="map3d-chrome__handoff-status" role="status">
               <span className="map3d-chrome__spinner" aria-hidden="true" />
               {labels.preparing360}
             </div>
-          )}
+          ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

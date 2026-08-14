@@ -87,8 +87,6 @@ export function DestinationPanel({
   return (
     <div className="destination-panel">
       <header className="destination-panel__header">
-        <h2 className="destination-panel__title">{copy.title}</h2>
-
         <div className="destination-panel__search">
           <span className="destination-panel__search-icon" aria-hidden="true">
             <SearchIcon />

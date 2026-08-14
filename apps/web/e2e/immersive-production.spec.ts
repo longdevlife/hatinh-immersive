@@ -146,7 +146,7 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
   await expect(page.locator('[data-testid="immersive-renderer-slot"]')).toHaveCount(0);
 });
 
-test('loads the public journey through the manifest REST path', async ({ page }) => {
+test('loads the public selected-3D journey through the manifest REST path', async ({ page }) => {
   let manifestRequestUrl = '';
   await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
     manifestRequestUrl = route.request().url();
@@ -162,18 +162,11 @@ test('loads the public journey through the manifest REST path', async ({ page })
   await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
   expect(manifestRequestUrl).toContain('locale=vi');
 
-  await page.getByRole('button', { name: 'Khám phá 360°' }).first().click();
-  await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
-
-  await page
-    .getByRole('navigation', { name: 'Danh sách cảnh quan' })
-    .getByRole('button')
-    .nth(1)
-    .click();
-  await expect(page.getByRole('heading', { name: 'Sân trung tâm' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
 });
 
-test('keeps selected 3D scoped to its destination before round-tripping through 360', async ({
+test('keeps selected 3D scoped to its destination without a generic 360 handoff', async ({
   page,
 }) => {
   await page.route(/\/api\/v1\/destinations(?:\?.*)?$/, async (route) => {
@@ -212,20 +205,6 @@ test('keeps selected 3D scoped to its destination before round-tripping through 
   await expect(renderer).toHaveAttribute('data-e2e-map3d-mount-count', initialMountCount!);
   await expect(renderer).toHaveAttribute('data-e2e-map3d-destroy-count', '0');
 
-  await page.getByRole('button', { name: 'Khám phá 360°' }).click();
-  await expect(page).toHaveURL(
-    /\/explore\/son-trang-co-dam\/immersive\?mode=panorama&location=destination-01&scene=scene-01&h=0&p=0&fov=90$/,
-  );
-  await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
-
-  await page.getByRole('button', { name: `Quay lại ${manifest.destination.name}` }).click();
-  await expect(page).toHaveURL(/\/explore\/son-trang-co-dam$/);
-  await expect(page.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: manifest.destination.name })).toBeVisible();
-  await expect(page.locator('[data-testid="immersive-renderer-slot"]')).toHaveCount(0);
-
-  await page.reload();
-  await expect(page.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: manifest.destination.name })).toBeVisible();
-  await expect(page).toHaveURL(/\/explore\/son-trang-co-dam$/);
+  await expect(page.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
 });

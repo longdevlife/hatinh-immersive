@@ -115,6 +115,30 @@ describe('Map3DChrome', () => {
     expect(screen.getByRole('status', { name: '' })).toHaveTextContent('360° đang được chuẩn bị');
   });
 
+  it('does not render a generic destination 360 handoff when the local rail is active', () => {
+    const onEnter360 = vi.fn();
+
+    render(
+      <Map3DChrome
+        selectedLocationId="gate"
+        onEnter360={onEnter360}
+        viewpointRail={{
+          anchors: [
+            { id: 'gate', label: 'Cổng', hasPanorama: true },
+            { id: 'culture', label: 'Văn hóa', hasPanorama: false },
+          ],
+          selectedAnchorId: 'gate',
+          isTransitioning: false,
+          onSelectAnchor: vi.fn(),
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(onEnter360).not.toHaveBeenCalled();
+  });
+
   it('hides 360 handoff entirely if no location is selected', () => {
     render(<Map3DChrome selectedLocationId={null} onEnter360={vi.fn()} />);
 

@@ -47,7 +47,7 @@ export interface ImmersiveNavigationState extends SceneTransitionState {
 
 export interface ImmersiveNavigationActions {
   enterOverview(destinationId: string, location?: Map3DLocation): void;
-  selectLocation(location: Map3DLocation): void;
+  selectLocation(location: Map3DLocation, destinationId?: string): void;
   enterPanorama(sceneId: string): void;
   updateView(view: Partial<NavigationView>): void;
   navigateToScene(sceneId: string): number | null;

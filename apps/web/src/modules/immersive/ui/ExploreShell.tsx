@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 import type { ImmersiveActions, ImmersiveLocale, ImmersiveViewVm } from '../../../shared/contracts';
-import { Map3DChrome, type Map3DChromeLocation } from '../../map3d';
+import {
+  Map3DChrome,
+  type Map3DChromeLocation,
+  type Selected3DViewpointRailProps,
+} from '../../map3d';
 import { MinimapViewport, type MinimapEnginePort } from '../../minimap';
 
 import { RendererState } from './RendererState';
@@ -45,6 +49,7 @@ export interface ExploreShellProps {
   onLocationSelected?: (locationId: string) => void;
   rendererContent?: ReactNode;
   selectedLocationId?: string | null;
+  selected3DViewpointRail?: Selected3DViewpointRailProps;
 }
 
 function MapLauncherIcon() {
@@ -136,9 +141,11 @@ export function ExploreShell({
   onLanguageToggle,
   onLocationSelected,
   selectedLocationId = null,
+  selected3DViewpointRail,
 }: ExploreShellProps) {
   const isPanorama = view.mode === 'panorama';
   const hasMap3DChrome = !isPanorama && map3dLocations !== undefined;
+  const hasScopedSelected3D = selected3DViewpointRail !== undefined;
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(readMinimapCollapsedPreference);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -272,13 +279,16 @@ export function ExploreShell({
               locations={map3dLocations ?? []}
               networkQuality={view.networkQuality}
               selectedLocationId={selectedLocationId}
+              {...(selected3DViewpointRail ? { viewpointRail: selected3DViewpointRail } : {})}
               showLocationBrowser={showLocationBrowser}
               destinationLabel={view.destination.name}
               onShare={() => void shareLocation()}
               onShowInfo={openInfo}
               onReturnToDestination={actions.onReturnToDestination}
               onToggleFullscreen={() => void toggleFullscreen()}
-              {...(canEnterPanorama ? { onEnter360: () => actions.onEnterPanorama() } : {})}
+              {...(canEnterPanorama && !selected3DViewpointRail
+                ? { onEnter360: () => actions.onEnterPanorama() }
+                : {})}
               {...(onLanguageToggle ? { onLanguageToggle } : {})}
               {...(onLocationSelected ? { onLocationSelected } : {})}
             >
@@ -308,7 +318,7 @@ export function ExploreShell({
           fallbackLabel={isPanorama ? `Quay lại ${view.destination.name}` : 'Mở trải nghiệm 360°'}
           returnLabel={`Quay lại ${view.destination.name}`}
           isTransitioning={isPanorama && isSceneTransitioning}
-          showFallback={isPanorama || canEnterPanorama}
+          showFallback={isPanorama || (!hasScopedSelected3D && canEnterPanorama)}
           {...(isPanorama ? {} : { onReturnToDestination: actions.onReturnToDestination })}
         />
       </section>

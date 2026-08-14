@@ -6,7 +6,9 @@ import {
   createLazyGoogleMaps3DEngine,
   FakeMap3DEngine,
   LazyMap3DViewport,
+  toDestinationMap3DLocations,
   type Map3DEnginePort,
+  type Selected3DAnchor,
 } from '../../map3d';
 import {
   createLazyPhotoSphereViewerEngine,
@@ -49,6 +51,10 @@ import { resolveRendererModes } from '../lib/renderer-mode';
 import { useImmersiveNavigation } from '../model/navigation.store';
 import { DEFAULT_NAVIGATION_VIEW } from '../model/navigation.view';
 import type { ActiveRenderer, ImmersiveNavigationState } from '../model/navigation.types';
+import {
+  resolvePublicSelected3DAnchors,
+  type Selected3DAnchorSource,
+} from '../model/selected-3d-anchor-source';
 
 export interface ImmersiveExperienceFactories {
   createMap3DEngine(): Promise<Map3DEnginePort>;
@@ -60,7 +66,11 @@ export interface ImmersiveExperienceProps {
   destinations?: DestinationPreviewVm[];
   factories?: ImmersiveExperienceFactories;
   manifest?: ImmersiveManifestVm;
+  selected3DAnchors?: readonly Selected3DAnchor[];
+  selected3DAnchorSource?: Selected3DAnchorSource;
 }
+
+const EMPTY_SELECTED_3D_ANCHORS: readonly Selected3DAnchor[] = [];
 
 type ActiveEngine = Map3DEnginePort | PanoramaEnginePort;
 
@@ -272,6 +282,7 @@ interface RendererHostProps {
   locations: Map3DLocation[];
   mode: ImmersiveMode;
   onHotspotSelect(hotspotId: string): void;
+  onCameraTransitionChange(isTransitioning: boolean): void;
   onLocationSelected(locationId: string): void;
   onNodeChange(nodeId: string, view: PanoramaView): void;
   onStatusChange(status: RendererStatus): void;
@@ -290,6 +301,7 @@ function RendererHost({
   locations,
   mode,
   onHotspotSelect,
+  onCameraTransitionChange,
   onLocationSelected,
   onNodeChange,
   onStatusChange,
@@ -311,6 +323,7 @@ function RendererHost({
           engine={engine as Map3DEnginePort}
           locations={locations}
           onLocationSelected={onLocationSelected}
+          onCameraTransitionChange={onCameraTransitionChange}
           onStatusChange={onStatusChange}
           {...(cameraPreset ? { cameraPreset } : {})}
         />
@@ -443,6 +456,8 @@ export function ImmersiveExperience({
   destinations: destinationsOverride,
   factories,
   manifest: manifestOverride,
+  selected3DAnchors = EMPTY_SELECTED_3D_ANCHORS,
+  selected3DAnchorSource = 'none',
 }: ImmersiveExperienceProps) {
   const { destinationSlug: routeDestinationSlug } = useParams<{ destinationSlug: string }>();
   const location = useLocation();
@@ -450,6 +465,7 @@ export function ImmersiveExperience({
   const destinationSlug = routeDestinationSlug ?? 'son-trang-co-dam';
   const navigation = useImmersiveNavigation();
   const [locale, setLocale] = useState<ImmersiveLocale>('vi');
+  const [isCameraTransitioning, setIsCameraTransitioning] = useState(false);
   const [destinationSearchQuery, setDestinationSearchQuery] = useState('');
   const manifestQuery = useImmersiveManifest(destinationSlug, locale, !manifestOverride);
   const shouldFetchDestinations =
@@ -458,13 +474,38 @@ export function ImmersiveExperience({
   const destinationsQuery = useImmersiveDestinations(locale, shouldFetchDestinations);
   const destinations = destinationsOverride ?? destinationsQuery.data;
   const manifest = manifestOverride ?? manifestQuery.data;
+  const composedSelected3DAnchors = useMemo(
+    () =>
+      selected3DAnchors.length > 0
+        ? selected3DAnchors
+        : manifest
+          ? resolvePublicSelected3DAnchors(
+              { id: manifest.destination.id, slug: manifest.destination.slug },
+              selected3DAnchorSource,
+            )
+          : EMPTY_SELECTED_3D_ANCHORS,
+    [manifest, selected3DAnchorSource, selected3DAnchors],
+  );
   const requestedMode = new URLSearchParams(location.search).get('mode');
   const isDestinationScopedSelected3D = requestedMode === 'overview3d';
-  const mapLocations = useMemo(
+  const destinationAnchors = useMemo(
     () =>
-      manifest ? mergeMapLocations(manifest, destinations, isDestinationScopedSelected3D) : [],
-    [destinations, isDestinationScopedSelected3D, manifest],
+      manifest
+        ? composedSelected3DAnchors.filter(
+            (anchor) => anchor.destinationId === manifest.destination.id,
+          )
+        : [],
+    [composedSelected3DAnchors, manifest],
   );
+  const mapLocations = useMemo(() => {
+    if (!manifest) {
+      return [];
+    }
+    if (isDestinationScopedSelected3D && destinationAnchors.length > 0) {
+      return toDestinationMap3DLocations(destinationAnchors, manifest.destination.id);
+    }
+    return mergeMapLocations(manifest, destinations, isDestinationScopedSelected3D);
+  }, [destinationAnchors, destinations, isDestinationScopedSelected3D, manifest]);
   const routeLocation = useMemo(
     () =>
       mapLocations.find((location) => location.id === manifest?.destination.id) ??
@@ -511,13 +552,17 @@ export function ImmersiveExperience({
 
     const current = useImmersiveNavigation.getState();
     const selectedLocation =
-      mapLocations.find((candidate) => candidate.id === deepLink.locationId) ?? routeLocation;
+      mapLocations.find((candidate) => candidate.id === deepLink.locationId) ??
+      (deepLink.mode === 'overview3d' ? mapLocations[0] : routeLocation);
     const sceneId = resolveSceneId(manifest, deepLink.sceneId);
 
     if (deepLink.mode === 'overview3d') {
       if (selectedLocation) {
         if (current.selectedLocationId !== selectedLocation.id || current.mode !== 'overview3d') {
-          current.selectLocation(selectedLocation);
+          current.selectLocation(selectedLocation, manifest.destination.id);
+        }
+        if (deepLink.locationId !== selectedLocation.id) {
+          writeDeepLink(navigate, destinationSlug, true);
         }
       } else if (
         current.destinationId !== manifest.destination.id ||
@@ -603,15 +648,11 @@ export function ImmersiveExperience({
   const selectLocation = useCallback(
     (locationId: string) => {
       const locationToSelect = mapLocations.find((candidate) => candidate.id === locationId);
-      const destination =
-        destinations.find((candidate) => candidate.id === locationId) ??
-        (manifest?.destination.id === locationId ? manifest.destination : undefined);
-
-      if (!locationToSelect || !destination) {
+      if (!locationToSelect || !manifest) {
         return;
       }
 
-      useImmersiveNavigation.getState().selectLocation(locationToSelect);
+      useImmersiveNavigation.getState().selectLocation(locationToSelect, manifest.destination.id);
       navigate(
         encodeImmersiveDeepLink({
           destinationSlug,
@@ -622,7 +663,7 @@ export function ImmersiveExperience({
         }),
       );
     },
-    [destinationSlug, destinations, manifest, mapLocations, navigate],
+    [destinationSlug, manifest, mapLocations, navigate],
   );
 
   const onReturnToDestination = useCallback(() => {
@@ -778,10 +819,46 @@ export function ImmersiveExperience({
   const selectedDestination =
     destinations.find((candidate) => candidate.id === navigation.selectedLocationId) ??
     manifest.destination;
-  const canEnterSelectedPanorama =
+  const selectedAnchor = destinationAnchors.find(
+    (anchor) => anchor.id === navigation.selectedLocationId,
+  );
+  const hasDestinationScopedSelected3D =
+    isDestinationScopedSelected3D && destinationAnchors.length > 0;
+  const selectedAnchorHasPanorama = Boolean(
+    selectedAnchor?.panoramaSceneId &&
+    manifest.panoramaNodes.some((node) => node.id === selectedAnchor.panoramaSceneId),
+  );
+  const canEnterDestinationPanorama =
     selectedDestination.defaultSceneId !== null &&
     (selectedDestination.id !== manifest.destination.id ||
       manifest.panoramaNodes.some((node) => node.id === selectedDestination.defaultSceneId));
+  const canEnterSelectedPanorama = hasDestinationScopedSelected3D
+    ? selectedAnchorHasPanorama
+    : canEnterDestinationPanorama;
+  const selected3DViewpointRail = hasDestinationScopedSelected3D
+    ? {
+        anchors: destinationAnchors.map((anchor) => ({
+          id: anchor.id,
+          label: anchor.label,
+          ...(anchor.shortLabel ? { shortLabel: anchor.shortLabel } : {}),
+          hasPanorama:
+            Boolean(anchor.panoramaSceneId) &&
+            manifest.panoramaNodes.some((node) => node.id === anchor.panoramaSceneId),
+        })),
+        selectedAnchorId: selectedAnchor?.id ?? destinationAnchors[0]?.id ?? '',
+        isTransitioning: isCameraTransitioning,
+        onSelectAnchor: selectLocation,
+        onOpenPanorama: (anchorId: string) => {
+          const anchor = destinationAnchors.find((candidate) => candidate.id === anchorId);
+          if (
+            anchor?.panoramaSceneId &&
+            manifest.panoramaNodes.some((node) => node.id === anchor.panoramaSceneId)
+          ) {
+            onEnterPanorama(anchor.panoramaSceneId);
+          }
+        },
+      }
+    : undefined;
 
   const currentPanoramaNode =
     manifest.panoramaNodes.find(
@@ -814,6 +891,7 @@ export function ImmersiveExperience({
       locations={mapLocations}
       mode={navigation.mode}
       onHotspotSelect={actions.onSelectHotspot}
+      onCameraTransitionChange={setIsCameraTransitioning}
       onLocationSelected={selectLocation}
       onNodeChange={onRendererNodeChange}
       onStatusChange={(status) => {
@@ -868,6 +946,7 @@ export function ImmersiveExperience({
         showLocationBrowser={!isDestinationScopedSelected3D}
         rendererContent={rendererContent}
         selectedLocationId={navigation.selectedLocationId}
+        {...(selected3DViewpointRail ? { selected3DViewpointRail } : {})}
         view={view}
       />
       {navigation.mode === 'panorama' ? (

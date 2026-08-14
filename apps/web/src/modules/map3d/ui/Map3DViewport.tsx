@@ -14,6 +14,7 @@ export interface Map3DViewportProps {
   fallback?: ReactNode;
   locations?: Map3DLocation[];
   onLocationSelected?: (locationId: string) => void;
+  onCameraTransitionChange?: (isTransitioning: boolean) => void;
   onStatusChange?: (status: RendererStatus) => void;
   model?: ModelPlacement;
   cameraPreset?: LocationCameraPreset;
@@ -24,12 +25,14 @@ export function Map3DViewport({
   fallback = <p role="alert">Không thể mở không gian 3D.</p>,
   locations,
   onLocationSelected,
+  onCameraTransitionChange,
   onStatusChange,
   model,
   cameraPreset,
 }: Map3DViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onLocationSelectedRef = useRef(onLocationSelected);
+  const onCameraTransitionChangeRef = useRef(onCameraTransitionChange);
   const onStatusChangeRef = useRef(onStatusChange);
   const mountPromiseRef = useRef<Promise<void> | null>(null);
   const operationQueueRef = useRef<Promise<void> | null>(null);
@@ -37,6 +40,7 @@ export function Map3DViewport({
   const [status, setStatus] = useState<RendererStatus>('loading');
 
   onLocationSelectedRef.current = onLocationSelected;
+  onCameraTransitionChangeRef.current = onCameraTransitionChange;
   onStatusChangeRef.current = onStatusChange;
 
   useEffect(() => {
@@ -145,7 +149,12 @@ export function Map3DViewport({
           return;
         }
 
-        return engine.flyTo(cameraPreset);
+        onCameraTransitionChangeRef.current?.(true);
+        return engine.flyTo(cameraPreset).finally(() => {
+          if (!cancelled && mountedEngineRef.current === engine) {
+            onCameraTransitionChangeRef.current?.(false);
+          }
+        });
       })
       .catch(() => {
         if (!cancelled) {

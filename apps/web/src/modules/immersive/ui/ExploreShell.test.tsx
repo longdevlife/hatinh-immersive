@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { beforeEach, vi } from 'vitest';
 
 import type { ImmersiveActions } from '../../../shared/contracts';
@@ -180,6 +181,61 @@ describe('ExploreShell', () => {
 
     expect(onLocationSelected).toHaveBeenCalledWith('destination-02');
     expect(actions.onEnterPanorama).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not expose destination-level 360 handoff beside a local viewpoint rail', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d' }}
+        actions={actions}
+        canEnterPanorama
+        map3dLocations={[{ id: 'destination-01', label: 'Sơn Trang Cổ Đạm' }]}
+        selectedLocationId="son-trang-gate"
+        selected3DViewpointRail={{
+          anchors: [{ id: 'son-trang-gate', label: 'Cổng', hasPanorama: true }],
+          selectedAnchorId: 'son-trang-gate',
+          isTransitioning: false,
+          onSelectAnchor: vi.fn(),
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
+    expect(actions.onEnterPanorama).not.toHaveBeenCalled();
+  });
+
+  it('does not expose a generic 360 fallback when scoped 3D fails beside the local rail', () => {
+    const actions = createActions();
+
+    render(
+      <ExploreShell
+        view={{ ...readyImmersiveViewFixture, mode: 'overview3d', rendererStatus: 'error' }}
+        actions={actions}
+        canEnterPanorama
+        map3dLocations={[{ id: 'destination-01', label: 'Sơn Trang Cổ Đạm' }]}
+        selectedLocationId="son-trang-gate"
+        selected3DViewpointRail={{
+          anchors: [{ id: 'son-trang-gate', label: 'Cổng', hasPanorama: true }],
+          selectedAnchorId: 'son-trang-gate',
+          isTransitioning: false,
+          onSelectAnchor: vi.fn(),
+          onOpenPanorama: vi.fn(),
+        }}
+      />,
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toBeInTheDocument();
+    expect(
+      within(alert).queryByRole('button', { name: 'Mở trải nghiệm 360°' }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(alert).getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mở 360° cho Cổng' })).toBeInTheDocument();
   });
 
   it('moves focus into the information sheet when it opens', async () => {

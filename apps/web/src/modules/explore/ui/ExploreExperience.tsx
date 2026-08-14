@@ -178,15 +178,14 @@ export function ExploreExperience({
   }
 
   return (
-    <main className="explore-experience" aria-labelledby="explore-title">
-      <header className="explore-experience__header">
-        <p className="eyebrow">Hà Tĩnh / Explore</p>
-        <h1 id="explore-title">Khám phá Hà Tĩnh</h1>
-        <p>Chọn một điểm đến để bắt đầu hành trình của bạn.</p>
-      </header>
-
+    <main className="explore-experience" aria-label="Khám phá Hà Tĩnh">
       <div className="explore-experience__layout" data-explore-mode={exploreMode}>
         <section className="explore-experience__destinations" aria-label="Danh sách điểm đến">
+          <header className="explore-experience__header">
+            <p className="eyebrow">Hà Tĩnh / Explore</p>
+            <h1 id="explore-title">Khám phá Hà Tĩnh</h1>
+            <p>Chọn một điểm đến để bắt đầu hành trình của bạn.</p>
+          </header>
           {destinationsQuery.isLoading && destinationsOverride === undefined ? (
             <p role="status">Đang tải điểm đến…</p>
           ) : destinationsQuery.isError && destinationsOverride === undefined ? (
