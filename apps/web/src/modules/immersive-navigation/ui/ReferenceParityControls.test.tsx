@@ -88,7 +88,7 @@ function createMockActions(
     onToggleNarration: vi.fn(),
     onToggleAutoTour: vi.fn(),
     onRetry: vi.fn(),
-    onShare: vi.fn(),
+    onShare: vi.fn().mockResolvedValue('copied'),
     onFullscreen: vi.fn(),
     ...overrides,
   };

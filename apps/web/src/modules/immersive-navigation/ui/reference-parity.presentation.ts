@@ -7,6 +7,7 @@ import type {
 } from '../../../shared/contracts';
 import type { ImmersiveAudioState } from '../../immersive-audio';
 import { getPanoramaTourSceneRole, isPanoramaSceneUsable } from '../../panorama-tour';
+import type { ImmersiveShareResult } from '../model/reference-parity.actions';
 
 export interface ReferenceParitySceneVm {
   id: string;
@@ -61,7 +62,7 @@ export interface ReferenceParityPresentationActions {
   onToggleNarration(): void;
   onToggleAutoTour(): void;
   onRetry(): void;
-  onShare(): void;
+  onShare(): Promise<ImmersiveShareResult>;
   onFullscreen(): void;
 }
 

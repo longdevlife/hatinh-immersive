@@ -82,6 +82,7 @@ import {
 } from '../../panorama-tour';
 import { createBrowserAudioAdapter, ImmersiveAudioController } from '../../immersive-audio';
 import { AutoTourController } from '../model/auto-tour.controller';
+import { shareImmersiveScene, toggleImmersiveFullscreen } from '../model/reference-parity.actions';
 
 export interface ImmersiveExperienceFactories {
   createMap3DEngine(): Promise<Map3DEnginePort>;
@@ -1266,8 +1267,20 @@ export function ImmersiveExperience({
       onToggleNarration,
       onToggleAutoTour,
       onRetry: onRetryRenderer,
-      onShare: () => undefined,
-      onFullscreen: () => undefined,
+      onShare: () =>
+        shareImmersiveScene({
+          title: manifest.destination.name,
+          url: window.location.href,
+          ...(typeof navigator.share === 'function'
+            ? { share: (data) => navigator.share(data) }
+            : {}),
+          ...(navigator.clipboard
+            ? { copy: (text: string) => navigator.clipboard.writeText(text) }
+            : {}),
+        }),
+      onFullscreen: () => {
+        void toggleImmersiveFullscreen(document);
+      },
     }),
     [
       onNavigateScene,
@@ -1280,6 +1293,7 @@ export function ImmersiveExperience({
       onEnableAudio,
       onToggleMinimap,
       onToggleNarration,
+      manifest,
     ],
   );
   const rendererContent = (

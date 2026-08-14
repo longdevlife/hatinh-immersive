@@ -36,24 +36,16 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
   const hasAudioSources = vm.audio.ambientAvailable || vm.audio.narrationAvailable;
 
   const handleShare = () => {
-    actions.onShare();
-    if (navigator.clipboard) {
-      void navigator.clipboard.writeText(window.location.href).then(() => {
+    void actions.onShare().then((result) => {
+      if (result === 'copied') {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
-      });
-    }
+      }
+    });
   };
 
   const handleFullscreen = () => {
     actions.onFullscreen();
-    if (!document.fullscreenElement) {
-      if (document.documentElement.requestFullscreen) {
-        void document.documentElement.requestFullscreen().then(() => setIsFullscreen(true));
-      }
-    } else if (document.exitFullscreen) {
-      void document.exitFullscreen().then(() => setIsFullscreen(false));
-    }
   };
 
   // Truthful Unavailable Composition: exactly one card, one Back action, no rail, no minimap, no directional actions
