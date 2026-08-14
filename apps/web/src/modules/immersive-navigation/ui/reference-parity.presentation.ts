@@ -56,6 +56,7 @@ export interface ReferenceParityPresentationActions {
   onSelectHotspot(hotspotId: string): void;
   onToggleMinimap(): void;
   onToggleMasterMute(): void;
+  onEnableAudio(): void;
   onToggleAmbient(): void;
   onToggleNarration(): void;
   onToggleAutoTour(): void;

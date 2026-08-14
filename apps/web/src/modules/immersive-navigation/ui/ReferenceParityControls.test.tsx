@@ -83,6 +83,7 @@ function createMockActions(
     onSelectHotspot: vi.fn(),
     onToggleMinimap: vi.fn(),
     onToggleMasterMute: vi.fn(),
+    onEnableAudio: vi.fn(),
     onToggleAmbient: vi.fn(),
     onToggleNarration: vi.fn(),
     onToggleAutoTour: vi.fn(),
@@ -253,5 +254,80 @@ describe('ReferenceParityControls', () => {
     const fsBtn = screen.getByRole('button', { name: 'Toàn màn hình' });
     fireEvent.click(fsBtn);
     expect(actions.onFullscreen).toHaveBeenCalled();
+  });
+
+  it('syncs fullscreen button state on document fullscreenchange', () => {
+    const actions = createMockActions();
+    const vm = createMockVm();
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
+    const fsBtn = screen.getByRole('button', { name: 'Toàn màn hình' });
+    expect(fsBtn).toHaveAttribute('aria-pressed', 'false');
+
+    // Simulate browser fullscreen change
+    Object.defineProperty(document, 'fullscreenElement', {
+      value: document.documentElement,
+      configurable: true,
+    });
+    fireEvent(document, new Event('fullscreenchange'));
+
+    expect(screen.getByRole('button', { name: 'Thoát toàn màn hình' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+
+    // Simulate exit fullscreen
+    Object.defineProperty(document, 'fullscreenElement', {
+      value: null,
+      configurable: true,
+    });
+    fireEvent(document, new Event('fullscreenchange'));
+
+    expect(screen.getByRole('button', { name: 'Toàn màn hình' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
+  it('renders audio prompt affordance when autoplayBlocked is true and genuine audio sources exist', () => {
+    const actions = createMockActions();
+    const vm = createMockVm({
+      audio: {
+        ambientAvailable: true,
+        narrationAvailable: false,
+        masterMuted: false,
+        ambientEnabled: true,
+        narrationEnabled: false,
+        narrationPlaying: false,
+        autoplayBlocked: true,
+      },
+    });
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
+    const promptBtn = screen.getByRole('button', { name: 'Bật âm thanh trải nghiệm' });
+    expect(promptBtn).toBeInTheDocument();
+    fireEvent.click(promptBtn);
+    expect(actions.onEnableAudio).toHaveBeenCalled();
+  });
+
+  it('does not render audio prompt when autoplayBlocked is true but no audio sources exist', () => {
+    const actions = createMockActions();
+    const vm = createMockVm({
+      audio: {
+        ambientAvailable: false,
+        narrationAvailable: false,
+        masterMuted: false,
+        ambientEnabled: false,
+        narrationEnabled: false,
+        narrationPlaying: false,
+        autoplayBlocked: true,
+      },
+    });
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
+    expect(screen.queryByRole('button', { name: /Bật âm thanh/i })).not.toBeInTheDocument();
   });
 });

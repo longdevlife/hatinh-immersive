@@ -1,4 +1,4 @@
-import { useMemo, useState, type FC } from 'react';
+import { useEffect, useMemo, useState, type FC } from 'react';
 
 import type {
   ReferenceParityPresentationActions,
@@ -21,10 +21,19 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Sync fullscreen state with browser fullscreenchange/Escape
+  useEffect(() => {
+    const syncFullscreenState = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener('fullscreenchange', syncFullscreenState);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreenState);
+  }, []);
+
   const currentScene = useMemo<ReferenceParitySceneVm | null>(
     () => vm.scenes.find((scene) => scene.isCurrent) ?? null,
     [vm.scenes],
   );
+
+  const hasAudioSources = vm.audio.ambientAvailable || vm.audio.narrationAvailable;
 
   const handleShare = () => {
     actions.onShare();
@@ -47,7 +56,7 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
     }
   };
 
-  // Truthful Unavailable Composition: exactly one message, one Back action, no rail, no minimap, no directional actions
+  // Truthful Unavailable Composition: exactly one card, one Back action, no rail, no minimap, no directional actions
   if (vm.mediaUnavailable) {
     return (
       <div
@@ -118,8 +127,35 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
 
       {/* Top-Right Restrained Utilities (Audio, Auto Tour, Minimap, Share, Fullscreen) */}
       <div className="panorama-controls__utilities reference-parity__utilities">
-        {/* Master Mute / Sound toggle (truthful: only if audio tracks available) */}
-        {vm.audio.ambientAvailable || vm.audio.narrationAvailable ? (
+        {/* Autoplay blocked audio prompt (truthful: only shown when genuine audio sources exist) */}
+        {vm.audio.autoplayBlocked && hasAudioSources ? (
+          <button
+            type="button"
+            className="panorama-control reference-parity__audio-prompt"
+            onClick={actions.onEnableAudio}
+            aria-label="Bật âm thanh trải nghiệm"
+            title="Bật âm thanh trải nghiệm"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+            </svg>
+            <span>Bật âm thanh</span>
+          </button>
+        ) : null}
+
+        {/* Master Mute / Sound toggle (truthful: only if genuine audio tracks available) */}
+        {hasAudioSources ? (
           <button
             type="button"
             className="panorama-control reference-parity__audio-btn"
