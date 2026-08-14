@@ -26,10 +26,12 @@ describe('panorama tour source boundary', () => {
   });
 
   it('does not inject demo scenes into API/none composition or other destinations', () => {
-    const sonTrang = getDemoManifest('son-trang-co-dam');
-    const thienCam = getDemoManifest('bien-thien-cam');
+    const sonTrang = getDemoManifest('son-trang-co-dam', 'public');
+    const thienCam = getDemoManifest('bien-thien-cam', 'public');
 
-    expect(composePanoramaTourManifest(sonTrang, 'none').panoramaNodes).toHaveLength(1);
+    expect(composePanoramaTourManifest(sonTrang, 'none').panoramaNodes).toEqual(
+      sonTrang.panoramaNodes,
+    );
     expect(composePanoramaTourManifest(thienCam, 'demo').panoramaNodes).toHaveLength(3);
     expect(composePanoramaTourManifest(sonTrang, 'demo').panoramaNodes).toHaveLength(8);
     expect(
@@ -45,6 +47,35 @@ describe('panorama tour source boundary', () => {
 
     expect(synthetic.panoramaNodes.every((node) => node.mediaQuality === 'ready')).toBe(true);
     expect(synthetic.panoramaNodes.every((node) => node.mediaRights === 'demo-only')).toBe(true);
+  });
+
+  it('composes an explicit multi-scene demo tour for every primary destination', () => {
+    for (const slug of [
+      'bien-thien-cam',
+      'son-trang-co-dam',
+      'khu-luu-niem-nguyen-du',
+      'nga-ba-dong-loc',
+    ]) {
+      const publicManifest = composePanoramaTourManifest(
+        getDemoManifest(slug, 'public'),
+        'demo',
+        'public',
+      );
+      const syntheticManifest = composePanoramaTourManifest(
+        getDemoManifest(slug, 'public'),
+        'demo',
+        'synthetic',
+      );
+
+      expect(publicManifest.nodes.length).toBeGreaterThan(1);
+      expect(syntheticManifest.panoramaNodes.length).toBeGreaterThan(1);
+      expect(syntheticManifest.panoramaNodes.every((node) => node.mediaQuality === 'ready')).toBe(
+        true,
+      );
+      expect(
+        syntheticManifest.panoramaNodes.every((node) => node.mediaRights === 'demo-only'),
+      ).toBe(true);
+    }
   });
 
   it('keeps API destination identity while canonicalizing the explicit demo entry scene', () => {

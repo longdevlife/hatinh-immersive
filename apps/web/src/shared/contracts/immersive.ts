@@ -43,12 +43,26 @@ export interface SceneLinkVm {
 export interface HotspotVm {
   id: string;
   sceneId?: string;
-  type: 'information' | 'media' | 'audio' | 'external';
+  type: 'information' | 'media' | 'audio' | 'scene-navigation' | 'external';
   yaw: number;
   pitch: number;
   label: string | null;
   content?: string | null;
   mediaUrl?: string | null;
+  targetSceneId?: string | null;
+  audioTrackId?: string | null;
+}
+
+export type ImmersiveAudioTrackType = 'ambient' | 'narration';
+
+export type ImmersiveAudioRights = 'customer-owned' | 'licensed' | 'demo-only';
+
+export interface ImmersiveAudioTrack {
+  id: string;
+  type: ImmersiveAudioTrackType;
+  label: string;
+  src: string | null;
+  rights: ImmersiveAudioRights;
 }
 
 export interface ImmersiveViewVm {
@@ -144,6 +158,9 @@ export interface PanoramaLink {
 export interface PanoramaNode {
   id: string;
   name?: string;
+  destinationSlug?: string;
+  thumbnailUrl?: string | null;
+  role?: 'major-stop' | 'connector';
   panoramaUrl: string;
   previewUrl: string | null;
   /**
@@ -152,6 +169,8 @@ export interface PanoramaNode {
    */
   mediaQuality?: PanoramaMediaQuality;
   mediaRights?: PanoramaMediaRights;
+  ambientTrackId?: string | null;
+  narrationTrackId?: string | null;
   lat: number;
   lng: number;
   initialView: PanoramaView;

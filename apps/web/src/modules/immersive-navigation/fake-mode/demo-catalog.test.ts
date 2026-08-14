@@ -47,11 +47,10 @@ describe('Hà Tĩnh demo catalog', () => {
       const nodeIds = new Set(manifest.nodes.map(({ id }) => id));
 
       expect(manifest.destination.slug).toBe(preview.slug);
+      expect(manifest.nodes.length).toBeGreaterThan(1);
       expect(manifest.defaultSceneId).not.toBeNull();
       expect(nodeIds).toContain(manifest.defaultSceneId);
-      expect(manifest.panoramaNodes.map(({ id }) => id)).toEqual(
-        expect.arrayContaining([...nodeIds]),
-      );
+      expect(manifest.panoramaNodes.every(({ id }) => nodeIds.has(id))).toBe(true);
       for (const link of manifest.links) {
         expect(link.sourceSceneId !== undefined && nodeIds.has(link.sourceSceneId)).toBe(true);
         expect(nodeIds).toContain(link.targetSceneId);
@@ -83,10 +82,13 @@ describe('Hà Tĩnh demo catalog', () => {
     for (const { preview } of DEMO_DESTINATIONS) {
       const manifest = getDemoManifest(preview.slug);
       for (const node of manifest.panoramaNodes) {
-        expect(node.panoramaUrl).toBe(`/demo/360/${node.id}/manifest.json`);
-        expect(node.previewUrl).toBe(`/demo/360/${node.id}/preview.webp`);
+        expect(node.panoramaUrl).toMatch(/^\/demo\/360\/.*\/manifest\.json$/);
+        expect(node.previewUrl).toMatch(/^\/demo\/360\/.*\/preview\.webp$/);
 
-        const output = path.join(publicRoot, 'demo', '360', node.id);
+        const output = path.join(
+          publicRoot,
+          node.panoramaUrl.slice(1, node.panoramaUrl.lastIndexOf('/')),
+        );
         const mediaManifest = parsePanoramaManifest(
           JSON.parse(await readFile(path.join(output, 'manifest.json'), 'utf8')),
         );

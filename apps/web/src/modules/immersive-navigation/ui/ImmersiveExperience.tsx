@@ -992,10 +992,7 @@ export function ImmersiveExperience({
 
   const panoramaTourPresentation = useMemo(
     () =>
-      manifest &&
-      manifest.destination.slug === 'son-trang-co-dam' &&
-      navigation.mode === 'panorama' &&
-      panoramaTourSource === 'demo'
+      manifest && navigation.mode === 'panorama' && panoramaTourSource === 'demo'
         ? buildPanoramaTourPresentationVm({
             nodes: manifest.panoramaNodes,
             currentSceneId: navigation.committedSceneId,
