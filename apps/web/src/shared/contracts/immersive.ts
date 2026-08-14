@@ -131,8 +131,9 @@ export interface PanoramaView {
   fov: number;
 }
 
-export type PanoramaMediaAvailability =
-  'ready' | 'demo-only' | 'low-resolution' | 'missing' | 'invalid';
+export type PanoramaMediaQuality = 'ready' | 'low-resolution' | 'missing' | 'invalid';
+
+export type PanoramaMediaRights = 'customer-owned' | 'licensed' | 'demo-only';
 
 export interface PanoramaLink {
   targetNodeId: string;
@@ -146,10 +147,11 @@ export interface PanoramaNode {
   panoramaUrl: string;
   previewUrl: string | null;
   /**
-   * Media readiness is deliberately separate from scene-graph membership.
-   * A graph can be complete while a scene still has no public-quality media.
+   * Media quality is deliberately separate from scene-graph membership and
+   * rights/intended-use. A complete graph can still lack public-quality media.
    */
-  mediaAvailability?: PanoramaMediaAvailability;
+  mediaQuality?: PanoramaMediaQuality;
+  mediaRights?: PanoramaMediaRights;
   lat: number;
   lng: number;
   initialView: PanoramaView;

@@ -106,9 +106,7 @@ function toPanoramaNode(
     name: node.name,
     panoramaUrl: node.panoramaManifestUrl,
     previewUrl: node.panoramaPreviewUrl ?? derivePreviewUrl(node.panoramaManifestUrl),
-    ...(resolveMediaAvailability(node)
-      ? { mediaAvailability: resolveMediaAvailability(node) }
-      : {}),
+    ...(resolveMediaQuality(node) ? { mediaQuality: resolveMediaQuality(node) } : {}),
     lat: node.lat,
     lng: node.lng,
     initialView: {
@@ -124,9 +122,9 @@ function toPanoramaNode(
   };
 }
 
-function resolveMediaAvailability(
+function resolveMediaQuality(
   node: GetImmersiveManifest200['nodes'][number],
-): Exclude<PanoramaNode['mediaAvailability'], undefined> {
+): Exclude<PanoramaNode['mediaQuality'], undefined> {
   if (node.panoramaAssetStatus !== 'ready') {
     return node.panoramaAssetStatus === null ? 'missing' : 'invalid';
   }

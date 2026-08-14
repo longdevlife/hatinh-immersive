@@ -1,4 +1,9 @@
-import type { PanoramaNode, SceneLinkVm, SceneNodeVm } from '../../../shared/contracts';
+import type {
+  PanoramaMediaQuality,
+  PanoramaNode,
+  SceneLinkVm,
+  SceneNodeVm,
+} from '../../../shared/contracts';
 
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
 
@@ -57,7 +62,13 @@ const TOUR_SCENES = [
 
 export const SON_TRANG_PANORAMA_TOUR_SCENE_IDS = TOUR_SCENES.map(({ id }) => id);
 
-export function createDemoPanoramaTourManifest(manifest: ImmersiveManifestVm): ImmersiveManifestVm {
+export type DemoPanoramaMediaMode = 'public' | 'synthetic';
+
+export function createDemoPanoramaTourManifest(
+  manifest: ImmersiveManifestVm,
+  mediaMode: DemoPanoramaMediaMode = 'public',
+): ImmersiveManifestVm {
+  const mediaQuality: PanoramaMediaQuality = mediaMode === 'synthetic' ? 'ready' : 'low-resolution';
   const nodes: SceneNodeVm[] = TOUR_SCENES.map((scene, index) => ({
     id: scene.id,
     name: scene.name,
@@ -97,7 +108,8 @@ export function createDemoPanoramaTourManifest(manifest: ImmersiveManifestVm): I
     name: node.name,
     panoramaUrl: `/demo/360/son-trang-tour/${node.id}/manifest.json`,
     previewUrl: `/demo/360/son-trang-tour/${node.id}/preview.webp`,
-    mediaAvailability: 'demo-only',
+    mediaQuality,
+    mediaRights: 'demo-only',
     lat: node.lat,
     lng: node.lng,
     initialView: { heading: node.heading, pitch: 0, fov: 88 },

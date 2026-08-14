@@ -489,10 +489,7 @@ export function ImmersiveControlsGroup({
               <nav className="panorama-tour-rail" aria-label="Hành trình 360 Sơn Trang">
                 <ul role="list">
                   {tour.scenes.map((scene) => {
-                    const isUnavailable =
-                      scene.mediaAvailability === 'missing' ||
-                      scene.mediaAvailability === 'invalid' ||
-                      scene.mediaAvailability === 'low-resolution';
+                    const isUnavailable = scene.mediaQuality !== 'ready';
                     const isDisabled = !scene.canNavigate || tour.isTransitioning;
 
                     return (
@@ -556,7 +553,7 @@ export function ImmersiveControlsGroup({
                 className="panorama-tour-message panorama-tour-message--unavailable"
                 role="status"
               >
-                <p>Cảnh 360° hiện chưa có sẵn dữ liệu hình ảnh đạt chuẩn.</p>
+                <p>Đang cập nhật hình ảnh 360° độ phân giải cao.</p>
               </div>
             ) : null}
           </div>

@@ -224,7 +224,12 @@ function createManifest(definition: DemoDestinationDefinition): ImmersiveManifes
     name: node.name,
     panoramaUrl: `/demo/360/${node.id}/manifest.json`,
     previewUrl: `/demo/360/${node.id}/preview.webp`,
-    mediaAvailability: definition.preview.slug === 'son-trang-co-dam' ? 'demo-only' : 'ready',
+    // Fake mode uses a deterministic synthetic renderer fixture. Public
+    // panorama-tour composition applies its own low-resolution quality gate.
+    mediaQuality: 'ready',
+    ...(definition.preview.slug === 'son-trang-co-dam'
+      ? { mediaRights: 'demo-only' as const }
+      : {}),
     lat: node.lat,
     lng: node.lng,
     initialView: { heading: node.heading, pitch: 0, fov: 88 },

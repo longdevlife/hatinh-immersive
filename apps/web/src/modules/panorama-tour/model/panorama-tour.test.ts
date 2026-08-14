@@ -21,7 +21,8 @@ const nodes: PanoramaNode[] = [
     lat: 18.3421,
     lng: 105.9032,
     initialView: { heading: 0, pitch: 0, fov: 88 },
-    mediaAvailability: 'demo-only',
+    mediaQuality: 'ready',
+    mediaRights: 'demo-only',
   },
   {
     id: 'culture',
@@ -31,7 +32,7 @@ const nodes: PanoramaNode[] = [
     lat: 18.3423,
     lng: 105.9034,
     initialView: { heading: 90, pitch: 0, fov: 88 },
-    mediaAvailability: 'missing',
+    mediaQuality: 'missing',
   },
 ];
 
@@ -60,7 +61,9 @@ describe('Sơn Trang panorama tour model', () => {
     expect(getPanoramaTourLinks(nodes, [...links, staleLink])).toEqual([]);
 
     const usableNodes = nodes.map((node) =>
-      node.id === 'culture' ? { ...node, mediaAvailability: 'demo-only' as const } : node,
+      node.id === 'culture'
+        ? { ...node, mediaQuality: 'ready' as const, mediaRights: 'demo-only' as const }
+        : node,
     );
     expect(getPanoramaTourLinks(usableNodes, [...links, staleLink])).toEqual(links);
   });
@@ -68,8 +71,13 @@ describe('Sơn Trang panorama tour model', () => {
   it('sanitizes node links before renderer consumption', () => {
     const renderableNodes = [
       { ...nodes[0]!, links: [{ targetNodeId: 'missing', yaw: 10, pitch: -2 }] },
-      { ...nodes[1]!, mediaAvailability: 'demo-only' as const, links: [] },
-      { ...nodes[1]!, id: 'missing', mediaAvailability: 'missing' as const, links: [] },
+      {
+        ...nodes[1]!,
+        mediaQuality: 'ready' as const,
+        mediaRights: 'demo-only' as const,
+        links: [],
+      },
+      { ...nodes[1]!, id: 'missing', mediaQuality: 'missing' as const, links: [] },
     ];
 
     expect(getPanoramaRenderableNodes(renderableNodes)).toEqual([
@@ -93,7 +101,9 @@ describe('Sơn Trang panorama tour model', () => {
 
   it('resolves valid, invalid and missing deep-linked scenes deterministically', () => {
     const usableNodes = nodes.map((node) =>
-      node.id === 'culture' ? { ...node, mediaAvailability: 'demo-only' as const } : node,
+      node.id === 'culture'
+        ? { ...node, mediaQuality: 'ready' as const, mediaRights: 'demo-only' as const }
+        : node,
     );
 
     expect(resolveTourSceneId(usableNodes, 'gate', 'culture')).toBe('culture');
@@ -110,12 +120,24 @@ describe('Sơn Trang panorama tour model', () => {
     expect(isPanoramaSceneUsable(nodes[1]!)).toBe(false);
   });
 
+  it('does not make low-resolution demo media publicly navigable', () => {
+    expect(
+      isPanoramaSceneUsable({
+        ...nodes[0]!,
+        mediaQuality: 'low-resolution',
+        mediaRights: 'demo-only',
+      }),
+    ).toBe(false);
+  });
+
   it('accepts only a linked, usable directional target', () => {
     expect(resolveTourNavigationTarget(nodes, links, 'gate', 'culture')).toBeNull();
     expect(
       resolveTourNavigationTarget(
         nodes.map((node) =>
-          node.id === 'culture' ? { ...node, mediaAvailability: 'demo-only' as const } : node,
+          node.id === 'culture'
+            ? { ...node, mediaQuality: 'ready' as const, mediaRights: 'demo-only' as const }
+            : node,
         ),
         links,
         'gate',
@@ -145,7 +167,7 @@ describe('Sơn Trang panorama tour model', () => {
           label: 'Cổng Sơn Trang',
           isCurrent: true,
           isVisited: true,
-          mediaAvailability: 'demo-only',
+          mediaQuality: 'ready',
           canNavigate: true,
         },
         {
@@ -153,7 +175,7 @@ describe('Sơn Trang panorama tour model', () => {
           label: 'Không gian Văn hóa',
           isCurrent: false,
           isVisited: false,
-          mediaAvailability: 'missing',
+          mediaQuality: 'missing',
           canNavigate: false,
         },
       ],

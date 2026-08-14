@@ -11,6 +11,7 @@ import { DEMO_DESTINATIONS, getDemoManifest } from '../fake-mode/demo-catalog';
 import { SON_TRANG_SELECTED_3D_ANCHORS } from '../fake-mode/selected-3d-demo-anchors';
 import { createFakeImmersiveManifest } from '../fake-mode/manifest';
 import type { Selected3DAnchorSource } from '../model/selected-3d-anchor-source';
+import type { PanoramaTourMediaMode, PanoramaTourSource } from '../model/panorama-tour-source';
 import { useImmersiveNavigation } from '../index';
 import { ImmersiveExperience, type ImmersiveExperienceFactories } from './ImmersiveExperience';
 
@@ -32,6 +33,8 @@ function renderExperience(
   destinations?: DestinationPreviewVm[],
   selected3DAnchors: readonly Selected3DAnchor[] = [],
   selected3DAnchorSource: Selected3DAnchorSource = 'none',
+  panoramaTourSource: PanoramaTourSource = 'none',
+  panoramaTourMediaMode: PanoramaTourMediaMode = 'public',
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -50,6 +53,8 @@ function renderExperience(
                 {...(destinations === undefined ? {} : { destinations })}
                 selected3DAnchors={selected3DAnchors}
                 selected3DAnchorSource={selected3DAnchorSource}
+                panoramaTourSource={panoramaTourSource}
+                panoramaTourMediaMode={panoramaTourMediaMode}
               />
             }
           />
@@ -62,6 +67,8 @@ function renderExperience(
                 {...(destinations === undefined ? {} : { destinations })}
                 selected3DAnchors={selected3DAnchors}
                 selected3DAnchorSource={selected3DAnchorSource}
+                panoramaTourSource={panoramaTourSource}
+                panoramaTourMediaMode={panoramaTourMediaMode}
               />
             }
           />
@@ -195,6 +202,29 @@ describe('ImmersiveExperience', () => {
     });
     expect(screen.queryByRole('button', { name: 'Khám phá 360°' })).not.toBeInTheDocument();
     expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(1);
+  });
+
+  it('shows a truthful unavailable state for the explicit public low-resolution tour source', async () => {
+    const { factories, panorama } = createFactories();
+
+    renderExperience(
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=son-trang-gate',
+      factories,
+      getDemoManifest('son-trang-co-dam'),
+      DEMO_DESTINATIONS.map(({ preview }) => preview),
+      [],
+      'none',
+      'demo',
+      'public',
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Đang cập nhật hình ảnh 360° độ phân giải cao.')).toBeVisible();
+    });
+    expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(false);
+    expect(screen.getAllByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).not.toHaveLength(
+      0,
+    );
   });
 
   it('uses the selected local anchor mapping as the only 360 handoff', async () => {

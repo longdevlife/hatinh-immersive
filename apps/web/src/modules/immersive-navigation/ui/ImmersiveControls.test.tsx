@@ -61,11 +61,11 @@ describe('ImmersiveControls', () => {
     expect(activeBtn.querySelector('.panorama-scene-browser__state')).toBeInTheDocument();
   });
 
-  it('keeps explicit demo-only tour scenes selectable while disabling unavailable media', () => {
+  it('keeps ready synthetic demo media selectable while disabling low-quality media', () => {
     const onSelectScene = vi.fn();
     const tour = {
       currentSceneId: 'gate',
-      status: 'ready' as const,
+      status: 'unavailable' as const,
       isTransitioning: false,
       hotspots: [],
       scenes: [
@@ -74,7 +74,7 @@ describe('ImmersiveControls', () => {
           label: 'Cổng Sơn Trang',
           isCurrent: true,
           isVisited: true,
-          mediaAvailability: 'demo-only' as const,
+          mediaQuality: 'ready' as const,
           canNavigate: true,
         },
         {
@@ -82,7 +82,7 @@ describe('ImmersiveControls', () => {
           label: 'Không gian Văn hóa',
           isCurrent: false,
           isVisited: false,
-          mediaAvailability: 'missing' as const,
+          mediaQuality: 'low-resolution' as const,
           canNavigate: false,
         },
       ],
@@ -109,6 +109,7 @@ describe('ImmersiveControls', () => {
     expect(
       screen.getByRole('button', { name: 'Không gian Văn hóa (Chưa có dữ liệu)' }),
     ).toBeDisabled();
+    expect(screen.getByText('Đang cập nhật hình ảnh 360° độ phân giải cao.')).toBeInTheDocument();
   });
 
   it('dispatches a valid directional hotspot through the presentation action', () => {

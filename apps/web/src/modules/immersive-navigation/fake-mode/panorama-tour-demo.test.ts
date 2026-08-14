@@ -16,9 +16,10 @@ describe('explicit Sơn Trang panorama tour demo composition', () => {
       valid: true,
       issues: [],
     });
-    expect(manifest.panoramaNodes.every((node) => node.mediaAvailability === 'demo-only')).toBe(
+    expect(manifest.panoramaNodes.every((node) => node.mediaQuality === 'low-resolution')).toBe(
       true,
     );
+    expect(manifest.panoramaNodes.every((node) => node.mediaRights === 'demo-only')).toBe(true);
     expect(manifest.destination.defaultSceneId).toBe('son-trang-gate');
     expect(manifest.defaultSceneId).toBe('son-trang-gate');
   });

@@ -1,5 +1,5 @@
 import type {
-  PanoramaMediaAvailability,
+  PanoramaMediaQuality,
   PanoramaNode,
   RendererStatus,
   SceneLinkVm,
@@ -10,7 +10,7 @@ export interface PanoramaTourSceneItemVm {
   label: string;
   isCurrent: boolean;
   isVisited: boolean;
-  mediaAvailability: PanoramaMediaAvailability;
+  mediaQuality: PanoramaMediaQuality;
   canNavigate: boolean;
 }
 
@@ -47,11 +47,10 @@ export interface PanoramaAnchorLike {
   panoramaSceneId?: string | null;
 }
 
-const DEFAULT_MEDIA_AVAILABILITY: PanoramaMediaAvailability = 'ready';
+const DEFAULT_MEDIA_QUALITY: PanoramaMediaQuality = 'ready';
 
 export function isPanoramaSceneUsable(node: PanoramaNode): boolean {
-  const availability = node.mediaAvailability ?? DEFAULT_MEDIA_AVAILABILITY;
-  return availability === 'ready' || availability === 'demo-only';
+  return (node.mediaQuality ?? DEFAULT_MEDIA_QUALITY) === 'ready';
 }
 
 /**
@@ -190,7 +189,7 @@ export function buildPanoramaTourPresentationVm({
     label: node.name ?? node.id,
     isCurrent: node.id === currentSceneId,
     isVisited: visited.has(node.id),
-    mediaAvailability: node.mediaAvailability ?? DEFAULT_MEDIA_AVAILABILITY,
+    mediaQuality: node.mediaQuality ?? DEFAULT_MEDIA_QUALITY,
     canNavigate: isPanoramaSceneUsable(node),
   }));
   const nodeById = new Map(nodes.map((node) => [node.id, node]));

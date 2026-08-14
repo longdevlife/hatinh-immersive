@@ -63,6 +63,7 @@ import {
 import {
   composePanoramaTourDestination,
   composePanoramaTourManifest,
+  type PanoramaTourMediaMode,
   type PanoramaTourSource,
 } from '../model/panorama-tour-source';
 import {
@@ -89,6 +90,7 @@ export interface ImmersiveExperienceProps {
   selected3DAnchors?: readonly Selected3DAnchor[];
   selected3DAnchorSource?: Selected3DAnchorSource;
   panoramaTourSource?: PanoramaTourSource;
+  panoramaTourMediaMode?: PanoramaTourMediaMode;
 }
 
 const EMPTY_SELECTED_3D_ANCHORS: readonly Selected3DAnchor[] = [];
@@ -473,6 +475,7 @@ export function ImmersiveExperience({
   selected3DAnchors = EMPTY_SELECTED_3D_ANCHORS,
   selected3DAnchorSource = 'none',
   panoramaTourSource = 'none',
+  panoramaTourMediaMode = 'public',
 }: ImmersiveExperienceProps) {
   const { destinationSlug: routeDestinationSlug } = useParams<{ destinationSlug: string }>();
   const location = useLocation();
@@ -491,8 +494,10 @@ export function ImmersiveExperience({
   const sourceManifest = manifestOverride ?? manifestQuery.data;
   const manifest = useMemo(
     () =>
-      sourceManifest ? composePanoramaTourManifest(sourceManifest, panoramaTourSource) : undefined,
-    [panoramaTourSource, sourceManifest],
+      sourceManifest
+        ? composePanoramaTourManifest(sourceManifest, panoramaTourSource, panoramaTourMediaMode)
+        : undefined,
+    [panoramaTourMediaMode, panoramaTourSource, sourceManifest],
   );
   const composedSelected3DAnchors = useMemo(
     () =>

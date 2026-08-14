@@ -14,6 +14,8 @@ export type {
   PanoramaEnginePort,
   PanoramaLink,
   PanoramaNode,
+  PanoramaMediaQuality,
+  PanoramaMediaRights,
   PanoramaView,
 } from './domain/panorama-engine.port';
 export { LazyPanoramaViewport } from './ui/lazy-panorama-viewport';
