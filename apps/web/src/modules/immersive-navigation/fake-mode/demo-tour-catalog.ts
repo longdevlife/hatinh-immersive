@@ -275,34 +275,27 @@ export function buildDemoManifest(
       pitch: link.pitch,
     },
   ]);
-  const panoramaNodes = tour.scenes.flatMap((scene) => {
+  const panoramaNodes = tour.scenes.map((scene) => {
     const panoramaUrl = scene.panoramaUrl;
-    if (!panoramaUrl) {
-      return [];
-    }
-    return [
-      {
-        id: scene.id,
-        name: scene.name,
-        destinationSlug: destination.slug,
-        ...(scene.thumbnailUrl !== undefined ? { thumbnailUrl: scene.thumbnailUrl } : {}),
-        role: scene.role,
-        panoramaUrl,
-        previewUrl: scene.previewUrl,
-        mediaQuality: scene.mediaQuality,
-        mediaRights: scene.mediaRights,
-        lat: scene.lat,
-        lng: scene.lng,
-        initialView: scene.initialView,
-        ...(scene.narrationTrackId !== undefined
-          ? { narrationTrackId: scene.narrationTrackId }
-          : {}),
-        ...(tour.ambientTrackId !== undefined ? { ambientTrackId: tour.ambientTrackId } : {}),
-        links: tour.links
-          .filter((link) => link.sourceSceneId === scene.id)
-          .map((link) => ({ targetNodeId: link.targetSceneId, yaw: link.yaw, pitch: link.pitch })),
-      },
-    ];
+    return {
+      id: scene.id,
+      name: scene.name,
+      destinationSlug: destination.slug,
+      ...(scene.thumbnailUrl !== undefined ? { thumbnailUrl: scene.thumbnailUrl } : {}),
+      role: scene.role,
+      panoramaUrl,
+      previewUrl: scene.previewUrl,
+      mediaQuality: scene.mediaQuality,
+      mediaRights: scene.mediaRights,
+      lat: scene.lat,
+      lng: scene.lng,
+      initialView: scene.initialView,
+      ...(scene.narrationTrackId !== undefined ? { narrationTrackId: scene.narrationTrackId } : {}),
+      ...(tour.ambientTrackId !== undefined ? { ambientTrackId: tour.ambientTrackId } : {}),
+      links: tour.links
+        .filter((link) => link.sourceSceneId === scene.id)
+        .map((link) => ({ targetNodeId: link.targetSceneId, yaw: link.yaw, pitch: link.pitch })),
+    };
   });
 
   return {

@@ -1087,6 +1087,7 @@ export function ImmersiveExperience({
       return;
     }
 
+    void audioController.setNarrationEnabled(true);
     void audioController.playNarration(currentNarrationTrack);
   }, [audioController, audioState.narrationPlaying, currentNarrationTrack]);
 

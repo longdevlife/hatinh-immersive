@@ -139,7 +139,7 @@ export class ImmersiveAudioController {
 
   pauseNarration(): void {
     this.narrationHandle?.pause();
-    this.update({ narrationPlaying: false });
+    this.update({ narrationEnabled: false, narrationPlaying: false });
     this.applyVolumes();
   }
 

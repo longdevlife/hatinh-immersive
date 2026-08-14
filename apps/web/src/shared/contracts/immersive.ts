@@ -161,7 +161,8 @@ export interface PanoramaNode {
   destinationSlug?: string;
   thumbnailUrl?: string | null;
   role?: 'major-stop' | 'connector';
-  panoramaUrl: string;
+  /** Null means the scene is part of the tour graph but has no media yet. */
+  panoramaUrl: string | null;
   previewUrl: string | null;
   /**
    * Media quality is deliberately separate from scene-graph membership and

@@ -96,6 +96,24 @@ describe('ImmersiveAudioController', () => {
     expect(controller.getState().narrationPlaying).toBe(false);
   });
 
+  it('marks narration disabled when the visitor pauses it and permits an explicit resume', async () => {
+    const { adapter } = adapterWithTracks();
+    const controller = new ImmersiveAudioController(adapter);
+    const narration = track('narration-pause', 'narration');
+
+    await controller.playNarration(narration);
+    controller.pauseNarration();
+
+    expect(controller.getState().narrationEnabled).toBe(false);
+    expect(controller.getState().narrationPlaying).toBe(false);
+
+    await controller.setNarrationEnabled(true);
+    await controller.playNarration(narration);
+
+    expect(controller.getState().narrationEnabled).toBe(true);
+    expect(controller.getState().narrationPlaying).toBe(true);
+  });
+
   it('master mute silences both channels and restores their effective volumes', async () => {
     const { adapter, created } = adapterWithTracks();
     const controller = new ImmersiveAudioController(adapter);

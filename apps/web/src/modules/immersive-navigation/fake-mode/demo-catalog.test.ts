@@ -77,9 +77,23 @@ describe('Hà Tĩnh demo catalog', () => {
     expect(manifest.panoramaNodes.every((node) => node.thumbnailUrl === null)).toBe(true);
     expect(
       manifest.panoramaNodes.every((node) =>
-        node.panoramaUrl.startsWith('/demo/360/son-trang-tour/'),
+        Boolean(node.panoramaUrl?.startsWith('/demo/360/son-trang-tour/')),
       ),
     ).toBe(true);
+  });
+
+  it('keeps unavailable public scenes in the Nguyễn Du and Đồng Lộc tour graphs', () => {
+    for (const slug of ['khu-luu-niem-nguyen-du', 'nga-ba-dong-loc']) {
+      const manifest = getDemoManifest(slug, 'public');
+
+      expect(manifest.panoramaNodes).toHaveLength(4);
+      expect(manifest.panoramaNodes.filter((node) => node.panoramaUrl === null)).toHaveLength(3);
+      expect(
+        manifest.panoramaNodes
+          .filter((node) => node.panoramaUrl === null)
+          .every((node) => node.mediaQuality === 'missing'),
+      ).toBe(true);
+    }
   });
 
   it('keeps a mode-specific demo manifest stable for persistent renderer consumers', () => {
@@ -106,6 +120,9 @@ describe('Hà Tĩnh demo catalog', () => {
     for (const { preview } of DEMO_DESTINATIONS) {
       const manifest = getDemoManifest(preview.slug);
       for (const node of manifest.panoramaNodes) {
+        if (!node.panoramaUrl || !node.previewUrl) {
+          continue;
+        }
         expect(node.panoramaUrl).toMatch(/^\/demo\/360\/.*\/manifest\.json$/);
         expect(node.previewUrl).toMatch(/^\/demo\/360\/.*\/preview\.webp$/);
 
