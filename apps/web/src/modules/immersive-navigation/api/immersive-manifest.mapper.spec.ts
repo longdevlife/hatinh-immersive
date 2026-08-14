@@ -1,6 +1,7 @@
 import type { GetImmersiveManifest200 } from '@hatinh/api-client';
 import { describe, expect, it } from 'vitest';
 
+import { getPanoramaTourLinks } from '../../panorama-tour';
 import { getSceneLinks, mapImmersiveManifest } from './immersive-manifest.mapper';
 
 function createManifestDto(): GetImmersiveManifest200 {
@@ -152,7 +153,6 @@ describe('mapImmersiveManifest', () => {
     expect(view.panoramaNodes[0]?.previewUrl).toBe('https://cdn.example.vn/scene-01/preview.webp');
     expect(view.panoramaNodes[1]?.links).toEqual([
       { targetNodeId: 'scene-01', yaw: 198, pitch: -2 },
-      { targetNodeId: 'scene-03', yaw: 120, pitch: 1 },
       { targetNodeId: 'scene-04', yaw: 240, pitch: 4 },
     ]);
     expect(getSceneLinks(view.links, 'scene-02').map((link) => link.targetSceneId)).toEqual([
@@ -161,6 +161,12 @@ describe('mapImmersiveManifest', () => {
       'scene-04',
     ]);
     expect(getSceneLinks(view.links, 'scene-02')[0]?.yaw).toBe(198);
+    expect(getPanoramaTourLinks(view.panoramaNodes, view.links).map((link) => link.id)).toEqual([
+      'link-01-02',
+      'link-01-02:reverse',
+      'link-02-04',
+      'link-02-04:reverse',
+    ]);
     expect(view.hotspots[0]).toEqual(
       expect.objectContaining({
         id: 'hotspot-01',
@@ -180,5 +186,35 @@ describe('mapImmersiveManifest', () => {
 
     expect(view.destination.name).toBe('son-trang-co-dam');
     expect(view.destination.summary).toBe('Một hành trình di sản.');
+  });
+
+  it('does not pass links to URL-backed scenes whose media is not ready into the panorama graph', () => {
+    const dto = createManifestDto();
+    const unavailableNode = dto.nodes.find((node) => node.id === 'scene-03');
+    if (!unavailableNode) {
+      throw new Error('TEST_SCENE_REQUIRED');
+    }
+
+    unavailableNode.panoramaManifestUrl = 'https://cdn.example.vn/scene-03/manifest.json';
+    unavailableNode.panoramaAssetStatus = null;
+
+    const view = mapImmersiveManifest(dto);
+
+    expect(view.panoramaNodes.map((node) => node.id)).toEqual([
+      'scene-01',
+      'scene-02',
+      'scene-03',
+      'scene-04',
+    ]);
+    expect(view.panoramaNodes.find((node) => node.id === 'scene-02')?.links).toEqual([
+      { targetNodeId: 'scene-01', yaw: 198, pitch: -2 },
+      { targetNodeId: 'scene-04', yaw: 240, pitch: 4 },
+    ]);
+    expect(getPanoramaTourLinks(view.panoramaNodes, view.links).map((link) => link.id)).toEqual([
+      'link-01-02',
+      'link-01-02:reverse',
+      'link-02-04',
+      'link-02-04:reverse',
+    ]);
   });
 });

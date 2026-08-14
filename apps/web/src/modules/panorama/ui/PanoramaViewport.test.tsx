@@ -75,6 +75,9 @@ describe('PanoramaViewport', () => {
     expect(
       screen.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' }),
     ).toBeInTheDocument();
+    const viewport = screen.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' });
+    expect(viewport).toHaveAttribute('data-e2e-panorama-mount-count', '1');
+    expect(viewport).toHaveAttribute('data-e2e-panorama-destroy-count', '0');
     expect(statuses).toEqual(['loading', 'ready']);
 
     unmount();

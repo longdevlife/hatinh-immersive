@@ -261,6 +261,220 @@
   opacity: 1;
 }
 
+/* --- Panorama Tour Rail (V3) --- */
+.panorama-tour-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3, 0.75rem);
+  width: 100%;
+}
+
+.panorama-tour-hotspots {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.panorama-tour-hotspots ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2, 0.5rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panorama-tour-hotspot-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 0.35rem;
+  padding: 0 0.85rem;
+  color: var(--color-text-inverse, #fff);
+  font: inherit;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--panorama-surface) 60%, transparent);
+  border: 1px solid var(--panorama-border);
+  border-radius: var(--radius-control, 999px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: all var(--panorama-motion) var(--panorama-ease);
+}
+
+.panorama-tour-hotspot-btn svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.panorama-tour-hotspot-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--panorama-surface) 80%, white 10%);
+}
+
+.panorama-tour-hotspot-btn:focus-visible {
+  outline: 2px solid var(--panorama-focus);
+  outline-offset: -2px;
+}
+
+.panorama-tour-hotspot-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.panorama-tour-rail-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  width: 100%;
+}
+
+.panorama-tour-back-btn {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.panorama-tour-rail {
+  flex: 1;
+  min-width: 0;
+  background: var(--panorama-surface);
+  border: 1px solid var(--panorama-border);
+  border-radius: var(--radius-control, 999px);
+  box-shadow: var(--elevation-1, 0 0.75rem 2rem rgb(3 12 9 / 0.22));
+  backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+}
+
+.panorama-tour-rail ul {
+  display: flex;
+  gap: 0;
+  margin: 0;
+  padding: 0.25rem;
+  overflow-x: auto;
+  list-style: none;
+  scrollbar-width: none;
+}
+.panorama-tour-rail ul::-webkit-scrollbar {
+  display: none;
+}
+
+.panorama-tour-rail__btn {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  color: var(--color-text-inverse, #fff);
+  font: inherit;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--radius-control, 999px) - 0.25rem);
+  cursor: pointer;
+  opacity: 0.85;
+  transition: all var(--panorama-motion) var(--panorama-ease);
+}
+
+.panorama-tour-rail__btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--panorama-surface) 78%, white 12%);
+  opacity: 1;
+}
+
+.panorama-tour-rail__btn:focus-visible {
+  outline: 2px solid var(--panorama-focus);
+  outline-offset: -2px;
+}
+
+.panorama-tour-rail__btn.is-current {
+  font-weight: 740;
+  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 36%, var(--panorama-surface));
+  opacity: 1;
+}
+
+.panorama-tour-rail__btn.is-unavailable {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  text-decoration-color: rgb(255 255 255 / 0.5);
+}
+
+.panorama-tour-rail__indicator {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.panorama-tour-rail__btn.is-visited .panorama-tour-rail__indicator {
+  background: currentColor;
+  opacity: 0.8;
+}
+
+.panorama-tour-rail__btn.is-current .panorama-tour-rail__indicator {
+  border-color: var(--color-accent-primary, #e5a95f);
+  background: transparent;
+  opacity: 1;
+}
+.panorama-tour-rail__indicator-inner {
+  position: absolute;
+  inset: 2px;
+  background: var(--color-accent-primary, #e5a95f);
+  border-radius: 50%;
+}
+
+.panorama-tour-message {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+  color: var(--color-text-inverse, #fff);
+  background: var(--color-surface-error, rgb(60 10 10 / 0.85));
+  border: 1px solid color-mix(in srgb, var(--color-text-error, #ff8080) 40%, transparent);
+  border-radius: var(--radius-md, 0.75rem);
+  backdrop-filter: blur(8px);
+}
+.panorama-tour-message--unavailable {
+  background: var(--panorama-surface);
+  border-color: var(--panorama-border);
+}
+
+.panorama-tour-message p {
+  margin: 0;
+}
+
+.panorama-tour-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 36px;
+  padding: 0 0.75rem;
+  color: var(--color-text-error, #ff8080);
+  font: inherit;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sm, 0.5rem);
+  cursor: pointer;
+}
+.panorama-tour-retry-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+.panorama-tour-retry-btn:hover {
+  background: color-mix(in srgb, var(--color-text-error, #ff8080) 15%, transparent);
+}
+
 @media (max-width: 767px) {
   .panorama-controls__utilities {
     top: max(0.75rem, env(safe-area-inset-top));
@@ -296,7 +510,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .panorama-control,
-  .panorama-scene-browser button {
+  .panorama-scene-browser button,
+  .panorama-tour-rail__btn,
+  .panorama-tour-hotspot-btn {
     transition: none;
   }
 }

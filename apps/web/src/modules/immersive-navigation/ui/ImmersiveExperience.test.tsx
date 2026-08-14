@@ -11,6 +11,7 @@ import { DEMO_DESTINATIONS, getDemoManifest } from '../fake-mode/demo-catalog';
 import { SON_TRANG_SELECTED_3D_ANCHORS } from '../fake-mode/selected-3d-demo-anchors';
 import { createFakeImmersiveManifest } from '../fake-mode/manifest';
 import type { Selected3DAnchorSource } from '../model/selected-3d-anchor-source';
+import type { PanoramaTourMediaMode, PanoramaTourSource } from '../model/panorama-tour-source';
 import { useImmersiveNavigation } from '../index';
 import { ImmersiveExperience, type ImmersiveExperienceFactories } from './ImmersiveExperience';
 
@@ -32,6 +33,8 @@ function renderExperience(
   destinations?: DestinationPreviewVm[],
   selected3DAnchors: readonly Selected3DAnchor[] = [],
   selected3DAnchorSource: Selected3DAnchorSource = 'none',
+  panoramaTourSource: PanoramaTourSource = 'none',
+  panoramaTourMediaMode: PanoramaTourMediaMode = 'public',
 ) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -50,6 +53,8 @@ function renderExperience(
                 {...(destinations === undefined ? {} : { destinations })}
                 selected3DAnchors={selected3DAnchors}
                 selected3DAnchorSource={selected3DAnchorSource}
+                panoramaTourSource={panoramaTourSource}
+                panoramaTourMediaMode={panoramaTourMediaMode}
               />
             }
           />
@@ -62,6 +67,8 @@ function renderExperience(
                 {...(destinations === undefined ? {} : { destinations })}
                 selected3DAnchors={selected3DAnchors}
                 selected3DAnchorSource={selected3DAnchorSource}
+                panoramaTourSource={panoramaTourSource}
+                panoramaTourMediaMode={panoramaTourMediaMode}
               />
             }
           />
@@ -151,6 +158,9 @@ describe('ImmersiveExperience', () => {
     await waitFor(() => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
       expect(minimap.calls.some((call) => call.type === 'mount')).toBe(true);
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
+      );
     });
     expect(screen.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeInTheDocument();
     expect(factories.createPanoramaEngine).toHaveBeenCalledTimes(1);
@@ -194,6 +204,29 @@ describe('ImmersiveExperience', () => {
     expect(screen.getAllByText('360° đang được chuẩn bị')).toHaveLength(1);
   });
 
+  it('shows a truthful unavailable state for the explicit public low-resolution tour source', async () => {
+    const { factories, panorama } = createFactories();
+
+    renderExperience(
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=son-trang-gate',
+      factories,
+      getDemoManifest('son-trang-co-dam'),
+      DEMO_DESTINATIONS.map(({ preview }) => preview),
+      [],
+      'none',
+      'demo',
+      'public',
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Đang cập nhật hình ảnh 360° độ phân giải cao.')).toBeVisible();
+    });
+    expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(false);
+    expect(screen.getAllByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).not.toHaveLength(
+      0,
+    );
+  });
+
   it('uses the selected local anchor mapping as the only 360 handoff', async () => {
     const { factories, map3d, panorama } = createFactories();
     const manifest = getDemoManifest('son-trang-co-dam');
@@ -213,10 +246,17 @@ describe('ImmersiveExperience', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Mở 360° cho Cổng' }));
 
-    await waitFor(() => expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true));
-    expect(screen.getByTestId('location')).toHaveTextContent(
-      'mode=panorama&location=son-trang-gate&scene=son-trang-gate',
-    );
+    await waitFor(() => {
+      expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        mode: 'panorama',
+        committedSceneId: 'son-trang-gate',
+        requestedSceneId: null,
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        'mode=panorama&location=son-trang-gate&scene=son-trang-gate',
+      );
+    });
   });
 
   it('routes a Google 3D marker selection through the location selection state', async () => {
@@ -616,6 +656,9 @@ describe('ImmersiveExperience', () => {
       expect(panorama.loadRequests.get('scene-01')).toBeDefined();
     });
     panorama.loadRequests.get('scene-01')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
     await waitFor(() => {
@@ -644,6 +687,80 @@ describe('ImmersiveExperience', () => {
     });
   });
 
+  it('lets a newer scene request supersede a pending request and commits only the latest scene', async () => {
+    const panorama = new DeferredPanoramaEngine();
+    const { factories } = createFactories(panorama);
+    const baseManifest = createFakeImmersiveManifest();
+    const firstLink = baseManifest.links.find((link) => link.sourceSceneId === 'scene-01');
+    if (!firstLink) {
+      throw new Error('The fake panorama graph must contain a scene-01 link.');
+    }
+    const manifest = {
+      ...baseManifest,
+      links: [
+        ...baseManifest.links,
+        { ...firstLink, id: 'link-scene-01-scene-03', targetSceneId: 'scene-03' },
+      ],
+      panoramaNodes: baseManifest.panoramaNodes.map((node) =>
+        node.id === 'scene-01'
+          ? {
+              ...node,
+              links: [...(node.links ?? []), { targetNodeId: 'scene-03', yaw: 0, pitch: 0 }],
+            }
+          : node,
+      ),
+    };
+    renderExperience(
+      '/explore/son-trang-co-dam/immersive?mode=panorama&scene=scene-01&h=0&p=0&fov=90',
+      factories,
+      manifest,
+    );
+
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-01')).toBeDefined();
+    });
+    panorama.loadRequests.get('scene-01')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-02')).toBeDefined();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 3' }));
+    await waitFor(() => {
+      expect(panorama.loadRequests.get('scene-03')).toBeDefined();
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        committedSceneId: 'scene-01',
+        requestedSceneId: 'scene-03',
+      });
+    });
+
+    panorama.loadRequests.get('scene-02')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        committedSceneId: 'scene-01',
+        requestedSceneId: 'scene-03',
+      });
+    });
+
+    panorama.loadRequests.get('scene-03')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState()).toMatchObject({
+        committedSceneId: 'scene-03',
+        requestedSceneId: null,
+      });
+      expect(screen.getByTestId('location')).toHaveTextContent(
+        '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-03&h=62&p=-2&fov=88',
+      );
+    });
+
+    expect(panorama.calls.filter((call) => call.type === 'mount')).toHaveLength(1);
+    expect(panorama.calls.filter((call) => call.type === 'destroy')).toHaveLength(0);
+  });
+
   it('keeps the committed URL while a requested panorama is pending', async () => {
     const panorama = new DeferredPanoramaEngine();
     const { factories } = createFactories(panorama);
@@ -656,6 +773,9 @@ describe('ImmersiveExperience', () => {
       expect(panorama.loadRequests.get('scene-01')).toBeDefined();
     });
     panorama.loadRequests.get('scene-01')?.resolve();
+    await waitFor(() => {
+      expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
+    });
 
     fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
 
@@ -692,6 +812,7 @@ describe('ImmersiveExperience', () => {
 
     await waitFor(() => {
       expect(panorama.loadedNode?.id).toBe('scene-01');
+      expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
     });
 
     const targetNode = manifest.panoramaNodes.find((node) => node.id === 'scene-02');

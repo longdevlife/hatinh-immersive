@@ -15,6 +15,8 @@ export type {
   NetworkQuality,
   PanoramaEnginePort,
   PanoramaLink,
+  PanoramaMediaQuality,
+  PanoramaMediaRights,
   PanoramaNode,
   PanoramaView,
   RendererStatus,

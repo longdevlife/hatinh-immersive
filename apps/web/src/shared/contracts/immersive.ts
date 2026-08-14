@@ -131,6 +131,10 @@ export interface PanoramaView {
   fov: number;
 }
 
+export type PanoramaMediaQuality = 'ready' | 'low-resolution' | 'missing' | 'invalid';
+
+export type PanoramaMediaRights = 'customer-owned' | 'licensed' | 'demo-only';
+
 export interface PanoramaLink {
   targetNodeId: string;
   yaw: number;
@@ -142,6 +146,12 @@ export interface PanoramaNode {
   name?: string;
   panoramaUrl: string;
   previewUrl: string | null;
+  /**
+   * Media quality is deliberately separate from scene-graph membership and
+   * rights/intended-use. A complete graph can still lack public-quality media.
+   */
+  mediaQuality?: PanoramaMediaQuality;
+  mediaRights?: PanoramaMediaRights;
   lat: number;
   lng: number;
   initialView: PanoramaView;

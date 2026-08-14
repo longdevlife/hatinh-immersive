@@ -15,6 +15,7 @@ describe('immersive navigation state machine', () => {
       committedSceneId: null,
       committedView: { heading: 0, pitch: 0, fov: 90 },
       requestedSceneId: null,
+      requestedView: null,
       transitionId: 0,
       selectedLocationId: null,
       selectedLocationPreset: null,
@@ -100,6 +101,74 @@ describe('immersive navigation state machine', () => {
       status: 'ready',
       transition: 'idle',
       view: { heading: 15, pitch: -4, fov: 82 },
+    });
+  });
+
+  it('keeps an initial panorama entry requested until the renderer commits it', () => {
+    const navigation = useImmersiveNavigation.getState();
+
+    navigation.enterOverview('destination-1');
+    const transitionId = navigation.requestPanoramaEntry('scene-a');
+
+    expect(transitionId).toBe(1);
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      mode: 'panorama',
+      activeRenderer: 'panorama',
+      transition: 'entering-panorama',
+      committedSceneId: null,
+      requestedSceneId: 'scene-a',
+      requestedView: { heading: 0, pitch: 0, fov: 90 },
+      visitedSceneIds: [],
+      panoramaStatus: 'loading',
+    });
+  });
+
+  it('commits the requested initial view only with the renderer-confirmed scene', () => {
+    const navigation = useImmersiveNavigation.getState();
+
+    navigation.enterOverview('destination-1');
+    const transitionId = navigation.requestPanoramaEntry('scene-a');
+    navigation.updateView({ heading: 123, pitch: -7, fov: 82 });
+    navigation.commitSceneTransition(transitionId!, { heading: 0, pitch: 0, fov: 90 });
+
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      committedSceneId: 'scene-a',
+      committedView: { heading: 123, pitch: -7, fov: 82 },
+      requestedSceneId: null,
+      requestedView: null,
+    });
+  });
+
+  it('rolls back a failed initial panorama entry without inventing a committed scene', () => {
+    const navigation = useImmersiveNavigation.getState();
+
+    navigation.enterOverview('destination-1');
+    const transitionId = navigation.requestPanoramaEntry('scene-a');
+    navigation.rollbackSceneTransition(transitionId!);
+
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      mode: 'panorama',
+      committedSceneId: null,
+      requestedSceneId: null,
+      visitedSceneIds: [],
+      panoramaStatus: 'error',
+      error: 'PANORAMA_SCENE_LOAD_FAILED',
+    });
+  });
+
+  it('keeps an all-unavailable panorama entry recoverable without a renderer', () => {
+    const navigation = useImmersiveNavigation.getState();
+
+    navigation.enterOverview('destination-1');
+    navigation.markPanoramaUnavailable();
+
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      mode: 'panorama',
+      activeRenderer: 'none',
+      committedSceneId: null,
+      requestedSceneId: null,
+      panoramaStatus: 'unavailable',
+      error: 'PANORAMA_UNAVAILABLE',
     });
   });
 
@@ -232,6 +301,30 @@ describe('immersive navigation state machine', () => {
       committedView: { heading: 24, pitch: -2, fov: 78 },
       requestedSceneId: null,
       visitedSceneIds: ['scene-a', 'scene-b', 'scene-c'],
+    });
+  });
+
+  it('ignores a stale renderer scene event while the initial scene is pending', () => {
+    const navigation = useImmersiveNavigation.getState();
+
+    navigation.enterOverview('destination-1');
+    navigation.requestPanoramaEntry('scene-a');
+    navigation.commitRendererScene('scene-b', { heading: 12, pitch: 1, fov: 80 });
+
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      committedSceneId: null,
+      requestedSceneId: 'scene-a',
+      panoramaStatus: 'loading',
+      visitedSceneIds: [],
+    });
+
+    navigation.commitRendererScene('scene-a', { heading: 0, pitch: 0, fov: 90 });
+
+    expect(useImmersiveNavigation.getState()).toMatchObject({
+      committedSceneId: 'scene-a',
+      requestedSceneId: null,
+      panoramaStatus: 'ready',
+      visitedSceneIds: ['scene-a'],
     });
   });
 

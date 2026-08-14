@@ -60,4 +60,89 @@ describe('ImmersiveControls', () => {
     expect(activeBtn).toHaveAttribute('aria-current', 'step');
     expect(activeBtn.querySelector('.panorama-scene-browser__state')).toBeInTheDocument();
   });
+
+  it('keeps ready synthetic demo media selectable while disabling low-quality media', () => {
+    const onSelectScene = vi.fn();
+    const tour = {
+      currentSceneId: 'gate',
+      status: 'unavailable' as const,
+      isTransitioning: false,
+      hotspots: [],
+      scenes: [
+        {
+          id: 'gate',
+          label: 'Cổng Sơn Trang',
+          isCurrent: true,
+          isVisited: true,
+          mediaQuality: 'ready' as const,
+          canNavigate: true,
+        },
+        {
+          id: 'culture',
+          label: 'Không gian Văn hóa',
+          isCurrent: false,
+          isVisited: false,
+          mediaQuality: 'low-resolution' as const,
+          canNavigate: false,
+        },
+      ],
+    };
+
+    render(
+      <ImmersiveControlsGroup
+        nodes={[]}
+        tour={tour}
+        tourActions={{
+          onBack: vi.fn(),
+          onRetry: vi.fn(),
+          onSelectHotspot: vi.fn(),
+          onSelectScene,
+        }}
+      />,
+    );
+
+    const gateButton = screen.getByRole('button', { name: 'Cổng Sơn Trang' });
+    expect(gateButton).toBeEnabled();
+    fireEvent.click(gateButton);
+    expect(onSelectScene).toHaveBeenCalledWith('gate');
+
+    expect(
+      screen.getByRole('button', { name: 'Không gian Văn hóa (Chưa có dữ liệu)' }),
+    ).toBeDisabled();
+    expect(screen.getByText('Đang cập nhật hình ảnh 360° độ phân giải cao.')).toBeInTheDocument();
+  });
+
+  it('dispatches a valid directional hotspot through the presentation action', () => {
+    const onSelectHotspot = vi.fn();
+    render(
+      <ImmersiveControlsGroup
+        nodes={[]}
+        tour={{
+          currentSceneId: 'gate',
+          status: 'ready',
+          isTransitioning: false,
+          scenes: [],
+          hotspots: [
+            {
+              id: 'gate:entrance-path',
+              label: 'Lối vào Sơn Trang',
+              targetSceneId: 'entrance-path',
+              yaw: 32,
+              pitch: 0,
+              canNavigate: true,
+            },
+          ],
+        }}
+        tourActions={{
+          onBack: vi.fn(),
+          onRetry: vi.fn(),
+          onSelectScene: vi.fn(),
+          onSelectHotspot,
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Đi đến Lối vào Sơn Trang' }));
+    expect(onSelectHotspot).toHaveBeenCalledWith('gate:entrance-path');
+  });
 });
