@@ -29,6 +29,7 @@ export interface ExploreMapDiagnostics {
   mapSourceLoaded: boolean | null;
   mapTilesLoaded: boolean | null;
   mapMoving: boolean | null;
+  mapIdleObserved: boolean;
 }
 
 export type ExploreMapDiagnosticsUnavailableReason =

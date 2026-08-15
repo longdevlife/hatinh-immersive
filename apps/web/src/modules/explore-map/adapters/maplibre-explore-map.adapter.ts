@@ -300,21 +300,17 @@ function readRenderedFeatureCount(map: ExploreMapInstance, layerId: string): num
   }
 }
 
-function waitForMapIdle(map: ExploreMapInstance): Promise<void> {
-  if (
-    map.isStyleLoaded?.() === true &&
-    map.isSourceLoaded?.(DESTINATIONS_SOURCE_ID) === true &&
-    map.isMoving?.() !== true
-  ) {
-    return Promise.resolve();
+function waitForMapIdle(map: ExploreMapInstance): Promise<boolean> {
+  if (map.isStyleLoaded?.() === true && map.isMoving?.() !== true) {
+    return Promise.resolve(false);
   }
 
   const triggerRepaint = map.triggerRepaint;
   if (!triggerRepaint) {
-    return Promise.resolve();
+    return Promise.resolve(false);
   }
 
-  return new Promise((resolve) => {
+  return new Promise<boolean>((resolve) => {
     let settled = false;
     const onIdle = () => {
       if (settled) {
@@ -323,7 +319,7 @@ function waitForMapIdle(map: ExploreMapInstance): Promise<void> {
 
       settled = true;
       map.off('idle', onIdle);
-      resolve();
+      resolve(true);
     };
 
     map.on('idle', onIdle);
@@ -588,7 +584,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
       return { diagnosticsUnavailableReason: 'map-not-mounted' };
     }
 
-    await waitForMapIdle(map);
+    const mapIdleObserved = await waitForMapIdle(map);
     if (this.map !== map) {
       return { diagnosticsUnavailableReason: 'map-replaced-before-capture' };
     }
@@ -647,6 +643,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
       mapSourceLoaded: map.isSourceLoaded?.(DESTINATIONS_SOURCE_ID) ?? null,
       mapTilesLoaded: map.areTilesLoaded?.() ?? null,
       mapMoving: map.isMoving?.() ?? null,
+      mapIdleObserved,
     };
   }
 
