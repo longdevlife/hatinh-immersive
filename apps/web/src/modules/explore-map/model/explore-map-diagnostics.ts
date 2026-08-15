@@ -25,6 +25,10 @@ export interface ExploreMapDiagnostics {
   mapCenter: { longitude: number; latitude: number } | null;
   mapZoom: number | null;
   mapBounds: { west: number; south: number; east: number; north: number } | null;
+  mapStyleLoaded: boolean | null;
+  mapSourceLoaded: boolean | null;
+  mapTilesLoaded: boolean | null;
+  mapMoving: boolean | null;
 }
 
 export type ExploreMapDiagnosticsUnavailableReason =

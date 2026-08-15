@@ -85,6 +85,7 @@ export interface ExploreMapInstance {
   getCenter?(): { lat: number; lng: number };
   getZoom?(): number;
   isMoving?(): boolean;
+  isSourceLoaded?(sourceId: string): boolean;
   isStyleLoaded?(): boolean;
   on(
     event: string,
@@ -302,7 +303,7 @@ function readRenderedFeatureCount(map: ExploreMapInstance, layerId: string): num
 function waitForMapIdle(map: ExploreMapInstance): Promise<void> {
   if (
     map.isStyleLoaded?.() === true &&
-    map.areTilesLoaded?.() === true &&
+    map.isSourceLoaded?.(DESTINATIONS_SOURCE_ID) === true &&
     map.isMoving?.() !== true
   ) {
     return Promise.resolve();
@@ -642,6 +643,10 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
             west: bounds.getWest(),
           }
         : null,
+      mapStyleLoaded: map.isStyleLoaded?.() ?? null,
+      mapSourceLoaded: map.isSourceLoaded?.(DESTINATIONS_SOURCE_ID) ?? null,
+      mapTilesLoaded: map.areTilesLoaded?.() ?? null,
+      mapMoving: map.isMoving?.() ?? null,
     };
   }
 
