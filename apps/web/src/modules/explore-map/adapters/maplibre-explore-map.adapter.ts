@@ -2,6 +2,10 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 import type { ExploreMapEnginePort } from '../domain/explore-map-engine.port';
 import type {
+  ExploreMapDiagnostics,
+  ExploreMapLayerDiagnostics,
+} from '../model/explore-map-diagnostics';
+import type {
   ExploreMapCameraTarget,
   ExploreMapDestination,
   ExploreMapStyle,
@@ -47,6 +51,7 @@ export interface ExploreMapOptions {
 
 export interface ExploreMapSource {
   setData(data: unknown): void;
+  getData?(): Promise<unknown> | unknown;
 }
 
 export interface ExploreMapImage {
@@ -69,6 +74,14 @@ export interface ExploreMapInstance {
   getSource(id: string): ExploreMapSource | undefined;
   getLayer(id: string): unknown | undefined;
   hasImage(id: string): boolean;
+  getBounds?(): {
+    getEast(): number;
+    getNorth(): number;
+    getSouth(): number;
+    getWest(): number;
+  };
+  getCenter?(): { lat: number; lng: number };
+  getZoom?(): number;
   on(
     event: string,
     layerOrListener: string | ExploreMapEventListener,
@@ -81,7 +94,10 @@ export interface ExploreMapInstance {
   ): this;
   remove(): void;
   resize(): void;
+  queryRenderedFeatures?(options?: { layers?: string[] }): unknown[];
+  querySourceFeatures?(sourceId: string): unknown[];
   setStyle(style: ExploreMapStyle): void;
+  triggerRepaint?(): void;
 }
 
 export interface ExploreMapRuntime {
@@ -195,6 +211,111 @@ function ensureDestinationPinImages(map: ExploreMapInstance): void {
   if (!map.hasImage(DESTINATION_SELECTED_PIN_IMAGE_ID)) {
     map.addImage(DESTINATION_SELECTED_PIN_IMAGE_ID, createDestinationPinImage([190, 128, 45]));
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function readGeoJsonFeatures(data: unknown): Array<Record<string, unknown>> {
+  if (!isRecord(data) || !Array.isArray(data.features)) {
+    return [];
+  }
+
+  return data.features.filter(isRecord);
+}
+
+function readPointCoordinates(feature: Record<string, unknown>): [number, number] | null {
+  const geometry = feature.geometry;
+  if (!isRecord(geometry) || geometry.type !== 'Point' || !Array.isArray(geometry.coordinates)) {
+    return null;
+  }
+
+  const [longitude, latitude] = geometry.coordinates;
+  return typeof longitude === 'number' && typeof latitude === 'number'
+    ? [longitude, latitude]
+    : null;
+}
+
+function readFeatureId(feature: Record<string, unknown>): string | number | null {
+  const properties = isRecord(feature.properties) ? feature.properties : null;
+  const id = properties?.id ?? feature.id;
+  return typeof id === 'string' || typeof id === 'number' ? id : null;
+}
+
+function readSelectedFlag(feature: Record<string, unknown>): boolean | null {
+  const properties = isRecord(feature.properties) ? feature.properties : null;
+  return typeof properties?.isSelected === 'boolean' ? properties.isSelected : null;
+}
+
+function readLayerConfig(layer: unknown): Record<string, unknown> | null {
+  if (!isRecord(layer)) {
+    return null;
+  }
+
+  const serialize = layer.serialize;
+  if (typeof serialize === 'function') {
+    const serialized = serialize.call(layer);
+    if (isRecord(serialized)) {
+      return serialized;
+    }
+  }
+
+  return layer;
+}
+
+function readLayerDiagnostics(layer: unknown): ExploreMapLayerDiagnostics {
+  const config = readLayerConfig(layer);
+  if (!config) {
+    return { exists: false };
+  }
+
+  const layout = isRecord(config.layout) ? config.layout : null;
+  return {
+    exists: true,
+    ...(config.filter === undefined ? {} : { filter: config.filter }),
+    ...(layout?.['icon-image'] === undefined ? {} : { iconImage: layout['icon-image'] }),
+    ...(layout?.['icon-size'] === undefined ? {} : { iconSize: layout['icon-size'] }),
+    ...(config.source === undefined ? {} : { source: config.source }),
+    ...(layout?.['text-field'] === undefined ? {} : { textField: layout['text-field'] }),
+    ...(config.type === undefined ? {} : { type: config.type }),
+    ...(layout?.visibility === undefined ? {} : { visibility: layout.visibility }),
+  };
+}
+
+function readRenderedFeatureCount(map: ExploreMapInstance, layerId: string): number | null {
+  if (!map.queryRenderedFeatures) {
+    return null;
+  }
+
+  try {
+    return map.queryRenderedFeatures({ layers: [layerId] }).length;
+  } catch {
+    return null;
+  }
+}
+
+function waitForMapIdle(map: ExploreMapInstance): Promise<void> {
+  const triggerRepaint = map.triggerRepaint;
+  if (!triggerRepaint) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const onIdle = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      map.off('idle', onIdle);
+      resolve();
+    };
+
+    map.on('idle', onIdle);
+    triggerRepaint.call(map);
+  });
 }
 
 interface MapLoadWaiter extends Promise<void> {
@@ -446,6 +567,70 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
       this.applyCameraCommand(this.pendingCameraCommand);
       this.pendingCameraCommand = null;
     }
+  }
+
+  async getDiagnostics(): Promise<ExploreMapDiagnostics | null> {
+    const map = this.map;
+    if (!map) {
+      return null;
+    }
+
+    await waitForMapIdle(map);
+    if (this.map !== map) {
+      return null;
+    }
+
+    const source = map.getSource(DESTINATIONS_SOURCE_ID);
+    const sourceData = source?.getData ? await source.getData() : null;
+    const sourceFeatures = readGeoJsonFeatures(sourceData);
+    const querySourceFeatureCount = map.querySourceFeatures
+      ? (() => {
+          try {
+            return map.querySourceFeatures!(DESTINATIONS_SOURCE_ID).length;
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+    const center = map.getCenter?.();
+    const bounds = map.getBounds?.();
+
+    return {
+      sourceExists: source !== undefined,
+      sourceDataFeatureCount: source?.getData ? sourceFeatures.length : null,
+      sourceFeatureCoordinates: sourceFeatures.map(readPointCoordinates),
+      sourceFeatureIds: sourceFeatures.map(readFeatureId),
+      sourceFeatureSelectedFlags: sourceFeatures.map(readSelectedFlag),
+      querySourceFeatureCount,
+      layers: {
+        [DESTINATIONS_HALO_LAYER_ID]: readLayerDiagnostics(
+          map.getLayer(DESTINATIONS_HALO_LAYER_ID),
+        ),
+        [DESTINATIONS_LAYER_ID]: readLayerDiagnostics(map.getLayer(DESTINATIONS_LAYER_ID)),
+        [DESTINATIONS_HIT_TARGET_LAYER_ID]: readLayerDiagnostics(
+          map.getLayer(DESTINATIONS_HIT_TARGET_LAYER_ID),
+        ),
+        [DESTINATIONS_LABEL_LAYER_ID]: readLayerDiagnostics(
+          map.getLayer(DESTINATIONS_LABEL_LAYER_ID),
+        ),
+        [USER_LOCATION_LAYER_ID]: readLayerDiagnostics(map.getLayer(USER_LOCATION_LAYER_ID)),
+      },
+      normalPinImageExists: map.hasImage(DESTINATION_PIN_IMAGE_ID),
+      selectedPinImageExists: map.hasImage(DESTINATION_SELECTED_PIN_IMAGE_ID),
+      renderedPinFeatureCount: readRenderedFeatureCount(map, DESTINATIONS_LAYER_ID),
+      renderedHaloFeatureCount: readRenderedFeatureCount(map, DESTINATIONS_HALO_LAYER_ID),
+      renderedLabelFeatureCount: readRenderedFeatureCount(map, DESTINATIONS_LABEL_LAYER_ID),
+      mapCenter: center ? { latitude: center.lat, longitude: center.lng } : null,
+      mapZoom: map.getZoom?.() ?? null,
+      mapBounds: bounds
+        ? {
+            east: bounds.getEast(),
+            north: bounds.getNorth(),
+            south: bounds.getSouth(),
+            west: bounds.getWest(),
+          }
+        : null,
+    };
   }
 
   subscribeDestinationSelected(listener: (destinationId: string) => void): () => void {

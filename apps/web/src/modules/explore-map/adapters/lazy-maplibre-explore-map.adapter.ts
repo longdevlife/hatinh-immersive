@@ -4,6 +4,7 @@ import type {
   ExploreMapStyle,
   ExploreMapViewportState,
 } from '../model/explore-map.types';
+import type { ExploreMapDiagnostics } from '../model/explore-map-diagnostics';
 
 type PendingCameraCommand =
   { type: 'flyTo'; target: ExploreMapCameraTarget } | { type: 'fitOverview' };
@@ -126,6 +127,10 @@ export class LazyMapLibreExploreMapEngine implements ExploreMapEnginePort {
     }
 
     return Promise.resolve();
+  }
+
+  getDiagnostics(): Promise<ExploreMapDiagnostics | null> {
+    return this.engine?.getDiagnostics?.() ?? Promise.resolve(null);
   }
 
   subscribeDestinationSelected(listener: (destinationId: string) => void): () => void {

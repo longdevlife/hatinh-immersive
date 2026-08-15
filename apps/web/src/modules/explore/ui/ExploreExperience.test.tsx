@@ -184,6 +184,24 @@ describe('ExploreExperience', () => {
     );
   });
 
+  it('exposes map diagnostics only for the explicit mapDebug query', async () => {
+    window.history.pushState({}, '', '/explore?mapDebug=1');
+    const mapEngine = Object.assign(new FakeExploreMapEngine(), {
+      getDiagnostics: vi.fn().mockResolvedValue({ sourceExists: true, sourceDataFeatureCount: 4 }),
+    });
+
+    renderExplore(mapEngine);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('explore-map-debug')).toHaveTextContent(
+        '"sourceDataFeatureCount":4',
+      ),
+    );
+    expect(mapEngine.getDiagnostics).toHaveBeenCalledTimes(1);
+
+    window.history.pushState({}, '', '/explore');
+  });
+
   it('shows a distinct empty state when the ready catalog has no destinations', () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },

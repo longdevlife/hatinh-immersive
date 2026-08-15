@@ -16,6 +16,10 @@ class FakeGeoJsonSource {
   setData(data: unknown): void {
     this.data = data;
   }
+
+  getData(): unknown {
+    return this.data;
+  }
 }
 
 class FakeMap {
@@ -148,6 +152,56 @@ class FakeMap {
   remove(): void {
     this.removed = true;
   }
+
+  getBounds() {
+    return {
+      getEast: () => 107,
+      getNorth: () => 19,
+      getSouth: () => 18,
+      getWest: () => 105,
+    };
+  }
+
+  getCenter() {
+    const center = (this.options as { center: [number, number] }).center;
+    return { lat: center[1], lng: center[0] };
+  }
+
+  getZoom(): number {
+    return (this.options as { zoom: number }).zoom;
+  }
+
+  queryRenderedFeatures(options?: { layers?: string[] }): unknown[] {
+    const layerId = options?.layers?.[0];
+    const features =
+      (this.sources.get('explore-destinations')?.data as { features?: unknown[] } | undefined)
+        ?.features ?? [];
+    if (layerId === 'explore-destinations-selection-halo') {
+      return features.filter(
+        (feature) =>
+          ((feature as { properties?: { isSelected?: boolean } }).properties?.isSelected ??
+            false) === true,
+      );
+    }
+    if (
+      layerId === 'explore-destinations' ||
+      layerId === 'explore-destination-labels' ||
+      layerId === 'explore-destinations-hit-targets'
+    ) {
+      return features;
+    }
+    return [];
+  }
+
+  querySourceFeatures(sourceId: string): unknown[] {
+    return (
+      (this.sources.get(sourceId)?.data as { features?: unknown[] } | undefined)?.features ?? []
+    );
+  }
+
+  triggerRepaint(): void {
+    queueMicrotask(() => this.emit('idle'));
+  }
 }
 
 const runtime = { Map: FakeMap } as unknown as ExploreMapRuntime;
@@ -265,6 +319,44 @@ describe('MapLibreExploreMapEngine', () => {
     );
     expect(map.images.has('explore-destination-pin')).toBe(true);
     expect(map.images.has('explore-destination-pin-selected')).toBe(true);
+
+    engine.destroy();
+  });
+
+  it('captures stable source, layer, image, rendered-feature, and camera diagnostics', async () => {
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8 },
+    });
+
+    engine.setState(state);
+    await engine.mount(document.createElement('div'));
+
+    await expect(engine.getDiagnostics()).resolves.toMatchObject({
+      sourceExists: true,
+      sourceDataFeatureCount: 2,
+      sourceFeatureIds: ['thien-cam', 'nguyen-du'],
+      sourceFeatureCoordinates: [
+        [106.4217, 18.2942],
+        [105.5871, 18.4328],
+      ],
+      sourceFeatureSelectedFlags: [true, false],
+      layers: {
+        'explore-destinations-selection-halo': { exists: true },
+        'explore-destinations': { exists: true },
+        'explore-destinations-hit-targets': { exists: true },
+        'explore-destination-labels': { exists: true },
+        'explore-user-location': { exists: true },
+      },
+      normalPinImageExists: true,
+      selectedPinImageExists: true,
+      renderedPinFeatureCount: 2,
+      renderedHaloFeatureCount: 1,
+      renderedLabelFeatureCount: 2,
+      mapCenter: { longitude: 105.9, latitude: 18.342 },
+      mapZoom: 9,
+      mapBounds: { west: 105, south: 18, east: 107, north: 19 },
+    });
 
     engine.destroy();
   });

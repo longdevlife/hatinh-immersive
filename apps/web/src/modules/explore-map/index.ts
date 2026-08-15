@@ -1,4 +1,8 @@
 export type { ExploreMapEnginePort } from './domain/explore-map-engine.port';
+export type {
+  ExploreMapDiagnostics,
+  ExploreMapLayerDiagnostics,
+} from './model/explore-map-diagnostics';
 export { FakeExploreMapEngine } from './adapters/fake-explore-map.adapter';
 export type { FakeExploreMapCall } from './adapters/fake-explore-map.adapter';
 export { LazyMapLibreExploreMapEngine } from './adapters/lazy-maplibre-explore-map.adapter';
