@@ -301,7 +301,7 @@ function readRenderedFeatureCount(map: ExploreMapInstance, layerId: string): num
 }
 
 function waitForMapIdle(map: ExploreMapInstance): Promise<boolean> {
-  if (map.isStyleLoaded?.() === true && map.isMoving?.() !== true) {
+  if (map.isMoving?.() === false) {
     return Promise.resolve(false);
   }
 
