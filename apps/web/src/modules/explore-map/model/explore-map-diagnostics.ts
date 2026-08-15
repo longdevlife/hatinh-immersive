@@ -9,6 +9,37 @@ export interface ExploreMapLayerDiagnostics {
   textField?: unknown;
 }
 
+export interface ExploreMapSetDataTrace {
+  sourceId: string;
+  callSequence: number;
+  startTimeMs: number;
+  promiseResolved: boolean;
+  promiseRejected: boolean;
+  timedOut: boolean;
+  settleTimeMs: number | null;
+  error?: string;
+}
+
+export interface ExploreMapSourceEventTrace {
+  sourceId: string;
+  event: 'sourcedataloading' | 'sourcedata' | 'sourcedataabort' | 'error';
+  timestampMs: number;
+  sourceDataType: string | null;
+  isSourceLoaded: boolean | null;
+  error?: string;
+}
+
+export interface ExploreMapCanaryDiagnostics {
+  sourceExists: boolean;
+  setDataPromiseResolved: boolean | null;
+  setDataPromiseRejected: boolean | null;
+  setDataTimedOut: boolean;
+  setDataSettleTimeMs: number | null;
+  sourceLoaded: boolean | null;
+  querySourceCount: number | null;
+  renderedCount: number | null;
+}
+
 export interface ExploreMapDiagnostics {
   sourceExists: boolean;
   sourceDataFeatureCount: number | null;
@@ -30,6 +61,14 @@ export interface ExploreMapDiagnostics {
   mapTilesLoaded: boolean | null;
   mapMoving: boolean | null;
   mapIdleObserved: boolean;
+  setStateCallCount: number;
+  applyStateCallCount: number;
+  destinationSetDataCallCount: number;
+  userLocationSetDataCallCount: number;
+  destinationSetDataTraces: ExploreMapSetDataTrace[];
+  userLocationSetDataTraces: ExploreMapSetDataTrace[];
+  sourceEvents: ExploreMapSourceEventTrace[];
+  canary: ExploreMapCanaryDiagnostics;
 }
 
 export type ExploreMapDiagnosticsUnavailableReason =

@@ -114,6 +114,7 @@ function getConfiguredExploreMapStyles(): readonly ExploreMapStyleOption[] {
 
 function createDefaultExploreMapEngine(
   styles: readonly ExploreMapStyleOption[],
+  diagnosticsEnabled = false,
 ): ExploreMapEnginePort {
   if (import.meta.env.VITE_EXPLORE_MAP_MODE === 'fake') {
     return new FakeExploreMapEngine();
@@ -122,6 +123,7 @@ function createDefaultExploreMapEngine(
   const style = styles[0]?.style;
 
   return new LazyMapLibreExploreMapEngine({
+    diagnosticsEnabled,
     ...(style ? { style } : {}),
   });
 }
@@ -141,9 +143,12 @@ export function ExploreExperience({
   const destinations = destinationsOverride ?? destinationsQuery.data;
   const configuredMapStyles = useMemo(getConfiguredExploreMapStyles, []);
   const availableMapStyles = mapStylesOverride ?? configuredMapStyles;
+  const isMapDebugEnabled =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('mapDebug') === '1';
   const mapEngine = useMemo(
-    () => mapEngineOverride ?? createDefaultExploreMapEngine(availableMapStyles),
-    [availableMapStyles, mapEngineOverride],
+    () => mapEngineOverride ?? createDefaultExploreMapEngine(availableMapStyles, isMapDebugEnabled),
+    [availableMapStyles, isMapDebugEnabled, mapEngineOverride],
   );
   const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
   const [query, setQuery] = useState(initialQuery ?? '');
@@ -165,9 +170,6 @@ export function ExploreExperience({
     typeof navigator !== 'undefined' &&
     typeof navigator.geolocation?.getCurrentPosition === 'function';
   const exploreMode = isMobileViewport && !isMobileMapOpen ? 'destination-list' : 'map';
-  const isMapDebugEnabled =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('mapDebug') === '1';
   const filteredDestinations = useMemo(
     () => filterDestinations(destinations, { query, category }),
     [category, destinations, query],

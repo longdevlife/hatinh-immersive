@@ -1,8 +1,11 @@
 export type { ExploreMapEnginePort } from './domain/explore-map-engine.port';
 export type {
+  ExploreMapCanaryDiagnostics,
   ExploreMapDiagnostics,
   ExploreMapLayerDiagnostics,
   ExploreMapDiagnosticsResult,
+  ExploreMapSetDataTrace,
+  ExploreMapSourceEventTrace,
   ExploreMapDiagnosticsUnavailable,
   ExploreMapDiagnosticsUnavailableReason,
 } from './model/explore-map-diagnostics';
