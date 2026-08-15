@@ -305,26 +305,11 @@ function waitForMapIdle(map: ExploreMapInstance): Promise<boolean> {
     return Promise.resolve(false);
   }
 
-  const triggerRepaint = map.triggerRepaint;
-  if (!triggerRepaint) {
-    return Promise.resolve(false);
-  }
-
-  return new Promise<boolean>((resolve) => {
-    let settled = false;
-    const onIdle = () => {
-      if (settled) {
-        return;
-      }
-
-      settled = true;
-      map.off('idle', onIdle);
-      resolve(true);
-    };
-
-    map.on('idle', onIdle);
-    triggerRepaint.call(map);
-  });
+  // The Preview runtime can keep the external raster source from emitting
+  // MapLibre's idle event. The diagnostic entry must still expose the source
+  // and layer state instead of hanging forever; mapIdleObserved remains false
+  // so the capture is never mistaken for an idle-event proof.
+  return Promise.resolve(false);
 }
 
 interface MapLoadWaiter extends Promise<void> {
