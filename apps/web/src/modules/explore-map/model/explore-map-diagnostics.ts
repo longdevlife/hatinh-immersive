@@ -28,6 +28,7 @@ export interface ExploreMapDiagnostics {
 }
 
 export type ExploreMapDiagnosticsUnavailableReason =
+  | 'diagnostics-capture-failed'
   | 'lazy-engine-not-mounted'
   | 'map-engine-diagnostics-not-supported'
   | 'map-not-mounted'

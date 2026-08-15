@@ -81,8 +81,11 @@ export interface ExploreMapInstance {
     getSouth(): number;
     getWest(): number;
   };
+  areTilesLoaded?(): boolean;
   getCenter?(): { lat: number; lng: number };
   getZoom?(): number;
+  isMoving?(): boolean;
+  isStyleLoaded?(): boolean;
   on(
     event: string,
     layerOrListener: string | ExploreMapEventListener,
@@ -297,6 +300,14 @@ function readRenderedFeatureCount(map: ExploreMapInstance, layerId: string): num
 }
 
 function waitForMapIdle(map: ExploreMapInstance): Promise<void> {
+  if (
+    map.isStyleLoaded?.() === true &&
+    map.areTilesLoaded?.() === true &&
+    map.isMoving?.() !== true
+  ) {
+    return Promise.resolve();
+  }
+
   const triggerRepaint = map.triggerRepaint;
   if (!triggerRepaint) {
     return Promise.resolve();

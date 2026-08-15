@@ -254,11 +254,18 @@ export function ExploreExperience({
 
     let cancelled = false;
     setMapDiagnostics(null);
-    void mapEngine.getDiagnostics().then((diagnostics) => {
-      if (!cancelled) {
-        setMapDiagnostics(diagnostics);
-      }
-    });
+    void mapEngine
+      .getDiagnostics()
+      .then((diagnostics) => {
+        if (!cancelled) {
+          setMapDiagnostics(diagnostics);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMapDiagnostics({ diagnosticsUnavailableReason: 'diagnostics-capture-failed' });
+        }
+      });
 
     return () => {
       cancelled = true;
