@@ -19,7 +19,7 @@ import {
   type ExploreMapStyleOption,
   type ExploreMapDestination,
   type ExploreMapEnginePort,
-  type ExploreMapDiagnostics,
+  type ExploreMapDiagnosticsResult,
 } from '../../explore-map';
 
 export interface ExploreExperienceProps {
@@ -157,7 +157,7 @@ export function ExploreExperience({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canUseFullscreen, setCanUseFullscreen] = useState(false);
   const [mapStatus, setMapStatus] = useState<RendererStatus>('idle');
-  const [mapDiagnostics, setMapDiagnostics] = useState<ExploreMapDiagnostics | null>(null);
+  const [mapDiagnostics, setMapDiagnostics] = useState<ExploreMapDiagnosticsResult | null>(null);
   const mapShellRef = useRef<HTMLElement>(null);
   const appliedInitialDestinationSlug = useRef<string | null>(null);
   const isMobileViewport = useIsMobileViewport();

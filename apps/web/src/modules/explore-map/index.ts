@@ -2,6 +2,9 @@ export type { ExploreMapEnginePort } from './domain/explore-map-engine.port';
 export type {
   ExploreMapDiagnostics,
   ExploreMapLayerDiagnostics,
+  ExploreMapDiagnosticsResult,
+  ExploreMapDiagnosticsUnavailable,
+  ExploreMapDiagnosticsUnavailableReason,
 } from './model/explore-map-diagnostics';
 export { FakeExploreMapEngine } from './adapters/fake-explore-map.adapter';
 export type { FakeExploreMapCall } from './adapters/fake-explore-map.adapter';

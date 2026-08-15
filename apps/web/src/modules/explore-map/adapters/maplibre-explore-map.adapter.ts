@@ -4,6 +4,7 @@ import type { ExploreMapEnginePort } from '../domain/explore-map-engine.port';
 import type {
   ExploreMapDiagnostics,
   ExploreMapLayerDiagnostics,
+  ExploreMapDiagnosticsResult,
 } from '../model/explore-map-diagnostics';
 import type {
   ExploreMapCameraTarget,
@@ -569,15 +570,15 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     }
   }
 
-  async getDiagnostics(): Promise<ExploreMapDiagnostics | null> {
+  async getDiagnostics(): Promise<ExploreMapDiagnosticsResult> {
     const map = this.map;
     if (!map) {
-      return null;
+      return { diagnosticsUnavailableReason: 'map-not-mounted' };
     }
 
     await waitForMapIdle(map);
     if (this.map !== map) {
-      return null;
+      return { diagnosticsUnavailableReason: 'map-replaced-before-capture' };
     }
 
     const source = map.getSource(DESTINATIONS_SOURCE_ID);

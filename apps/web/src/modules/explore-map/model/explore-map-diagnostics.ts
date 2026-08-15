@@ -26,3 +26,15 @@ export interface ExploreMapDiagnostics {
   mapZoom: number | null;
   mapBounds: { west: number; south: number; east: number; north: number } | null;
 }
+
+export type ExploreMapDiagnosticsUnavailableReason =
+  | 'lazy-engine-not-mounted'
+  | 'map-engine-diagnostics-not-supported'
+  | 'map-not-mounted'
+  | 'map-replaced-before-capture';
+
+export interface ExploreMapDiagnosticsUnavailable {
+  diagnosticsUnavailableReason: ExploreMapDiagnosticsUnavailableReason;
+}
+
+export type ExploreMapDiagnosticsResult = ExploreMapDiagnostics | ExploreMapDiagnosticsUnavailable;
