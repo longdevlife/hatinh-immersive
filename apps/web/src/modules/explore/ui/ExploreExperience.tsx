@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import '../../../app/styles/explore.css';
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
-import type { DestinationPreviewVm, RendererStatus } from '../../../shared/contracts';
+import type { DestinationPreviewVm } from '../../../shared/contracts';
 import { DEFAULT_HA_TINH_RASTER_STYLE } from '../../../shared/map/ha-tinh-raster-style';
 import { DestinationPanel, filterDestinations } from '../../destination-catalog';
 import {
@@ -19,7 +19,6 @@ import {
   type ExploreMapStyleOption,
   type ExploreMapDestination,
   type ExploreMapEnginePort,
-  type ExploreMapDiagnosticsResult,
 } from '../../explore-map';
 
 export interface ExploreExperienceProps {
@@ -114,7 +113,6 @@ function getConfiguredExploreMapStyles(): readonly ExploreMapStyleOption[] {
 
 function createDefaultExploreMapEngine(
   styles: readonly ExploreMapStyleOption[],
-  diagnosticsEnabled = false,
 ): ExploreMapEnginePort {
   if (import.meta.env.VITE_EXPLORE_MAP_MODE === 'fake') {
     return new FakeExploreMapEngine();
@@ -123,7 +121,6 @@ function createDefaultExploreMapEngine(
   const style = styles[0]?.style;
 
   return new LazyMapLibreExploreMapEngine({
-    diagnosticsEnabled,
     ...(style ? { style } : {}),
   });
 }
@@ -143,12 +140,9 @@ export function ExploreExperience({
   const destinations = destinationsOverride ?? destinationsQuery.data;
   const configuredMapStyles = useMemo(getConfiguredExploreMapStyles, []);
   const availableMapStyles = mapStylesOverride ?? configuredMapStyles;
-  const isMapDebugEnabled =
-    typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('mapDebug') === '1';
   const mapEngine = useMemo(
-    () => mapEngineOverride ?? createDefaultExploreMapEngine(availableMapStyles, isMapDebugEnabled),
-    [availableMapStyles, isMapDebugEnabled, mapEngineOverride],
+    () => mapEngineOverride ?? createDefaultExploreMapEngine(availableMapStyles),
+    [availableMapStyles, mapEngineOverride],
   );
   const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
   const [query, setQuery] = useState(initialQuery ?? '');
@@ -161,8 +155,6 @@ export function ExploreExperience({
   const [activeMapStyleId, setActiveMapStyleId] = useState(availableMapStyles[0]?.id ?? '');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canUseFullscreen, setCanUseFullscreen] = useState(false);
-  const [mapStatus, setMapStatus] = useState<RendererStatus>('idle');
-  const [mapDiagnostics, setMapDiagnostics] = useState<ExploreMapDiagnosticsResult | null>(null);
   const mapShellRef = useRef<HTMLElement>(null);
   const appliedInitialDestinationSlug = useRef<string | null>(null);
   const isMobileViewport = useIsMobileViewport();
@@ -247,53 +239,6 @@ export function ExploreExperience({
       setIsMobileMapOpen(initialView === 'map');
     }
   }, [initialView, isMobileViewport]);
-
-  useEffect(() => {
-    if (!isMapDebugEnabled || mapStatus !== 'ready' || !mapEngine.getDiagnostics) {
-      setMapDiagnostics(null);
-      return undefined;
-    }
-
-    let cancelled = false;
-    let retryTimer: number | null = null;
-    setMapDiagnostics(null);
-    const capture = () => {
-      void mapEngine.getDiagnostics!()
-        .then((diagnostics) => {
-          if (cancelled) {
-            return;
-          }
-
-          setMapDiagnostics(diagnostics);
-          if ('mapIdleObserved' in diagnostics && diagnostics.mapIdleObserved) {
-            return;
-          }
-
-          retryTimer = window.setTimeout(capture, 500);
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setMapDiagnostics({ diagnosticsUnavailableReason: 'diagnostics-capture-failed' });
-            retryTimer = window.setTimeout(capture, 500);
-          }
-        });
-    };
-    capture();
-
-    return () => {
-      cancelled = true;
-      if (retryTimer !== null) {
-        window.clearTimeout(retryTimer);
-      }
-    };
-  }, [
-    isMapDebugEnabled,
-    mapDestinations,
-    mapEngine,
-    mapStatus,
-    selectedDestinationId,
-    userLocation,
-  ]);
 
   function handleSelectDestination(destinationId: string) {
     const nextDestination = filteredDestinations.find(
@@ -476,7 +421,6 @@ export function ExploreExperience({
             enabled={!isMobileViewport || isMobileMapOpen}
             engine={mapEngine}
             onDestinationSelected={handleSelectDestination}
-            onStatusChange={setMapStatus}
             selectedDestinationId={selectedDestinationId}
             userLocation={userLocation}
           />
@@ -488,17 +432,6 @@ export function ExploreExperience({
                 onOpenDestination ? () => openDestination(selectedDestination) : undefined
               }
             />
-          ) : null}
-          {isMapDebugEnabled && mapStatus === 'ready' ? (
-            <pre data-testid="explore-map-debug" hidden>
-              {JSON.stringify(
-                mapDiagnostics ?? {
-                  diagnosticsUnavailable: true,
-                  engineHasDiagnostics: typeof mapEngine.getDiagnostics === 'function',
-                  mapStatus,
-                },
-              )}
-            </pre>
           ) : null}
         </section>
       </div>

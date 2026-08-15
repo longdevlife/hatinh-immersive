@@ -1,12 +1,8 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
+import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+
 import type { ExploreMapEnginePort } from '../domain/explore-map-engine.port';
-import type {
-  ExploreMapLayerDiagnostics,
-  ExploreMapDiagnosticsResult,
-  ExploreMapSetDataTrace,
-  ExploreMapSourceEventTrace,
-} from '../model/explore-map-diagnostics';
 import type {
   ExploreMapCameraTarget,
   ExploreMapDestination,
@@ -32,10 +28,7 @@ const DEFAULT_OVERVIEW_MAX_ZOOM = 11;
 const REDUCED_MOTION_MEDIA_QUERY = '(prefers-reduced-motion: reduce)';
 const DESTINATION_PIN_IMAGE_ID = 'explore-destination-pin';
 const DESTINATION_SELECTED_PIN_IMAGE_ID = 'explore-destination-pin-selected';
-const DEBUG_CANARY_SOURCE_ID = 'debug-canary-source';
-const DEBUG_CANARY_LAYER_ID = 'debug-canary-circle';
-const DEBUG_SET_DATA_TIMEOUT_MS = 7500;
-const DEBUG_CANARY_COORDINATES: ExploreMapCoordinate = [105.9032, 18.3421];
+const EXPLORE_MAP_E2E_HOOKS_ENABLED = import.meta.env.VITE_EXPLORE_MAP_E2E_HOOKS === 'true';
 
 function getTransitionDuration(options: ExploreMapOptions): number {
   if (typeof window !== 'undefined' && window.matchMedia?.(REDUCED_MOTION_MEDIA_QUERY).matches) {
@@ -48,7 +41,6 @@ function getTransitionDuration(options: ExploreMapOptions): number {
 export type ExploreMapCoordinate = [longitude: number, latitude: number];
 
 export interface ExploreMapOptions {
-  diagnosticsEnabled?: boolean;
   loadRuntime?: () => Promise<ExploreMapRuntime>;
   style?: ExploreMapStyle;
   center?: ExploreMapCoordinate;
@@ -122,6 +114,27 @@ export interface ExploreMapRuntime {
   }) => ExploreMapInstance;
 }
 
+function exposeMapForE2e(map: ExploreMapInstance): void {
+  if (!EXPLORE_MAP_E2E_HOOKS_ENABLED || typeof window === 'undefined') {
+    return;
+  }
+
+  (
+    window as unknown as { __hatinhExploreMapForE2e?: ExploreMapInstance }
+  ).__hatinhExploreMapForE2e = map;
+}
+
+function clearMapForE2e(map: ExploreMapInstance): void {
+  if (!EXPLORE_MAP_E2E_HOOKS_ENABLED || typeof window === 'undefined') {
+    return;
+  }
+
+  const e2eWindow = window as unknown as { __hatinhExploreMapForE2e?: ExploreMapInstance };
+  if (e2eWindow.__hatinhExploreMapForE2e === map) {
+    delete e2eWindow.__hatinhExploreMapForE2e;
+  }
+}
+
 interface ExploreMapFeature {
   geometry: { coordinates: ExploreMapCoordinate; type: 'Point' };
   properties: Record<string, unknown>;
@@ -135,6 +148,7 @@ interface ExploreMapGeoJson {
 
 async function loadMapLibreRuntime(): Promise<ExploreMapRuntime> {
   const maplibre = await import('maplibre-gl');
+  maplibre.setWorkerUrl(mapLibreWorkerUrl);
   return { Map: maplibre.Map as unknown as ExploreMapRuntime['Map'] };
 }
 
@@ -222,163 +236,6 @@ function ensureDestinationPinImages(map: ExploreMapInstance): void {
   if (!map.hasImage(DESTINATION_SELECTED_PIN_IMAGE_ID)) {
     map.addImage(DESTINATION_SELECTED_PIN_IMAGE_ID, createDestinationPinImage([190, 128, 45]));
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
-function readGeoJsonFeatures(data: unknown): Array<Record<string, unknown>> {
-  if (!isRecord(data) || !Array.isArray(data.features)) {
-    return [];
-  }
-
-  return data.features.filter(isRecord);
-}
-
-function readPointCoordinates(feature: Record<string, unknown>): [number, number] | null {
-  const geometry = feature.geometry;
-  if (!isRecord(geometry) || geometry.type !== 'Point' || !Array.isArray(geometry.coordinates)) {
-    return null;
-  }
-
-  const [longitude, latitude] = geometry.coordinates;
-  return typeof longitude === 'number' && typeof latitude === 'number'
-    ? [longitude, latitude]
-    : null;
-}
-
-function readFeatureId(feature: Record<string, unknown>): string | number | null {
-  const properties = isRecord(feature.properties) ? feature.properties : null;
-  const id = properties?.id ?? feature.id;
-  return typeof id === 'string' || typeof id === 'number' ? id : null;
-}
-
-function readSelectedFlag(feature: Record<string, unknown>): boolean | null {
-  const properties = isRecord(feature.properties) ? feature.properties : null;
-  return typeof properties?.isSelected === 'boolean' ? properties.isSelected : null;
-}
-
-function readLayerConfig(layer: unknown): Record<string, unknown> | null {
-  if (!isRecord(layer)) {
-    return null;
-  }
-
-  const serialize = layer.serialize;
-  if (typeof serialize === 'function') {
-    const serialized = serialize.call(layer);
-    if (isRecord(serialized)) {
-      return serialized;
-    }
-  }
-
-  return layer;
-}
-
-function readLayerDiagnostics(layer: unknown): ExploreMapLayerDiagnostics {
-  const config = readLayerConfig(layer);
-  if (!config) {
-    return { exists: false };
-  }
-
-  const layout = isRecord(config.layout) ? config.layout : null;
-  return {
-    exists: true,
-    ...(config.filter === undefined ? {} : { filter: config.filter }),
-    ...(layout?.['icon-image'] === undefined ? {} : { iconImage: layout['icon-image'] }),
-    ...(layout?.['icon-size'] === undefined ? {} : { iconSize: layout['icon-size'] }),
-    ...(config.source === undefined ? {} : { source: config.source }),
-    ...(layout?.['text-field'] === undefined ? {} : { textField: layout['text-field'] }),
-    ...(config.type === undefined ? {} : { type: config.type }),
-    ...(layout?.visibility === undefined ? {} : { visibility: layout.visibility }),
-  };
-}
-
-function readRenderedFeatureCount(map: ExploreMapInstance, layerId: string): number | null {
-  if (!map.queryRenderedFeatures) {
-    return null;
-  }
-
-  try {
-    return map.queryRenderedFeatures({ layers: [layerId] }).length;
-  } catch {
-    return null;
-  }
-}
-
-function waitForMapIdle(map: ExploreMapInstance): Promise<boolean> {
-  if (map.isMoving?.() === false) {
-    return Promise.resolve(false);
-  }
-
-  // The Preview runtime can keep the external raster source from emitting
-  // MapLibre's idle event. The diagnostic entry must still expose the source
-  // and layer state instead of hanging forever; mapIdleObserved remains false
-  // so the capture is never mistaken for an idle-event proof.
-  return Promise.resolve(false);
-}
-
-function diagnosticNow(): number {
-  return typeof performance !== 'undefined' && typeof performance.now === 'function'
-    ? performance.now()
-    : Date.now();
-}
-
-function diagnosticErrorMessage(error: unknown): string | undefined {
-  if (error instanceof Error) {
-    return error.message;
-  }
-
-  if (typeof error === 'string') {
-    return error;
-  }
-
-  if (isRecord(error) && typeof error.message === 'string') {
-    return error.message;
-  }
-
-  return undefined;
-}
-
-function diagnosticSourceId(event: unknown): string | null {
-  if (!isRecord(event)) {
-    return null;
-  }
-
-  return typeof event.sourceId === 'string'
-    ? event.sourceId
-    : isRecord(event.source) && typeof event.source.id === 'string'
-      ? event.source.id
-      : null;
-}
-
-function diagnosticSourceDataType(event: unknown): string | null {
-  if (!isRecord(event) || typeof event.sourceDataType !== 'string') {
-    return null;
-  }
-
-  return event.sourceDataType;
-}
-
-function diagnosticSourceLoaded(event: unknown): boolean | null {
-  if (!isRecord(event) || typeof event.isSourceLoaded !== 'boolean') {
-    return null;
-  }
-
-  return event.isSourceLoaded;
-}
-
-function diagnosticCanaryGeoJson(): ExploreMapGeoJson {
-  return {
-    features: [
-      {
-        geometry: { coordinates: DEBUG_CANARY_COORDINATES, type: 'Point' },
-        properties: {},
-        type: 'Feature',
-      },
-    ],
-    type: 'FeatureCollection',
-  };
 }
 
 interface MapLoadWaiter extends Promise<void> {
@@ -501,18 +358,6 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   private pendingMapLoadCancellation: (() => void) | null = null;
   private readonly handledOriginalClickEvents = new WeakSet<object>();
   private currentStyle: ExploreMapStyle | null = null;
-  private diagnosticSetDataSequence = 0;
-  private diagnosticSetStateCallCount = 0;
-  private diagnosticApplyStateCallCount = 0;
-  private readonly diagnosticSetDataTraces = new Map<string, ExploreMapSetDataTrace[]>();
-  private readonly diagnosticSourceEvents: ExploreMapSourceEventTrace[] = [];
-  private readonly diagnosticTimers = new Set<ReturnType<typeof setTimeout>>();
-  private diagnosticEventMap: ExploreMapInstance | null = null;
-  private readonly diagnosticEventListeners: Array<{
-    event: string;
-    listener: ExploreMapEventListener;
-  }> = [];
-  private diagnosticCanarySource: ExploreMapSource | null = null;
   private readonly handleDestinationClick = (event?: unknown) => {
     const destinationId = readDestinationId(event);
     if (!destinationId) {
@@ -561,6 +406,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     });
     this.map = map;
     this.currentStyle = this.currentStyle ?? this.options.style;
+    exposeMapForE2e(map);
 
     const mapLoad = waitForMapLoad(map);
     this.pendingMapLoadCancellation = mapLoad.cancel;
@@ -595,10 +441,6 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   }
 
   setState(state: ExploreMapViewportState): void {
-    if (this.options.diagnosticsEnabled) {
-      this.diagnosticSetStateCallCount += 1;
-    }
-
     this.state = {
       destinations: [...state.destinations],
       selectedDestinationId: state.selectedDestinationId,
@@ -648,100 +490,6 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     }
   }
 
-  async getDiagnostics(): Promise<ExploreMapDiagnosticsResult> {
-    const map = this.map;
-    if (!map) {
-      return { diagnosticsUnavailableReason: 'map-not-mounted' };
-    }
-
-    const mapIdleObserved = await waitForMapIdle(map);
-    if (this.map !== map) {
-      return { diagnosticsUnavailableReason: 'map-replaced-before-capture' };
-    }
-
-    const source = map.getSource(DESTINATIONS_SOURCE_ID);
-    const sourceData = source?.getData ? await source.getData() : null;
-    const sourceFeatures = readGeoJsonFeatures(sourceData);
-    const querySourceFeatureCount = map.querySourceFeatures
-      ? (() => {
-          try {
-            return map.querySourceFeatures!(DESTINATIONS_SOURCE_ID).length;
-          } catch {
-            return null;
-          }
-        })()
-      : null;
-    const center = map.getCenter?.();
-    const bounds = map.getBounds?.();
-    const canarySource = map.getSource(DEBUG_CANARY_SOURCE_ID);
-    const canaryTrace = this.latestDiagnosticSetDataTrace(DEBUG_CANARY_SOURCE_ID);
-
-    return {
-      sourceExists: source !== undefined,
-      sourceDataFeatureCount: source?.getData ? sourceFeatures.length : null,
-      sourceFeatureCoordinates: sourceFeatures.map(readPointCoordinates),
-      sourceFeatureIds: sourceFeatures.map(readFeatureId),
-      sourceFeatureSelectedFlags: sourceFeatures.map(readSelectedFlag),
-      querySourceFeatureCount,
-      layers: {
-        [DESTINATIONS_HALO_LAYER_ID]: readLayerDiagnostics(
-          map.getLayer(DESTINATIONS_HALO_LAYER_ID),
-        ),
-        [DESTINATIONS_LAYER_ID]: readLayerDiagnostics(map.getLayer(DESTINATIONS_LAYER_ID)),
-        [DESTINATIONS_HIT_TARGET_LAYER_ID]: readLayerDiagnostics(
-          map.getLayer(DESTINATIONS_HIT_TARGET_LAYER_ID),
-        ),
-        [DESTINATIONS_LABEL_LAYER_ID]: readLayerDiagnostics(
-          map.getLayer(DESTINATIONS_LABEL_LAYER_ID),
-        ),
-        [USER_LOCATION_LAYER_ID]: readLayerDiagnostics(map.getLayer(USER_LOCATION_LAYER_ID)),
-      },
-      normalPinImageExists: map.hasImage(DESTINATION_PIN_IMAGE_ID),
-      selectedPinImageExists: map.hasImage(DESTINATION_SELECTED_PIN_IMAGE_ID),
-      renderedPinFeatureCount: readRenderedFeatureCount(map, DESTINATIONS_LAYER_ID),
-      renderedHaloFeatureCount: readRenderedFeatureCount(map, DESTINATIONS_HALO_LAYER_ID),
-      renderedLabelFeatureCount: readRenderedFeatureCount(map, DESTINATIONS_LABEL_LAYER_ID),
-      mapCenter: center ? { latitude: center.lat, longitude: center.lng } : null,
-      mapZoom: map.getZoom?.() ?? null,
-      mapBounds: bounds
-        ? {
-            east: bounds.getEast(),
-            north: bounds.getNorth(),
-            south: bounds.getSouth(),
-            west: bounds.getWest(),
-          }
-        : null,
-      mapStyleLoaded: map.isStyleLoaded?.() ?? null,
-      mapSourceLoaded: map.isSourceLoaded?.(DESTINATIONS_SOURCE_ID) ?? null,
-      mapTilesLoaded: map.areTilesLoaded?.() ?? null,
-      mapMoving: map.isMoving?.() ?? null,
-      mapIdleObserved,
-      setStateCallCount: this.diagnosticSetStateCallCount,
-      applyStateCallCount: this.diagnosticApplyStateCallCount,
-      destinationSetDataCallCount:
-        this.diagnosticSetDataTraces.get(DESTINATIONS_SOURCE_ID)?.length ?? 0,
-      userLocationSetDataCallCount:
-        this.diagnosticSetDataTraces.get(USER_LOCATION_SOURCE_ID)?.length ?? 0,
-      destinationSetDataTraces: [
-        ...(this.diagnosticSetDataTraces.get(DESTINATIONS_SOURCE_ID) ?? []),
-      ],
-      userLocationSetDataTraces: [
-        ...(this.diagnosticSetDataTraces.get(USER_LOCATION_SOURCE_ID) ?? []),
-      ],
-      sourceEvents: [...this.diagnosticSourceEvents],
-      canary: {
-        sourceExists: canarySource !== undefined,
-        setDataPromiseRejected: canaryTrace?.promiseRejected ?? null,
-        setDataPromiseResolved: canaryTrace?.promiseResolved ?? null,
-        setDataSettleTimeMs: canaryTrace?.settleTimeMs ?? null,
-        setDataTimedOut: canaryTrace?.timedOut ?? false,
-        sourceLoaded: map.isSourceLoaded?.(DEBUG_CANARY_SOURCE_ID) ?? null,
-        querySourceCount: this.readQuerySourceCount(map, DEBUG_CANARY_SOURCE_ID),
-        renderedCount: readRenderedFeatureCount(map, DEBUG_CANARY_LAYER_ID),
-      },
-    };
-  }
-
   subscribeDestinationSelected(listener: (destinationId: string) => void): () => void {
     this.destinationListeners.add(listener);
     return () => this.destinationListeners.delete(listener);
@@ -759,30 +507,19 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   }
 
   private applyState(): void {
-    if (this.options.diagnosticsEnabled) {
-      this.diagnosticApplyStateCallCount += 1;
-    }
-
     const destinationSource = this.map?.getSource(DESTINATIONS_SOURCE_ID);
     const userLocationSource = this.map?.getSource(USER_LOCATION_SOURCE_ID);
     if (destinationSource) {
-      this.setDiagnosticData(
-        DESTINATIONS_SOURCE_ID,
-        destinationSource,
+      destinationSource.setData(
         toGeoJson(this.state.destinations, this.state.selectedDestinationId),
       );
     }
     if (userLocationSource) {
-      this.setDiagnosticData(
-        USER_LOCATION_SOURCE_ID,
-        userLocationSource,
-        userLocationGeoJson(this.state.userLocation),
-      );
+      userLocationSource.setData(userLocationGeoJson(this.state.userLocation));
     }
   }
 
   private installDataLayers(map: ExploreMapInstance): void {
-    this.installDiagnosticSourceEventTrace(map);
     ensureDestinationPinImages(map);
 
     if (!map.getSource(DESTINATIONS_SOURCE_ID)) {
@@ -874,155 +611,6 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
         type: 'circle',
       });
     }
-
-    this.installDiagnosticCanary(map);
-  }
-
-  private installDiagnosticSourceEventTrace(map: ExploreMapInstance): void {
-    if (!this.options.diagnosticsEnabled || this.diagnosticEventMap === map) {
-      return;
-    }
-
-    this.diagnosticEventMap = map;
-    for (const event of ['sourcedataloading', 'sourcedata', 'sourcedataabort', 'error']) {
-      const listener: ExploreMapEventListener = (payload) => {
-        const sourceId = diagnosticSourceId(payload);
-        if (
-          sourceId !== DESTINATIONS_SOURCE_ID &&
-          sourceId !== USER_LOCATION_SOURCE_ID &&
-          sourceId !== DEBUG_CANARY_SOURCE_ID
-        ) {
-          return;
-        }
-
-        const error = isRecord(payload) ? diagnosticErrorMessage(payload.error) : undefined;
-        this.diagnosticSourceEvents.push({
-          ...(error ? { error } : {}),
-          event: event as ExploreMapSourceEventTrace['event'],
-          isSourceLoaded: diagnosticSourceLoaded(payload),
-          sourceDataType: diagnosticSourceDataType(payload),
-          sourceId,
-          timestampMs: diagnosticNow(),
-        });
-      };
-
-      map.on(event, listener);
-      this.diagnosticEventListeners.push({ event, listener });
-    }
-  }
-
-  private installDiagnosticCanary(map: ExploreMapInstance): void {
-    if (!this.options.diagnosticsEnabled) {
-      return;
-    }
-
-    if (!map.getSource(DEBUG_CANARY_SOURCE_ID)) {
-      map.addSource(DEBUG_CANARY_SOURCE_ID, {
-        data: emptyGeoJson(),
-        type: 'geojson',
-      });
-    }
-
-    if (!map.getLayer(DEBUG_CANARY_LAYER_ID)) {
-      map.addLayer({
-        id: DEBUG_CANARY_LAYER_ID,
-        paint: {
-          'circle-color': '#ff00aa',
-          'circle-radius': 6,
-        },
-        source: DEBUG_CANARY_SOURCE_ID,
-        type: 'circle',
-      });
-    }
-
-    const source = map.getSource(DEBUG_CANARY_SOURCE_ID);
-    if (!source || this.diagnosticCanarySource === source) {
-      return;
-    }
-
-    this.diagnosticCanarySource = source;
-    this.setDiagnosticData(DEBUG_CANARY_SOURCE_ID, source, diagnosticCanaryGeoJson());
-  }
-
-  private setDiagnosticData(sourceId: string, source: ExploreMapSource, data: unknown): void {
-    if (!this.options.diagnosticsEnabled) {
-      source.setData(data);
-      return;
-    }
-
-    const trace: ExploreMapSetDataTrace = {
-      callSequence: ++this.diagnosticSetDataSequence,
-      promiseRejected: false,
-      promiseResolved: false,
-      settleTimeMs: null,
-      sourceId,
-      startTimeMs: diagnosticNow(),
-      timedOut: false,
-    };
-    const traces = this.diagnosticSetDataTraces.get(sourceId) ?? [];
-    traces.push(trace);
-    this.diagnosticSetDataTraces.set(sourceId, traces);
-
-    let result: Promise<void> | void;
-    try {
-      result = source.setData(data);
-    } catch (error) {
-      trace.promiseRejected = true;
-      trace.settleTimeMs = diagnosticNow() - trace.startTimeMs;
-      const message = diagnosticErrorMessage(error);
-      if (message) {
-        trace.error = message;
-      }
-      return;
-    }
-
-    if (!result || typeof (result as Promise<void>).then !== 'function') {
-      trace.promiseResolved = true;
-      trace.settleTimeMs = diagnosticNow() - trace.startTimeMs;
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      trace.timedOut = true;
-      this.diagnosticTimers.delete(timeout);
-    }, DEBUG_SET_DATA_TIMEOUT_MS);
-    this.diagnosticTimers.add(timeout);
-
-    void Promise.resolve(result).then(
-      () => {
-        clearTimeout(timeout);
-        this.diagnosticTimers.delete(timeout);
-        trace.promiseResolved = true;
-        trace.settleTimeMs = diagnosticNow() - trace.startTimeMs;
-      },
-      (error: unknown) => {
-        clearTimeout(timeout);
-        this.diagnosticTimers.delete(timeout);
-        trace.promiseRejected = true;
-        trace.settleTimeMs = diagnosticNow() - trace.startTimeMs;
-        const message = diagnosticErrorMessage(error);
-        if (message) {
-          trace.error = message;
-        }
-      },
-    );
-  }
-
-  private latestDiagnosticSetDataTrace(sourceId: string): ExploreMapSetDataTrace | null {
-    const traces = this.diagnosticSetDataTraces.get(sourceId);
-    return traces?.[traces.length - 1] ?? null;
-  }
-
-  private readQuerySourceCount(map: ExploreMapInstance, sourceId: string): number | null {
-    if (!map.querySourceFeatures) {
-      return null;
-    }
-
-    try {
-      return map.querySourceFeatures(sourceId).length;
-    } catch {
-      return null;
-    }
   }
 
   private async applyStyle(map: ExploreMapInstance, style: ExploreMapStyle): Promise<void> {
@@ -1100,11 +688,8 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     this.pendingMapLoadCancellation = null;
     cancelMapLoad?.();
 
-    if (this.map || this.diagnosticEventMap) {
-      this.resetDiagnosticRuntimeState();
-    }
-
     if (this.map) {
+      clearMapForE2e(this.map);
       this.map.off('click', DESTINATIONS_HIT_TARGET_LAYER_ID, this.handleDestinationClick);
       this.map.off('click', DESTINATIONS_LABEL_LAYER_ID, this.handleDestinationClick);
       this.map.remove();
@@ -1114,27 +699,6 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
 
     this.map = null;
     this.container = null;
-  }
-
-  private resetDiagnosticRuntimeState(): void {
-    for (const timer of this.diagnosticTimers) {
-      clearTimeout(timer);
-    }
-    this.diagnosticTimers.clear();
-
-    if (this.diagnosticEventMap) {
-      for (const { event, listener } of this.diagnosticEventListeners) {
-        this.diagnosticEventMap.off(event, listener);
-      }
-    }
-    this.diagnosticEventListeners.length = 0;
-    this.diagnosticEventMap = null;
-    this.diagnosticCanarySource = null;
-    this.diagnosticSetDataSequence = 0;
-    this.diagnosticSetStateCallCount = 0;
-    this.diagnosticApplyStateCallCount = 0;
-    this.diagnosticSetDataTraces.clear();
-    this.diagnosticSourceEvents.length = 0;
   }
 
   private async getRuntime(): Promise<ExploreMapRuntime> {

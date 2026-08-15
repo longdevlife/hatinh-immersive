@@ -190,12 +190,6 @@ class FakeMap {
     ) {
       return features;
     }
-    if (layerId === 'debug-canary-circle') {
-      return (
-        (this.sources.get('debug-canary-source')?.data as { features?: unknown[] } | undefined)
-          ?.features ?? []
-      );
-    }
     return [];
   }
 
@@ -203,10 +197,6 @@ class FakeMap {
     return (
       (this.sources.get(sourceId)?.data as { features?: unknown[] } | undefined)?.features ?? []
     );
-  }
-
-  isSourceLoaded(sourceId: string): boolean {
-    return this.sources.has(sourceId);
   }
 
   triggerRepaint(): void {
@@ -329,70 +319,6 @@ describe('MapLibreExploreMapEngine', () => {
     );
     expect(map.images.has('explore-destination-pin')).toBe(true);
     expect(map.images.has('explore-destination-pin-selected')).toBe(true);
-
-    engine.destroy();
-  });
-
-  it('captures stable source, layer, image, rendered-feature, and camera diagnostics', async () => {
-    const engine = new MapLibreExploreMapEngine({
-      loadRuntime: async () => runtime,
-      style: { version: 8 },
-    });
-
-    engine.setState(state);
-    await engine.mount(document.createElement('div'));
-
-    await expect(engine.getDiagnostics()).resolves.toMatchObject({
-      sourceExists: true,
-      sourceDataFeatureCount: 2,
-      sourceFeatureIds: ['thien-cam', 'nguyen-du'],
-      sourceFeatureCoordinates: [
-        [106.4217, 18.2942],
-        [105.5871, 18.4328],
-      ],
-      sourceFeatureSelectedFlags: [true, false],
-      layers: {
-        'explore-destinations-selection-halo': { exists: true },
-        'explore-destinations': { exists: true },
-        'explore-destinations-hit-targets': { exists: true },
-        'explore-destination-labels': { exists: true },
-        'explore-user-location': { exists: true },
-      },
-      normalPinImageExists: true,
-      selectedPinImageExists: true,
-      renderedPinFeatureCount: 2,
-      renderedHaloFeatureCount: 1,
-      renderedLabelFeatureCount: 2,
-      mapCenter: { longitude: 105.9, latitude: 18.342 },
-      mapZoom: 9,
-      mapBounds: { west: 105, south: 18, east: 107, north: 19 },
-    });
-
-    engine.destroy();
-  });
-
-  it('traces setData and the diagnostic GeoJSON canary when diagnostics are enabled', async () => {
-    const engine = new MapLibreExploreMapEngine({
-      diagnosticsEnabled: true,
-      loadRuntime: async () => runtime,
-      style: { version: 8 },
-    });
-
-    engine.setState(state);
-    await engine.mount(document.createElement('div'));
-
-    await expect(engine.getDiagnostics()).resolves.toMatchObject({
-      destinationSetDataCallCount: 1,
-      userLocationSetDataCallCount: 1,
-      canary: {
-        sourceExists: true,
-        setDataPromiseResolved: true,
-        setDataPromiseRejected: false,
-        sourceLoaded: true,
-        querySourceCount: 1,
-        renderedCount: 1,
-      },
-    });
 
     engine.destroy();
   });

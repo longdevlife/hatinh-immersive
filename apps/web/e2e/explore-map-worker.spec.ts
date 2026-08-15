@@ -20,8 +20,9 @@ const TEST_STYLE = {
 type MapProbeState = {
   destinationRenderedCount: number;
   destinationSourceCount: number;
+  destinationSourceIds: string[];
   destinationSourceLoaded: boolean;
-  selectedDestinationCount: number;
+  selectedDestinationIds: string[];
   selectedHaloRenderedCount: number;
 };
 
@@ -92,12 +93,27 @@ test('production MapLibre build serves its worker and settles real GeoJSON updat
       const selectedFeatures = sourceFeatures.filter(
         (feature) => feature.properties?.isSelected === true,
       );
+      const destinationSourceIds = [
+        ...new Set(
+          sourceFeatures
+            .map((feature) => feature.properties?.id)
+            .filter((id): id is string => typeof id === 'string'),
+        ),
+      ].sort();
+      const selectedDestinationIds = [
+        ...new Set(
+          selectedFeatures
+            .map((feature) => feature.properties?.id)
+            .filter((id): id is string => typeof id === 'string'),
+        ),
+      ].sort();
 
       return {
         destinationRenderedCount: renderedFeatures.length,
         destinationSourceCount: sourceFeatures.length,
+        destinationSourceIds,
         destinationSourceLoaded: map.isSourceLoaded('explore-destinations'),
-        selectedDestinationCount: selectedFeatures.length,
+        selectedDestinationIds,
         selectedHaloRenderedCount: map.queryRenderedFeatures({
           layers: ['explore-destinations-selection-halo'],
         }).length,
@@ -107,9 +123,14 @@ test('production MapLibre build serves its worker and settles real GeoJSON updat
 
   await expect.poll(readMapProbe, { timeout: 30_000 }).toMatchObject({
     destinationRenderedCount: expect.any(Number),
-    destinationSourceCount: 4,
+    destinationSourceIds: [
+      'dong-loc-junction',
+      'nguyen-du-memorial',
+      'son-trang-co-dam',
+      'thien-cam-beach',
+    ],
     destinationSourceLoaded: true,
-    selectedDestinationCount: 0,
+    selectedDestinationIds: [],
     selectedHaloRenderedCount: 0,
     sourceExists: true,
   });
@@ -171,9 +192,9 @@ test('production MapLibre build serves its worker and settles real GeoJSON updat
   await expect(map).toHaveAttribute('data-selected-destination-id', 'son-trang-co-dam');
   await expect.poll(readMapProbe, { timeout: 30_000 }).toMatchObject({
     destinationRenderedCount: expect.any(Number),
-    destinationSourceCount: 4,
+    destinationSourceIds: expect.arrayContaining(['son-trang-co-dam']),
     destinationSourceLoaded: true,
-    selectedDestinationCount: 1,
+    selectedDestinationIds: ['son-trang-co-dam'],
     selectedHaloRenderedCount: 1,
   });
   expect((await readMapProbe())!.destinationRenderedCount).toBeGreaterThan(0);
