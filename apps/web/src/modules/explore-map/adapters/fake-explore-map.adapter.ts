@@ -1,5 +1,9 @@
 import type { ExploreMapEnginePort } from '../domain/explore-map-engine.port';
-import type { ExploreMapCameraTarget, ExploreMapViewportState } from '../model/explore-map.types';
+import type {
+  ExploreMapCameraTarget,
+  ExploreMapStyle,
+  ExploreMapViewportState,
+} from '../model/explore-map.types';
 
 const E2E_SELECT_EVENT = 'hatinh:e2e:explore-map-select';
 
@@ -8,6 +12,7 @@ export type FakeExploreMapCall =
   | { type: 'setState'; state: ExploreMapViewportState }
   | { type: 'flyTo'; target: ExploreMapCameraTarget }
   | { type: 'fitOverview' }
+  | { type: 'changeStyle'; style: ExploreMapStyle }
   | { type: 'resize' }
   | { type: 'destroy' };
 
@@ -43,6 +48,7 @@ export class FakeExploreMapEngine implements ExploreMapEnginePort {
     this.state = {
       destinations: [...state.destinations],
       selectedDestinationId: state.selectedDestinationId,
+      ...(state.userLocation ? { userLocation: { ...state.userLocation } } : {}),
     };
     this.calls.push({ state: this.state, type: 'setState' });
   }
@@ -54,6 +60,10 @@ export class FakeExploreMapEngine implements ExploreMapEnginePort {
 
   async fitOverview(): Promise<void> {
     this.calls.push({ type: 'fitOverview' });
+  }
+
+  async changeStyle(style: ExploreMapStyle): Promise<void> {
+    this.calls.push({ style, type: 'changeStyle' });
   }
 
   subscribeDestinationSelected(listener: (destinationId: string) => void): () => void {

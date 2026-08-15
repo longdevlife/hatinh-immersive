@@ -22,10 +22,12 @@ describe('LazyMapLibreExploreMapEngine', () => {
       readonly listeners = new Set<(destinationId: string) => void>();
       state: unknown;
       target: unknown;
+      style: unknown;
       destroyed = false;
 
-      constructor() {
+      constructor(options?: { style?: unknown }) {
         MockMapLibreExploreMapEngine.latest = this;
+        this.style = options?.style;
       }
 
       async mount(): Promise<void> {}
@@ -36,6 +38,14 @@ describe('LazyMapLibreExploreMapEngine', () => {
 
       async flyTo(target: unknown): Promise<void> {
         this.target = target;
+      }
+
+      async changeStyle(style: unknown): Promise<void> {
+        if ((style as { name?: string }).name === 'broken') {
+          throw new Error('STYLE_SWITCH_FAILED');
+        }
+
+        this.style = style;
       }
 
       subscribeDestinationSelected(listener: (destinationId: string) => void): () => void {
@@ -60,7 +70,11 @@ describe('LazyMapLibreExploreMapEngine', () => {
       MapLibreExploreMapEngine: MockMapLibreExploreMapEngine,
     }));
     const { LazyMapLibreExploreMapEngine } = await import('./lazy-maplibre-explore-map.adapter');
-    const state = { destinations: [], selectedDestinationId: null };
+    const state = {
+      destinations: [],
+      selectedDestinationId: null,
+      userLocation: { latitude: 18.35, longitude: 105.91 },
+    };
     const target = { latitude: 18.3, longitude: 106.4, zoom: 13 };
     const engine = new LazyMapLibreExploreMapEngine({ style: { version: 8 } });
     const onDestinationSelected = vi.fn();
@@ -74,6 +88,18 @@ describe('LazyMapLibreExploreMapEngine', () => {
     expect(MockMapLibreExploreMapEngine.latest?.state).toEqual(state);
     expect(MockMapLibreExploreMapEngine.latest?.target).toEqual(target);
     expect(onDestinationSelected).toHaveBeenCalledWith('thien-cam');
+
+    await expect(engine.changeStyle({ name: 'broken', version: 8 })).rejects.toThrow(
+      'STYLE_SWITCH_FAILED',
+    );
+    engine.destroy();
+    await engine.mount(document.createElement('div'));
+    expect(MockMapLibreExploreMapEngine.latest?.style).toEqual({ version: 8 });
+
+    await engine.changeStyle({ name: 'alternate', version: 8 });
+    engine.destroy();
+    await engine.mount(document.createElement('div'));
+    expect(MockMapLibreExploreMapEngine.latest?.style).toEqual({ name: 'alternate', version: 8 });
 
     engine.destroy();
     expect(MockMapLibreExploreMapEngine.latest?.destroyed).toBe(true);

@@ -118,6 +118,9 @@ jobs:
       - name: Deterministic real MapLibre Explore end-to-end test
         run: pnpm --filter @hatinh/web test:e2e:explore-map
 
+      - name: Deterministic Hybrid Explore Map controls end-to-end test
+        run: pnpm --filter @hatinh/web test:e2e:explore-map:hybrid
+
       - name: Production-build Selected 3D lifecycle end-to-end test
         run: pnpm --filter @hatinh/web test:e2e:selected-3d
 

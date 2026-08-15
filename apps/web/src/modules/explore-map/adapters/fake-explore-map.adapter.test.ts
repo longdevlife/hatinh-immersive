@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type {
   ExploreMapCameraTarget,
   ExploreMapDestination,
+  ExploreMapStyle,
   ExploreMapViewportState,
 } from '../model/explore-map.types';
 
@@ -50,6 +51,17 @@ describe('FakeExploreMapEngine', () => {
     });
   });
 
+  it('preserves the provider-neutral user location state', () => {
+    const engine = new FakeExploreMapEngine();
+
+    engine.setState({
+      ...state,
+      userLocation: { latitude: 18.35, longitude: 105.91 },
+    });
+
+    expect(engine.state.userLocation).toEqual({ latitude: 18.35, longitude: 105.91 });
+  });
+
   it('notifies subscribed listeners and stops after unsubscribe', () => {
     const engine = new FakeExploreMapEngine();
     const firstListener = vi.fn();
@@ -82,6 +94,15 @@ describe('FakeExploreMapEngine', () => {
     await engine.fitOverview();
 
     expect(engine.calls).toContainEqual({ type: 'fitOverview' });
+  });
+
+  it('records a style change without remounting', async () => {
+    const engine = new FakeExploreMapEngine();
+    const style: ExploreMapStyle = { version: 8, name: 'alternate' };
+
+    await engine.changeStyle(style);
+
+    expect(engine.calls).toContainEqual({ style, type: 'changeStyle' });
   });
 
   it('can be destroyed repeatedly without throwing or retaining listeners', () => {

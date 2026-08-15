@@ -1,0 +1,204 @@
+.explore-map-controls {
+  --map-control-ink: #173c31;
+  --map-control-muted: #62746b;
+  --map-control-accent: #187b5c;
+  --map-control-soft: rgb(255 253 248 / 0.94);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  max-width: min(100%, 30rem);
+  color: var(--map-control-ink);
+  position: absolute;
+  inset: 1rem 1rem auto auto;
+  z-index: 4;
+}
+
+.explore-map-controls__categories,
+.explore-map-controls__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.explore-map-controls__categories {
+  flex-wrap: wrap;
+}
+
+.explore-map-controls__eyebrow {
+  flex-basis: 100%;
+  color: var(--map-control-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.explore-map-controls__category-list {
+  display: flex;
+  gap: 0.4rem;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.explore-map-controls__category-list::-webkit-scrollbar {
+  display: none;
+}
+
+.explore-map-controls__category,
+.explore-map-controls__action,
+.explore-map-controls__style {
+  min-height: 2.75rem;
+  border: 1px solid rgb(23 60 49 / 0.14);
+  border-radius: 999px;
+  background: var(--map-control-soft);
+  color: var(--map-control-ink);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.explore-map-controls__category,
+.explore-map-controls__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+.explore-map-controls__category[aria-pressed='true'] {
+  border-color: var(--map-control-accent);
+  background: var(--map-control-accent);
+  color: #fffdf8;
+}
+
+.explore-map-controls__category:hover,
+.explore-map-controls__action:hover,
+.explore-map-controls__style:hover {
+  border-color: rgb(24 123 92 / 0.55);
+}
+
+.explore-map-controls__category:hover,
+.explore-map-controls__action:hover {
+  transform: translateY(-1px);
+}
+
+.explore-map-controls__category:disabled,
+.explore-map-controls__action:disabled {
+  cursor: wait;
+  opacity: 0.62;
+  transform: none;
+}
+
+.explore-map-controls__style {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0 0.65rem 0 0.8rem;
+}
+
+.explore-map-controls__style svg,
+.explore-map-controls__action svg {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.explore-map-controls__style select {
+  min-height: 2.6rem;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.explore-map-controls__action-label {
+  display: none;
+}
+
+.explore-map-controls__status {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0.42rem 0.7rem;
+  border: 1px solid rgb(23 60 49 / 0.12);
+  border-radius: 0.75rem;
+  background: rgb(255 253 248 / 0.9);
+  color: var(--map-control-muted);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.explore-map-controls__status--denied,
+.explore-map-controls__status--unavailable {
+  border-color: rgb(164 98 34 / 0.26);
+  color: #8a5525;
+}
+
+.explore-map-controls__status--available {
+  border-color: rgb(24 123 92 / 0.2);
+  color: var(--map-control-accent);
+}
+
+.explore-map-controls button:focus-visible,
+.explore-map-controls select:focus-visible {
+  outline: 3px solid #f3c46b;
+  outline-offset: 3px;
+}
+
+@media (min-width: 900px) {
+  .explore-map-controls__action-label {
+    display: inline;
+  }
+}
+
+@media (max-width: 768px) {
+  .explore-map-controls {
+    width: auto;
+    max-width: none;
+    gap: 0.55rem;
+    inset: 4.75rem 1rem auto;
+  }
+
+  .explore-map-controls__categories {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .explore-map-controls__category-list {
+    width: 100%;
+    padding: 0.1rem 0.1rem 0.2rem;
+  }
+
+  .explore-map-controls__actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .explore-map-controls__action-label {
+    display: inline;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explore-map-controls__category,
+  .explore-map-controls__action {
+    transition: none;
+  }
+}

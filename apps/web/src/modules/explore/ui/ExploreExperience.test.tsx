@@ -97,7 +97,13 @@ describe('ExploreExperience', () => {
       'aria-current',
       'true',
     );
-    expect(screen.getByText('Đang chọn: Khu lưu niệm Nguyễn Du')).toBeInTheDocument();
+    const selectionCard = screen.getByRole('complementary', {
+      name: 'Điểm đến đang chọn: Khu lưu niệm Nguyễn Du',
+    });
+    expect(
+      within(selectionCard).getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' }),
+    ).toBeInTheDocument();
+    expect(within(selectionCard).getByText('Điểm đến đang chọn')).toBeInTheDocument();
   });
 
   it('opens the selected destination through the detail callback', () => {
@@ -120,7 +126,11 @@ describe('ExploreExperience', () => {
     renderExplore(new FakeExploreMapEngine(), { onOpenDestination });
 
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'Nguyễn' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Di sản & văn hóa' }));
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Danh sách điểm đến' })).getByRole('button', {
+        name: 'Di sản & văn hóa',
+      }),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Chọn điểm đến Khu lưu niệm Nguyễn Du' }));
     fireEvent.click(
       within(screen.getByTestId('explore-map')).getByRole('button', { name: 'Xem chi tiết' }),
@@ -353,5 +363,104 @@ describe('ExploreExperience', () => {
       expect(screen.queryByTestId('destination-card-thien-cam-beach')).not.toBeInTheDocument(),
     );
     expect(mapEngine.fitOverview).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not auto-select the first destination when a category removes the current selection', async () => {
+    const onDiscoveryStateChange = vi.fn();
+    renderExplore(new FakeExploreMapEngine(), { onDiscoveryStateChange });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chọn điểm đến Biển Thiên Cầm' }));
+    fireEvent.click(
+      within(screen.getByRole('region', { name: 'Danh sách điểm đến' })).getByRole('button', {
+        name: 'Lịch sử',
+      }),
+    );
+
+    expect(screen.queryByRole('heading', { name: 'Biển Thiên Cầm' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('destination-card-dong-loc-junction')).not.toHaveAttribute(
+      'aria-current',
+    );
+    expect(onDiscoveryStateChange).toHaveBeenLastCalledWith({
+      category: 'Lịch sử',
+      destinationSlug: null,
+      query: '',
+      view: 'map',
+    });
+  });
+
+  it('passes the chosen map style to the mounted engine without losing selection', async () => {
+    const mapEngine = new FakeExploreMapEngine();
+    renderExplore(mapEngine, {
+      mapStyles: [
+        { id: 'default', label: 'Mặc định', style: { version: 8, name: 'default' } },
+        { id: 'relief', label: 'Địa hình', style: { version: 8, name: 'relief' } },
+      ],
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chọn điểm đến Khu lưu niệm Nguyễn Du' }));
+    fireEvent.change(screen.getByRole('combobox', { name: 'Kiểu bản đồ' }), {
+      target: { value: 'relief' },
+    });
+
+    await waitFor(() =>
+      expect(mapEngine.calls).toContainEqual({
+        style: { name: 'relief', version: 8 },
+        type: 'changeStyle',
+      }),
+    );
+    const latestState = [...mapEngine.calls].reverse().find((call) => call.type === 'setState');
+    expect(latestState?.type === 'setState' ? latestState.state.selectedDestinationId : null).toBe(
+      'nguyen-du-memorial',
+    );
+  });
+
+  it('keeps the map usable and distinguishes denied browser location', async () => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: (_success: PositionCallback, error: PositionErrorCallback) =>
+          error({ code: 1 } as GeolocationPositionError),
+      },
+    });
+    const mapEngine = new FakeExploreMapEngine();
+    renderExplore(mapEngine);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Tìm vị trí của tôi' }));
+
+    expect(await screen.findByTestId('explore-map-location-status')).toHaveTextContent(
+      'Quyền vị trí đang tắt',
+    );
+    expect(screen.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' })).toBeInTheDocument();
+  });
+
+  it('synchronizes fullscreen state from fullscreenchange and does not use a blind toggle', async () => {
+    const requestFullscreen = vi.fn(async () => undefined);
+    const exitFullscreen = vi.fn(async () => undefined);
+    Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreen,
+    });
+    Object.defineProperty(document, 'exitFullscreen', {
+      configurable: true,
+      value: exitFullscreen,
+    });
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      writable: true,
+      value: null,
+    });
+    renderExplore(new FakeExploreMapEngine());
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Toàn màn hình' }));
+    expect(requestFullscreen).toHaveBeenCalledTimes(1);
+
+    const mapShell = screen.getByTestId('explore-map');
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: mapShell });
+    fireEvent(document, new Event('fullscreenchange'));
+    expect(screen.getByRole('button', { name: 'Thoát toàn màn hình' })).toBeInTheDocument();
+
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, value: null });
+    fireEvent(document, new Event('fullscreenchange'));
+    expect(screen.getByRole('button', { name: 'Toàn màn hình' })).toBeInTheDocument();
   });
 });

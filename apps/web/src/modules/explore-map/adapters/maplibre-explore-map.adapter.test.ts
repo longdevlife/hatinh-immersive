@@ -22,6 +22,7 @@ class FakeMap {
   readonly options: unknown;
   readonly sources = new Map<string, FakeGeoJsonSource>();
   readonly layers: unknown[] = [];
+  readonly styleChanges: unknown[] = [];
   readonly flyToCalls: unknown[] = [];
   readonly fitBoundsCalls: unknown[] = [];
   readonly resizeCalls: number[] = [];
@@ -31,6 +32,7 @@ class FakeMap {
 
   static latest: FakeMap | null = null;
   static autoLoad = true;
+  static failNextStyleChange = false;
 
   constructor(options: unknown) {
     this.options = options;
@@ -100,6 +102,23 @@ class FakeMap {
     return this.sources.get(id);
   }
 
+  getLayer(id: string): unknown | undefined {
+    return this.layers.find((layer) => (layer as { id?: string }).id === id);
+  }
+
+  setStyle(style: unknown): void {
+    this.styleChanges.push(style);
+    this.sources.clear();
+    this.layers.length = 0;
+    if (FakeMap.failNextStyleChange) {
+      FakeMap.failNextStyleChange = false;
+      queueMicrotask(() => this.emit('error'));
+      return;
+    }
+
+    queueMicrotask(() => this.emit('style.load'));
+  }
+
   addLayer(layer: unknown): void {
     this.layers.push(layer);
   }
@@ -150,6 +169,7 @@ const state: ExploreMapViewportState = {
 describe('MapLibreExploreMapEngine', () => {
   afterEach(() => {
     FakeMap.autoLoad = true;
+    FakeMap.failNextStyleChange = false;
     FakeMap.latest = null;
     vi.unstubAllGlobals();
   });
@@ -251,6 +271,101 @@ describe('MapLibreExploreMapEngine', () => {
     expect(map.removed).toBe(true);
     expect(map.layerListeners.get('explore-destinations')?.size ?? 0).toBe(0);
     expect(map.layerListeners.get('explore-destinations-hit-targets')?.size ?? 0).toBe(0);
+  });
+
+  it('restores destination layers and selection after a style reload without remounting', async () => {
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8, name: 'default' },
+    });
+
+    engine.setState(state);
+    await engine.mount(document.createElement('div'));
+    const map = FakeMap.latest!;
+    await engine.changeStyle({ version: 8, name: 'alternate' });
+
+    expect(map.styleChanges).toEqual([{ version: 8, name: 'alternate' }]);
+    expect(map.removed).toBe(false);
+    expect(map.sources.get('explore-destinations')?.data).toMatchObject({
+      features: expect.arrayContaining([
+        expect.objectContaining({
+          properties: expect.objectContaining({ id: 'thien-cam', isSelected: true }),
+        }),
+      ]),
+    });
+    expect(map.layers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'explore-destinations' }),
+        expect.objectContaining({ id: 'explore-destinations-hit-targets' }),
+        expect.objectContaining({ id: 'explore-destination-labels' }),
+      ]),
+    );
+
+    engine.destroy();
+  });
+
+  it('rolls back the style and destination layers when the next style fails', async () => {
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8, name: 'default' },
+    });
+
+    engine.setState(state);
+    await engine.mount(document.createElement('div'));
+    const map = FakeMap.latest!;
+    FakeMap.failNextStyleChange = true;
+
+    await expect(engine.changeStyle({ version: 8, name: 'broken' })).rejects.toThrow(
+      'MAPLIBRE_EXPLORE_STYLE_ERROR',
+    );
+
+    expect(map.styleChanges).toEqual([
+      { version: 8, name: 'broken' },
+      { version: 8, name: 'default' },
+    ]);
+    expect(map.removed).toBe(false);
+    expect(map.sources.get('explore-destinations')?.data).toMatchObject({
+      features: expect.arrayContaining([
+        expect.objectContaining({
+          properties: expect.objectContaining({ id: 'thien-cam', isSelected: true }),
+        }),
+      ]),
+    });
+    expect(map.layers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'explore-destinations' }),
+        expect.objectContaining({ id: 'explore-destinations-hit-targets' }),
+      ]),
+    );
+
+    engine.destroy();
+  });
+
+  it('renders the user location through the provider-native source', async () => {
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8 },
+    });
+
+    engine.setState({
+      ...state,
+      userLocation: { latitude: 18.35, longitude: 105.91 },
+    });
+    await engine.mount(document.createElement('div'));
+    const map = FakeMap.latest!;
+
+    expect(map.sources.get('explore-user-location')?.data).toEqual({
+      features: [
+        {
+          geometry: { coordinates: [105.91, 18.35], type: 'Point' },
+          properties: {},
+          type: 'Feature',
+        },
+      ],
+      type: 'FeatureCollection',
+    });
+
+    engine.destroy();
   });
 
   it('emits one selection when one click reaches overlapping destination layers', async () => {

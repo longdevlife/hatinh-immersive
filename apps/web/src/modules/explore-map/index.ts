@@ -9,12 +9,31 @@ export type {
   ExploreMapOptions,
   ExploreMapRuntime,
   ExploreMapSource,
-  ExploreMapStyle,
 } from './adapters/maplibre-explore-map.adapter';
 export type {
   ExploreMapCameraTarget,
   ExploreMapDestination,
+  ExploreMapLocationStatus,
+  ExploreMapStyle,
+  ExploreMapStyleOption,
+  ExploreMapUserLocation,
   ExploreMapViewportState,
 } from './model/explore-map.types';
+export {
+  isFullscreenSupported,
+  requestBrowserLocation,
+  toggleFullscreen,
+} from './model/explore-map-browser';
+export type {
+  ExploreMapFullscreenDocument,
+  ExploreMapFullscreenElement,
+  ExploreMapGeolocationProvider,
+  ExploreMapLocationResult,
+} from './model/explore-map-browser';
+export { buildDirectionsUrl } from './model/explore-map-directions';
+export { ExploreMapControls } from './ui/ExploreMapControls';
+export type { ExploreMapControlsProps } from './ui/ExploreMapControls';
+export { ExploreMapSelectionCard } from './ui/ExploreMapSelectionCard';
+export type { ExploreMapSelectionCardProps } from './ui/ExploreMapSelectionCard';
 export { ExploreMapViewport } from './ui';
 export type { ExploreMapViewportProps } from './ui';

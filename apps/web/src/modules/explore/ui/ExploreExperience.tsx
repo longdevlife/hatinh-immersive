@@ -8,7 +8,15 @@ import { DestinationPanel, filterDestinations } from '../../destination-catalog'
 import {
   FakeExploreMapEngine,
   LazyMapLibreExploreMapEngine,
+  buildDirectionsUrl,
+  isFullscreenSupported,
+  requestBrowserLocation,
+  toggleFullscreen,
+  ExploreMapControls,
+  ExploreMapSelectionCard,
   ExploreMapViewport,
+  type ExploreMapLocationStatus,
+  type ExploreMapStyleOption,
   type ExploreMapDestination,
   type ExploreMapEnginePort,
 } from '../../explore-map';
@@ -20,6 +28,7 @@ export interface ExploreExperienceProps {
   initialQuery?: string;
   initialCategory?: string;
   initialView?: 'cards' | 'map';
+  mapStyles?: readonly ExploreMapStyleOption[];
   onDiscoveryStateChange?(state: {
     query: string;
     category: string;
@@ -82,23 +91,37 @@ function toExploreMapDestination(destination: DestinationPreviewVm): ExploreMapD
   };
 }
 
-function createDefaultExploreMapEngine(): ExploreMapEnginePort {
-  if (import.meta.env.VITE_EXPLORE_MAP_MODE === 'fake') {
-    return new FakeExploreMapEngine();
-  }
-
-  const styleUrl =
+function getConfiguredExploreMapStyles(): readonly ExploreMapStyleOption[] {
+  const primaryStyleUrl =
     import.meta.env.VITE_EXPLORE_MAP_STYLE_URL?.trim() ||
     import.meta.env.VITE_MINIMAP_STYLE_URL?.trim();
   const allowDemoFallback =
     import.meta.env.DEV || import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake';
+  const primaryStyle = primaryStyleUrl || (allowDemoFallback ? DEFAULT_HA_TINH_RASTER_STYLE : null);
+  if (!primaryStyle) {
+    return [];
+  }
+
+  const styles: ExploreMapStyleOption[] = [{ id: 'default', label: 'Bản đồ', style: primaryStyle }];
+  const alternateStyleUrl = import.meta.env.VITE_EXPLORE_MAP_ALT_STYLE_URL?.trim();
+  if (alternateStyleUrl) {
+    styles.push({ id: 'alternate', label: 'Lớp phụ', style: alternateStyleUrl });
+  }
+
+  return styles;
+}
+
+function createDefaultExploreMapEngine(
+  styles: readonly ExploreMapStyleOption[],
+): ExploreMapEnginePort {
+  if (import.meta.env.VITE_EXPLORE_MAP_MODE === 'fake') {
+    return new FakeExploreMapEngine();
+  }
+
+  const style = styles[0]?.style;
 
   return new LazyMapLibreExploreMapEngine({
-    ...(styleUrl
-      ? { style: styleUrl }
-      : allowDemoFallback
-        ? { style: DEFAULT_HA_TINH_RASTER_STYLE }
-        : {}),
+    ...(style ? { style } : {}),
   });
 }
 
@@ -109,21 +132,35 @@ export function ExploreExperience({
   initialQuery,
   initialCategory,
   initialView,
+  mapStyles: mapStylesOverride,
   onDiscoveryStateChange,
   onOpenDestination,
 }: ExploreExperienceProps) {
   const destinationsQuery = useImmersiveDestinations('vi', destinationsOverride === undefined);
   const destinations = destinationsOverride ?? destinationsQuery.data;
+  const configuredMapStyles = useMemo(getConfiguredExploreMapStyles, []);
+  const availableMapStyles = mapStylesOverride ?? configuredMapStyles;
   const mapEngine = useMemo(
-    () => mapEngineOverride ?? createDefaultExploreMapEngine(),
-    [mapEngineOverride],
+    () => mapEngineOverride ?? createDefaultExploreMapEngine(availableMapStyles),
+    [availableMapStyles, mapEngineOverride],
   );
   const [selectedDestinationId, setSelectedDestinationId] = useState<string | null>(null);
   const [query, setQuery] = useState(initialQuery ?? '');
   const [category, setCategory] = useState(initialCategory ?? '');
   const [isMobileMapOpen, setIsMobileMapOpen] = useState(initialView === 'map');
+  const [locationStatus, setLocationStatus] = useState<ExploreMapLocationStatus>('idle');
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(
+    null,
+  );
+  const [activeMapStyleId, setActiveMapStyleId] = useState(availableMapStyles[0]?.id ?? '');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [canUseFullscreen, setCanUseFullscreen] = useState(false);
+  const mapShellRef = useRef<HTMLElement>(null);
   const appliedInitialDestinationSlug = useRef<string | null>(null);
   const isMobileViewport = useIsMobileViewport();
+  const canUseGeolocation =
+    typeof navigator !== 'undefined' &&
+    typeof navigator.geolocation?.getCurrentPosition === 'function';
   const exploreMode = isMobileViewport && !isMobileMapOpen ? 'destination-list' : 'map';
   const filteredDestinations = useMemo(
     () => filterDestinations(destinations, { query, category }),
@@ -140,6 +177,34 @@ export function ExploreExperience({
   const selectedDestination = filteredDestinations.find(
     (destination) => destination.id === selectedDestinationId,
   );
+  const categories = useMemo(() => {
+    const values = new Set<string>();
+    destinations.forEach((destination) => {
+      if (destination.categoryLabel) {
+        values.add(destination.categoryLabel);
+      }
+    });
+    return ['Tất cả', ...values];
+  }, [destinations]);
+
+  useEffect(() => {
+    if (!availableMapStyles.some((style) => style.id === activeMapStyleId)) {
+      setActiveMapStyleId(availableMapStyles[0]?.id ?? '');
+    }
+  }, [activeMapStyleId, availableMapStyles]);
+
+  useEffect(() => {
+    const syncFullscreen = () => {
+      const mapShell = mapShellRef.current;
+      const documentLike = document;
+      setCanUseFullscreen(isFullscreenSupported(mapShell, documentLike));
+      setIsFullscreen(documentLike.fullscreenElement === mapShell);
+    };
+
+    syncFullscreen();
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    return () => document.removeEventListener('fullscreenchange', syncFullscreen);
+  }, []);
 
   useEffect(() => {
     setSelectedDestinationId((currentId) => {
@@ -234,6 +299,45 @@ export function ExploreExperience({
     });
   }
 
+  function handleRequestUserLocation() {
+    if (!canUseGeolocation) {
+      setLocationStatus('unavailable');
+      return;
+    }
+
+    setLocationStatus('requesting');
+    void requestBrowserLocation(navigator.geolocation).then((result) => {
+      setLocationStatus(result.status);
+      if (result.status !== 'available' || !result.location) {
+        return;
+      }
+
+      setUserLocation(result.location);
+      void mapEngine.flyTo({
+        latitude: result.location.latitude,
+        longitude: result.location.longitude,
+        zoom: 12,
+      });
+    });
+  }
+
+  function handleChangeMapStyle(styleId: string) {
+    const nextStyle = availableMapStyles.find((style) => style.id === styleId);
+    if (!nextStyle || nextStyle.id === activeMapStyleId) {
+      return;
+    }
+
+    const previousStyleId = activeMapStyleId;
+    setActiveMapStyleId(nextStyle.id);
+    void mapEngine.changeStyle(nextStyle.style).catch(() => {
+      setActiveMapStyleId(previousStyleId);
+    });
+  }
+
+  function handleToggleFullscreen() {
+    void toggleFullscreen(mapShellRef.current, document).catch(() => undefined);
+  }
+
   function openDestination(destination: DestinationPreviewVm) {
     const params = new URLSearchParams();
     if (query.trim()) {
@@ -280,6 +384,7 @@ export function ExploreExperience({
         </section>
 
         <section
+          ref={mapShellRef}
           className="explore-experience__map"
           data-explore-mode={exploreMode}
           data-map-open={isMobileMapOpen}
@@ -294,30 +399,38 @@ export function ExploreExperience({
               Quay lại danh sách
             </button>
           ) : null}
+          <ExploreMapControls
+            activeMapStyleId={activeMapStyleId}
+            canUseFullscreen={canUseFullscreen}
+            canUseGeolocation={canUseGeolocation}
+            categories={isMobileViewport && isMobileMapOpen ? categories : []}
+            isFullscreen={isFullscreen}
+            locationStatus={locationStatus}
+            mapStyles={availableMapStyles}
+            onCategoryChange={(nextCategory) =>
+              updateCategory(nextCategory === 'Tất cả' ? '' : nextCategory)
+            }
+            onChangeMapStyle={handleChangeMapStyle}
+            onRequestUserLocation={handleRequestUserLocation}
+            onToggleFullscreen={handleToggleFullscreen}
+            selectedCategory={category}
+          />
           <ExploreMapViewport
             destinations={mapDestinations}
             enabled={!isMobileViewport || isMobileMapOpen}
             engine={mapEngine}
             onDestinationSelected={handleSelectDestination}
             selectedDestinationId={selectedDestinationId}
+            userLocation={userLocation}
           />
           {selectedDestination ? (
-            <div
-              aria-live="polite"
-              className="explore-experience__selection"
-              data-testid="explore-selected-destination"
-            >
-              <p>Đang chọn: {selectedDestination.name}</p>
-              {onOpenDestination ? (
-                <button
-                  type="button"
-                  className="explore-experience__detail-action"
-                  onClick={() => openDestination(selectedDestination)}
-                >
-                  Xem chi tiết
-                </button>
-              ) : null}
-            </div>
+            <ExploreMapSelectionCard
+              destination={selectedDestination}
+              directionsHref={buildDirectionsUrl(selectedDestination.geoPoint)}
+              onOpenDetail={
+                onOpenDestination ? () => openDestination(selectedDestination) : undefined
+              }
+            />
           ) : null}
         </section>
       </div>

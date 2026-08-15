@@ -4,13 +4,20 @@ import type { ExploreMapEnginePort } from '../domain/explore-map-engine.port';
 import type {
   ExploreMapCameraTarget,
   ExploreMapDestination,
+  ExploreMapStyle,
+  ExploreMapUserLocation,
   ExploreMapViewportState,
 } from '../model/explore-map.types';
 
+export type { ExploreMapStyle } from '../model/explore-map.types';
+
 const DESTINATIONS_SOURCE_ID = 'explore-destinations';
 const DESTINATIONS_LAYER_ID = 'explore-destinations';
+const DESTINATIONS_HALO_LAYER_ID = 'explore-destinations-selection-halo';
 const DESTINATIONS_HIT_TARGET_LAYER_ID = 'explore-destinations-hit-targets';
 const DESTINATIONS_LABEL_LAYER_ID = 'explore-destination-labels';
+const USER_LOCATION_SOURCE_ID = 'explore-user-location';
+const USER_LOCATION_LAYER_ID = 'explore-user-location';
 const DEFAULT_CENTER: ExploreMapCoordinate = [105.9, 18.342];
 const DEFAULT_ZOOM = 9;
 const DEFAULT_TRANSITION_DURATION = 650;
@@ -26,7 +33,6 @@ function getTransitionDuration(options: ExploreMapOptions): number {
   return options.transitionDurationMs ?? DEFAULT_TRANSITION_DURATION;
 }
 
-export type ExploreMapStyle = string | Record<string, unknown>;
 export type ExploreMapCoordinate = [longitude: number, latitude: number];
 
 export interface ExploreMapOptions {
@@ -52,6 +58,7 @@ export interface ExploreMapInstance {
   ): void;
   flyTo(options: { center: ExploreMapCoordinate; duration: number; zoom?: number }): void;
   getSource(id: string): ExploreMapSource | undefined;
+  getLayer(id: string): unknown | undefined;
   on(
     event: string,
     layerOrListener: string | ExploreMapEventListener,
@@ -64,6 +71,7 @@ export interface ExploreMapInstance {
   ): this;
   remove(): void;
   resize(): void;
+  setStyle(style: ExploreMapStyle): void;
 }
 
 export interface ExploreMapRuntime {
@@ -79,13 +87,7 @@ export interface ExploreMapRuntime {
 
 interface ExploreMapFeature {
   geometry: { coordinates: ExploreMapCoordinate; type: 'Point' };
-  properties: {
-    categoryLabel: string | null;
-    featured: boolean;
-    id: string;
-    isSelected: boolean;
-    label: string;
-  };
+  properties: Record<string, unknown>;
   type: 'Feature';
 }
 
@@ -101,6 +103,28 @@ async function loadMapLibreRuntime(): Promise<ExploreMapRuntime> {
 
 function emptyGeoJson(): ExploreMapGeoJson {
   return { features: [], type: 'FeatureCollection' };
+}
+
+function userLocationGeoJson(
+  location: ExploreMapUserLocation | null | undefined,
+): ExploreMapGeoJson {
+  if (!location) {
+    return emptyGeoJson();
+  }
+
+  return {
+    features: [
+      {
+        geometry: {
+          coordinates: [location.longitude, location.latitude],
+          type: 'Point',
+        },
+        properties: {},
+        type: 'Feature',
+      },
+    ],
+    type: 'FeatureCollection',
+  };
 }
 
 function toGeoJson(
@@ -173,6 +197,50 @@ function waitForMapLoad(map: ExploreMapInstance): MapLoadWaiter {
   return Object.assign(promise, { cancel });
 }
 
+function waitForStyleLoad(map: ExploreMapInstance): MapLoadWaiter {
+  let cancel = () => undefined;
+  const promise = new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const cleanup = () => {
+      map.off('style.load', onStyleLoad);
+      map.off('error', onError);
+    };
+    const onStyleLoad = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+      reject(new Error('MAPLIBRE_EXPLORE_STYLE_ERROR'));
+    };
+
+    cancel = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+      reject(new Error('MAPLIBRE_EXPLORE_STYLE_CANCELLED'));
+    };
+
+    map.on('style.load', onStyleLoad);
+    map.on('error', onError);
+  });
+
+  return Object.assign(promise, { cancel });
+}
+
 function readDestinationId(event?: unknown): string | null {
   const feature = (
     event as { features?: Array<{ properties?: Record<string, unknown> | null }> } | undefined
@@ -201,6 +269,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   private mountGeneration = 0;
   private pendingMapLoadCancellation: (() => void) | null = null;
   private readonly handledOriginalClickEvents = new WeakSet<object>();
+  private currentStyle: ExploreMapStyle | null = null;
   private readonly handleDestinationClick = (event?: unknown) => {
     const destinationId = readDestinationId(event);
     if (!destinationId) {
@@ -244,10 +313,11 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
       center: this.options.center ?? DEFAULT_CENTER,
       container,
       interactive: true,
-      style: this.options.style,
+      style: this.currentStyle ?? this.options.style,
       zoom: this.options.zoom ?? DEFAULT_ZOOM,
     });
     this.map = map;
+    this.currentStyle = this.currentStyle ?? this.options.style;
 
     const mapLoad = waitForMapLoad(map);
     this.pendingMapLoadCancellation = mapLoad.cancel;
@@ -270,54 +340,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
       return;
     }
 
-    map.addSource(DESTINATIONS_SOURCE_ID, {
-      data: emptyGeoJson(),
-      type: 'geojson',
-    });
-    map.addLayer({
-      id: DESTINATIONS_LAYER_ID,
-      paint: {
-        'circle-color': [
-          'case',
-          ['get', 'isSelected'],
-          '#f5b866',
-          ['get', 'featured'],
-          '#2f8064',
-          '#f4f0e8',
-        ],
-        'circle-radius': ['case', ['get', 'isSelected'], 10, ['get', 'featured'], 8, 6],
-        'circle-stroke-color': '#173c31',
-        'circle-stroke-width': 2,
-      },
-      source: DESTINATIONS_SOURCE_ID,
-      type: 'circle',
-    });
-    map.addLayer({
-      id: DESTINATIONS_HIT_TARGET_LAYER_ID,
-      paint: {
-        'circle-color': '#000000',
-        'circle-opacity': 0,
-        'circle-radius': 22,
-      },
-      source: DESTINATIONS_SOURCE_ID,
-      type: 'circle',
-    });
-    map.addLayer({
-      id: DESTINATIONS_LABEL_LAYER_ID,
-      layout: {
-        'text-anchor': 'top',
-        'text-field': ['get', 'label'],
-        'text-offset': [0, 1.15],
-        'text-size': 12,
-      },
-      paint: {
-        'text-color': '#173c31',
-        'text-halo-color': '#f4f0e8',
-        'text-halo-width': 1.5,
-      },
-      source: DESTINATIONS_SOURCE_ID,
-      type: 'symbol',
-    });
+    this.installDataLayers(map);
     map.on('click', DESTINATIONS_HIT_TARGET_LAYER_ID, this.handleDestinationClick);
     map.on('click', DESTINATIONS_LABEL_LAYER_ID, this.handleDestinationClick);
 
@@ -332,8 +355,34 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     this.state = {
       destinations: [...state.destinations],
       selectedDestinationId: state.selectedDestinationId,
+      userLocation: state.userLocation ? { ...state.userLocation } : null,
     };
     this.applyState();
+  }
+
+  async changeStyle(style: ExploreMapStyle): Promise<void> {
+    const map = this.map;
+    if (!map) {
+      return;
+    }
+
+    const previousStyle = this.currentStyle;
+    try {
+      await this.applyStyle(map, style);
+      this.currentStyle = style;
+    } catch (error) {
+      if (previousStyle !== null && this.map === map) {
+        try {
+          await this.applyStyle(map, previousStyle);
+          this.currentStyle = previousStyle;
+        } catch {
+          // Preserve the original style-switch failure for the caller. The
+          // map remains mounted, and the next explicit style action can retry.
+        }
+      }
+
+      throw error;
+    }
   }
 
   async flyTo(target: ExploreMapCameraTarget): Promise<void> {
@@ -372,6 +421,119 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     this.map
       ?.getSource(DESTINATIONS_SOURCE_ID)
       ?.setData(toGeoJson(this.state.destinations, this.state.selectedDestinationId));
+    this.map
+      ?.getSource(USER_LOCATION_SOURCE_ID)
+      ?.setData(userLocationGeoJson(this.state.userLocation));
+  }
+
+  private installDataLayers(map: ExploreMapInstance): void {
+    if (!map.getSource(DESTINATIONS_SOURCE_ID)) {
+      map.addSource(DESTINATIONS_SOURCE_ID, {
+        data: emptyGeoJson(),
+        type: 'geojson',
+      });
+    }
+    if (!map.getSource(USER_LOCATION_SOURCE_ID)) {
+      map.addSource(USER_LOCATION_SOURCE_ID, {
+        data: emptyGeoJson(),
+        type: 'geojson',
+      });
+    }
+
+    if (!map.getLayer(DESTINATIONS_HALO_LAYER_ID)) {
+      map.addLayer({
+        filter: ['==', ['get', 'isSelected'], true],
+        id: DESTINATIONS_HALO_LAYER_ID,
+        paint: {
+          'circle-blur': 0.35,
+          'circle-color': '#f5b866',
+          'circle-opacity': 0.35,
+          'circle-radius': 17,
+        },
+        source: DESTINATIONS_SOURCE_ID,
+        type: 'circle',
+      });
+    }
+    if (!map.getLayer(DESTINATIONS_LAYER_ID)) {
+      map.addLayer({
+        id: DESTINATIONS_LAYER_ID,
+        paint: {
+          'circle-color': [
+            'case',
+            ['get', 'isSelected'],
+            '#f5b866',
+            ['get', 'featured'],
+            '#2f8064',
+            '#f4f0e8',
+          ],
+          'circle-radius': ['case', ['get', 'isSelected'], 9, ['get', 'featured'], 8, 6],
+          'circle-stroke-color': '#173c31',
+          'circle-stroke-width': 2,
+        },
+        source: DESTINATIONS_SOURCE_ID,
+        type: 'circle',
+      });
+    }
+    if (!map.getLayer(DESTINATIONS_HIT_TARGET_LAYER_ID)) {
+      map.addLayer({
+        id: DESTINATIONS_HIT_TARGET_LAYER_ID,
+        paint: {
+          'circle-color': '#000000',
+          'circle-opacity': 0,
+          'circle-radius': 22,
+        },
+        source: DESTINATIONS_SOURCE_ID,
+        type: 'circle',
+      });
+    }
+    if (!map.getLayer(DESTINATIONS_LABEL_LAYER_ID)) {
+      map.addLayer({
+        id: DESTINATIONS_LABEL_LAYER_ID,
+        layout: {
+          'text-anchor': 'top',
+          'text-field': ['get', 'label'],
+          'text-offset': [0, 1.15],
+          'text-size': 12,
+        },
+        paint: {
+          'text-color': '#173c31',
+          'text-halo-color': '#f4f0e8',
+          'text-halo-width': 1.5,
+        },
+        source: DESTINATIONS_SOURCE_ID,
+        type: 'symbol',
+      });
+    }
+    if (!map.getLayer(USER_LOCATION_LAYER_ID)) {
+      map.addLayer({
+        id: USER_LOCATION_LAYER_ID,
+        paint: {
+          'circle-color': '#2d7ff9',
+          'circle-radius': 7,
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 3,
+        },
+        source: USER_LOCATION_SOURCE_ID,
+        type: 'circle',
+      });
+    }
+  }
+
+  private async applyStyle(map: ExploreMapInstance, style: ExploreMapStyle): Promise<void> {
+    const styleLoad = waitForStyleLoad(map);
+    // A synchronous setStyle failure must not leave a rejected waiter
+    // unobserved while the caller handles the original adapter error.
+    void styleLoad.catch(() => undefined);
+
+    try {
+      map.setStyle(style);
+      await styleLoad;
+      this.installDataLayers(map);
+      this.applyState();
+    } catch (error) {
+      styleLoad.cancel();
+      throw error;
+    }
   }
 
   private applyCameraTarget(target: ExploreMapCameraTarget): void {

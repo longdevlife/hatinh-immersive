@@ -7,7 +7,8 @@ const TRANSPARENT_PNG = Buffer.from(
 
 test('runs the real Explore MapLibre engine against locally fulfilled style and tiles', async ({
   page,
-}) => {
+}, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   let styleRequests = 0;
   let tileRequests = 0;
   const osmAttempts: string[] = [];
@@ -18,7 +19,7 @@ test('runs the real Explore MapLibre engine against locally fulfilled style and 
     osmAttempts.push(route.request().url());
     await route.abort();
   });
-  await page.route('**/test/explore-map-style.json', async (route) => {
+  await page.route('**/test/explore-map-*.json', async (route) => {
     styleRequests += 1;
     await route.fulfill({
       body: JSON.stringify({
@@ -49,11 +50,62 @@ test('runs the real Explore MapLibre engine against locally fulfilled style and 
   await expect.poll(() => styleRequests).toBeGreaterThan(0);
   await expect.poll(() => tileRequests).toBeGreaterThan(0);
   await expect(map).toHaveAttribute('data-selected-destination-id', '');
+  await page.screenshot({ path: testInfo.outputPath('explore-map-real-desktop-overview.png') });
 
   await page.getByRole('button', { name: 'Chọn điểm đến Khu lưu niệm Nguyễn Du' }).click();
   await expect(map).toHaveAttribute('data-selected-destination-id', 'nguyen-du-memorial');
+  await page.getByRole('combobox', { name: 'Kiểu bản đồ' }).selectOption('alternate');
+  await expect(page.getByRole('combobox', { name: 'Kiểu bản đồ' })).toHaveValue('alternate');
+  await expect.poll(() => styleRequests).toBeGreaterThan(1);
+  await expect(map).toHaveAttribute('data-selected-destination-id', 'nguyen-du-memorial');
+  await page.screenshot({ path: testInfo.outputPath('explore-map-real-desktop-selected.png') });
   expect(requestedUrls).toEqual(
     expect.arrayContaining([expect.stringContaining('/test/explore-tiles/')]),
   );
   expect(osmAttempts).toEqual([]);
+});
+
+test('runs the real Explore MapLibre engine in mobile map mode without losing the selected POI', async ({
+  page,
+}, testInfo) => {
+  await page.route('**/test/explore-map-*.json', async (route) => {
+    await route.fulfill({
+      body: JSON.stringify({
+        layers: [{ id: 'local', source: 'local', type: 'raster' }],
+        sources: {
+          local: {
+            tileSize: 256,
+            tiles: ['/test/explore-tiles/{z}/{x}/{y}.png'],
+            type: 'raster',
+          },
+        },
+        version: 8,
+      }),
+      contentType: 'application/json',
+    });
+  });
+  await page.route(/\/test\/explore-tiles\/\d+\/\d+\/\d+\.png$/, async (route) => {
+    await route.fulfill({ body: TRANSPARENT_PNG, contentType: 'image/png' });
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/explore');
+  await expect(page.getByRole('region', { name: 'Danh sách điểm đến' })).toBeVisible();
+  await page.getByRole('button', { name: 'Chọn điểm đến Biển Thiên Cầm' }).click();
+  await page.getByRole('button', { name: 'Xem bản đồ' }).click();
+
+  const mapShell = page.getByTestId('explore-map');
+  await expect(mapShell).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+    'data-explore-map-status',
+    'ready',
+  );
+  await page.screenshot({ path: testInfo.outputPath('explore-map-real-mobile-390.png') });
+
+  await page.setViewportSize({ width: 430, height: 932 });
+  await page.screenshot({ path: testInfo.outputPath('explore-map-real-mobile-430.png') });
+  await expect(page.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' })).toHaveAttribute(
+    'data-selected-destination-id',
+    'thien-cam-beach',
+  );
 });
