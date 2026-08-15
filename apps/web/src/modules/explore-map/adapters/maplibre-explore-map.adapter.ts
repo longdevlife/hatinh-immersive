@@ -1100,7 +1100,9 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     this.pendingMapLoadCancellation = null;
     cancelMapLoad?.();
 
-    this.resetDiagnosticRuntimeState();
+    if (this.map || this.diagnosticEventMap) {
+      this.resetDiagnosticRuntimeState();
+    }
 
     if (this.map) {
       this.map.off('click', DESTINATIONS_HIT_TARGET_LAYER_ID, this.handleDestinationClick);
