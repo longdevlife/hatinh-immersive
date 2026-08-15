@@ -466,9 +466,9 @@ export function ExploreExperience({
               }
             />
           ) : null}
-          {isMapDebugEnabled && mapDiagnostics ? (
+          {isMapDebugEnabled && mapStatus === 'ready' ? (
             <pre data-testid="explore-map-debug" hidden>
-              {JSON.stringify(mapDiagnostics)}
+              {JSON.stringify(mapDiagnostics ?? { diagnosticsUnavailable: true, mapStatus })}
             </pre>
           ) : null}
         </section>
