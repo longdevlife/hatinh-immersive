@@ -177,12 +177,21 @@ async function loadPanoramaManifest(node: PanoramaNode): Promise<unknown> {
     throw new Error('PANORAMA_FETCH_UNAVAILABLE');
   }
 
-  const response = await fetch(node.panoramaUrl);
+  const panoramaUrl = requirePanoramaUrl(node);
+  const response = await fetch(panoramaUrl);
   if (!response.ok) {
     throw new Error(`PANORAMA_MANIFEST_FETCH_FAILED_${response.status}`);
   }
 
-  return hydratePanoramaManifest(await response.json(), response.url || node.panoramaUrl);
+  return hydratePanoramaManifest(await response.json(), response.url || panoramaUrl);
+}
+
+function requirePanoramaUrl(node: PanoramaNode): string {
+  if (!node.panoramaUrl) {
+    throw new Error(`PANORAMA_MEDIA_UNAVAILABLE:${node.id}`);
+  }
+
+  return node.panoramaUrl;
 }
 
 function hydratePanoramaManifest(value: unknown, manifestUrl: string): unknown {
@@ -487,7 +496,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     }
 
     const loadedPanorama = await (this.options.loadPanorama ?? loadPanoramaManifest)(node);
-    const panorama = hydratePanoramaManifest(loadedPanorama, node.panoramaUrl);
+    const panorama = hydratePanoramaManifest(loadedPanorama, requirePanoramaUrl(node));
     this.panoramaCache.set(node.id, panorama);
     return panorama;
   }

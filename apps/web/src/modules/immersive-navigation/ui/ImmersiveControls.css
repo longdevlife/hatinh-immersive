@@ -10,7 +10,6 @@
   z-index: var(--z-index-overlay, 20);
   pointer-events: none;
 }
-
 .panorama-controls__utilities {
   position: absolute;
   top: var(--safe-area-spacing, clamp(1rem, 2.5vw, 2rem));
@@ -20,7 +19,6 @@
   gap: var(--space-2, 0.5rem);
   pointer-events: auto;
 }
-
 .panorama-controls__secondary {
   display: flex;
   align-items: center;
@@ -661,5 +659,144 @@
   .panorama-tour-unavailable__btn,
   .panorama-tour-retry-btn {
     transition: none;
+  }
+}
+
+/* ==========================================================================
+   REFERENCE PARITY PRESENTATION (HCMC DEPTH INSPIRATION & HA TINH CHROME)
+   ========================================================================== */
+
+.reference-parity-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-index-overlay, 20);
+}
+
+.reference-parity__top-left {
+  position: absolute;
+  top: var(--safe-area-spacing, clamp(1rem, 2.5vw, 2rem));
+  left: var(--safe-area-spacing, clamp(1rem, 4vw, 4rem));
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  pointer-events: auto;
+  z-index: 2;
+  max-width: calc(100vw - 18rem);
+}
+
+.reference-parity__context {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.3rem 0.95rem;
+  background: var(--panorama-surface, rgb(8 22 18 / 0.82));
+  border: 1px solid var(--panorama-border, rgb(255 255 255 / 0.2));
+  border-radius: var(--radius-control, 999px);
+  backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  box-shadow: var(--elevation-1, 0 0.75rem 2rem rgb(3 12 9 / 0.22));
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.reference-parity__utilities {
+  position: absolute;
+  top: var(--safe-area-spacing, clamp(1rem, 2.5vw, 2rem));
+  right: var(--safe-area-spacing, clamp(1rem, 4vw, 4rem));
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.reference-parity__audio-btn.is-active,
+.reference-parity__ambient-btn.is-active,
+.reference-parity__narration-btn.is-active,
+.reference-parity__autotour-btn.is-active,
+.reference-parity__minimap-btn.is-active {
+  color: #ffffff;
+  background: color-mix(
+    in srgb,
+    var(--color-accent-primary, #e5a95f) 35%,
+    var(--panorama-surface, rgb(8 22 18 / 0.82))
+  );
+  border-color: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 70%, white 30%);
+}
+
+.reference-parity__rail-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-right: 0.35rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.reference-parity__rail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.reference-parity__rail .panorama-tour-rail__btn--major {
+  padding: 0 0.75rem 0 0.45rem;
+}
+
+.reference-parity__audio-prompt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.85rem;
+  width: auto;
+  border-radius: var(--radius-control, 999px);
+  background: var(--color-accent-primary, #e5a95f);
+  color: #141f18;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 1px solid #fff6dc;
+  box-shadow: 0 0.5rem 1.5rem rgb(229 169 95 / 0.35);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.reference-parity__audio-prompt:hover,
+.reference-parity__audio-prompt:focus-visible {
+  background: #f0be7d;
+  color: #0b140f;
+}
+
+@media (max-width: 767px) {
+  .reference-parity__top-left {
+    top: max(0.75rem, env(safe-area-inset-top));
+    left: max(0.75rem, env(safe-area-inset-left));
+    max-width: calc(100vw - 12rem);
+  }
+
+  .reference-parity__utilities {
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: max(0.75rem, env(safe-area-inset-right));
+    gap: 0.35rem;
+  }
+
+  .reference-parity__utilities .panorama-control {
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+  }
+
+  .reference-parity__audio-prompt {
+    min-width: auto;
+    width: auto;
+    padding: 0 0.65rem;
+    font-size: 0.76rem;
   }
 }

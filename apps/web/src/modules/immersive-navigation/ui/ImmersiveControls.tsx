@@ -582,3 +582,6 @@ export function ImmersiveControlsGroup({
     </div>
   );
 }
+
+export { ReferenceParityControls } from './ReferenceParityControls';
+export type { ReferenceParityControlsProps } from './ReferenceParityControls';

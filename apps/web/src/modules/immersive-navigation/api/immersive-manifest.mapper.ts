@@ -4,6 +4,7 @@ import type {
   CameraTarget,
   DestinationPreviewVm,
   HotspotVm,
+  ImmersiveAudioTrack,
   PanoramaNode,
   SceneLinkVm,
   SceneNodeVm,
@@ -18,6 +19,8 @@ export interface ImmersiveManifestVm {
   panoramaNodes: PanoramaNode[];
   links: SceneLinkVm[];
   hotspots: HotspotVm[];
+  audioTracks?: readonly ImmersiveAudioTrack[];
+  ambientTrackId?: string | null;
 }
 
 export function mapImmersiveManifest(dto: GetImmersiveManifest200): ImmersiveManifestVm {

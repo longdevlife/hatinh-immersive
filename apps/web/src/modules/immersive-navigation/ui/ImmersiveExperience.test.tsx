@@ -210,7 +210,7 @@ describe('ImmersiveExperience', () => {
     renderExperience(
       '/explore/son-trang-co-dam/immersive?mode=panorama&scene=son-trang-gate',
       factories,
-      getDemoManifest('son-trang-co-dam'),
+      getDemoManifest('son-trang-co-dam', 'public'),
       DEMO_DESTINATIONS.map(({ preview }) => preview),
       [],
       'none',
@@ -234,9 +234,39 @@ describe('ImmersiveExperience', () => {
     expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(false);
   });
 
+  it('advances the explicit demo tour through Auto Tour after the current scene commits', async () => {
+    const { factories } = createFactories();
+
+    renderExperience(
+      '/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-boardwalk',
+      factories,
+      getDemoManifest('bien-thien-cam', 'synthetic'),
+      DEMO_DESTINATIONS.map(({ preview }) => preview),
+      [],
+      'none',
+      'demo',
+      'synthetic',
+    );
+
+    const autoTourButton = await screen.findByRole('button', { name: 'Tự động tham quan' });
+    await waitFor(() => expect(autoTourButton).not.toBeDisabled());
+    vi.useFakeTimers();
+    fireEvent.click(autoTourButton);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6500);
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(screen.getByTestId('location')).toHaveTextContent(/scene=thien-cam-shore/);
+  });
+
   it('uses the selected local anchor mapping as the only 360 handoff', async () => {
     const { factories, map3d, panorama } = createFactories();
-    const manifest = getDemoManifest('son-trang-co-dam');
+    const manifest = getDemoManifest('son-trang-co-dam', 'synthetic');
     const mappedAnchors = SON_TRANG_SELECTED_3D_ANCHORS;
 
     renderExperience(
@@ -396,7 +426,7 @@ describe('ImmersiveExperience', () => {
 
   it('canonicalizes an invalid panorama scene and location with replace semantics', async () => {
     const { factories } = createFactories();
-    const manifest = getDemoManifest('bien-thien-cam');
+    const manifest = getDemoManifest('bien-thien-cam', 'synthetic');
     const returnTo = '/explore?q=bi%E1%BB%83n&destination=bien-thien-cam&view=map';
 
     renderExperience(

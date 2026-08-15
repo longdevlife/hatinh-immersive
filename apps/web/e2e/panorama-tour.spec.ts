@@ -194,14 +194,14 @@ test('canonicalizes a missing-media deep link to the available scene without tra
   await page.goto('/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-missing');
 
   await expect(page.getByRole('heading', { name: 'Lối dạo Thiên Cầm' })).toBeVisible();
-  await expect(page).toHaveURL(/scene=thien-cam-gate/);
+  await expect(page).toHaveURL(/scene=thien-cam-boardwalk/);
   await expect(
     page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' }),
   ).toHaveAttribute('data-renderer-status', 'ready');
 
   await page.goto('/explore/bien-thien-cam/immersive?mode=panorama&scene=unknown-scene');
   await expect(page.getByRole('heading', { name: 'Lối dạo Thiên Cầm' })).toBeVisible();
-  await expect(page).toHaveURL(/scene=thien-cam-gate/);
+  await expect(page).toHaveURL(/scene=thien-cam-boardwalk/);
 });
 
 test('shows a recoverable unavailable state when every panorama scene lacks media', async ({
@@ -217,10 +217,8 @@ test('shows a recoverable unavailable state when every panorama scene lacks medi
 
   await page.goto('/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-missing');
 
-  await expect(page.getByText('Trải nghiệm 360° chưa khả dụng')).toBeVisible();
-  await expect(
-    page
-      .getByLabel('Không gian 360 độ tại Toàn cảnh điểm đến')
-      .getByRole('button', { name: 'Quay lại Biển Thiên Cầm' }),
-  ).toBeVisible();
+  await expect(page.getByText('360° đang được cập nhật')).toBeVisible();
+  await expect(page.getByText('Hình ảnh độ phân giải cao đang được chuẩn bị.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Quay lại Biển Thiên Cầm' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: /Hành trình 360/i })).not.toBeVisible();
 });
