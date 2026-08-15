@@ -23,6 +23,37 @@ const tours = [
   },
 ] as const;
 
+const syntheticGapFixtures = [
+  {
+    slug: 'khu-luu-niem-nguyen-du',
+    sourceScene: 'nguyen-du-courtyard',
+  },
+  {
+    slug: 'nga-ba-dong-loc',
+    sourceScene: 'dong-loc-memorial',
+  },
+] as const;
+
+async function installSyntheticGapMediaRoutes(page: Page): Promise<void> {
+  for (const fixture of syntheticGapFixtures) {
+    await page.route(`**/demo/test/360/${fixture.slug}/**`, async (route) => {
+      const requestUrl = new URL(route.request().url());
+      const prefix = `/demo/test/360/${fixture.slug}/`;
+      const remainder = requestUrl.pathname.slice(prefix.length);
+      const separator = remainder.indexOf('/');
+      if (separator < 0) {
+        await route.fallback();
+        return;
+      }
+
+      const assetPath = remainder.slice(separator + 1);
+      const fixtureUrl = `${requestUrl.origin}/demo/360/${fixture.sourceScene}/${assetPath}`;
+      const response = await route.fetch({ url: fixtureUrl });
+      await route.fulfill({ response });
+    });
+  }
+}
+
 async function getDirectionalArrow(page: Page, targetSceneId: string): Promise<Locator> {
   const arrowLayer = page.locator('.psv-virtual-tour-arrows');
   await expect(arrowLayer).toBeVisible();
@@ -55,6 +86,8 @@ async function expectCommittedScene(page: Page, sceneId: string): Promise<void> 
 test.describe('real Photo Sphere Viewer directional arrows', () => {
   for (const tour of tours) {
     test(`${tour.slug} walks A → B → C → B through real PSV arrows`, async ({ page }) => {
+      await installSyntheticGapMediaRoutes(page);
+
       const [firstScene, secondScene, thirdScene] = tour.scenes;
       await page.goto(`/explore/${tour.slug}/immersive?mode=panorama&scene=${firstScene}`);
 
