@@ -136,6 +136,9 @@ jobs:
       - name: Production-build multi-destination reference-parity immersive E2E
         run: pnpm --filter @hatinh/web test:e2e:reference-parity
 
+      - name: Production-build multi-destination real PSV directional-arrow E2E
+        run: pnpm --filter @hatinh/web test:e2e:reference-parity:real
+
       - name: Production manifest end-to-end smoke tests
         run: pnpm --filter @hatinh/web exec playwright test --config=playwright.production.config.ts
 
