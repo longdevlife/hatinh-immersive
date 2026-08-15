@@ -8,17 +8,21 @@ import {
 
 describe('Explore Map browser capabilities', () => {
   it('resolves a browser location when the provider succeeds', async () => {
+    const getCurrentPosition = vi.fn((success: PositionCallback) => {
+      success({
+        coords: { latitude: 18.3421, longitude: 105.9032 },
+      } as GeolocationPosition);
+    });
     const geolocation = {
-      getCurrentPosition: vi.fn((success: PositionCallback) => {
-        success({
-          coords: { latitude: 18.3421, longitude: 105.9032 },
-        } as GeolocationPosition);
-      }),
+      getCurrentPosition,
     };
 
     await expect(requestBrowserLocation(geolocation)).resolves.toEqual({
       location: { latitude: 18.3421, longitude: 105.9032 },
       status: 'available',
+    });
+    expect(getCurrentPosition).toHaveBeenCalledWith(expect.any(Function), expect.any(Function), {
+      timeout: 12000,
     });
   });
 

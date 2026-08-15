@@ -1,5 +1,7 @@
 import type { ExploreMapLocationStatus, ExploreMapUserLocation } from './explore-map.types';
 
+export const DEFAULT_GEOLOCATION_TIMEOUT_MS = 12_000;
+
 export interface ExploreMapLocationResult {
   status: Exclude<ExploreMapLocationStatus, 'idle' | 'requesting'>;
   location?: ExploreMapUserLocation;
@@ -43,6 +45,7 @@ export function requestBrowserLocation(
           resolve({ location: { latitude, longitude }, status: 'available' });
         },
         (error) => resolve({ status: error.code === 1 ? 'denied' : 'unavailable' }),
+        { timeout: DEFAULT_GEOLOCATION_TIMEOUT_MS },
       );
     } catch {
       resolve({ status: 'unavailable' });

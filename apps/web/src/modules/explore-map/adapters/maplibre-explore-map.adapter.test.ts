@@ -22,6 +22,7 @@ class FakeMap {
   readonly options: unknown;
   readonly sources = new Map<string, FakeGeoJsonSource>();
   readonly layers: unknown[] = [];
+  readonly images = new Map<string, unknown>();
   readonly styleChanges: unknown[] = [];
   readonly flyToCalls: unknown[] = [];
   readonly fitBoundsCalls: unknown[] = [];
@@ -98,6 +99,14 @@ class FakeMap {
     this.sources.set(id, new FakeGeoJsonSource(source.data));
   }
 
+  addImage(id: string, image: unknown): void {
+    this.images.set(id, image);
+  }
+
+  hasImage(id: string): boolean {
+    return this.images.has(id);
+  }
+
   getSource(id: string): FakeGeoJsonSource | undefined {
     return this.sources.get(id);
   }
@@ -110,6 +119,7 @@ class FakeMap {
     this.styleChanges.push(style);
     this.sources.clear();
     this.layers.length = 0;
+    this.images.clear();
     if (FakeMap.failNextStyleChange) {
       FakeMap.failNextStyleChange = false;
       queueMicrotask(() => this.emit('error'));
@@ -220,7 +230,28 @@ describe('MapLibreExploreMapEngine', () => {
     });
     expect(map.layers).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: 'explore-destinations', source: 'explore-destinations' }),
+        expect.objectContaining({
+          id: 'explore-destinations',
+          layout: expect.objectContaining({
+            'icon-image': [
+              'case',
+              ['get', 'isSelected'],
+              'explore-destination-pin-selected',
+              'explore-destination-pin',
+            ],
+          }),
+          source: 'explore-destinations',
+          type: 'symbol',
+        }),
+        expect.objectContaining({
+          id: 'explore-destination-labels',
+          layout: expect.objectContaining({
+            'text-size': ['case', ['get', 'isSelected'], 14, 12],
+          }),
+          paint: expect.objectContaining({
+            'text-color': ['case', ['get', 'isSelected'], '#173c31', '#52665b'],
+          }),
+        }),
         expect.objectContaining({
           id: 'explore-destinations-hit-targets',
           paint: expect.objectContaining({
@@ -232,6 +263,8 @@ describe('MapLibreExploreMapEngine', () => {
         }),
       ]),
     );
+    expect(map.images.has('explore-destination-pin')).toBe(true);
+    expect(map.images.has('explore-destination-pin-selected')).toBe(true);
 
     engine.destroy();
   });
@@ -300,6 +333,8 @@ describe('MapLibreExploreMapEngine', () => {
         expect.objectContaining({ id: 'explore-destination-labels' }),
       ]),
     );
+    expect(map.images.has('explore-destination-pin')).toBe(true);
+    expect(map.images.has('explore-destination-pin-selected')).toBe(true);
 
     engine.destroy();
   });

@@ -48,6 +48,7 @@ describe('FakeExploreMapEngine', () => {
     expect(engine.state).toEqual({
       destinations: [state.destinations[0]],
       selectedDestinationId: 'thien-cam',
+      userLocation: null,
     });
   });
 

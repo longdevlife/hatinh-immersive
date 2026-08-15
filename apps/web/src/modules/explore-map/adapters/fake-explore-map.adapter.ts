@@ -48,7 +48,7 @@ export class FakeExploreMapEngine implements ExploreMapEnginePort {
     this.state = {
       destinations: [...state.destinations],
       selectedDestinationId: state.selectedDestinationId,
-      ...(state.userLocation ? { userLocation: { ...state.userLocation } } : {}),
+      userLocation: state.userLocation ? { ...state.userLocation } : null,
     };
     this.calls.push({ state: this.state, type: 'setState' });
   }

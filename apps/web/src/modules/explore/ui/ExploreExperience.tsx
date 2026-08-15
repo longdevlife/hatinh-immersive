@@ -309,6 +309,7 @@ export function ExploreExperience({
     void requestBrowserLocation(navigator.geolocation).then((result) => {
       setLocationStatus(result.status);
       if (result.status !== 'available' || !result.location) {
+        setUserLocation(null);
         return;
       }
 

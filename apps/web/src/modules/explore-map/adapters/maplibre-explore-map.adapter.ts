@@ -24,6 +24,8 @@ const DEFAULT_TRANSITION_DURATION = 650;
 const DEFAULT_OVERVIEW_PADDING = 64;
 const DEFAULT_OVERVIEW_MAX_ZOOM = 11;
 const REDUCED_MOTION_MEDIA_QUERY = '(prefers-reduced-motion: reduce)';
+const DESTINATION_PIN_IMAGE_ID = 'explore-destination-pin';
+const DESTINATION_SELECTED_PIN_IMAGE_ID = 'explore-destination-pin-selected';
 
 function getTransitionDuration(options: ExploreMapOptions): number {
   if (typeof window !== 'undefined' && window.matchMedia?.(REDUCED_MOTION_MEDIA_QUERY).matches) {
@@ -47,10 +49,17 @@ export interface ExploreMapSource {
   setData(data: unknown): void;
 }
 
+export interface ExploreMapImage {
+  width: number;
+  height: number;
+  data: Uint8Array;
+}
+
 export type ExploreMapEventListener = (event?: unknown) => void;
 
 export interface ExploreMapInstance {
   addLayer(layer: unknown): void;
+  addImage(id: string, image: ExploreMapImage): void;
   addSource(id: string, source: { data: unknown; type: 'geojson' }): void;
   fitBounds(
     bounds: [ExploreMapCoordinate, ExploreMapCoordinate],
@@ -59,6 +68,7 @@ export interface ExploreMapInstance {
   flyTo(options: { center: ExploreMapCoordinate; duration: number; zoom?: number }): void;
   getSource(id: string): ExploreMapSource | undefined;
   getLayer(id: string): unknown | undefined;
+  hasImage(id: string): boolean;
   on(
     event: string,
     layerOrListener: string | ExploreMapEventListener,
@@ -148,6 +158,43 @@ function toGeoJson(
     })),
     type: 'FeatureCollection',
   };
+}
+
+function createDestinationPinImage(color: readonly [number, number, number]): ExploreMapImage {
+  const width = 32;
+  const height = 40;
+  const data = new Uint8Array(width * height * 4);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const dx = x - 15.5;
+      const circleDy = y - 11.5;
+      const inCircle = dx * dx + circleDy * circleDy <= 11.5 * 11.5;
+      const tailProgress = (y - 11.5) / 26;
+      const tailHalfWidth = Math.max(0, 11.5 * (1 - tailProgress));
+      const inTail = y >= 11.5 && y <= 39 && Math.abs(dx) <= tailHalfWidth;
+      if (!inCircle && !inTail) {
+        continue;
+      }
+
+      const offset = (y * width + x) * 4;
+      data[offset] = color[0];
+      data[offset + 1] = color[1];
+      data[offset + 2] = color[2];
+      data[offset + 3] = 255;
+    }
+  }
+
+  return { data, height, width };
+}
+
+function ensureDestinationPinImages(map: ExploreMapInstance): void {
+  if (!map.hasImage(DESTINATION_PIN_IMAGE_ID)) {
+    map.addImage(DESTINATION_PIN_IMAGE_ID, createDestinationPinImage([22, 119, 82]));
+  }
+  if (!map.hasImage(DESTINATION_SELECTED_PIN_IMAGE_ID)) {
+    map.addImage(DESTINATION_SELECTED_PIN_IMAGE_ID, createDestinationPinImage([190, 128, 45]));
+  }
 }
 
 interface MapLoadWaiter extends Promise<void> {
@@ -427,6 +474,8 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   }
 
   private installDataLayers(map: ExploreMapInstance): void {
+    ensureDestinationPinImages(map);
+
     if (!map.getSource(DESTINATIONS_SOURCE_ID)) {
       map.addSource(DESTINATIONS_SOURCE_ID, {
         data: emptyGeoJson(),
@@ -457,21 +506,20 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     if (!map.getLayer(DESTINATIONS_LAYER_ID)) {
       map.addLayer({
         id: DESTINATIONS_LAYER_ID,
-        paint: {
-          'circle-color': [
+        layout: {
+          'icon-allow-overlap': true,
+          'icon-anchor': 'bottom',
+          'icon-image': [
             'case',
             ['get', 'isSelected'],
-            '#f5b866',
-            ['get', 'featured'],
-            '#2f8064',
-            '#f4f0e8',
+            DESTINATION_SELECTED_PIN_IMAGE_ID,
+            DESTINATION_PIN_IMAGE_ID,
           ],
-          'circle-radius': ['case', ['get', 'isSelected'], 9, ['get', 'featured'], 8, 6],
-          'circle-stroke-color': '#173c31',
-          'circle-stroke-width': 2,
+          'icon-ignore-placement': true,
+          'icon-size': ['case', ['get', 'isSelected'], 0.9, ['get', 'featured'], 0.8, 0.7],
         },
         source: DESTINATIONS_SOURCE_ID,
-        type: 'circle',
+        type: 'symbol',
       });
     }
     if (!map.getLayer(DESTINATIONS_HIT_TARGET_LAYER_ID)) {
@@ -493,12 +541,12 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
           'text-anchor': 'top',
           'text-field': ['get', 'label'],
           'text-offset': [0, 1.15],
-          'text-size': 12,
+          'text-size': ['case', ['get', 'isSelected'], 14, 12],
         },
         paint: {
-          'text-color': '#173c31',
+          'text-color': ['case', ['get', 'isSelected'], '#173c31', '#52665b'],
           'text-halo-color': '#f4f0e8',
-          'text-halo-width': 1.5,
+          'text-halo-width': ['case', ['get', 'isSelected'], 2, 1.5],
         },
         source: DESTINATIONS_SOURCE_ID,
         type: 'symbol',

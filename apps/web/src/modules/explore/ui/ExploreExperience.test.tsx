@@ -433,6 +433,48 @@ describe('ExploreExperience', () => {
     expect(screen.getByRole('region', { name: 'Bản đồ khám phá Hà Tĩnh' })).toBeInTheDocument();
   });
 
+  it('clears a previously shown location when a later locate request fails', async () => {
+    let requestCount = 0;
+    const getCurrentPosition = vi.fn((success: PositionCallback, error: PositionErrorCallback) => {
+      requestCount += 1;
+      if (requestCount === 1) {
+        success({
+          coords: { latitude: 18.3421, longitude: 105.9032 },
+        } as GeolocationPosition);
+        return;
+      }
+
+      error({ code: 1 } as GeolocationPositionError);
+    });
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition,
+      },
+    });
+    const mapEngine = new FakeExploreMapEngine();
+    renderExplore(mapEngine);
+
+    const locateButton = await screen.findByRole('button', { name: 'Tìm vị trí của tôi' });
+    fireEvent.click(locateButton);
+    await waitFor(() => expect(getCurrentPosition).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(mapEngine.state.userLocation).toEqual({
+        latitude: 18.3421,
+        longitude: 105.9032,
+      }),
+    );
+
+    fireEvent.click(locateButton);
+    await waitFor(() => expect(getCurrentPosition).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(screen.getByTestId('explore-map-location-status')).toHaveTextContent(
+        'Quyền vị trí đang tắt',
+      ),
+    );
+    await waitFor(() => expect(mapEngine.state.userLocation).toBeNull());
+  });
+
   it('synchronizes fullscreen state from fullscreenchange and does not use a blind toggle', async () => {
     const requestFullscreen = vi.fn(async () => undefined);
     const exitFullscreen = vi.fn(async () => undefined);
