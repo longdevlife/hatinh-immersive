@@ -253,22 +253,36 @@ export function ExploreExperience({
     }
 
     let cancelled = false;
+    let retryTimer: number | null = null;
     setMapDiagnostics(null);
-    void mapEngine
-      .getDiagnostics()
-      .then((diagnostics) => {
-        if (!cancelled) {
+    const capture = () => {
+      void mapEngine.getDiagnostics!()
+        .then((diagnostics) => {
+          if (cancelled) {
+            return;
+          }
+
           setMapDiagnostics(diagnostics);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setMapDiagnostics({ diagnosticsUnavailableReason: 'diagnostics-capture-failed' });
-        }
-      });
+          if ('mapIdleObserved' in diagnostics && diagnostics.mapIdleObserved) {
+            return;
+          }
+
+          retryTimer = window.setTimeout(capture, 500);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setMapDiagnostics({ diagnosticsUnavailableReason: 'diagnostics-capture-failed' });
+            retryTimer = window.setTimeout(capture, 500);
+          }
+        });
+    };
+    capture();
 
     return () => {
       cancelled = true;
+      if (retryTimer !== null) {
+        window.clearTimeout(retryTimer);
+      }
     };
   }, [
     isMapDebugEnabled,

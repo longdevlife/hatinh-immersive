@@ -197,7 +197,7 @@ describe('ExploreExperience', () => {
         '"sourceDataFeatureCount":4',
       ),
     );
-    expect(mapEngine.getDiagnostics).toHaveBeenCalledTimes(1);
+    expect(mapEngine.getDiagnostics).toHaveBeenCalled();
 
     window.history.pushState({}, '', '/explore');
   });
