@@ -117,7 +117,6 @@ export class AudioTourCoordinator {
     const activeScene = this.activeScene;
     if (
       !activeScene ||
-      activeScene.request.mode !== 'auto-tour' ||
       activeScene.context.sceneId !== sceneId ||
       !this.autoTourController.getState().isActive
     ) {
@@ -153,11 +152,7 @@ export class AudioTourCoordinator {
   }
 
   notifyNarrationCompleted(context: ImmersivePlaybackContext): boolean {
-    if (
-      !this.isCurrentContext(context) ||
-      this.activeScene?.request.mode !== 'auto-tour' ||
-      !this.autoTourController.getState().isActive
-    ) {
+    if (!this.isCurrentContext(context) || !this.autoTourController.getState().isActive) {
       return false;
     }
 

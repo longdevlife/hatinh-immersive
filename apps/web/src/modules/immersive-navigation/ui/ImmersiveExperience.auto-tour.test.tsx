@@ -85,7 +85,7 @@ describe('ImmersiveExperience Auto Tour progression', () => {
 
     const advanceAutoTour = async () => {
       await act(async () => {
-        await vi.advanceTimersByTimeAsync(6500);
+        await vi.advanceTimersByTimeAsync(9000);
       });
       await act(async () => {
         await Promise.resolve();

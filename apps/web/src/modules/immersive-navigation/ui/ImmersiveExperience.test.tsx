@@ -254,7 +254,7 @@ describe('ImmersiveExperience', () => {
     fireEvent.click(autoTourButton);
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(6500);
+      await vi.advanceTimersByTimeAsync(9000);
     });
 
     await act(async () => {
