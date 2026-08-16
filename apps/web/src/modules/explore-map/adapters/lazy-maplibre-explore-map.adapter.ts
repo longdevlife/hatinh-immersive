@@ -1,5 +1,9 @@
 import type { ExploreMapEnginePort } from '../domain/explore-map-engine.port';
-import type { ExploreMapCameraTarget, ExploreMapViewportState } from '../model/explore-map.types';
+import type {
+  ExploreMapCameraTarget,
+  ExploreMapStyle,
+  ExploreMapViewportState,
+} from '../model/explore-map.types';
 
 type PendingCameraCommand =
   { type: 'flyTo'; target: ExploreMapCameraTarget } | { type: 'fitOverview' };
@@ -10,6 +14,7 @@ function cloneState(state: ExploreMapViewportState): ExploreMapViewportState {
   return {
     destinations: [...state.destinations],
     selectedDestinationId: state.selectedDestinationId,
+    ...(state.userLocation ? { userLocation: { ...state.userLocation } } : {}),
   };
 }
 
@@ -23,6 +28,7 @@ export class LazyMapLibreExploreMapEngine implements ExploreMapEnginePort {
     selectedDestinationId: null,
   };
   private pendingCameraCommand: PendingCameraCommand | null = null;
+  private pendingStyle: ExploreMapStyle | null = null;
   private lifecycleGeneration = 0;
 
   constructor(options: ExploreMapOptions) {
@@ -37,7 +43,10 @@ export class LazyMapLibreExploreMapEngine implements ExploreMapEnginePort {
       return;
     }
 
-    const engine = new MapLibreExploreMapEngine(this.options);
+    const engine = new MapLibreExploreMapEngine({
+      ...this.options,
+      ...(this.pendingStyle ? { style: this.pendingStyle } : {}),
+    });
     this.engine = engine;
     engine.setState(this.state);
     this.engineSubscription = engine.subscribeDestinationSelected((destinationId) => {
@@ -86,6 +95,17 @@ export class LazyMapLibreExploreMapEngine implements ExploreMapEnginePort {
   setState(state: ExploreMapViewportState): void {
     this.state = cloneState(state);
     this.engine?.setState(this.state);
+  }
+
+  changeStyle(style: ExploreMapStyle): Promise<void> {
+    if (!this.engine) {
+      this.pendingStyle = style;
+      return Promise.resolve();
+    }
+
+    return this.engine.changeStyle(style).then(() => {
+      this.pendingStyle = style;
+    });
   }
 
   flyTo(target: ExploreMapCameraTarget): Promise<void> {

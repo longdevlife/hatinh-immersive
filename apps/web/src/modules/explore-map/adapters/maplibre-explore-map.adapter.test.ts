@@ -16,12 +16,18 @@ class FakeGeoJsonSource {
   setData(data: unknown): void {
     this.data = data;
   }
+
+  getData(): unknown {
+    return this.data;
+  }
 }
 
 class FakeMap {
   readonly options: unknown;
   readonly sources = new Map<string, FakeGeoJsonSource>();
   readonly layers: unknown[] = [];
+  readonly images = new Map<string, unknown>();
+  readonly styleChanges: unknown[] = [];
   readonly flyToCalls: unknown[] = [];
   readonly fitBoundsCalls: unknown[] = [];
   readonly resizeCalls: number[] = [];
@@ -31,6 +37,7 @@ class FakeMap {
 
   static latest: FakeMap | null = null;
   static autoLoad = true;
+  static failNextStyleChange = false;
 
   constructor(options: unknown) {
     this.options = options;
@@ -96,8 +103,34 @@ class FakeMap {
     this.sources.set(id, new FakeGeoJsonSource(source.data));
   }
 
+  addImage(id: string, image: unknown): void {
+    this.images.set(id, image);
+  }
+
+  hasImage(id: string): boolean {
+    return this.images.has(id);
+  }
+
   getSource(id: string): FakeGeoJsonSource | undefined {
     return this.sources.get(id);
+  }
+
+  getLayer(id: string): unknown | undefined {
+    return this.layers.find((layer) => (layer as { id?: string }).id === id);
+  }
+
+  setStyle(style: unknown): void {
+    this.styleChanges.push(style);
+    this.sources.clear();
+    this.layers.length = 0;
+    this.images.clear();
+    if (FakeMap.failNextStyleChange) {
+      FakeMap.failNextStyleChange = false;
+      queueMicrotask(() => this.emit('error'));
+      return;
+    }
+
+    queueMicrotask(() => this.emit('style.load'));
   }
 
   addLayer(layer: unknown): void {
@@ -118,6 +151,56 @@ class FakeMap {
 
   remove(): void {
     this.removed = true;
+  }
+
+  getBounds() {
+    return {
+      getEast: () => 107,
+      getNorth: () => 19,
+      getSouth: () => 18,
+      getWest: () => 105,
+    };
+  }
+
+  getCenter() {
+    const center = (this.options as { center: [number, number] }).center;
+    return { lat: center[1], lng: center[0] };
+  }
+
+  getZoom(): number {
+    return (this.options as { zoom: number }).zoom;
+  }
+
+  queryRenderedFeatures(options?: { layers?: string[] }): unknown[] {
+    const layerId = options?.layers?.[0];
+    const features =
+      (this.sources.get('explore-destinations')?.data as { features?: unknown[] } | undefined)
+        ?.features ?? [];
+    if (layerId === 'explore-destinations-selection-halo') {
+      return features.filter(
+        (feature) =>
+          ((feature as { properties?: { isSelected?: boolean } }).properties?.isSelected ??
+            false) === true,
+      );
+    }
+    if (
+      layerId === 'explore-destinations' ||
+      layerId === 'explore-destination-labels' ||
+      layerId === 'explore-destinations-hit-targets'
+    ) {
+      return features;
+    }
+    return [];
+  }
+
+  querySourceFeatures(sourceId: string): unknown[] {
+    return (
+      (this.sources.get(sourceId)?.data as { features?: unknown[] } | undefined)?.features ?? []
+    );
+  }
+
+  triggerRepaint(): void {
+    queueMicrotask(() => this.emit('idle'));
   }
 }
 
@@ -150,6 +233,7 @@ const state: ExploreMapViewportState = {
 describe('MapLibreExploreMapEngine', () => {
   afterEach(() => {
     FakeMap.autoLoad = true;
+    FakeMap.failNextStyleChange = false;
     FakeMap.latest = null;
     vi.unstubAllGlobals();
   });
@@ -200,7 +284,28 @@ describe('MapLibreExploreMapEngine', () => {
     });
     expect(map.layers).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: 'explore-destinations', source: 'explore-destinations' }),
+        expect.objectContaining({
+          id: 'explore-destinations',
+          layout: expect.objectContaining({
+            'icon-image': [
+              'case',
+              ['get', 'isSelected'],
+              'explore-destination-pin-selected',
+              'explore-destination-pin',
+            ],
+          }),
+          source: 'explore-destinations',
+          type: 'symbol',
+        }),
+        expect.objectContaining({
+          id: 'explore-destination-labels',
+          layout: expect.objectContaining({
+            'text-size': ['case', ['get', 'isSelected'], 14, 12],
+          }),
+          paint: expect.objectContaining({
+            'text-color': ['case', ['get', 'isSelected'], '#173c31', '#52665b'],
+          }),
+        }),
         expect.objectContaining({
           id: 'explore-destinations-hit-targets',
           paint: expect.objectContaining({
@@ -212,6 +317,8 @@ describe('MapLibreExploreMapEngine', () => {
         }),
       ]),
     );
+    expect(map.images.has('explore-destination-pin')).toBe(true);
+    expect(map.images.has('explore-destination-pin-selected')).toBe(true);
 
     engine.destroy();
   });
@@ -251,6 +358,103 @@ describe('MapLibreExploreMapEngine', () => {
     expect(map.removed).toBe(true);
     expect(map.layerListeners.get('explore-destinations')?.size ?? 0).toBe(0);
     expect(map.layerListeners.get('explore-destinations-hit-targets')?.size ?? 0).toBe(0);
+  });
+
+  it('restores destination layers and selection after a style reload without remounting', async () => {
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8, name: 'default' },
+    });
+
+    engine.setState(state);
+    await engine.mount(document.createElement('div'));
+    const map = FakeMap.latest!;
+    await engine.changeStyle({ version: 8, name: 'alternate' });
+
+    expect(map.styleChanges).toEqual([{ version: 8, name: 'alternate' }]);
+    expect(map.removed).toBe(false);
+    expect(map.sources.get('explore-destinations')?.data).toMatchObject({
+      features: expect.arrayContaining([
+        expect.objectContaining({
+          properties: expect.objectContaining({ id: 'thien-cam', isSelected: true }),
+        }),
+      ]),
+    });
+    expect(map.layers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'explore-destinations' }),
+        expect.objectContaining({ id: 'explore-destinations-hit-targets' }),
+        expect.objectContaining({ id: 'explore-destination-labels' }),
+      ]),
+    );
+    expect(map.images.has('explore-destination-pin')).toBe(true);
+    expect(map.images.has('explore-destination-pin-selected')).toBe(true);
+
+    engine.destroy();
+  });
+
+  it('rolls back the style and destination layers when the next style fails', async () => {
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8, name: 'default' },
+    });
+
+    engine.setState(state);
+    await engine.mount(document.createElement('div'));
+    const map = FakeMap.latest!;
+    FakeMap.failNextStyleChange = true;
+
+    await expect(engine.changeStyle({ version: 8, name: 'broken' })).rejects.toThrow(
+      'MAPLIBRE_EXPLORE_STYLE_ERROR',
+    );
+
+    expect(map.styleChanges).toEqual([
+      { version: 8, name: 'broken' },
+      { version: 8, name: 'default' },
+    ]);
+    expect(map.removed).toBe(false);
+    expect(map.sources.get('explore-destinations')?.data).toMatchObject({
+      features: expect.arrayContaining([
+        expect.objectContaining({
+          properties: expect.objectContaining({ id: 'thien-cam', isSelected: true }),
+        }),
+      ]),
+    });
+    expect(map.layers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'explore-destinations' }),
+        expect.objectContaining({ id: 'explore-destinations-hit-targets' }),
+      ]),
+    );
+
+    engine.destroy();
+  });
+
+  it('renders the user location through the provider-native source', async () => {
+    const engine = new MapLibreExploreMapEngine({
+      loadRuntime: async () => runtime,
+      style: { version: 8 },
+    });
+
+    engine.setState({
+      ...state,
+      userLocation: { latitude: 18.35, longitude: 105.91 },
+    });
+    await engine.mount(document.createElement('div'));
+    const map = FakeMap.latest!;
+
+    expect(map.sources.get('explore-user-location')?.data).toEqual({
+      features: [
+        {
+          geometry: { coordinates: [105.91, 18.35], type: 'Point' },
+          properties: {},
+          type: 'Feature',
+        },
+      ],
+      type: 'FeatureCollection',
+    });
+
+    engine.destroy();
   });
 
   it('emits one selection when one click reaches overlapping destination layers', async () => {

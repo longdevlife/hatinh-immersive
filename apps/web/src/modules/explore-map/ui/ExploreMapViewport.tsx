@@ -3,7 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 import type { RendererStatus } from '../../../shared/contracts';
 
 import type { ExploreMapEnginePort } from '../domain/explore-map-engine.port';
-import type { ExploreMapDestination, ExploreMapViewportState } from '../model/explore-map.types';
+import type {
+  ExploreMapDestination,
+  ExploreMapUserLocation,
+  ExploreMapViewportState,
+} from '../model/explore-map.types';
 
 export interface ExploreMapViewportProps {
   engine: ExploreMapEnginePort;
@@ -12,6 +16,7 @@ export interface ExploreMapViewportProps {
   selectedDestinationId: string | null;
   onDestinationSelected(destinationId: string): void;
   onStatusChange?(status: RendererStatus): void;
+  userLocation?: ExploreMapUserLocation | null;
 }
 
 const DEFAULT_DESTINATION_ZOOM = 13;
@@ -23,6 +28,7 @@ export function ExploreMapViewport({
   onDestinationSelected,
   onStatusChange,
   selectedDestinationId,
+  userLocation,
 }: ExploreMapViewportProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onDestinationSelectedRef = useRef(onDestinationSelected);
@@ -33,9 +39,13 @@ export function ExploreMapViewport({
   onStatusChangeRef.current = onStatusChange;
 
   useEffect(() => {
-    const state: ExploreMapViewportState = { destinations, selectedDestinationId };
+    const state: ExploreMapViewportState = {
+      destinations,
+      selectedDestinationId,
+      userLocation: userLocation ?? null,
+    };
     engine.setState(state);
-  }, [destinations, engine, selectedDestinationId]);
+  }, [destinations, engine, selectedDestinationId, userLocation]);
 
   useEffect(() => {
     if (!enabled) {
