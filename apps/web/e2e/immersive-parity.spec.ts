@@ -135,7 +135,7 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
     });
   });
 
-  await page.goto('/explore/bien-thien-cam?mode=panorama&scene=thien-cam-boardwalk&h=0&p=0&fov=90');
+  await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90');
   await expect(page.getByRole('region', { name: 'Các công cụ tiện ích' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' }).click();

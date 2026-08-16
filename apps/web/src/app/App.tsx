@@ -85,7 +85,7 @@ function FakeImmersiveExperience() {
   const { destinationSlug = DEFAULT_PUBLIC_DESTINATION_SLUG } = useParams();
   const demoDestination = DEMO_DESTINATIONS.find(({ preview }) => preview.slug === destinationSlug);
   const manifest = demoDestination
-    ? getDemoManifest(destinationSlug)
+    ? getDemoManifest(destinationSlug, 'synthetic')
     : createFakeImmersiveManifest();
   const destinations = demoDestination
     ? DEMO_DESTINATIONS.map(({ preview }) => preview)

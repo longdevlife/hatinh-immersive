@@ -1,22 +1,34 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
+import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+
 import type { ExploreMapEnginePort } from '../domain/explore-map-engine.port';
 import type {
   ExploreMapCameraTarget,
   ExploreMapDestination,
+  ExploreMapStyle,
+  ExploreMapUserLocation,
   ExploreMapViewportState,
 } from '../model/explore-map.types';
 
+export type { ExploreMapStyle } from '../model/explore-map.types';
+
 const DESTINATIONS_SOURCE_ID = 'explore-destinations';
 const DESTINATIONS_LAYER_ID = 'explore-destinations';
+const DESTINATIONS_HALO_LAYER_ID = 'explore-destinations-selection-halo';
 const DESTINATIONS_HIT_TARGET_LAYER_ID = 'explore-destinations-hit-targets';
 const DESTINATIONS_LABEL_LAYER_ID = 'explore-destination-labels';
+const USER_LOCATION_SOURCE_ID = 'explore-user-location';
+const USER_LOCATION_LAYER_ID = 'explore-user-location';
 const DEFAULT_CENTER: ExploreMapCoordinate = [105.9, 18.342];
 const DEFAULT_ZOOM = 9;
 const DEFAULT_TRANSITION_DURATION = 650;
 const DEFAULT_OVERVIEW_PADDING = 64;
 const DEFAULT_OVERVIEW_MAX_ZOOM = 11;
 const REDUCED_MOTION_MEDIA_QUERY = '(prefers-reduced-motion: reduce)';
+const DESTINATION_PIN_IMAGE_ID = 'explore-destination-pin';
+const DESTINATION_SELECTED_PIN_IMAGE_ID = 'explore-destination-pin-selected';
+const EXPLORE_MAP_E2E_HOOKS_ENABLED = import.meta.env.VITE_EXPLORE_MAP_E2E_HOOKS === 'true';
 
 function getTransitionDuration(options: ExploreMapOptions): number {
   if (typeof window !== 'undefined' && window.matchMedia?.(REDUCED_MOTION_MEDIA_QUERY).matches) {
@@ -26,7 +38,6 @@ function getTransitionDuration(options: ExploreMapOptions): number {
   return options.transitionDurationMs ?? DEFAULT_TRANSITION_DURATION;
 }
 
-export type ExploreMapStyle = string | Record<string, unknown>;
 export type ExploreMapCoordinate = [longitude: number, latitude: number];
 
 export interface ExploreMapOptions {
@@ -38,13 +49,21 @@ export interface ExploreMapOptions {
 }
 
 export interface ExploreMapSource {
-  setData(data: unknown): void;
+  setData(data: unknown): Promise<void> | void;
+  getData?(): Promise<unknown> | unknown;
+}
+
+export interface ExploreMapImage {
+  width: number;
+  height: number;
+  data: Uint8Array;
 }
 
 export type ExploreMapEventListener = (event?: unknown) => void;
 
 export interface ExploreMapInstance {
   addLayer(layer: unknown): void;
+  addImage(id: string, image: ExploreMapImage): void;
   addSource(id: string, source: { data: unknown; type: 'geojson' }): void;
   fitBounds(
     bounds: [ExploreMapCoordinate, ExploreMapCoordinate],
@@ -52,6 +71,20 @@ export interface ExploreMapInstance {
   ): void;
   flyTo(options: { center: ExploreMapCoordinate; duration: number; zoom?: number }): void;
   getSource(id: string): ExploreMapSource | undefined;
+  getLayer(id: string): unknown | undefined;
+  hasImage(id: string): boolean;
+  getBounds?(): {
+    getEast(): number;
+    getNorth(): number;
+    getSouth(): number;
+    getWest(): number;
+  };
+  areTilesLoaded?(): boolean;
+  getCenter?(): { lat: number; lng: number };
+  getZoom?(): number;
+  isMoving?(): boolean;
+  isSourceLoaded?(sourceId: string): boolean;
+  isStyleLoaded?(): boolean;
   on(
     event: string,
     layerOrListener: string | ExploreMapEventListener,
@@ -64,6 +97,10 @@ export interface ExploreMapInstance {
   ): this;
   remove(): void;
   resize(): void;
+  queryRenderedFeatures?(options?: { layers?: string[] }): unknown[];
+  querySourceFeatures?(sourceId: string): unknown[];
+  setStyle(style: ExploreMapStyle): void;
+  triggerRepaint?(): void;
 }
 
 export interface ExploreMapRuntime {
@@ -77,15 +114,30 @@ export interface ExploreMapRuntime {
   }) => ExploreMapInstance;
 }
 
+function exposeMapForE2e(map: ExploreMapInstance): void {
+  if (!EXPLORE_MAP_E2E_HOOKS_ENABLED || typeof window === 'undefined') {
+    return;
+  }
+
+  (
+    window as unknown as { __hatinhExploreMapForE2e?: ExploreMapInstance }
+  ).__hatinhExploreMapForE2e = map;
+}
+
+function clearMapForE2e(map: ExploreMapInstance): void {
+  if (!EXPLORE_MAP_E2E_HOOKS_ENABLED || typeof window === 'undefined') {
+    return;
+  }
+
+  const e2eWindow = window as unknown as { __hatinhExploreMapForE2e?: ExploreMapInstance };
+  if (e2eWindow.__hatinhExploreMapForE2e === map) {
+    delete e2eWindow.__hatinhExploreMapForE2e;
+  }
+}
+
 interface ExploreMapFeature {
   geometry: { coordinates: ExploreMapCoordinate; type: 'Point' };
-  properties: {
-    categoryLabel: string | null;
-    featured: boolean;
-    id: string;
-    isSelected: boolean;
-    label: string;
-  };
+  properties: Record<string, unknown>;
   type: 'Feature';
 }
 
@@ -96,11 +148,34 @@ interface ExploreMapGeoJson {
 
 async function loadMapLibreRuntime(): Promise<ExploreMapRuntime> {
   const maplibre = await import('maplibre-gl');
+  maplibre.setWorkerUrl(mapLibreWorkerUrl);
   return { Map: maplibre.Map as unknown as ExploreMapRuntime['Map'] };
 }
 
 function emptyGeoJson(): ExploreMapGeoJson {
   return { features: [], type: 'FeatureCollection' };
+}
+
+function userLocationGeoJson(
+  location: ExploreMapUserLocation | null | undefined,
+): ExploreMapGeoJson {
+  if (!location) {
+    return emptyGeoJson();
+  }
+
+  return {
+    features: [
+      {
+        geometry: {
+          coordinates: [location.longitude, location.latitude],
+          type: 'Point',
+        },
+        properties: {},
+        type: 'Feature',
+      },
+    ],
+    type: 'FeatureCollection',
+  };
 }
 
 function toGeoJson(
@@ -124,6 +199,43 @@ function toGeoJson(
     })),
     type: 'FeatureCollection',
   };
+}
+
+function createDestinationPinImage(color: readonly [number, number, number]): ExploreMapImage {
+  const width = 32;
+  const height = 40;
+  const data = new Uint8Array(width * height * 4);
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const dx = x - 15.5;
+      const circleDy = y - 11.5;
+      const inCircle = dx * dx + circleDy * circleDy <= 11.5 * 11.5;
+      const tailProgress = (y - 11.5) / 26;
+      const tailHalfWidth = Math.max(0, 11.5 * (1 - tailProgress));
+      const inTail = y >= 11.5 && y <= 39 && Math.abs(dx) <= tailHalfWidth;
+      if (!inCircle && !inTail) {
+        continue;
+      }
+
+      const offset = (y * width + x) * 4;
+      data[offset] = color[0];
+      data[offset + 1] = color[1];
+      data[offset + 2] = color[2];
+      data[offset + 3] = 255;
+    }
+  }
+
+  return { data, height, width };
+}
+
+function ensureDestinationPinImages(map: ExploreMapInstance): void {
+  if (!map.hasImage(DESTINATION_PIN_IMAGE_ID)) {
+    map.addImage(DESTINATION_PIN_IMAGE_ID, createDestinationPinImage([22, 119, 82]));
+  }
+  if (!map.hasImage(DESTINATION_SELECTED_PIN_IMAGE_ID)) {
+    map.addImage(DESTINATION_SELECTED_PIN_IMAGE_ID, createDestinationPinImage([190, 128, 45]));
+  }
 }
 
 interface MapLoadWaiter extends Promise<void> {
@@ -173,6 +285,50 @@ function waitForMapLoad(map: ExploreMapInstance): MapLoadWaiter {
   return Object.assign(promise, { cancel });
 }
 
+function waitForStyleLoad(map: ExploreMapInstance): MapLoadWaiter {
+  let cancel = () => undefined;
+  const promise = new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const cleanup = () => {
+      map.off('style.load', onStyleLoad);
+      map.off('error', onError);
+    };
+    const onStyleLoad = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+      reject(new Error('MAPLIBRE_EXPLORE_STYLE_ERROR'));
+    };
+
+    cancel = () => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      cleanup();
+      reject(new Error('MAPLIBRE_EXPLORE_STYLE_CANCELLED'));
+    };
+
+    map.on('style.load', onStyleLoad);
+    map.on('error', onError);
+  });
+
+  return Object.assign(promise, { cancel });
+}
+
 function readDestinationId(event?: unknown): string | null {
   const feature = (
     event as { features?: Array<{ properties?: Record<string, unknown> | null }> } | undefined
@@ -201,6 +357,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   private mountGeneration = 0;
   private pendingMapLoadCancellation: (() => void) | null = null;
   private readonly handledOriginalClickEvents = new WeakSet<object>();
+  private currentStyle: ExploreMapStyle | null = null;
   private readonly handleDestinationClick = (event?: unknown) => {
     const destinationId = readDestinationId(event);
     if (!destinationId) {
@@ -244,10 +401,12 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
       center: this.options.center ?? DEFAULT_CENTER,
       container,
       interactive: true,
-      style: this.options.style,
+      style: this.currentStyle ?? this.options.style,
       zoom: this.options.zoom ?? DEFAULT_ZOOM,
     });
     this.map = map;
+    this.currentStyle = this.currentStyle ?? this.options.style;
+    exposeMapForE2e(map);
 
     const mapLoad = waitForMapLoad(map);
     this.pendingMapLoadCancellation = mapLoad.cancel;
@@ -270,54 +429,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
       return;
     }
 
-    map.addSource(DESTINATIONS_SOURCE_ID, {
-      data: emptyGeoJson(),
-      type: 'geojson',
-    });
-    map.addLayer({
-      id: DESTINATIONS_LAYER_ID,
-      paint: {
-        'circle-color': [
-          'case',
-          ['get', 'isSelected'],
-          '#f5b866',
-          ['get', 'featured'],
-          '#2f8064',
-          '#f4f0e8',
-        ],
-        'circle-radius': ['case', ['get', 'isSelected'], 10, ['get', 'featured'], 8, 6],
-        'circle-stroke-color': '#173c31',
-        'circle-stroke-width': 2,
-      },
-      source: DESTINATIONS_SOURCE_ID,
-      type: 'circle',
-    });
-    map.addLayer({
-      id: DESTINATIONS_HIT_TARGET_LAYER_ID,
-      paint: {
-        'circle-color': '#000000',
-        'circle-opacity': 0,
-        'circle-radius': 22,
-      },
-      source: DESTINATIONS_SOURCE_ID,
-      type: 'circle',
-    });
-    map.addLayer({
-      id: DESTINATIONS_LABEL_LAYER_ID,
-      layout: {
-        'text-anchor': 'top',
-        'text-field': ['get', 'label'],
-        'text-offset': [0, 1.15],
-        'text-size': 12,
-      },
-      paint: {
-        'text-color': '#173c31',
-        'text-halo-color': '#f4f0e8',
-        'text-halo-width': 1.5,
-      },
-      source: DESTINATIONS_SOURCE_ID,
-      type: 'symbol',
-    });
+    this.installDataLayers(map);
     map.on('click', DESTINATIONS_HIT_TARGET_LAYER_ID, this.handleDestinationClick);
     map.on('click', DESTINATIONS_LABEL_LAYER_ID, this.handleDestinationClick);
 
@@ -332,8 +444,34 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     this.state = {
       destinations: [...state.destinations],
       selectedDestinationId: state.selectedDestinationId,
+      userLocation: state.userLocation ? { ...state.userLocation } : null,
     };
     this.applyState();
+  }
+
+  async changeStyle(style: ExploreMapStyle): Promise<void> {
+    const map = this.map;
+    if (!map) {
+      return;
+    }
+
+    const previousStyle = this.currentStyle;
+    try {
+      await this.applyStyle(map, style);
+      this.currentStyle = style;
+    } catch (error) {
+      if (previousStyle !== null && this.map === map) {
+        try {
+          await this.applyStyle(map, previousStyle);
+          this.currentStyle = previousStyle;
+        } catch {
+          // Preserve the original style-switch failure for the caller. The
+          // map remains mounted, and the next explicit style action can retry.
+        }
+      }
+
+      throw error;
+    }
   }
 
   async flyTo(target: ExploreMapCameraTarget): Promise<void> {
@@ -369,9 +507,127 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
   }
 
   private applyState(): void {
-    this.map
-      ?.getSource(DESTINATIONS_SOURCE_ID)
-      ?.setData(toGeoJson(this.state.destinations, this.state.selectedDestinationId));
+    const destinationSource = this.map?.getSource(DESTINATIONS_SOURCE_ID);
+    const userLocationSource = this.map?.getSource(USER_LOCATION_SOURCE_ID);
+    if (destinationSource) {
+      destinationSource.setData(
+        toGeoJson(this.state.destinations, this.state.selectedDestinationId),
+      );
+    }
+    if (userLocationSource) {
+      userLocationSource.setData(userLocationGeoJson(this.state.userLocation));
+    }
+  }
+
+  private installDataLayers(map: ExploreMapInstance): void {
+    ensureDestinationPinImages(map);
+
+    if (!map.getSource(DESTINATIONS_SOURCE_ID)) {
+      map.addSource(DESTINATIONS_SOURCE_ID, {
+        data: emptyGeoJson(),
+        type: 'geojson',
+      });
+    }
+    if (!map.getSource(USER_LOCATION_SOURCE_ID)) {
+      map.addSource(USER_LOCATION_SOURCE_ID, {
+        data: emptyGeoJson(),
+        type: 'geojson',
+      });
+    }
+
+    if (!map.getLayer(DESTINATIONS_HALO_LAYER_ID)) {
+      map.addLayer({
+        filter: ['==', ['get', 'isSelected'], true],
+        id: DESTINATIONS_HALO_LAYER_ID,
+        paint: {
+          'circle-blur': 0.35,
+          'circle-color': '#f5b866',
+          'circle-opacity': 0.35,
+          'circle-radius': 17,
+        },
+        source: DESTINATIONS_SOURCE_ID,
+        type: 'circle',
+      });
+    }
+    if (!map.getLayer(DESTINATIONS_LAYER_ID)) {
+      map.addLayer({
+        id: DESTINATIONS_LAYER_ID,
+        layout: {
+          'icon-allow-overlap': true,
+          'icon-anchor': 'bottom',
+          'icon-image': [
+            'case',
+            ['get', 'isSelected'],
+            DESTINATION_SELECTED_PIN_IMAGE_ID,
+            DESTINATION_PIN_IMAGE_ID,
+          ],
+          'icon-ignore-placement': true,
+          'icon-size': ['case', ['get', 'isSelected'], 0.9, ['get', 'featured'], 0.8, 0.7],
+        },
+        source: DESTINATIONS_SOURCE_ID,
+        type: 'symbol',
+      });
+    }
+    if (!map.getLayer(DESTINATIONS_HIT_TARGET_LAYER_ID)) {
+      map.addLayer({
+        id: DESTINATIONS_HIT_TARGET_LAYER_ID,
+        paint: {
+          'circle-color': '#000000',
+          'circle-opacity': 0,
+          'circle-radius': 22,
+        },
+        source: DESTINATIONS_SOURCE_ID,
+        type: 'circle',
+      });
+    }
+    if (!map.getLayer(DESTINATIONS_LABEL_LAYER_ID)) {
+      map.addLayer({
+        id: DESTINATIONS_LABEL_LAYER_ID,
+        layout: {
+          'text-anchor': 'top',
+          'text-field': ['get', 'label'],
+          'text-offset': [0, 1.15],
+          'text-size': ['case', ['get', 'isSelected'], 14, 12],
+        },
+        paint: {
+          'text-color': ['case', ['get', 'isSelected'], '#173c31', '#52665b'],
+          'text-halo-color': '#f4f0e8',
+          'text-halo-width': ['case', ['get', 'isSelected'], 2, 1.5],
+        },
+        source: DESTINATIONS_SOURCE_ID,
+        type: 'symbol',
+      });
+    }
+    if (!map.getLayer(USER_LOCATION_LAYER_ID)) {
+      map.addLayer({
+        id: USER_LOCATION_LAYER_ID,
+        paint: {
+          'circle-color': '#2d7ff9',
+          'circle-radius': 7,
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 3,
+        },
+        source: USER_LOCATION_SOURCE_ID,
+        type: 'circle',
+      });
+    }
+  }
+
+  private async applyStyle(map: ExploreMapInstance, style: ExploreMapStyle): Promise<void> {
+    const styleLoad = waitForStyleLoad(map);
+    // A synchronous setStyle failure must not leave a rejected waiter
+    // unobserved while the caller handles the original adapter error.
+    void styleLoad.catch(() => undefined);
+
+    try {
+      map.setStyle(style);
+      await styleLoad;
+      this.installDataLayers(map);
+      this.applyState();
+    } catch (error) {
+      styleLoad.cancel();
+      throw error;
+    }
   }
 
   private applyCameraTarget(target: ExploreMapCameraTarget): void {
@@ -433,6 +689,7 @@ export class MapLibreExploreMapEngine implements ExploreMapEnginePort {
     cancelMapLoad?.();
 
     if (this.map) {
+      clearMapForE2e(this.map);
       this.map.off('click', DESTINATIONS_HIT_TARGET_LAYER_ID, this.handleDestinationClick);
       this.map.off('click', DESTINATIONS_LABEL_LAYER_ID, this.handleDestinationClick);
       this.map.remove();

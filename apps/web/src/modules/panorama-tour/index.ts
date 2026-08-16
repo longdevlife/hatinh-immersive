@@ -18,3 +18,15 @@ export type {
   PanoramaTourSceneItemVm,
   PanoramaTourSceneRole,
 } from './model/panorama-tour';
+
+export { validateDestinationTour } from './model/destination-tour';
+
+export type {
+  DestinationTour,
+  DestinationTourGraphValidation,
+  DestinationTourHotspot,
+  DestinationTourLink,
+  DestinationTourMediaMode,
+  DestinationTourScene,
+  DestinationTourSceneRole,
+} from './model/destination-tour';

@@ -3,6 +3,7 @@ import {
   createDemoPanoramaTourManifest,
   type DemoPanoramaMediaMode,
 } from '../fake-mode/panorama-tour-demo';
+import { getDemoSceneDefinitions } from '../fake-mode/demo-tour-catalog';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
 
 export type PanoramaTourSource = 'demo' | 'none';
@@ -39,7 +40,7 @@ export function composePanoramaTourManifest(
   source: PanoramaTourSource,
   mediaMode: PanoramaTourMediaMode = 'public',
 ): ImmersiveManifestVm {
-  if (source !== 'demo' || manifest.destination.slug !== 'son-trang-co-dam') {
+  if (source !== 'demo' || !isDemoTourDestination(manifest.destination.slug)) {
     return manifest;
   }
 
@@ -55,12 +56,16 @@ export function composePanoramaTourDestination(
   destination: DestinationPreviewVm,
   source: PanoramaTourSource,
 ): DestinationPreviewVm {
-  if (source !== 'demo' || destination.slug !== 'son-trang-co-dam') {
+  if (source !== 'demo' || !isDemoTourDestination(destination.slug)) {
     return destination;
   }
 
   return {
     ...destination,
-    defaultSceneId: 'son-trang-gate',
+    defaultSceneId: getDemoSceneDefinitions(destination.slug)[0]?.id ?? destination.defaultSceneId,
   };
+}
+
+function isDemoTourDestination(slug: string): boolean {
+  return getDemoSceneDefinitions(slug).length > 1;
 }

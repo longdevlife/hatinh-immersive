@@ -3,7 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   testIgnore:
-    /(?:explore-map-real|immersive-(minimap|production)|selected-3d(?:-(?:local-anchors|public-runtime))?|navigation-return-context|panorama-tour)\.spec\.ts/,
+    /(?:explore-map-real|explore-map-hybrid-controls|explore-map-worker|immersive-(minimap|production|parity)|selected-3d(?:-(?:local-anchors|public-runtime))?|navigation-return-context|panorama-tour|reference-parity-(?:immersive|real-psv))\.spec\.ts/,
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,

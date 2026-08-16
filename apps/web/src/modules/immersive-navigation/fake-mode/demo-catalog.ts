@@ -1,21 +1,13 @@
-import type {
-  DestinationPreviewVm,
-  PanoramaNode,
-  SceneLinkVm,
-  SceneNodeVm,
-} from '../../../shared/contracts';
-import { hotspotsFixture } from '../../../shared/fixtures';
+import type { DestinationPreviewVm } from '../../../shared/contracts';
 import type { Map3DLocation } from '../../map3d';
 import { getDemoDestinationMedia } from './demo-media';
+import {
+  buildDemoManifest,
+  getDemoSceneDefinitions,
+  type DemoSceneDefinition,
+  type DemoTourBuildMode,
+} from './demo-tour-catalog';
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
-
-interface DemoSceneDefinition {
-  id: string;
-  name: string;
-  lat: number;
-  lng: number;
-  heading: number;
-}
 
 interface DemoDestinationDefinition {
   location: Map3DLocation;
@@ -78,15 +70,7 @@ export const DEMO_DESTINATIONS = [
       tilt: 48,
       range: 1_800,
     },
-    scenes: [
-      {
-        id: 'son-trang-gate',
-        name: 'Cổng Sơn Trang Cổ Đạm',
-        lat: 18.3421,
-        lng: 105.9032,
-        heading: 32,
-      },
-    ],
+    scenes: getDemoSceneDefinitions('son-trang-co-dam'),
   }),
   createDefinition({
     id: 'thien-cam-beach',
@@ -101,29 +85,7 @@ export const DEMO_DESTINATIONS = [
       tilt: 58,
       range: 1_250,
     },
-    scenes: [
-      {
-        id: 'thien-cam-boardwalk',
-        name: 'Lối dạo Thiên Cầm',
-        lat: 18.2771383,
-        lng: 106.098072,
-        heading: 82,
-      },
-      {
-        id: 'thien-cam-shore',
-        name: 'Bờ biển Thiên Cầm',
-        lat: 18.2771983,
-        lng: 106.098122,
-        heading: 118,
-      },
-      {
-        id: 'thien-cam-lookout',
-        name: 'Điểm ngắm Thiên Cầm',
-        lat: 18.2772583,
-        lng: 106.098172,
-        heading: 214,
-      },
-    ],
+    scenes: getDemoSceneDefinitions('bien-thien-cam'),
   }),
   createDefinition({
     id: 'nguyen-du-memorial',
@@ -138,15 +100,7 @@ export const DEMO_DESTINATIONS = [
       tilt: 57,
       range: 900,
     },
-    scenes: [
-      {
-        id: 'nguyen-du-courtyard',
-        name: 'Sân khu lưu niệm Nguyễn Du',
-        lat: 18.6647657,
-        lng: 105.7667208,
-        heading: 118,
-      },
-    ],
+    scenes: getDemoSceneDefinitions('khu-luu-niem-nguyen-du'),
   }),
   createDefinition({
     id: 'dong-loc-junction',
@@ -161,98 +115,31 @@ export const DEMO_DESTINATIONS = [
       tilt: 58,
       range: 1_050,
     },
-    scenes: [
-      {
-        id: 'dong-loc-memorial',
-        name: 'Khu tưởng niệm Đồng Lộc',
-        lat: 18.4022035,
-        lng: 105.7395203,
-        heading: 205,
-      },
-    ],
+    scenes: getDemoSceneDefinitions('nga-ba-dong-loc'),
   }),
 ] as const satisfies readonly DemoDestinationDefinition[];
 
-const manifests = new Map(
-  DEMO_DESTINATIONS.map((definition) => [definition.preview.slug, createManifest(definition)]),
-);
-
-export function getDemoManifest(slug: string): ImmersiveManifestVm {
+export function getDemoManifest(
+  slug: string,
+  mode: DemoTourBuildMode = 'public',
+): ImmersiveManifestVm {
   const manifest = manifests.get(slug);
   if (!manifest) {
     throw new Error(`DEMO_DESTINATION_NOT_FOUND:${slug}`);
   }
-  return manifest;
+
+  const cacheKey = `${mode}:${slug}`;
+  const cachedManifest = manifestCache.get(cacheKey);
+  if (cachedManifest) {
+    return cachedManifest;
+  }
+
+  const nextManifest = buildDemoManifest(manifest.preview, mode);
+  manifestCache.set(cacheKey, nextManifest);
+  return nextManifest;
 }
 
-function createManifest(definition: DemoDestinationDefinition): ImmersiveManifestVm {
-  const nodes: SceneNodeVm[] = definition.scenes.map((scene, index) => ({
-    id: scene.id,
-    name: scene.name,
-    lat: scene.lat,
-    lng: scene.lng,
-    heading: scene.heading,
-    isVisited: index === 0,
-    isCurrent: index === 0,
-  }));
-  const links: SceneLinkVm[] = nodes.slice(0, -1).flatMap((source, index) => {
-    const target = nodes[index + 1];
-    if (!target) {
-      return [];
-    }
-    return [
-      {
-        id: `${source.id}:${target.id}`,
-        sourceSceneId: source.id,
-        targetSceneId: target.id,
-        label: 'Đi tiếp',
-        yaw: source.heading,
-        pitch: 0,
-      },
-      {
-        id: `${target.id}:${source.id}`,
-        sourceSceneId: target.id,
-        targetSceneId: source.id,
-        label: 'Quay lại',
-        yaw: (target.heading + 180) % 360,
-        pitch: 0,
-      },
-    ];
-  });
-  const panoramaNodes: PanoramaNode[] = nodes.map((node) => ({
-    id: node.id,
-    name: node.name,
-    panoramaUrl: `/demo/360/${node.id}/manifest.json`,
-    previewUrl: `/demo/360/${node.id}/preview.webp`,
-    // Fake mode uses a deterministic synthetic renderer fixture. Public
-    // panorama-tour composition applies its own low-resolution quality gate.
-    mediaQuality: 'ready',
-    ...(definition.preview.slug === 'son-trang-co-dam'
-      ? { mediaRights: 'demo-only' as const }
-      : {}),
-    lat: node.lat,
-    lng: node.lng,
-    initialView: { heading: node.heading, pitch: 0, fov: 88 },
-    links: links
-      .filter((link) => link.sourceSceneId === node.id)
-      .map((link) => ({ targetNodeId: link.targetSceneId, yaw: link.yaw, pitch: link.pitch })),
-  }));
-
-  return {
-    destination: definition.preview,
-    defaultSceneId: definition.preview.defaultSceneId,
-    overviewTarget: {
-      ...definition.location.cameraPreset.center,
-      heading: definition.location.cameraPreset.heading,
-      tilt: definition.location.cameraPreset.tilt,
-      range: definition.location.cameraPreset.range,
-    },
-    nodes,
-    panoramaNodes,
-    links,
-    hotspots:
-      definition.preview.slug === 'son-trang-co-dam' || definition.preview.slug === 'bien-thien-cam'
-        ? hotspotsFixture
-        : [],
-  };
-}
+const manifests = new Map(
+  DEMO_DESTINATIONS.map((definition) => [definition.preview.slug, definition]),
+);
+const manifestCache = new Map<string, ImmersiveManifestVm>();

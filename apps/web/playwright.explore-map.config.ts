@@ -23,6 +23,7 @@ export default defineConfig({
       ...process.env,
       VITE_EXPLORE_MAP_MODE: 'maplibre',
       VITE_EXPLORE_MAP_STYLE_URL: '/test/explore-map-style.json',
+      VITE_EXPLORE_MAP_ALT_STYLE_URL: '/test/explore-map-alternate-style.json',
       VITE_IMMERSIVE_DATA_MODE: 'fake',
       VITE_IMMERSIVE_MAP3D_MODE: 'fake',
       VITE_IMMERSIVE_PANORAMA_MODE: 'fake',

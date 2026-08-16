@@ -25,6 +25,11 @@ import {
   type MinimapEnginePort,
 } from '../../minimap';
 import { ImmersiveControlsGroup } from './ImmersiveControls';
+import { ReferenceParityControls } from './ReferenceParityControls';
+import {
+  buildReferenceParityPresentationVm,
+  type ReferenceParityPresentationActions,
+} from './reference-parity.presentation';
 import { useImmersiveDestinations, useImmersiveManifest } from '../../../shared/api/immersive';
 import type {
   ImmersiveActions,
@@ -68,7 +73,6 @@ import {
   type PanoramaTourSource,
 } from '../model/panorama-tour-source';
 import {
-  buildPanoramaTourPresentationVm,
   getPanoramaRenderableNodes,
   getPanoramaTourLinks,
   isPanoramaSceneUsable,
@@ -76,6 +80,9 @@ import {
   resolveTourSceneId,
   validatePanoramaTourGraph,
 } from '../../panorama-tour';
+import { createBrowserAudioAdapter, ImmersiveAudioController } from '../../immersive-audio';
+import { AutoTourController } from '../model/auto-tour.controller';
+import { shareImmersiveScene, toggleImmersiveFullscreen } from '../model/reference-parity.actions';
 
 export interface ImmersiveExperienceFactories {
   createMap3DEngine(): Promise<Map3DEnginePort>;
@@ -578,6 +585,37 @@ export function ImmersiveExperience({
     [manifest?.overviewTarget],
   );
   const resolvedFactories = factories ?? defaultFactories;
+  const audioController = useMemo(
+    () => new ImmersiveAudioController(createBrowserAudioAdapter()),
+    [],
+  );
+  const [audioState, setAudioState] = useState(() => audioController.getState());
+  const [autoTourState, setAutoTourState] = useState({
+    isRunning: false,
+    isPaused: false,
+  });
+  const autoTourControllerRef = useRef<AutoTourController | null>(null);
+  const audioTracks = manifest?.audioTracks ?? [];
+  const ambientTrack = audioTracks.find((track) => track.type === 'ambient') ?? null;
+
+  useEffect(() => audioController.subscribe(setAudioState), [audioController]);
+
+  useEffect(() => {
+    audioController.setAmbientTrack(ambientTrack);
+    if (navigation.mode === 'panorama') {
+      void audioController.startAmbient();
+    } else {
+      audioController.stop();
+    }
+  }, [ambientTrack, audioController, navigation.mode]);
+
+  useEffect(
+    () => () => {
+      audioController.stop();
+      autoTourControllerRef.current?.destroy();
+    },
+    [audioController],
+  );
   const [retryKey, setRetryKey] = useState(0);
   const pendingUrlFrame = useRef<number | null>(null);
   const expectedDeepLinkRef = useRef<string | null>(null);
@@ -885,7 +923,11 @@ export function ImmersiveExperience({
   );
 
   const onNavigateScene = useCallback(
-    (sceneId: string) => {
+    (sceneId: string, isAutomatic = false) => {
+      if (!isAutomatic) {
+        autoTourControllerRef.current?.manualInteraction();
+      }
+
       const targetNode = manifest?.panoramaNodes.find((node) => node.id === sceneId);
       if (!manifest || !panoramaTourGraph.valid || !targetNode) {
         return;
@@ -904,6 +946,38 @@ export function ImmersiveExperience({
     [manifest, panoramaTourGraph.valid],
   );
 
+  const autoTourController = useMemo(
+    () =>
+      new AutoTourController({
+        onNavigate: (sceneId) => onNavigateScene(sceneId, true),
+        onStateChange: setAutoTourState,
+        getNextSceneId: (sceneId) => {
+          const currentIndex = panoramaRenderableNodes.findIndex((node) => node.id === sceneId);
+          const nextNode =
+            currentIndex >= 0 ? panoramaRenderableNodes[currentIndex + 1] : undefined;
+          if (!nextNode) {
+            return null;
+          }
+
+          const hasForwardLink = panoramaTourLinks.some(
+            (link) => link.sourceSceneId === sceneId && link.targetSceneId === nextNode.id,
+          );
+          return hasForwardLink ? nextNode.id : null;
+        },
+      }),
+    [onNavigateScene, panoramaRenderableNodes, panoramaTourLinks],
+  );
+
+  useEffect(() => {
+    autoTourControllerRef.current = autoTourController;
+    return () => {
+      if (autoTourControllerRef.current === autoTourController) {
+        autoTourControllerRef.current = null;
+      }
+      autoTourController.destroy();
+    };
+  }, [autoTourController]);
+
   const onRendererNodeChange = useCallback(
     (sceneId: string, rendererView: PanoramaView) => {
       if (!manifest || !manifest.panoramaNodes.some((node) => node.id === sceneId)) {
@@ -920,6 +994,7 @@ export function ImmersiveExperience({
 
       state.commitRendererScene(sceneId, rendererView);
       if (useImmersiveNavigation.getState().committedSceneId === sceneId) {
+        autoTourControllerRef.current?.onSceneCommitted(sceneId);
         writeDeepLink(
           navigate,
           destinationSlug,
@@ -944,6 +1019,81 @@ export function ImmersiveExperience({
     setRetryKey((current) => current + 1);
   }, []);
 
+  const currentNarrationTrack = useMemo(() => {
+    const currentSceneId = navigation.requestedSceneId ?? navigation.committedSceneId;
+    const currentNode = manifest?.panoramaNodes.find((node) => node.id === currentSceneId);
+    return (
+      manifest?.audioTracks?.find(
+        (track) => track.type === 'narration' && track.id === currentNode?.narrationTrackId,
+      ) ??
+      manifest?.audioTracks?.find((track) => track.type === 'narration') ??
+      null
+    );
+  }, [manifest, navigation.committedSceneId, navigation.requestedSceneId]);
+
+  const onSelectHotspot = useCallback(
+    (hotspotId: string) => {
+      const hotspot = manifest?.hotspots.find((candidate) => candidate.id === hotspotId);
+      if (!hotspot) {
+        return;
+      }
+
+      autoTourControllerRef.current?.manualInteraction();
+      if (hotspot.type === 'scene-navigation' && hotspot.targetSceneId) {
+        onNavigateScene(hotspot.targetSceneId);
+        return;
+      }
+
+      useImmersiveNavigation.getState().selectHotspot(hotspotId);
+      if (manifest && hotspot.type === 'audio' && hotspot.audioTrackId) {
+        const track = manifest.audioTracks?.find(
+          (candidate) => candidate.id === hotspot.audioTrackId,
+        );
+        if (track) {
+          void audioController.playNarration(track);
+        }
+      }
+    },
+    [audioController, manifest, onNavigateScene],
+  );
+
+  const onToggleMinimap = useCallback(() => {
+    autoTourControllerRef.current?.manualInteraction();
+    useImmersiveNavigation.getState().toggleMinimap();
+  }, []);
+
+  const onToggleMasterMute = useCallback(() => {
+    audioController.setMasterMuted(!audioState.masterMuted);
+  }, [audioController, audioState.masterMuted]);
+
+  const onEnableAudio = useCallback(() => {
+    audioController.setMasterMuted(false);
+    void audioController.startAmbient();
+  }, [audioController]);
+
+  const onToggleAmbient = useCallback(() => {
+    void audioController.setAmbientEnabled(!audioState.ambientEnabled);
+  }, [audioController, audioState.ambientEnabled]);
+
+  const onToggleNarration = useCallback(() => {
+    if (audioState.narrationPlaying) {
+      audioController.pauseNarration();
+      return;
+    }
+
+    void audioController.setNarrationEnabled(true);
+    void audioController.playNarration(currentNarrationTrack);
+  }, [audioController, audioState.narrationPlaying, currentNarrationTrack]);
+
+  const onToggleAutoTour = useCallback(() => {
+    const currentSceneId = navigation.committedSceneId;
+    if (!currentSceneId) {
+      return;
+    }
+
+    autoTourControllerRef.current?.toggle(currentSceneId);
+  }, [navigation.committedSceneId]);
+
   const actions = useMemo<ImmersiveActions>(
     () => ({
       onCloseHotspot: () => useImmersiveNavigation.getState().closeHotspot(),
@@ -953,10 +1103,17 @@ export function ImmersiveExperience({
       onNavigateScene,
       onOpenDestinationInfo: () => undefined,
       onRetryRenderer,
-      onSelectHotspot: (hotspotId) => useImmersiveNavigation.getState().selectHotspot(hotspotId),
-      onToggleMinimap: () => useImmersiveNavigation.getState().toggleMinimap(),
+      onSelectHotspot,
+      onToggleMinimap,
     }),
-    [onEnterPanorama, onNavigateScene, onRetryRenderer, onReturnToDestination],
+    [
+      onEnterPanorama,
+      onNavigateScene,
+      onRetryRenderer,
+      onReturnToDestination,
+      onSelectHotspot,
+      onToggleMinimap,
+    ],
   );
   const destinationSearchResults = useMemo(() => {
     const query = destinationSearchQuery.trim().toLocaleLowerCase('vi');
@@ -990,29 +1147,49 @@ export function ImmersiveExperience({
     setLocale(nextLocale);
   }, []);
 
-  const panoramaTourPresentation = useMemo(
-    () =>
-      manifest &&
-      manifest.destination.slug === 'son-trang-co-dam' &&
-      navigation.mode === 'panorama' &&
-      panoramaTourSource === 'demo'
-        ? buildPanoramaTourPresentationVm({
-            nodes: manifest.panoramaNodes,
-            currentSceneId: navigation.committedSceneId,
-            visitedSceneIds: navigation.visitedSceneIds,
-            status: navigation.panoramaStatus,
-            isTransitioning: navigation.transition === 'navigating-scene',
-          })
-        : undefined,
+  const referenceParityActions = useMemo<ReferenceParityPresentationActions>(
+    () => ({
+      onBack: onReturnToDestination,
+      onSelectScene: onNavigateScene,
+      onSelectHotspot,
+      onToggleMinimap,
+      onToggleMasterMute,
+      onEnableAudio,
+      onToggleAmbient,
+      onToggleNarration,
+      onToggleAutoTour,
+      onRetry: onRetryRenderer,
+      onShare: () =>
+        shareImmersiveScene({
+          title: manifest?.destination.name ?? destinationSlug,
+          url: window.location.href,
+          ...(typeof navigator.share === 'function'
+            ? { share: (data) => navigator.share(data) }
+            : {}),
+          ...(navigator.clipboard
+            ? { copy: (text: string) => navigator.clipboard.writeText(text) }
+            : {}),
+        }),
+      onFullscreen: () => {
+        void toggleImmersiveFullscreen(document);
+      },
+    }),
     [
+      destinationSlug,
       manifest,
-      navigation.committedSceneId,
-      navigation.panoramaStatus,
-      navigation.transition,
-      navigation.visitedSceneIds,
-      panoramaTourSource,
+      onEnableAudio,
+      onNavigateScene,
+      onRetryRenderer,
+      onReturnToDestination,
+      onSelectHotspot,
+      onToggleAmbient,
+      onToggleAutoTour,
+      onToggleMasterMute,
+      onToggleMinimap,
+      onToggleNarration,
     ],
   );
+
   if (!manifest) {
     return <ManifestState kind={manifestQuery.isPending ? 'loading' : 'error'} />;
   }
@@ -1101,6 +1278,21 @@ export function ImmersiveExperience({
     selectedHotspot?.type === 'audio'
       ? selectedHotspot.type
       : null;
+  const referenceParityPresentation =
+    navigation.mode === 'panorama' && panoramaTourSource === 'demo'
+      ? buildReferenceParityPresentationVm({
+          destination: manifest.destination,
+          nodes: manifest.panoramaNodes,
+          currentSceneId: navigation.committedSceneId,
+          visitedSceneIds: navigation.visitedSceneIds,
+          status: navigation.panoramaStatus,
+          isTransitioning: navigation.transition === 'navigating-scene',
+          audioState,
+          audioTracks,
+          autoTour: autoTourState,
+          hotspots: view.hotspots,
+        })
+      : undefined;
   const rendererContent = (
     <RendererHost
       activeRenderer={navigation.activeRenderer}
@@ -1144,6 +1336,7 @@ export function ImmersiveExperience({
             if (requestedNode) {
               state.commitSceneTransition(transitionId, requestedNode.initialView);
               if (useImmersiveNavigation.getState().committedSceneId === requestedSceneId) {
+                autoTourControllerRef.current?.onSceneCommitted(requestedSceneId);
                 writeDeepLink(
                   navigate,
                   destinationSlug,
@@ -1200,34 +1393,32 @@ export function ImmersiveExperience({
         onLocationSelected={selectLocation}
         showLocationBrowser={!isDestinationScopedSelected3D}
         rendererContent={rendererContent}
-        hasPanoramaTourControls={panoramaTourPresentation !== undefined}
+        hasPanoramaTourControls={referenceParityPresentation !== undefined}
         selectedLocationId={navigation.selectedLocationId}
         {...(selected3DViewpointRail ? { selected3DViewpointRail } : {})}
         view={view}
       />
       {navigation.mode === 'panorama' ? (
-        <ImmersiveControlsGroup
-          currentSceneId={navigation.committedSceneId}
-          destinations={destinationSearchResults}
-          links={view.links}
-          locale={locale}
-          nodes={view.nodes}
-          searchLoading={shouldFetchDestinations && destinationsQuery.isPending}
-          onLocaleChange={onLocaleChange}
-          onNavigateScene={actions.onNavigateScene}
-          onSearchDestination={setDestinationSearchQuery}
-          onSelectDestination={onSelectDestination}
-          {...(panoramaTourPresentation
-            ? {
-                tour: panoramaTourPresentation,
-                tourActions: {
-                  onBack: actions.onReturnToDestination,
-                  onSelectScene: actions.onNavigateScene,
-                  onRetry: actions.onRetryRenderer,
-                },
-              }
-            : {})}
-        />
+        referenceParityPresentation ? (
+          <ReferenceParityControls
+            vm={referenceParityPresentation}
+            actions={referenceParityActions}
+            minimapOpen={navigation.minimapOpen}
+          />
+        ) : (
+          <ImmersiveControlsGroup
+            currentSceneId={navigation.committedSceneId}
+            destinations={destinationSearchResults}
+            links={view.links}
+            locale={locale}
+            nodes={view.nodes}
+            searchLoading={shouldFetchDestinations && destinationsQuery.isPending}
+            onLocaleChange={onLocaleChange}
+            onNavigateScene={actions.onNavigateScene}
+            onSearchDestination={setDestinationSearchQuery}
+            onSelectDestination={onSelectDestination}
+          />
+        )
       ) : null}
       {selectedHotspot && selectedHotspotType ? (
         <HotspotPanel

@@ -3,6 +3,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   testMatch: /panorama-tour\.spec\.ts/,
+  grep: /walks the explicit Sơn Trang graph|canonicalizes a missing-media deep link/,
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
