@@ -68,6 +68,19 @@ export class ImmersiveAudioController {
 
   private ambientHandle: AudioTrackHandle | null = null;
 
+  private committedAmbientTrackId: string | null = null;
+
+  private committedAmbientPlaying = false;
+
+  private ambientHandles = new Set<AudioTrackHandle>();
+
+  private pendingAmbientTransition: {
+    trackId: string;
+    handle: AudioTrackHandle;
+  } | null = null;
+
+  private ambientTransitionPromise: Promise<void> | null = null;
+
   private narrationHandle: AudioTrackHandle | null = null;
 
   private narrationEndedCleanup: (() => void) | null = null;
@@ -93,14 +106,15 @@ export class ImmersiveAudioController {
     track: ImmersiveAudioTrack | null,
     transitionKind: AmbientTransitionKind = 'scene',
   ): Promise<void> {
-    if (track?.id === this.state.ambientTrackId && this.ambientHandle) {
+    if (
+      track?.id === this.state.ambientTrackId &&
+      (this.ambientHandle !== null || this.pendingAmbientTransition?.trackId === track.id)
+    ) {
       return;
     }
 
     if (!track || track.type !== 'ambient') {
-      this.ambientTransitionId += 1;
-      this.ambientHandle?.stop();
-      this.ambientHandle = null;
+      this.stopAmbient();
       this.update({ ambientTrackId: null, ambientPlaying: false });
       return;
     }
@@ -110,46 +124,47 @@ export class ImmersiveAudioController {
       return;
     }
 
+    this.cancelPendingAmbientTransition();
+    this.ambientHandles.add(nextHandle);
     const previousHandle = this.ambientHandle;
-    const previousTrackId = this.state.ambientTrackId;
-    const wasPlaying = this.state.ambientPlaying;
+    const previousTrackId = this.committedAmbientTrackId;
+    const wasPlaying = this.committedAmbientPlaying;
     const transitionId = ++this.ambientTransitionId;
-    this.ambientHandle = nextHandle;
     this.update({ ambientTrackId: track.id, ambientPlaying: false, autoplayBlocked: false });
     this.applyVolumes();
 
     if (!previousHandle || !wasPlaying) {
-      previousHandle?.stop();
+      this.stopHandle(previousHandle);
+      this.ambientHandle = nextHandle;
+      this.committedAmbientTrackId = track.id;
+      this.committedAmbientPlaying = false;
+      this.applyVolumes();
       return;
     }
 
-    try {
-      await nextHandle.play();
-      await Promise.all([
-        previousHandle.fadeTo(0, this.getAmbientCrossfadeDuration(transitionKind)),
-        nextHandle.fadeTo(
-          this.getEffectiveAmbientVolume(),
-          this.getAmbientCrossfadeDuration(transitionKind),
-        ),
-      ]);
-      if (transitionId !== this.ambientTransitionId || this.ambientHandle !== nextHandle) {
-        return;
-      }
-      previousHandle.stop();
-      this.update({ ambientPlaying: true, autoplayBlocked: false });
-      this.applyVolumes();
-    } catch {
-      if (transitionId !== this.ambientTransitionId || this.ambientHandle !== nextHandle) {
-        return;
-      }
-      nextHandle.stop();
-      this.ambientHandle = previousHandle;
-      this.update({ ambientTrackId: previousTrackId, ambientPlaying: wasPlaying });
-      this.applyVolumes();
-    }
+    nextHandle.setVolume(0);
+    const transitionPromise = this.completeAmbientTransition(
+      transitionId,
+      track.id,
+      nextHandle,
+      previousHandle,
+      previousTrackId,
+      wasPlaying,
+      transitionKind,
+    );
+    this.pendingAmbientTransition = { trackId: track.id, handle: nextHandle };
+    this.ambientTransitionPromise = transitionPromise;
+    await transitionPromise;
   }
 
   async startAmbient(): Promise<boolean> {
+    while (this.ambientTransitionPromise) {
+      const transition = this.ambientTransitionPromise;
+      await transition;
+      if (this.ambientTransitionPromise === transition) {
+        break;
+      }
+    }
     if (!this.ambientHandle || !this.state.ambientEnabled || this.state.masterMuted) {
       return false;
     }
@@ -160,6 +175,7 @@ export class ImmersiveAudioController {
     this.applyVolumes();
     try {
       await this.ambientHandle.play();
+      this.committedAmbientPlaying = true;
       this.update({ ambientPlaying: true, autoplayBlocked: false });
       return true;
     } catch {
@@ -171,8 +187,12 @@ export class ImmersiveAudioController {
   async setAmbientEnabled(enabled: boolean): Promise<boolean> {
     this.update({ ambientEnabled: enabled });
     if (!enabled) {
+      this.ambientTransitionId += 1;
+      this.cancelPendingAmbientTransition();
       this.ambientHandle?.pause();
+      this.committedAmbientPlaying = false;
       this.update({ ambientPlaying: false });
+      this.applyVolumes();
       return true;
     }
     return this.startAmbient();
@@ -219,7 +239,7 @@ export class ImmersiveAudioController {
         return false;
       }
       this.update({ narrationPlaying: true, autoplayBlocked: false });
-      this.applyVolumes();
+      await this.applyVolumes(NARRATION_STOP_FADE_MS);
       return true;
     } catch {
       if (this.narrationHandle === handle) {
@@ -233,7 +253,7 @@ export class ImmersiveAudioController {
   pauseNarration(): void {
     this.narrationHandle?.pause();
     this.update({ narrationPlaying: false });
-    this.applyVolumes();
+    void this.applyVolumes(NARRATION_STOP_FADE_MS);
   }
 
   async resumeNarration(): Promise<boolean> {
@@ -248,7 +268,7 @@ export class ImmersiveAudioController {
         return false;
       }
       this.update({ narrationPlaying: true, autoplayBlocked: false });
-      this.applyVolumes();
+      await this.applyVolumes(NARRATION_STOP_FADE_MS);
       return true;
     } catch {
       this.update({ autoplayBlocked: true, narrationPlaying: false });
@@ -289,7 +309,6 @@ export class ImmersiveAudioController {
   }
 
   stop(): void {
-    this.ambientTransitionId += 1;
     this.stopAmbient();
     this.stopNarration();
     this.update({
@@ -304,9 +323,84 @@ export class ImmersiveAudioController {
   }
 
   private stopAmbient(): void {
-    this.ambientHandle?.stop();
+    this.ambientTransitionId += 1;
+    this.pendingAmbientTransition = null;
+    this.ambientTransitionPromise = null;
+    for (const handle of this.ambientHandles) {
+      handle.stop();
+    }
+    this.ambientHandles.clear();
     this.ambientHandle = null;
+    this.committedAmbientTrackId = null;
+    this.committedAmbientPlaying = false;
     this.update({ ambientPlaying: false });
+  }
+
+  private cancelPendingAmbientTransition(): void {
+    if (this.pendingAmbientTransition) {
+      this.stopHandle(this.pendingAmbientTransition.handle);
+      this.pendingAmbientTransition = null;
+      this.ambientTransitionPromise = null;
+    }
+  }
+
+  private stopHandle(handle: AudioTrackHandle | null): void {
+    if (!handle) {
+      return;
+    }
+    handle.stop();
+    this.ambientHandles.delete(handle);
+  }
+
+  private async completeAmbientTransition(
+    transitionId: number,
+    trackId: string,
+    nextHandle: AudioTrackHandle,
+    previousHandle: AudioTrackHandle,
+    previousTrackId: string | null,
+    wasPlaying: boolean,
+    transitionKind: AmbientTransitionKind,
+  ): Promise<void> {
+    try {
+      await nextHandle.play();
+      if (!this.isCurrentAmbientTransition(transitionId, nextHandle)) {
+        return;
+      }
+      const durationMs = this.getAmbientCrossfadeDuration(transitionKind);
+      await Promise.all([
+        previousHandle.fadeTo(0, durationMs),
+        nextHandle.fadeTo(this.getEffectiveAmbientVolume(), durationMs),
+      ]);
+      if (!this.isCurrentAmbientTransition(transitionId, nextHandle)) {
+        return;
+      }
+      this.stopHandle(previousHandle);
+      this.ambientHandle = nextHandle;
+      this.committedAmbientTrackId = trackId;
+      this.committedAmbientPlaying = true;
+      this.pendingAmbientTransition = null;
+      this.ambientTransitionPromise = null;
+      this.update({ ambientTrackId: trackId, ambientPlaying: true, autoplayBlocked: false });
+      this.applyVolumes();
+    } catch {
+      if (!this.isCurrentAmbientTransition(transitionId, nextHandle)) {
+        return;
+      }
+      this.stopHandle(nextHandle);
+      this.ambientHandle = previousHandle;
+      this.committedAmbientTrackId = previousTrackId;
+      this.committedAmbientPlaying = wasPlaying;
+      this.pendingAmbientTransition = null;
+      this.ambientTransitionPromise = null;
+      this.update({ ambientTrackId: previousTrackId, ambientPlaying: wasPlaying });
+      this.applyVolumes();
+    }
+  }
+
+  private isCurrentAmbientTransition(transitionId: number, handle: AudioTrackHandle): boolean {
+    return (
+      transitionId === this.ambientTransitionId && this.pendingAmbientTransition?.handle === handle
+    );
   }
 
   private stopNarration(): void {
@@ -325,7 +419,7 @@ export class ImmersiveAudioController {
         narrationCanSeek: false,
       });
     }
-    this.applyVolumes();
+    void this.applyVolumes(NARRATION_STOP_FADE_MS);
   }
 
   private finishNarration(handle: AudioTrackHandle | null): void {
@@ -344,16 +438,22 @@ export class ImmersiveAudioController {
       narrationDurationSeconds: 0,
       narrationCanSeek: false,
     });
-    this.applyVolumes();
+    void this.applyVolumes(NARRATION_STOP_FADE_MS);
   }
 
-  private applyVolumes(): void {
+  private applyVolumes(ambientFadeDurationMs = 0): Promise<void> {
     const ambientVolume = this.getEffectiveAmbientVolume();
     const narrationVolume =
       this.state.masterMuted || !this.state.narrationEnabled ? 0 : DEFAULT_NARRATION_VOLUME;
     this.update({ ambientVolume, narrationVolume });
-    this.ambientHandle?.setVolume(ambientVolume);
     this.narrationHandle?.setVolume(narrationVolume);
+    if (this.ambientHandle && ambientFadeDurationMs > 0) {
+      return this.ambientHandle
+        .fadeTo(ambientVolume, ambientFadeDurationMs)
+        .catch(() => this.ambientHandle?.setVolume(ambientVolume));
+    }
+    this.ambientHandle?.setVolume(ambientVolume);
+    return Promise.resolve();
   }
 
   private getEffectiveAmbientVolume(): number {

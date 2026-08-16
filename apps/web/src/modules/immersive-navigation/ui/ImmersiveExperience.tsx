@@ -601,12 +601,22 @@ export function ImmersiveExperience({
   useEffect(() => audioController.subscribe(setAudioState), [audioController]);
 
   useEffect(() => {
-    audioController.setAmbientTrack(ambientTrack);
-    if (navigation.mode === 'panorama') {
-      void audioController.startAmbient();
-    } else {
+    if (navigation.mode !== 'panorama') {
       audioController.stop();
+      return;
     }
+
+    let cancelled = false;
+    void (async () => {
+      await audioController.setAmbientTrack(ambientTrack);
+      if (!cancelled) {
+        await audioController.startAmbient();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [ambientTrack, audioController, navigation.mode]);
 
   useEffect(

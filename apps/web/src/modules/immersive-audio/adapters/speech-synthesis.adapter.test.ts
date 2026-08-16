@@ -90,6 +90,28 @@ describe('speech synthesis audio adapter', () => {
     vi.unstubAllGlobals();
   });
 
+  it('pauses active speech for mute and resumes it when volume is restored', async () => {
+    const synthesis = {
+      speak: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      cancel: vi.fn(),
+      paused: false,
+    };
+    vi.stubGlobal('speechSynthesis', synthesis);
+    vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance);
+
+    const handle = createSpeechSynthesisAudioAdapter().create(narration());
+    await handle?.play();
+    handle?.setVolume(0);
+    handle?.setVolume(1);
+
+    expect(synthesis.pause).toHaveBeenCalledTimes(1);
+    expect(synthesis.resume).toHaveBeenCalledTimes(1);
+
+    vi.unstubAllGlobals();
+  });
+
   it('returns no handle when speech synthesis is unavailable', () => {
     vi.stubGlobal('speechSynthesis', undefined);
     vi.stubGlobal('SpeechSynthesisUtterance', undefined);

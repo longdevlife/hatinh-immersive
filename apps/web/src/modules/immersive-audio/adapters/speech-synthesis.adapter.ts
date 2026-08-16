@@ -21,8 +21,8 @@ function createHandle(
   Utterance: typeof SpeechSynthesisUtterance,
 ): AudioTrackHandle {
   const endedListeners = new Set<() => void>();
-  const progressListeners = new Set<(snapshot: AudioPlaybackSnapshot) => void>();
   let activeUtterance: SpeechSynthesisUtterance | null = null;
+  let mutedByVolume = false;
 
   const finish = (utterance: SpeechSynthesisUtterance) => {
     if (activeUtterance !== utterance) {
@@ -60,20 +60,27 @@ function createHandle(
     pause: () => synthesis.pause(),
     stop: () => {
       activeUtterance = null;
+      mutedByVolume = false;
       synthesis.cancel();
     },
-    setVolume: () => {
-      // SpeechSynthesis does not expose a reliable volume channel.
+    setVolume: (volume) => {
+      if (!activeUtterance) {
+        return;
+      }
+      if (volume <= 0 && !mutedByVolume) {
+        synthesis.pause();
+        mutedByVolume = true;
+      } else if (volume > 0 && mutedByVolume) {
+        synthesis.resume();
+        mutedByVolume = false;
+      }
     },
     fadeTo: async () => {
       // SpeechSynthesis is a demo fallback and cannot be crossfaded.
     },
     seek: () => false,
     getPlaybackSnapshot: () => ({ ...EMPTY_SNAPSHOT }),
-    onProgress: (listener) => {
-      progressListeners.add(listener);
-      return () => progressListeners.delete(listener);
-    },
+    onProgress: () => () => undefined,
     onEnded: (listener) => {
       endedListeners.add(listener);
       return () => endedListeners.delete(listener);

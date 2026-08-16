@@ -14,7 +14,8 @@ class FakeTrack implements AudioTrackHandle {
   stopCount = 0;
   currentTime = 0;
   duration = 20;
-  fadeCalls: Array<{ volume: number; durationMs: number }> = [];
+  fadeCalls: Array<{ fromVolume: number; volume: number; durationMs: number }> = [];
+  playGate: Promise<void> | null = null;
   rejectPlay = false;
   private endedListeners = new Set<() => void>();
   private progressListeners = new Set<
@@ -23,6 +24,9 @@ class FakeTrack implements AudioTrackHandle {
 
   async play(): Promise<void> {
     this.playCount += 1;
+    if (this.playGate) {
+      await this.playGate;
+    }
     if (this.rejectPlay) {
       throw new Error('AUTOPLAY_BLOCKED');
     }
@@ -41,7 +45,7 @@ class FakeTrack implements AudioTrackHandle {
   }
 
   fadeTo(volume: number, durationMs: number): Promise<void> {
-    this.fadeCalls.push({ volume, durationMs });
+    this.fadeCalls.push({ fromVolume: this.volume, volume, durationMs });
     this.volume = volume;
     return Promise.resolve();
   }
@@ -213,9 +217,17 @@ describe('ImmersiveAudioController', () => {
     await controller.startAmbient();
     await controller.setAmbientTrack(override);
 
-    expect(created.get(main.id)?.fadeCalls).toContainEqual({ volume: 0, durationMs: 750 });
+    expect(created.get(main.id)?.fadeCalls).toContainEqual({
+      fromVolume: 0.18,
+      volume: 0,
+      durationMs: 750,
+    });
     expect(created.get(override.id)?.playCount).toBe(1);
-    expect(created.get(override.id)?.fadeCalls).toContainEqual({ volume: 0.18, durationMs: 750 });
+    expect(created.get(override.id)?.fadeCalls).toContainEqual({
+      fromVolume: 0,
+      volume: 0.18,
+      durationMs: 750,
+    });
     expect(created.get(main.id)?.stopCount).toBe(1);
     expect(controller.getState().ambientTrackId).toBe(override.id);
     expect(controller.getState().ambientPlaying).toBe(true);
@@ -232,10 +244,12 @@ describe('ImmersiveAudioController', () => {
     await controller.setAmbientTrack(nextDestination, 'destination');
 
     expect(created.get(firstDestination.id)?.fadeCalls).toContainEqual({
+      fromVolume: 0.18,
       volume: 0,
       durationMs: 1000,
     });
     expect(created.get(nextDestination.id)?.fadeCalls).toContainEqual({
+      fromVolume: 0,
       volume: 0.18,
       durationMs: 1000,
     });
@@ -264,6 +278,128 @@ describe('ImmersiveAudioController', () => {
     expect(controller.getState().ambientTrackId).toBe(main.id);
     expect(controller.getState().ambientPlaying).toBe(true);
     expect(created.get(main.id)?.stopCount).toBe(0);
+  });
+
+  it('does not double-play a replacement while an ambient transition is pending', async () => {
+    const main = track('ambient-main-pending', 'ambient');
+    const replacement = track('ambient-replacement-pending', 'ambient');
+    const handles = new Map<string, FakeTrack>([
+      [main.id, new FakeTrack()],
+      [replacement.id, new FakeTrack()],
+    ]);
+    let resolveReplacement!: () => void;
+    handles.get(replacement.id)!.playGate = new Promise<void>((resolve) => {
+      resolveReplacement = resolve;
+    });
+    const adapter: AudioAdapter = {
+      create: (definition) => handles.get(definition.id) ?? null,
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    await controller.setAmbientTrack(main);
+    await controller.startAmbient();
+    const transition = controller.setAmbientTrack(replacement);
+    await Promise.resolve();
+    const startPromise = controller.startAmbient();
+
+    resolveReplacement();
+    await transition;
+    await startPromise;
+
+    expect(handles.get(replacement.id)?.playCount).toBe(1);
+    expect(controller.getState().ambientPlaying).toBe(true);
+  });
+
+  it('supersedes a stale ambient transition without leaking the old handles', async () => {
+    const main = track('ambient-main-rapid', 'ambient');
+    const middle = track('ambient-middle-rapid', 'ambient');
+    const latest = track('ambient-latest-rapid', 'ambient');
+    const handles = new Map<string, FakeTrack>([
+      [main.id, new FakeTrack()],
+      [middle.id, new FakeTrack()],
+      [latest.id, new FakeTrack()],
+    ]);
+    let resolveMiddle!: () => void;
+    handles.get(middle.id)!.playGate = new Promise<void>((resolve) => {
+      resolveMiddle = resolve;
+    });
+    const adapter: AudioAdapter = {
+      create: (definition) => handles.get(definition.id) ?? null,
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    await controller.setAmbientTrack(main);
+    await controller.startAmbient();
+    const middleTransition = controller.setAmbientTrack(middle);
+    await Promise.resolve();
+    await controller.setAmbientTrack(latest);
+
+    expect(handles.get(middle.id)?.stopCount).toBe(1);
+    expect(handles.get(main.id)?.stopCount).toBe(1);
+    expect(controller.getState()).toMatchObject({
+      ambientTrackId: latest.id,
+      ambientPlaying: true,
+    });
+
+    resolveMiddle();
+    await middleTransition;
+    expect(handles.get(middle.id)?.stopCount).toBe(1);
+    expect(handles.get(middle.id)?.fadeCalls).toHaveLength(0);
+    expect(handles.get(latest.id)?.stopCount).toBe(0);
+  });
+
+  it('stops committed and pending ambient handles when immersive mode ends', async () => {
+    const main = track('ambient-main-stop-pending', 'ambient');
+    const pending = track('ambient-pending-stop', 'ambient');
+    const handles = new Map<string, FakeTrack>([
+      [main.id, new FakeTrack()],
+      [pending.id, new FakeTrack()],
+    ]);
+    let resolvePending!: () => void;
+    handles.get(pending.id)!.playGate = new Promise<void>((resolve) => {
+      resolvePending = resolve;
+    });
+    const adapter: AudioAdapter = {
+      create: (definition) => handles.get(definition.id) ?? null,
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    await controller.setAmbientTrack(main);
+    await controller.startAmbient();
+    const transition = controller.setAmbientTrack(pending);
+    await Promise.resolve();
+    controller.stop();
+
+    expect(handles.get(main.id)?.stopCount).toBe(1);
+    expect(handles.get(pending.id)?.stopCount).toBe(1);
+    resolvePending();
+    await transition;
+    expect(controller.getState().ambientTrackId).toBeNull();
+  });
+
+  it('fades ambient down and back up around narration playback', async () => {
+    const { adapter, created } = adapterWithTracks();
+    const controller = new ImmersiveAudioController(adapter);
+    const ambient = track('ambient-duck-fade', 'ambient');
+    const narration = track('narration-duck-fade', 'narration');
+
+    await controller.setAmbientTrack(ambient);
+    await controller.startAmbient();
+    await controller.playNarration(narration);
+
+    expect(created.get(ambient.id)?.fadeCalls).toContainEqual({
+      fromVolume: 0.18,
+      volume: 0.045,
+      durationMs: 180,
+    });
+
+    created.get(narration.id)?.finish();
+
+    expect(created.get(ambient.id)?.fadeCalls).toContainEqual({
+      fromVolume: 0.045,
+      volume: 0.18,
+      durationMs: 180,
+    });
   });
 
   it('restores the previous ambient when a replacement rejects playback', async () => {
