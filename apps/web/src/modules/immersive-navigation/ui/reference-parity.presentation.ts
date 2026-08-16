@@ -2,10 +2,13 @@ import type {
   HotspotVm,
   ImmersiveAudioTrack,
   ImmersiveAudioTrackType,
+  ImmersiveLocale,
+  ImmersiveTranscriptContent,
   PanoramaNode,
   RendererStatus,
 } from '../../../shared/contracts';
 import type { ImmersiveAudioState } from '../../immersive-audio';
+import { resolveSceneAudio } from '../../immersive-audio';
 import { getPanoramaTourSceneRole, isPanoramaSceneUsable } from '../../panorama-tour';
 import type { ImmersiveShareResult } from '../model/reference-parity.actions';
 
@@ -69,6 +72,151 @@ export interface ReferenceParityPresentationActions {
 export interface ReferenceParityAudioInput {
   state?: ImmersiveAudioState;
   tracks?: readonly ImmersiveAudioTrack[];
+}
+
+export type ImmersiveMediaDockMode = 'free-explore' | 'auto-tour';
+
+export type ImmersiveMediaDockNarrationStatus =
+  'idle' | 'loading' | 'playing' | 'paused' | 'unavailable';
+
+export interface ImmersiveMediaDockVm {
+  mode: ImmersiveMediaDockMode;
+  sceneId: string | null;
+  sceneLabel: string;
+  soundGateRequired: boolean;
+  captionsEnabled: boolean;
+  narration: {
+    available: boolean;
+    status: ImmersiveMediaDockNarrationStatus;
+    currentTimeSeconds: number;
+    durationSeconds: number;
+    canSeek: boolean;
+    activeLocale: ImmersiveLocale | null;
+    alternateLocales: readonly ImmersiveLocale[];
+  };
+  transcript: {
+    available: boolean;
+    content: ImmersiveTranscriptContent | null;
+  };
+  autoTour: {
+    isActive: boolean;
+    isPaused: boolean;
+    currentIndex: number;
+    total: number;
+  };
+}
+
+export interface ImmersiveMediaDockActions {
+  onEnableSound(): void;
+  onContinueMuted(): void;
+  onPlayNarration(): void;
+  onPauseNarration(): void;
+  onSeekNarration(seconds: number): void;
+  onToggleCaptions(): void;
+  onOpenTranscript(): void;
+  onCloseTranscript(): void;
+  onStartAutoTour(): void;
+  onPauseAutoTour(): void;
+  onResumeAutoTour(): void;
+  onSkipStory(): void;
+  onPreviousScene(): void;
+  onNextScene(): void;
+  onExitAutoTour(): void;
+  onListenInLocale(locale: ImmersiveLocale): void;
+}
+
+export interface ImmersiveMediaDockVmInput {
+  mode: ImmersiveMediaDockMode;
+  scene: PanoramaNode | null;
+  nodes: readonly PanoramaNode[];
+  currentSceneId: string | null;
+  destinationAmbientTrackId: string | null;
+  locale: ImmersiveLocale;
+  audioTracks?: readonly ImmersiveAudioTrack[];
+  audioState?: ImmersiveAudioState;
+  narrationLoading?: boolean;
+  autoTour: {
+    isActive: boolean;
+    isPaused: boolean;
+    currentSceneId: string | null;
+  };
+  captionsEnabled: boolean;
+  soundGateRequired?: boolean;
+}
+
+export function buildImmersiveMediaDockVm({
+  mode,
+  scene,
+  nodes,
+  currentSceneId,
+  destinationAmbientTrackId,
+  locale,
+  audioTracks = [],
+  audioState,
+  narrationLoading = false,
+  autoTour,
+  captionsEnabled,
+  soundGateRequired,
+}: ImmersiveMediaDockVmInput): ImmersiveMediaDockVm {
+  const resolved = scene
+    ? resolveSceneAudio({
+        tracks: audioTracks,
+        destinationAmbientTrackId,
+        scene,
+        locale,
+      })
+    : {
+        narrationTrack: null,
+        transcript: null,
+        narrationLocale: null,
+        alternateNarrationLocales: [],
+      };
+  const narrationTrackId = resolved.narrationTrack?.id ?? null;
+  const narrationMatchesCurrentTrack = audioState?.narrationTrackId === narrationTrackId;
+  const narrationStatus: ImmersiveMediaDockNarrationStatus = !resolved.narrationTrack
+    ? 'unavailable'
+    : narrationLoading
+      ? 'loading'
+      : audioState?.narrationPlaying && narrationMatchesCurrentTrack
+        ? 'playing'
+        : narrationMatchesCurrentTrack
+          ? 'paused'
+          : 'idle';
+  const autoTourSceneId = autoTour.isActive ? autoTour.currentSceneId : null;
+  const currentIndex = autoTourSceneId
+    ? Math.max(0, nodes.findIndex((node) => node.id === autoTourSceneId) + 1)
+    : 0;
+
+  return {
+    mode,
+    sceneId: currentSceneId,
+    sceneLabel: scene?.name ?? scene?.id ?? '',
+    soundGateRequired: soundGateRequired ?? audioState?.autoplayBlocked ?? false,
+    captionsEnabled,
+    narration: {
+      available: resolved.narrationTrack !== null,
+      status: narrationStatus,
+      currentTimeSeconds: narrationMatchesCurrentTrack
+        ? (audioState?.narrationCurrentTimeSeconds ?? 0)
+        : 0,
+      durationSeconds: narrationMatchesCurrentTrack
+        ? (audioState?.narrationDurationSeconds ?? 0)
+        : 0,
+      canSeek: narrationMatchesCurrentTrack && (audioState?.narrationCanSeek ?? false),
+      activeLocale: resolved.narrationLocale,
+      alternateLocales: resolved.alternateNarrationLocales,
+    },
+    transcript: {
+      available: resolved.transcript !== null,
+      content: resolved.transcript,
+    },
+    autoTour: {
+      isActive: autoTour.isActive,
+      isPaused: autoTour.isPaused,
+      currentIndex,
+      total: nodes.length,
+    },
+  };
 }
 
 export function buildReferenceParityPresentationVm({

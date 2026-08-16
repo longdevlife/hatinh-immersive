@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import type { PanoramaNode } from '../../../shared/contracts';
+import type {
+  ImmersiveAudioTrack,
+  ImmersiveTranscriptContent,
+  PanoramaNode,
+} from '../../../shared/contracts';
 import type { ImmersiveAudioState } from '../../immersive-audio';
-import { buildReferenceParityPresentationVm } from './reference-parity.presentation';
+import {
+  buildImmersiveMediaDockVm,
+  buildReferenceParityPresentationVm,
+  type ImmersiveMediaDockActions,
+} from './reference-parity.presentation';
 
 function node(id: string, quality: PanoramaNode['mediaQuality'] = 'ready'): PanoramaNode {
   return {
@@ -35,6 +43,40 @@ const audioState: ImmersiveAudioState = {
   narrationDurationSeconds: 0,
   narrationCanSeek: false,
   autoplayBlocked: false,
+};
+
+const narrationTrack: ImmersiveAudioTrack = {
+  id: 'narration-major',
+  type: 'narration',
+  label: 'Câu chuyện chính',
+  src: '/demo/audio/narration-major.mp3',
+  rights: 'demo-only',
+  locale: 'vi',
+};
+
+const transcript: ImmersiveTranscriptContent = {
+  locale: 'vi',
+  title: 'Câu chuyện chính',
+  segments: [{ id: 'segment-1', startMs: 0, endMs: 1000, text: 'Một câu chuyện Hà Tĩnh.' }],
+};
+
+const mediaDockActions: ImmersiveMediaDockActions = {
+  onEnableSound: () => undefined,
+  onContinueMuted: () => undefined,
+  onPlayNarration: () => undefined,
+  onPauseNarration: () => undefined,
+  onSeekNarration: () => undefined,
+  onToggleCaptions: () => undefined,
+  onOpenTranscript: () => undefined,
+  onCloseTranscript: () => undefined,
+  onStartAutoTour: () => undefined,
+  onPauseAutoTour: () => undefined,
+  onResumeAutoTour: () => undefined,
+  onSkipStory: () => undefined,
+  onPreviousScene: () => undefined,
+  onNextScene: () => undefined,
+  onExitAutoTour: () => undefined,
+  onListenInLocale: () => undefined,
 };
 
 describe('reference parity presentation contract', () => {
@@ -130,5 +172,162 @@ describe('reference parity presentation contract', () => {
     expect(vm.hotspots).toHaveLength(1);
     expect(vm.hotspots[0]).toMatchObject({ id: 'next', targetSceneId: 'two' });
     expect(vm.autoTour).toMatchObject({ isRunning: true, canStart: true });
+  });
+
+  it('free explore exposes an idle listen-story state without activating Auto Tour', () => {
+    const vm = buildImmersiveMediaDockVm({
+      mode: 'free-explore',
+      scene: {
+        ...node('major'),
+        narrationTrackId: narrationTrack.id,
+        transcripts: { vi: transcript },
+      },
+      nodes: [node('major'), node('connector')],
+      currentSceneId: 'major',
+      destinationAmbientTrackId: null,
+      locale: 'vi',
+      audioTracks: [narrationTrack],
+      audioState,
+      autoTour: { isActive: false, isPaused: false, currentSceneId: null },
+      captionsEnabled: false,
+      soundGateRequired: false,
+    });
+
+    expect(vm.mode).toBe('free-explore');
+    expect(vm.sceneLabel).toBe('major');
+    expect(vm.narration).toMatchObject({
+      available: true,
+      status: 'idle',
+      activeLocale: 'vi',
+      currentTimeSeconds: 0,
+      durationSeconds: 0,
+      canSeek: false,
+    });
+    expect(vm.transcript).toMatchObject({ available: true, content: transcript });
+    expect(vm.captionsEnabled).toBe(false);
+    expect(vm.autoTour).toEqual({
+      isActive: false,
+      isPaused: false,
+      currentIndex: 0,
+      total: 2,
+    });
+    expect(mediaDockActions.onPlayNarration).toBeTypeOf('function');
+  });
+
+  it('maps narration playback, pause, progress, seeking and Auto Tour index', () => {
+    const playingState: ImmersiveAudioState = {
+      ...audioState,
+      narrationTrackId: narrationTrack.id,
+      narrationPlaying: true,
+      narrationCurrentTimeSeconds: 12,
+      narrationDurationSeconds: 30,
+      narrationCanSeek: true,
+    };
+    const vm = buildImmersiveMediaDockVm({
+      mode: 'auto-tour',
+      scene: {
+        ...node('major'),
+        narrationTrackId: narrationTrack.id,
+        transcripts: { vi: transcript },
+      },
+      nodes: [node('major'), node('connector')],
+      currentSceneId: 'major',
+      destinationAmbientTrackId: null,
+      locale: 'vi',
+      audioTracks: [narrationTrack],
+      audioState: playingState,
+      narrationLoading: false,
+      autoTour: { isActive: true, isPaused: false, currentSceneId: 'major' },
+      captionsEnabled: true,
+      soundGateRequired: false,
+    });
+
+    expect(vm.narration).toMatchObject({
+      status: 'playing',
+      currentTimeSeconds: 12,
+      durationSeconds: 30,
+      canSeek: true,
+    });
+    expect(vm.captionsEnabled).toBe(true);
+    expect(vm.autoTour).toEqual({
+      isActive: true,
+      isPaused: false,
+      currentIndex: 1,
+      total: 2,
+    });
+
+    const pausedVm = buildImmersiveMediaDockVm({
+      mode: 'auto-tour',
+      scene: {
+        ...node('major'),
+        narrationTrackId: narrationTrack.id,
+        transcripts: { vi: transcript },
+      },
+      nodes: [node('major'), node('connector')],
+      currentSceneId: 'major',
+      destinationAmbientTrackId: null,
+      locale: 'vi',
+      audioTracks: [narrationTrack],
+      audioState: { ...playingState, narrationPlaying: false },
+      autoTour: { isActive: true, isPaused: true, currentSceneId: 'major' },
+      captionsEnabled: true,
+      soundGateRequired: false,
+    });
+
+    expect(pausedVm.narration.status).toBe('paused');
+    expect(pausedVm.autoTour.isPaused).toBe(true);
+  });
+
+  it('keeps English audio missing explicit while exposing Vietnamese alternate and transcript', () => {
+    const englishTranscript: ImmersiveTranscriptContent = {
+      ...transcript,
+      locale: 'en',
+      title: 'The main story',
+    };
+    const vm = buildImmersiveMediaDockVm({
+      mode: 'free-explore',
+      scene: {
+        ...node('major'),
+        narrationTrackIds: { vi: narrationTrack.id },
+        transcripts: { en: englishTranscript },
+      },
+      nodes: [node('major')],
+      currentSceneId: 'major',
+      destinationAmbientTrackId: null,
+      locale: 'en',
+      audioTracks: [narrationTrack],
+      audioState,
+      autoTour: { isActive: false, isPaused: false, currentSceneId: null },
+      captionsEnabled: false,
+      soundGateRequired: false,
+    });
+
+    expect(vm.narration).toMatchObject({
+      available: false,
+      status: 'unavailable',
+      activeLocale: null,
+      alternateLocales: ['vi'],
+    });
+    expect(vm.transcript).toEqual({ available: true, content: englishTranscript });
+  });
+
+  it('keeps transcript usable and exposes the sound gate when audio is unavailable', () => {
+    const vm = buildImmersiveMediaDockVm({
+      mode: 'free-explore',
+      scene: { ...node('major'), transcripts: { vi: transcript } },
+      nodes: [node('major')],
+      currentSceneId: 'major',
+      destinationAmbientTrackId: null,
+      locale: 'vi',
+      audioTracks: [],
+      audioState: { ...audioState, autoplayBlocked: true },
+      autoTour: { isActive: false, isPaused: false, currentSceneId: null },
+      captionsEnabled: false,
+      soundGateRequired: true,
+    });
+
+    expect(vm.soundGateRequired).toBe(true);
+    expect(vm.narration).toMatchObject({ available: false, status: 'unavailable' });
+    expect(vm.transcript).toEqual({ available: true, content: transcript });
   });
 });
