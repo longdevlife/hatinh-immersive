@@ -417,7 +417,7 @@ export class ImmersiveAudioController {
     );
   }
 
-  private stopNarration(): void {
+  stopNarration(): void {
     this.narrationEndedCleanup?.();
     this.narrationEndedCleanup = null;
     this.narrationProgressCleanup?.();
