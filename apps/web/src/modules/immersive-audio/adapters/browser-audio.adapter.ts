@@ -34,6 +34,7 @@ export function createBrowserAudioAdapter(): AudioAdapter {
       element.loop = track.type === 'ambient';
       const progressListeners = new Set<(snapshot: AudioPlaybackSnapshot) => void>();
       let fadeFrame: number | null = null;
+      let fadeTimeout: number | null = null;
       let cancelFade: (() => void) | null = null;
 
       const emitProgress = () => {
@@ -47,6 +48,24 @@ export function createBrowserAudioAdapter(): AudioAdapter {
       element.addEventListener('durationchange', emitProgress);
       element.addEventListener('loadedmetadata', emitProgress);
 
+      const clearFadeSchedule = () => {
+        if (fadeFrame !== null && typeof cancelAnimationFrame === 'function') {
+          cancelAnimationFrame(fadeFrame);
+        }
+        if (fadeTimeout !== null && typeof window !== 'undefined') {
+          window.clearTimeout(fadeTimeout);
+        }
+        fadeFrame = null;
+        fadeTimeout = null;
+      };
+
+      const removeProgressListeners = () => {
+        element.removeEventListener('timeupdate', emitProgress);
+        element.removeEventListener('durationchange', emitProgress);
+        element.removeEventListener('loadedmetadata', emitProgress);
+        progressListeners.clear();
+      };
+
       return {
         play: () => element.play(),
         pause: () => element.pause(),
@@ -56,8 +75,11 @@ export function createBrowserAudioAdapter(): AudioAdapter {
           element.pause();
           element.currentTime = 0;
           emitProgress();
+          removeProgressListeners();
         },
         setVolume: (volume) => {
+          cancelFade?.();
+          cancelFade = null;
           element.volume = clampVolume(volume);
         },
         fadeTo: (volume, durationMs) => {
@@ -78,11 +100,10 @@ export function createBrowserAudioAdapter(): AudioAdapter {
                 return;
               }
               settled = true;
-              if (fadeFrame !== null && typeof cancelAnimationFrame === 'function') {
-                cancelAnimationFrame(fadeFrame);
+              clearFadeSchedule();
+              if (cancelFade === settle) {
+                cancelFade = null;
               }
-              fadeFrame = null;
-              cancelFade = null;
               resolve();
             };
             cancelFade = settle;
@@ -96,13 +117,13 @@ export function createBrowserAudioAdapter(): AudioAdapter {
               if (typeof requestAnimationFrame === 'function') {
                 fadeFrame = requestAnimationFrame(tick);
               } else {
-                fadeFrame = window.setTimeout(() => tick(performance.now()), 16);
+                fadeTimeout = window.setTimeout(() => tick(performance.now()), 16);
               }
             };
             if (typeof requestAnimationFrame === 'function') {
               fadeFrame = requestAnimationFrame(tick);
             } else {
-              fadeFrame = window.setTimeout(() => tick(performance.now()), 16);
+              fadeTimeout = window.setTimeout(() => tick(performance.now()), 16);
             }
           });
         },

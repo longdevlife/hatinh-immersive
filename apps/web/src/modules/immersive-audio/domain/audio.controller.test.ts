@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  DUCKED_AMBIENT_VOLUME,
   ImmersiveAudioController,
   type AudioAdapter,
   type AudioTrackHandle,
@@ -16,6 +17,7 @@ class FakeTrack implements AudioTrackHandle {
   duration = 20;
   fadeCalls: Array<{ fromVolume: number; volume: number; durationMs: number }> = [];
   playGate: Promise<void> | null = null;
+  fadeGate: Promise<void> | null = null;
   rejectPlay = false;
   private endedListeners = new Set<() => void>();
   private progressListeners = new Set<
@@ -47,6 +49,9 @@ class FakeTrack implements AudioTrackHandle {
   fadeTo(volume: number, durationMs: number): Promise<void> {
     this.fadeCalls.push({ fromVolume: this.volume, volume, durationMs });
     this.volume = volume;
+    if (this.fadeGate) {
+      return this.fadeGate;
+    }
     return Promise.resolve();
   }
 
@@ -102,6 +107,11 @@ function adapterWithTracks() {
   return { adapter, created };
 }
 
+async function flushMicrotasks(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
 describe('ImmersiveAudioController', () => {
   it('starts one ambient track and does not recreate it when the scene changes', async () => {
     const { adapter, created } = adapterWithTracks();
@@ -155,6 +165,69 @@ describe('ImmersiveAudioController', () => {
     expect(controller.getState().narrationEnabled).toBe(true);
     expect(controller.getState().narrationPlaying).toBe(true);
     expect(created.get(narration.id)?.playCount).toBe(2);
+  });
+
+  it('ignores a stale play rejection after a newer narration owns the controller', async () => {
+    const first = track('narration-stale-play-a', 'narration');
+    const second = track('narration-stale-play-b', 'narration');
+    const handles = new Map<string, FakeTrack>([
+      [first.id, new FakeTrack()],
+      [second.id, new FakeTrack()],
+    ]);
+    let rejectFirst!: (reason?: unknown) => void;
+    handles.get(first.id)!.playGate = new Promise<void>((_, reject) => {
+      rejectFirst = reject;
+    });
+    const adapter: AudioAdapter = {
+      create: (definition) => handles.get(definition.id) ?? null,
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    const firstPlay = controller.playNarration(first);
+    await flushMicrotasks();
+    await expect(controller.playNarration(second)).resolves.toBe(true);
+
+    rejectFirst(new Error('STALE_AUTOPLAY_BLOCKED'));
+    await expect(firstPlay).resolves.toBe(false);
+
+    expect(controller.getState()).toMatchObject({
+      narrationTrackId: second.id,
+      narrationPlaying: true,
+      autoplayBlocked: false,
+    });
+  });
+
+  it('ignores a stale resume rejection after a newer narration owns the controller', async () => {
+    const first = track('narration-stale-resume-a', 'narration');
+    const second = track('narration-stale-resume-b', 'narration');
+    const handles = new Map<string, FakeTrack>([
+      [first.id, new FakeTrack()],
+      [second.id, new FakeTrack()],
+    ]);
+    const adapter: AudioAdapter = {
+      create: (definition) => handles.get(definition.id) ?? null,
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    await controller.playNarration(first);
+    controller.pauseNarration();
+
+    let rejectFirst!: (reason?: unknown) => void;
+    handles.get(first.id)!.playGate = new Promise<void>((_, reject) => {
+      rejectFirst = reject;
+    });
+    const firstResume = controller.resumeNarration();
+    await flushMicrotasks();
+    await expect(controller.playNarration(second)).resolves.toBe(true);
+
+    rejectFirst(new Error('STALE_RESUME_BLOCKED'));
+    await expect(firstResume).resolves.toBe(false);
+
+    expect(controller.getState()).toMatchObject({
+      narrationTrackId: second.id,
+      narrationPlaying: true,
+      autoplayBlocked: false,
+    });
   });
 
   it('master mute silences both channels and restores their effective volumes', async () => {
@@ -253,6 +326,71 @@ describe('ImmersiveAudioController', () => {
       volume: 0.18,
       durationMs: 1000,
     });
+  });
+
+  it('silences both committed and pending ambient handles when muted during crossfade', async () => {
+    const main = track('ambient-mute-crossfade-main', 'ambient');
+    const pending = track('ambient-mute-crossfade-pending', 'ambient');
+    const handles = new Map<string, FakeTrack>([
+      [main.id, new FakeTrack()],
+      [pending.id, new FakeTrack()],
+    ]);
+    let resolveFade!: () => void;
+    handles.get(pending.id)!.fadeGate = new Promise<void>((resolve) => {
+      resolveFade = resolve;
+    });
+    const adapter: AudioAdapter = {
+      create: (definition) => handles.get(definition.id) ?? null,
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    await controller.setAmbientTrack(main);
+    await controller.startAmbient();
+    const transition = controller.setAmbientTrack(pending);
+    await flushMicrotasks();
+
+    expect(handles.get(pending.id)?.fadeCalls).toHaveLength(1);
+    controller.setMasterMuted(true);
+
+    expect(handles.get(main.id)?.volume).toBe(0);
+    expect(handles.get(pending.id)?.volume).toBe(0);
+
+    resolveFade();
+    await transition;
+    expect(handles.get(pending.id)?.volume).toBe(0);
+  });
+
+  it('ducks both committed and pending ambient handles when narration starts during crossfade', async () => {
+    const main = track('ambient-duck-crossfade-main', 'ambient');
+    const pending = track('ambient-duck-crossfade-pending', 'ambient');
+    const narration = track('narration-duck-crossfade', 'narration');
+    const handles = new Map<string, FakeTrack>([
+      [main.id, new FakeTrack()],
+      [pending.id, new FakeTrack()],
+      [narration.id, new FakeTrack()],
+    ]);
+    let resolveFade!: () => void;
+    handles.get(pending.id)!.fadeGate = new Promise<void>((resolve) => {
+      resolveFade = resolve;
+    });
+    const adapter: AudioAdapter = {
+      create: (definition) => handles.get(definition.id) ?? null,
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    await controller.setAmbientTrack(main);
+    await controller.startAmbient();
+    const transition = controller.setAmbientTrack(pending);
+    await flushMicrotasks();
+
+    await expect(controller.playNarration(narration)).resolves.toBe(true);
+
+    expect(handles.get(main.id)?.volume).toBe(DUCKED_AMBIENT_VOLUME);
+    expect(handles.get(pending.id)?.volume).toBe(DUCKED_AMBIENT_VOLUME);
+
+    resolveFade();
+    await transition;
+    expect(handles.get(pending.id)?.volume).toBe(DUCKED_AMBIENT_VOLUME);
   });
 
   it('keeps the current ambient when a replacement track cannot be created', async () => {

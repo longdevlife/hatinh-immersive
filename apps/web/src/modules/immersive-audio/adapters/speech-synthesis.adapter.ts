@@ -23,12 +23,15 @@ function createHandle(
   const endedListeners = new Set<() => void>();
   let activeUtterance: SpeechSynthesisUtterance | null = null;
   let mutedByVolume = false;
+  let pausedManually = false;
 
   const finish = (utterance: SpeechSynthesisUtterance) => {
     if (activeUtterance !== utterance) {
       return;
     }
     activeUtterance = null;
+    mutedByVolume = false;
+    pausedManually = false;
     for (const listener of endedListeners) {
       listener();
     }
@@ -38,6 +41,8 @@ function createHandle(
     play: async () => {
       if (activeUtterance && synthesis.paused) {
         synthesis.resume();
+        mutedByVolume = false;
+        pausedManually = false;
         return;
       }
       if (activeUtterance) {
@@ -57,21 +62,30 @@ function createHandle(
         throw error;
       }
     },
-    pause: () => synthesis.pause(),
+    pause: () => {
+      if (!activeUtterance) {
+        return;
+      }
+      synthesis.pause();
+      pausedManually = true;
+    },
     stop: () => {
       activeUtterance = null;
       mutedByVolume = false;
+      pausedManually = false;
       synthesis.cancel();
     },
     setVolume: (volume) => {
       if (!activeUtterance) {
         return;
       }
-      if (volume <= 0 && !mutedByVolume) {
+      if (volume <= 0 && !mutedByVolume && !pausedManually) {
         synthesis.pause();
         mutedByVolume = true;
       } else if (volume > 0 && mutedByVolume) {
-        synthesis.resume();
+        if (!pausedManually) {
+          synthesis.resume();
+        }
         mutedByVolume = false;
       }
     },

@@ -252,9 +252,10 @@ export class ImmersiveAudioController {
       await this.applyVolumes(NARRATION_STOP_FADE_MS);
       return true;
     } catch {
-      if (this.narrationHandle === handle) {
-        this.stopNarration();
+      if (this.narrationHandle !== handle) {
+        return false;
       }
+      this.stopNarration();
       this.update({ autoplayBlocked: true });
       return false;
     }
@@ -281,6 +282,9 @@ export class ImmersiveAudioController {
       await this.applyVolumes(NARRATION_STOP_FADE_MS);
       return true;
     } catch {
+      if (this.narrationHandle !== handle) {
+        return false;
+      }
       this.update({ autoplayBlocked: true, narrationPlaying: false });
       this.applyVolumes();
       return false;
@@ -457,12 +461,26 @@ export class ImmersiveAudioController {
       this.state.masterMuted || !this.state.narrationEnabled ? 0 : DEFAULT_NARRATION_VOLUME;
     this.update({ ambientVolume, narrationVolume });
     this.narrationHandle?.setVolume(narrationVolume);
-    if (this.ambientHandle && ambientFadeDurationMs > 0) {
-      return this.ambientHandle
+
+    const committedAmbientHandle = this.ambientHandle;
+    const pendingAmbientHandle = this.pendingAmbientTransition?.handle;
+    if (committedAmbientHandle && ambientFadeDurationMs > 0) {
+      pendingAmbientHandle?.setVolume(ambientVolume);
+      return committedAmbientHandle
         .fadeTo(ambientVolume, ambientFadeDurationMs)
-        .catch(() => this.ambientHandle?.setVolume(ambientVolume));
+        .catch(() => committedAmbientHandle.setVolume(ambientVolume));
     }
-    this.ambientHandle?.setVolume(ambientVolume);
+
+    const ambientHandles = new Set<AudioTrackHandle>();
+    if (committedAmbientHandle) {
+      ambientHandles.add(committedAmbientHandle);
+    }
+    if (pendingAmbientHandle) {
+      ambientHandles.add(pendingAmbientHandle);
+    }
+    for (const handle of ambientHandles) {
+      handle.setVolume(ambientVolume);
+    }
     return Promise.resolve();
   }
 

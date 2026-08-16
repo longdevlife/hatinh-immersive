@@ -153,6 +153,66 @@ describe('browser audio adapter', () => {
     vi.unstubAllGlobals();
   });
 
+  it('cancels an in-flight fade when a direct volume policy overrides it', async () => {
+    const { audio } = createAudioMock({ duration: 20 });
+    const requestAnimationFrame = vi.fn().mockReturnValue(42);
+    const cancelAnimationFrame = vi.fn();
+    vi.stubGlobal(
+      'Audio',
+      vi.fn(function AudioMock() {
+        return audio;
+      }),
+    );
+    vi.stubGlobal('requestAnimationFrame', requestAnimationFrame);
+    vi.stubGlobal('cancelAnimationFrame', cancelAnimationFrame);
+
+    const handle = createBrowserAudioAdapter().create({
+      id: 'ambient-fade-override',
+      type: 'ambient',
+      label: 'Ambient',
+      src: '/demo/audio/ambient.ogg',
+      rights: 'demo-only',
+    });
+
+    const fade = handle!.fadeTo(0.3, 750);
+    handle!.setVolume(0);
+
+    expect(cancelAnimationFrame).toHaveBeenCalledWith(42);
+    expect(audio.volume).toBe(0);
+    await fade;
+
+    vi.unstubAllGlobals();
+  });
+
+  it('removes progress listeners when stopped', () => {
+    const { audio } = createAudioMock({ duration: 20 });
+    vi.stubGlobal(
+      'Audio',
+      vi.fn(function AudioMock() {
+        return audio;
+      }),
+    );
+
+    const handle = createBrowserAudioAdapter().create({
+      id: 'narration-progress-cleanup',
+      type: 'narration',
+      label: 'Narration',
+      src: '/demo/audio/narration.ogg',
+      rights: 'demo-only',
+    });
+    const snapshots: unknown[] = [];
+    handle?.onProgress((snapshot) => snapshots.push(snapshot));
+    audio.emit('timeupdate');
+
+    handle?.stop();
+    const snapshotsAfterStop = snapshots.length;
+    audio.emit('timeupdate');
+
+    expect(snapshots.length).toBe(snapshotsAfterStop);
+
+    vi.unstubAllGlobals();
+  });
+
   it('returns no handle for an unavailable audio source', () => {
     const adapter = createBrowserAudioAdapter();
 

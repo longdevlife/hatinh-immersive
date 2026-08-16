@@ -112,6 +112,32 @@ describe('speech synthesis audio adapter', () => {
     vi.unstubAllGlobals();
   });
 
+  it('does not resume manually paused speech when mute is toggled', async () => {
+    const synthesis = {
+      speak: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      cancel: vi.fn(),
+      paused: false,
+    };
+    vi.stubGlobal('speechSynthesis', synthesis);
+    vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance);
+
+    const handle = createSpeechSynthesisAudioAdapter().create(narration());
+    await handle?.play();
+    handle?.pause();
+    synthesis.paused = true;
+    handle?.setVolume(0);
+    handle?.setVolume(1);
+
+    expect(synthesis.resume).not.toHaveBeenCalled();
+
+    await handle?.play();
+    expect(synthesis.resume).toHaveBeenCalledTimes(1);
+
+    vi.unstubAllGlobals();
+  });
+
   it('returns no handle when speech synthesis is unavailable', () => {
     vi.stubGlobal('speechSynthesis', undefined);
     vi.stubGlobal('SpeechSynthesisUtterance', undefined);
