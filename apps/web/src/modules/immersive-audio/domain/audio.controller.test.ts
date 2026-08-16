@@ -280,6 +280,78 @@ describe('ImmersiveAudioController', () => {
     expect(created.get(main.id)?.stopCount).toBe(0);
   });
 
+  it('keeps the committed ambient when a missing replacement supersedes a pending transition', async () => {
+    const main = track('ambient-main-missing-pending', 'ambient');
+    const pending = track('ambient-pending-missing', 'ambient');
+    const missing = track('ambient-missing-pending', 'ambient');
+    const handles = new Map<string, FakeTrack>([
+      [main.id, new FakeTrack()],
+      [pending.id, new FakeTrack()],
+    ]);
+    let resolvePending!: () => void;
+    handles.get(pending.id)!.playGate = new Promise<void>((resolve) => {
+      resolvePending = resolve;
+    });
+    const adapter: AudioAdapter = {
+      create: (definition) => handles.get(definition.id) ?? null,
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    await controller.setAmbientTrack(main);
+    await controller.startAmbient();
+    const pendingTransition = controller.setAmbientTrack(pending);
+    await Promise.resolve();
+    await controller.setAmbientTrack(missing);
+
+    expect(handles.get(pending.id)?.stopCount).toBe(1);
+    expect(controller.getState()).toMatchObject({
+      ambientTrackId: main.id,
+      ambientPlaying: true,
+    });
+
+    resolvePending();
+    await pendingTransition;
+    expect(controller.getState().ambientTrackId).toBe(main.id);
+    expect(handles.get(main.id)?.stopCount).toBe(0);
+  });
+
+  it('restores the committed ambient identity when ambient is disabled during a transition', async () => {
+    const main = track('ambient-main-disable-pending', 'ambient');
+    const pending = track('ambient-pending-disable', 'ambient');
+    const handles = new Map<string, FakeTrack>([
+      [main.id, new FakeTrack()],
+      [pending.id, new FakeTrack()],
+    ]);
+    let resolvePending!: () => void;
+    handles.get(pending.id)!.playGate = new Promise<void>((resolve) => {
+      resolvePending = resolve;
+    });
+    const adapter: AudioAdapter = {
+      create: (definition) => handles.get(definition.id) ?? null,
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    await controller.setAmbientTrack(main);
+    await controller.startAmbient();
+    const pendingTransition = controller.setAmbientTrack(pending);
+    await Promise.resolve();
+    await controller.setAmbientEnabled(false);
+
+    expect(controller.getState()).toMatchObject({
+      ambientTrackId: main.id,
+      ambientEnabled: false,
+      ambientPlaying: false,
+    });
+
+    resolvePending();
+    await pendingTransition;
+    await controller.setAmbientEnabled(true);
+    expect(controller.getState()).toMatchObject({
+      ambientTrackId: main.id,
+      ambientPlaying: true,
+    });
+  });
+
   it('does not double-play a replacement while an ambient transition is pending', async () => {
     const main = track('ambient-main-pending', 'ambient');
     const replacement = track('ambient-replacement-pending', 'ambient');

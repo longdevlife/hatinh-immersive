@@ -121,6 +121,16 @@ export class ImmersiveAudioController {
 
     const nextHandle = this.adapter.create(track);
     if (!nextHandle) {
+      if (this.pendingAmbientTransition) {
+        this.ambientTransitionId += 1;
+        this.cancelPendingAmbientTransition();
+        this.update({
+          ambientTrackId: this.committedAmbientTrackId,
+          ambientPlaying: this.committedAmbientPlaying,
+          autoplayBlocked: false,
+        });
+        this.applyVolumes();
+      }
       return;
     }
 
@@ -191,7 +201,7 @@ export class ImmersiveAudioController {
       this.cancelPendingAmbientTransition();
       this.ambientHandle?.pause();
       this.committedAmbientPlaying = false;
-      this.update({ ambientPlaying: false });
+      this.update({ ambientTrackId: this.committedAmbientTrackId, ambientPlaying: false });
       this.applyVolumes();
       return true;
     }
