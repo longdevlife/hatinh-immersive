@@ -5,6 +5,7 @@ import {
   ImmersiveAudioController,
   resolveSceneAudio,
   type ImmersiveAudioState,
+  type NarrationLifecycleEvent,
 } from '../../immersive-audio';
 import type {
   ImmersiveAudioTrack,
@@ -27,6 +28,7 @@ import {
 export interface ImmersiveAudioTourAudioController extends AudioTourAudioController {
   getState(): ImmersiveAudioState;
   subscribe(listener: (state: ImmersiveAudioState) => void): () => void;
+  subscribeNarrationLifecycle(listener: (event: NarrationLifecycleEvent) => void): () => void;
   setMasterMuted(muted: boolean): void;
   setAmbientEnabled(enabled: boolean): Promise<boolean>;
   setNarrationEnabled(enabled: boolean): Promise<boolean>;
@@ -172,6 +174,21 @@ export function useImmersiveAudioTour(
   useEffect(() => {
     setAudioState(runtime.audioController.getState());
     return runtime.audioController.subscribe(setAudioState);
+  }, [runtime]);
+
+  useEffect(() => {
+    return runtime.audioController.subscribeNarrationLifecycle((event) => {
+      const context = runtime.coordinator.getCurrentContext();
+      if (!context) {
+        return;
+      }
+
+      if (event.type === 'ended') {
+        runtime.coordinator.notifyNarrationCompleted(context);
+      } else {
+        runtime.coordinator.notifyNarrationFailed(context);
+      }
+    });
   }, [runtime]);
 
   useEffect(() => {

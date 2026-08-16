@@ -20,6 +20,7 @@ class FakeTrack implements AudioTrackHandle {
   fadeGate: Promise<void> | null = null;
   rejectPlay = false;
   private endedListeners = new Set<() => void>();
+  private errorListeners = new Set<() => void>();
   private progressListeners = new Set<
     (snapshot: { currentTimeSeconds: number; durationSeconds: number; canSeek: boolean }) => void
   >();
@@ -84,8 +85,19 @@ class FakeTrack implements AudioTrackHandle {
     return () => this.endedListeners.delete(listener);
   }
 
+  onError(listener: () => void): () => void {
+    this.errorListeners.add(listener);
+    return () => this.errorListeners.delete(listener);
+  }
+
   finish(): void {
     for (const listener of this.endedListeners) {
+      listener();
+    }
+  }
+
+  fail(): void {
+    for (const listener of this.errorListeners) {
       listener();
     }
   }
@@ -113,6 +125,24 @@ async function flushMicrotasks(): Promise<void> {
 }
 
 describe('ImmersiveAudioController', () => {
+  it('distinguishes natural narration completion from narration errors', async () => {
+    const { adapter, created } = adapterWithTracks();
+    const controller = new ImmersiveAudioController(adapter);
+    const narration = track('narration-lifecycle', 'narration');
+    const events: string[] = [];
+
+    controller.subscribeNarrationLifecycle((event) => {
+      events.push(`${event.trackId}:${event.type}`);
+    });
+
+    await controller.playNarration(narration);
+    created.get(narration.id)?.finish();
+    await controller.playNarration(narration);
+    created.get(narration.id)?.fail();
+
+    expect(events).toEqual([`${narration.id}:ended`, `${narration.id}:error`]);
+  });
+
   it('starts one ambient track and does not recreate it when the scene changes', async () => {
     const { adapter, created } = adapterWithTracks();
     const controller = new ImmersiveAudioController(adapter);

@@ -8,6 +8,7 @@ import type {
   PanoramaNode,
 } from '../../../shared/contracts';
 import type { ImmersiveAudioState } from '../../immersive-audio';
+import type { NarrationLifecycleEvent } from '../../immersive-audio';
 import { AutoTourController, type AutoTourScheduler } from '../model/auto-tour.controller';
 import {
   useImmersiveAudioTour,
@@ -45,6 +46,8 @@ class FakeAudioController implements ImmersiveAudioTourAudioController {
 
   private listeners = new Set<(state: ImmersiveAudioState) => void>();
 
+  private narrationLifecycleListeners = new Set<(event: NarrationLifecycleEvent) => void>();
+
   state: ImmersiveAudioState = {
     masterMuted: false,
     ambientEnabled: true,
@@ -68,6 +71,11 @@ class FakeAudioController implements ImmersiveAudioTourAudioController {
   subscribe(listener: (state: ImmersiveAudioState) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  subscribeNarrationLifecycle(listener: (event: NarrationLifecycleEvent) => void): () => void {
+    this.narrationLifecycleListeners.add(listener);
+    return () => this.narrationLifecycleListeners.delete(listener);
   }
 
   async setAmbientTrack(track: ImmersiveAudioTrack | null): Promise<void> {
@@ -132,6 +140,12 @@ class FakeAudioController implements ImmersiveAudioTourAudioController {
     this.emit();
   }
 
+  emitNarrationLifecycle(event: NarrationLifecycleEvent): void {
+    for (const listener of this.narrationLifecycleListeners) {
+      listener(event);
+    }
+  }
+
   private emit(): void {
     const snapshot = this.getState();
     for (const listener of this.listeners) {
@@ -189,7 +203,7 @@ function createHarness(input: ImmersiveAudioTourInput = createInput()) {
   const factories = {
     createAudioController: () => audioController,
     createAutoTourController: (options: ConstructorParameters<typeof AutoTourController>[0]) =>
-      new AutoTourController({ ...options, scheduler, settleDelayMs: 0 }),
+      new AutoTourController({ ...options, scheduler, settleDelayMs: 0, holdDurationMs: 0 }),
   };
   const hook = renderHook(({ value }) => useImmersiveAudioTour(value, factories), {
     initialProps: { value: input },
@@ -215,6 +229,20 @@ describe('useImmersiveAudioTour', () => {
     act(() => scheduler.flush());
 
     await waitFor(() => expect(audioController.calls).toContain('playNarration:narration-a'));
+  });
+
+  it('advances only after the explicit natural narration completion event', async () => {
+    const { result, audioController, scheduler, onNavigateScene } = createHarness();
+
+    await waitFor(() => expect(audioController.calls).toContain('startAmbient'));
+    act(() => result.current.startAutoTour());
+    act(() => scheduler.flush());
+    await waitFor(() => expect(audioController.calls).toContain('playNarration:narration-a'));
+
+    act(() => audioController.emitNarrationLifecycle({ type: 'ended', trackId: 'narration-a' }));
+    act(() => scheduler.flush());
+
+    expect(onNavigateScene).toHaveBeenCalledWith('scene-b', true);
   });
 
   it('keeps Auto Tour active when the scene rail jumps to another scene', async () => {

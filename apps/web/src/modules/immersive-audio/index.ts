@@ -15,6 +15,7 @@ export type {
   AudioPlaybackSnapshot,
   AudioTrackHandle,
   ImmersiveAudioState,
+  NarrationLifecycleEvent,
 } from './domain/audio.controller';
 export {
   DEFAULT_SCENE_FALLBACK_DURATION_MS,

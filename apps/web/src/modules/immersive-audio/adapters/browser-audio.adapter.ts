@@ -145,6 +145,11 @@ export function createBrowserAudioAdapter(): AudioAdapter {
           element.addEventListener('ended', listener);
           return () => element.removeEventListener('ended', listener);
         },
+        onError: (listener) => {
+          const handleError = () => listener();
+          element.addEventListener('error', handleError);
+          return () => element.removeEventListener('error', handleError);
+        },
       };
     },
   };

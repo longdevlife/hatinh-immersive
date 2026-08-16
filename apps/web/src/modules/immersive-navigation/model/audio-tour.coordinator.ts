@@ -159,6 +159,15 @@ export class AudioTourCoordinator {
     return this.autoTourController.onNarrationEnded(context.sceneId);
   }
 
+  notifyNarrationFailed(context: ImmersivePlaybackContext): boolean {
+    if (!this.isCurrentContext(context) || !this.autoTourController.getState().isActive) {
+      return false;
+    }
+
+    this.notifyNarrationUnavailable(context);
+    return true;
+  }
+
   destroy(): void {
     this.sessionId += 1;
     this.requestId += 1;

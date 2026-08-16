@@ -16,6 +16,12 @@ export interface AudioTrackHandle {
   getPlaybackSnapshot(): AudioPlaybackSnapshot;
   onProgress(listener: (snapshot: AudioPlaybackSnapshot) => void): () => void;
   onEnded(listener: () => void): () => void;
+  onError?(listener: () => void): () => void;
+}
+
+export interface NarrationLifecycleEvent {
+  type: 'ended' | 'error';
+  trackId: string;
 }
 
 export interface AudioAdapter {
@@ -85,11 +91,15 @@ export class ImmersiveAudioController {
 
   private narrationEndedCleanup: (() => void) | null = null;
 
+  private narrationErrorCleanup: (() => void) | null = null;
+
   private narrationProgressCleanup: (() => void) | null = null;
 
   private ambientTransitionId = 0;
 
   private listeners = new Set<(state: ImmersiveAudioState) => void>();
+
+  private narrationLifecycleListeners = new Set<(event: NarrationLifecycleEvent) => void>();
 
   constructor(private readonly adapter: AudioAdapter) {}
 
@@ -100,6 +110,11 @@ export class ImmersiveAudioController {
   subscribe(listener: (state: ImmersiveAudioState) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  subscribeNarrationLifecycle(listener: (event: NarrationLifecycleEvent) => void): () => void {
+    this.narrationLifecycleListeners.add(listener);
+    return () => this.narrationLifecycleListeners.delete(listener);
   }
 
   async setAmbientTrack(
@@ -231,8 +246,12 @@ export class ImmersiveAudioController {
       });
     });
     this.narrationEndedCleanup = handle.onEnded(() => {
-      this.finishNarration(handle);
+      this.finishNarration(handle, 'ended');
     });
+    this.narrationErrorCleanup =
+      handle.onError?.(() => {
+        this.finishNarration(handle, 'error');
+      }) ?? null;
     const snapshot = handle.getPlaybackSnapshot();
     this.update({
       narrationTrackId: track.id,
@@ -420,6 +439,8 @@ export class ImmersiveAudioController {
   stopNarration(): void {
     this.narrationEndedCleanup?.();
     this.narrationEndedCleanup = null;
+    this.narrationErrorCleanup?.();
+    this.narrationErrorCleanup = null;
     this.narrationProgressCleanup?.();
     this.narrationProgressCleanup = null;
     this.narrationHandle?.stop();
@@ -436,12 +457,18 @@ export class ImmersiveAudioController {
     void this.applyVolumes(NARRATION_STOP_FADE_MS);
   }
 
-  private finishNarration(handle: AudioTrackHandle | null): void {
+  private finishNarration(
+    handle: AudioTrackHandle | null,
+    type: NarrationLifecycleEvent['type'],
+  ): void {
     if (!handle || handle !== this.narrationHandle) {
       return;
     }
+    const trackId = this.state.narrationTrackId;
     this.narrationEndedCleanup?.();
     this.narrationEndedCleanup = null;
+    this.narrationErrorCleanup?.();
+    this.narrationErrorCleanup = null;
     this.narrationProgressCleanup?.();
     this.narrationProgressCleanup = null;
     this.narrationHandle = null;
@@ -452,6 +479,12 @@ export class ImmersiveAudioController {
       narrationDurationSeconds: 0,
       narrationCanSeek: false,
     });
+    if (trackId) {
+      const event = { type, trackId } satisfies NarrationLifecycleEvent;
+      for (const listener of this.narrationLifecycleListeners) {
+        listener(event);
+      }
+    }
     void this.applyVolumes(NARRATION_STOP_FADE_MS);
   }
 

@@ -90,6 +90,33 @@ describe('speech synthesis audio adapter', () => {
     vi.unstubAllGlobals();
   });
 
+  it('reports speech errors separately instead of treating them as successful completion', async () => {
+    const synthesis = {
+      speak: vi.fn(),
+      pause: vi.fn(),
+      resume: vi.fn(),
+      cancel: vi.fn(),
+      paused: false,
+    };
+    vi.stubGlobal('speechSynthesis', synthesis);
+    vi.stubGlobal('SpeechSynthesisUtterance', FakeUtterance);
+
+    const handle = createSpeechSynthesisAudioAdapter().create(narration());
+    const ended = vi.fn();
+    const error = vi.fn();
+    handle?.onEnded(ended);
+    handle?.onError?.(error);
+    await handle?.play();
+
+    const utterance = synthesis.speak.mock.calls[0]?.[0] as FakeUtterance;
+    utterance.onerror?.();
+
+    expect(ended).not.toHaveBeenCalled();
+    expect(error).toHaveBeenCalledTimes(1);
+
+    vi.unstubAllGlobals();
+  });
+
   it('pauses active speech for mute and resumes it when volume is restored', async () => {
     const synthesis = {
       speak: vi.fn(),
