@@ -41,6 +41,11 @@ export interface ImmersiveAudioState {
 export const DEFAULT_AMBIENT_VOLUME = 0.18;
 export const DEFAULT_NARRATION_VOLUME = 1;
 export const DUCKED_AMBIENT_VOLUME = 0.045;
+export const AMBIENT_SCENE_CROSSFADE_MS = 750;
+export const AMBIENT_DESTINATION_CROSSFADE_MS = 1000;
+export const NARRATION_STOP_FADE_MS = 180;
+
+export type AmbientTransitionKind = 'scene' | 'destination';
 
 const INITIAL_AUDIO_STATE: ImmersiveAudioState = {
   masterMuted: false,
@@ -69,6 +74,8 @@ export class ImmersiveAudioController {
 
   private narrationProgressCleanup: (() => void) | null = null;
 
+  private ambientTransitionId = 0;
+
   private listeners = new Set<(state: ImmersiveAudioState) => void>();
 
   constructor(private readonly adapter: AudioAdapter) {}
@@ -82,20 +89,64 @@ export class ImmersiveAudioController {
     return () => this.listeners.delete(listener);
   }
 
-  setAmbientTrack(track: ImmersiveAudioTrack | null): void {
+  async setAmbientTrack(
+    track: ImmersiveAudioTrack | null,
+    transitionKind: AmbientTransitionKind = 'scene',
+  ): Promise<void> {
     if (track?.id === this.state.ambientTrackId && this.ambientHandle) {
       return;
     }
 
-    this.stopAmbient();
     if (!track || track.type !== 'ambient') {
+      this.ambientTransitionId += 1;
+      this.ambientHandle?.stop();
+      this.ambientHandle = null;
       this.update({ ambientTrackId: null, ambientPlaying: false });
       return;
     }
 
-    this.ambientHandle = this.adapter.create(track);
+    const nextHandle = this.adapter.create(track);
+    if (!nextHandle) {
+      return;
+    }
+
+    const previousHandle = this.ambientHandle;
+    const previousTrackId = this.state.ambientTrackId;
+    const wasPlaying = this.state.ambientPlaying;
+    const transitionId = ++this.ambientTransitionId;
+    this.ambientHandle = nextHandle;
     this.update({ ambientTrackId: track.id, ambientPlaying: false, autoplayBlocked: false });
     this.applyVolumes();
+
+    if (!previousHandle || !wasPlaying) {
+      previousHandle?.stop();
+      return;
+    }
+
+    try {
+      await nextHandle.play();
+      await Promise.all([
+        previousHandle.fadeTo(0, this.getAmbientCrossfadeDuration(transitionKind)),
+        nextHandle.fadeTo(
+          this.getEffectiveAmbientVolume(),
+          this.getAmbientCrossfadeDuration(transitionKind),
+        ),
+      ]);
+      if (transitionId !== this.ambientTransitionId || this.ambientHandle !== nextHandle) {
+        return;
+      }
+      previousHandle.stop();
+      this.update({ ambientPlaying: true, autoplayBlocked: false });
+      this.applyVolumes();
+    } catch {
+      if (transitionId !== this.ambientTransitionId || this.ambientHandle !== nextHandle) {
+        return;
+      }
+      nextHandle.stop();
+      this.ambientHandle = previousHandle;
+      this.update({ ambientTrackId: previousTrackId, ambientPlaying: wasPlaying });
+      this.applyVolumes();
+    }
   }
 
   async startAmbient(): Promise<boolean> {
@@ -238,6 +289,7 @@ export class ImmersiveAudioController {
   }
 
   stop(): void {
+    this.ambientTransitionId += 1;
     this.stopAmbient();
     this.stopNarration();
     this.update({
@@ -296,17 +348,25 @@ export class ImmersiveAudioController {
   }
 
   private applyVolumes(): void {
-    const ambientVolume =
-      this.state.masterMuted || !this.state.ambientEnabled
-        ? 0
-        : this.state.narrationPlaying
-          ? DUCKED_AMBIENT_VOLUME
-          : DEFAULT_AMBIENT_VOLUME;
+    const ambientVolume = this.getEffectiveAmbientVolume();
     const narrationVolume =
       this.state.masterMuted || !this.state.narrationEnabled ? 0 : DEFAULT_NARRATION_VOLUME;
     this.update({ ambientVolume, narrationVolume });
     this.ambientHandle?.setVolume(ambientVolume);
     this.narrationHandle?.setVolume(narrationVolume);
+  }
+
+  private getEffectiveAmbientVolume(): number {
+    if (this.state.masterMuted || !this.state.ambientEnabled) {
+      return 0;
+    }
+    return this.state.narrationPlaying ? DUCKED_AMBIENT_VOLUME : DEFAULT_AMBIENT_VOLUME;
+  }
+
+  private getAmbientCrossfadeDuration(transitionKind: AmbientTransitionKind): number {
+    return transitionKind === 'destination'
+      ? AMBIENT_DESTINATION_CROSSFADE_MS
+      : AMBIENT_SCENE_CROSSFADE_MS;
   }
 
   private update(patch: Partial<ImmersiveAudioState>): void {

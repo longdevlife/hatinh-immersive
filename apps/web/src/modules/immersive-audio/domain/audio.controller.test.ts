@@ -14,6 +14,7 @@ class FakeTrack implements AudioTrackHandle {
   stopCount = 0;
   currentTime = 0;
   duration = 20;
+  fadeCalls: Array<{ volume: number; durationMs: number }> = [];
   rejectPlay = false;
   private endedListeners = new Set<() => void>();
   private progressListeners = new Set<
@@ -39,7 +40,8 @@ class FakeTrack implements AudioTrackHandle {
     this.volume = volume;
   }
 
-  fadeTo(volume: number): Promise<void> {
+  fadeTo(volume: number, durationMs: number): Promise<void> {
+    this.fadeCalls.push({ volume, durationMs });
     this.volume = volume;
     return Promise.resolve();
   }
@@ -102,9 +104,9 @@ describe('ImmersiveAudioController', () => {
     const controller = new ImmersiveAudioController(adapter);
     const ambient = track('ambient-thien-cam', 'ambient');
 
-    controller.setAmbientTrack(ambient);
+    await controller.setAmbientTrack(ambient);
     await controller.startAmbient();
-    controller.setAmbientTrack(ambient);
+    await controller.setAmbientTrack(ambient);
     await controller.startAmbient();
 
     expect(created.get(ambient.id)?.playCount).toBe(1);
@@ -117,7 +119,7 @@ describe('ImmersiveAudioController', () => {
     const ambient = track('ambient-son-trang', 'ambient');
     const narration = track('narration-son-trang', 'narration');
 
-    controller.setAmbientTrack(ambient);
+    await controller.setAmbientTrack(ambient);
     await controller.startAmbient();
     await controller.playNarration(narration);
 
@@ -157,7 +159,7 @@ describe('ImmersiveAudioController', () => {
     const ambient = track('ambient-dong-loc', 'ambient');
     const narration = track('narration-dong-loc', 'narration');
 
-    controller.setAmbientTrack(ambient);
+    await controller.setAmbientTrack(ambient);
     await controller.startAmbient();
     await controller.playNarration(narration);
     controller.setMasterMuted(true);
@@ -178,7 +180,7 @@ describe('ImmersiveAudioController', () => {
     const controller = new ImmersiveAudioController(adapter);
     const ambient = track('ambient-blocked', 'ambient');
 
-    controller.setAmbientTrack(ambient);
+    await controller.setAmbientTrack(ambient);
     await expect(controller.startAmbient()).resolves.toBe(false);
 
     expect(controller.getState().autoplayBlocked).toBe(true);
@@ -190,7 +192,7 @@ describe('ImmersiveAudioController', () => {
     const ambient = track('ambient-cleanup', 'ambient');
     const narration = track('narration-cleanup', 'narration');
 
-    controller.setAmbientTrack(ambient);
+    await controller.setAmbientTrack(ambient);
     await controller.startAmbient();
     await controller.playNarration(narration);
     controller.stop();
@@ -199,5 +201,94 @@ describe('ImmersiveAudioController', () => {
     expect(created.get(narration.id)?.stopCount).toBe(1);
     expect(controller.getState().ambientTrackId).toBeNull();
     expect(controller.getState().narrationPlaying).toBe(false);
+  });
+
+  it('crossfades to a new ambient track while keeping the new track playing', async () => {
+    const { adapter, created } = adapterWithTracks();
+    const controller = new ImmersiveAudioController(adapter);
+    const main = track('ambient-main', 'ambient');
+    const override = track('ambient-override', 'ambient');
+
+    await controller.setAmbientTrack(main);
+    await controller.startAmbient();
+    await controller.setAmbientTrack(override);
+
+    expect(created.get(main.id)?.fadeCalls).toContainEqual({ volume: 0, durationMs: 750 });
+    expect(created.get(override.id)?.playCount).toBe(1);
+    expect(created.get(override.id)?.fadeCalls).toContainEqual({ volume: 0.18, durationMs: 750 });
+    expect(created.get(main.id)?.stopCount).toBe(1);
+    expect(controller.getState().ambientTrackId).toBe(override.id);
+    expect(controller.getState().ambientPlaying).toBe(true);
+  });
+
+  it('uses the longer crossfade when the destination ambient changes', async () => {
+    const { adapter, created } = adapterWithTracks();
+    const controller = new ImmersiveAudioController(adapter);
+    const firstDestination = track('ambient-destination-a', 'ambient');
+    const nextDestination = track('ambient-destination-b', 'ambient');
+
+    await controller.setAmbientTrack(firstDestination);
+    await controller.startAmbient();
+    await controller.setAmbientTrack(nextDestination, 'destination');
+
+    expect(created.get(firstDestination.id)?.fadeCalls).toContainEqual({
+      volume: 0,
+      durationMs: 1000,
+    });
+    expect(created.get(nextDestination.id)?.fadeCalls).toContainEqual({
+      volume: 0.18,
+      durationMs: 1000,
+    });
+  });
+
+  it('keeps the current ambient when a replacement track cannot be created', async () => {
+    const main = track('ambient-main', 'ambient');
+    const missing = track('ambient-missing', 'ambient');
+    const created = new Map<string, FakeTrack>();
+    const adapter: AudioAdapter = {
+      create(trackDefinition) {
+        if (trackDefinition.id === missing.id) {
+          return null;
+        }
+        const handle = new FakeTrack();
+        created.set(trackDefinition.id, handle);
+        return handle;
+      },
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    await controller.setAmbientTrack(main);
+    await controller.startAmbient();
+    await controller.setAmbientTrack(missing);
+
+    expect(controller.getState().ambientTrackId).toBe(main.id);
+    expect(controller.getState().ambientPlaying).toBe(true);
+    expect(created.get(main.id)?.stopCount).toBe(0);
+  });
+
+  it('restores the previous ambient when a replacement rejects playback', async () => {
+    const main = track('ambient-main-reject', 'ambient');
+    const replacement = track('ambient-replacement-reject', 'ambient');
+    const created = new Map<string, FakeTrack>();
+    const adapter: AudioAdapter = {
+      create(trackDefinition) {
+        const handle = new FakeTrack();
+        if (trackDefinition.id === replacement.id) {
+          handle.rejectPlay = true;
+        }
+        created.set(trackDefinition.id, handle);
+        return handle;
+      },
+    };
+    const controller = new ImmersiveAudioController(adapter);
+
+    await controller.setAmbientTrack(main);
+    await controller.startAmbient();
+    await controller.setAmbientTrack(replacement);
+
+    expect(controller.getState().ambientTrackId).toBe(main.id);
+    expect(controller.getState().ambientPlaying).toBe(true);
+    expect(created.get(main.id)?.stopCount).toBe(0);
+    expect(created.get(replacement.id)?.stopCount).toBe(1);
   });
 });

@@ -1,9 +1,14 @@
 export { createBrowserAudioAdapter } from './adapters/browser-audio.adapter';
+export { createSpeechSynthesisAudioAdapter } from './adapters/speech-synthesis.adapter';
 export {
   DEFAULT_AMBIENT_VOLUME,
+  AMBIENT_DESTINATION_CROSSFADE_MS,
+  AMBIENT_SCENE_CROSSFADE_MS,
+  type AmbientTransitionKind,
   DEFAULT_NARRATION_VOLUME,
   DUCKED_AMBIENT_VOLUME,
   ImmersiveAudioController,
+  NARRATION_STOP_FADE_MS,
 } from './domain/audio.controller';
 export type {
   AudioAdapter,
