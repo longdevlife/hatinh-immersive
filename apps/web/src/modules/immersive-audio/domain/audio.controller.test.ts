@@ -12,8 +12,13 @@ class FakeTrack implements AudioTrackHandle {
   playCount = 0;
   pauseCount = 0;
   stopCount = 0;
+  currentTime = 0;
+  duration = 20;
   rejectPlay = false;
   private endedListeners = new Set<() => void>();
+  private progressListeners = new Set<
+    (snapshot: { currentTimeSeconds: number; durationSeconds: number; canSeek: boolean }) => void
+  >();
 
   async play(): Promise<void> {
     this.playCount += 1;
@@ -32,6 +37,35 @@ class FakeTrack implements AudioTrackHandle {
 
   setVolume(volume: number): void {
     this.volume = volume;
+  }
+
+  fadeTo(volume: number): Promise<void> {
+    this.volume = volume;
+    return Promise.resolve();
+  }
+
+  seek(seconds: number): boolean {
+    this.currentTime = Math.max(0, Math.min(this.duration, seconds));
+    return true;
+  }
+
+  getPlaybackSnapshot() {
+    return {
+      currentTimeSeconds: this.currentTime,
+      durationSeconds: this.duration,
+      canSeek: true,
+    };
+  }
+
+  onProgress(
+    listener: (snapshot: {
+      currentTimeSeconds: number;
+      durationSeconds: number;
+      canSeek: boolean;
+    }) => void,
+  ): () => void {
+    this.progressListeners.add(listener);
+    return () => this.progressListeners.delete(listener);
   }
 
   onEnded(listener: () => void): () => void {
@@ -96,22 +130,25 @@ describe('ImmersiveAudioController', () => {
     expect(controller.getState().narrationPlaying).toBe(false);
   });
 
-  it('marks narration disabled when the visitor pauses it and permits an explicit resume', async () => {
-    const { adapter } = adapterWithTracks();
+  it('pauses narration without disabling the preference and resumes the same handle', async () => {
+    const { adapter, created } = adapterWithTracks();
     const controller = new ImmersiveAudioController(adapter);
     const narration = track('narration-pause', 'narration');
 
     await controller.playNarration(narration);
     controller.pauseNarration();
 
-    expect(controller.getState().narrationEnabled).toBe(false);
+    expect(controller.getState().narrationEnabled).toBe(true);
     expect(controller.getState().narrationPlaying).toBe(false);
 
-    await controller.setNarrationEnabled(true);
-    await controller.playNarration(narration);
+    const resumeNarration = (
+      controller as unknown as { resumeNarration(): Promise<boolean> }
+    ).resumeNarration.bind(controller);
+    await expect(resumeNarration()).resolves.toBe(true);
 
     expect(controller.getState().narrationEnabled).toBe(true);
     expect(controller.getState().narrationPlaying).toBe(true);
+    expect(created.get(narration.id)?.playCount).toBe(2);
   });
 
   it('master mute silences both channels and restores their effective volumes', async () => {

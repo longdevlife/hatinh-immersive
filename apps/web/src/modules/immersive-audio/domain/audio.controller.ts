@@ -1,10 +1,20 @@
 import type { ImmersiveAudioTrack } from '../../../shared/contracts';
 
+export interface AudioPlaybackSnapshot {
+  currentTimeSeconds: number;
+  durationSeconds: number;
+  canSeek: boolean;
+}
+
 export interface AudioTrackHandle {
   play(): Promise<void>;
   pause(): void;
   stop(): void;
   setVolume(volume: number): void;
+  fadeTo(volume: number, durationMs: number): Promise<void>;
+  seek(seconds: number): boolean;
+  getPlaybackSnapshot(): AudioPlaybackSnapshot;
+  onProgress(listener: (snapshot: AudioPlaybackSnapshot) => void): () => void;
   onEnded(listener: () => void): () => void;
 }
 
@@ -22,6 +32,9 @@ export interface ImmersiveAudioState {
   ambientVolume: number;
   narrationVolume: number;
   narrationPlaying: boolean;
+  narrationCurrentTimeSeconds: number;
+  narrationDurationSeconds: number;
+  narrationCanSeek: boolean;
   autoplayBlocked: boolean;
 }
 
@@ -39,6 +52,9 @@ const INITIAL_AUDIO_STATE: ImmersiveAudioState = {
   ambientVolume: DEFAULT_AMBIENT_VOLUME,
   narrationVolume: DEFAULT_NARRATION_VOLUME,
   narrationPlaying: false,
+  narrationCurrentTimeSeconds: 0,
+  narrationDurationSeconds: 0,
+  narrationCanSeek: false,
   autoplayBlocked: false,
 };
 
@@ -50,6 +66,8 @@ export class ImmersiveAudioController {
   private narrationHandle: AudioTrackHandle | null = null;
 
   private narrationEndedCleanup: (() => void) | null = null;
+
+  private narrationProgressCleanup: (() => void) | null = null;
 
   private listeners = new Set<(state: ImmersiveAudioState) => void>();
 
@@ -120,18 +138,42 @@ export class ImmersiveAudioController {
       return false;
     }
 
-    this.narrationEndedCleanup = this.narrationHandle.onEnded(() => {
-      this.finishNarration(this.narrationHandle);
+    const handle = this.narrationHandle;
+    this.narrationProgressCleanup = handle.onProgress((snapshot) => {
+      if (this.narrationHandle !== handle) {
+        return;
+      }
+      this.update({
+        narrationCurrentTimeSeconds: snapshot.currentTimeSeconds,
+        narrationDurationSeconds: snapshot.durationSeconds,
+        narrationCanSeek: snapshot.canSeek,
+      });
     });
-    this.update({ narrationTrackId: track.id, narrationPlaying: true });
+    this.narrationEndedCleanup = handle.onEnded(() => {
+      this.finishNarration(handle);
+    });
+    const snapshot = handle.getPlaybackSnapshot();
+    this.update({
+      narrationTrackId: track.id,
+      narrationPlaying: false,
+      narrationCurrentTimeSeconds: snapshot.currentTimeSeconds,
+      narrationDurationSeconds: snapshot.durationSeconds,
+      narrationCanSeek: snapshot.canSeek,
+    });
     this.applyVolumes();
 
     try {
-      await this.narrationHandle.play();
-      this.update({ autoplayBlocked: false });
+      await handle.play();
+      if (this.narrationHandle !== handle) {
+        return false;
+      }
+      this.update({ narrationPlaying: true, autoplayBlocked: false });
+      this.applyVolumes();
       return true;
     } catch {
-      this.stopNarration();
+      if (this.narrationHandle === handle) {
+        this.stopNarration();
+      }
       this.update({ autoplayBlocked: true });
       return false;
     }
@@ -139,8 +181,46 @@ export class ImmersiveAudioController {
 
   pauseNarration(): void {
     this.narrationHandle?.pause();
-    this.update({ narrationEnabled: false, narrationPlaying: false });
+    this.update({ narrationPlaying: false });
     this.applyVolumes();
+  }
+
+  async resumeNarration(): Promise<boolean> {
+    if (!this.narrationHandle || !this.state.narrationEnabled) {
+      return false;
+    }
+
+    const handle = this.narrationHandle;
+    try {
+      await handle.play();
+      if (this.narrationHandle !== handle) {
+        return false;
+      }
+      this.update({ narrationPlaying: true, autoplayBlocked: false });
+      this.applyVolumes();
+      return true;
+    } catch {
+      this.update({ autoplayBlocked: true, narrationPlaying: false });
+      this.applyVolumes();
+      return false;
+    }
+  }
+
+  seekNarration(seconds: number): boolean {
+    if (!this.narrationHandle) {
+      return false;
+    }
+
+    const didSeek = this.narrationHandle.seek(seconds);
+    if (didSeek) {
+      const snapshot = this.narrationHandle.getPlaybackSnapshot();
+      this.update({
+        narrationCurrentTimeSeconds: snapshot.currentTimeSeconds,
+        narrationDurationSeconds: snapshot.durationSeconds,
+        narrationCanSeek: snapshot.canSeek,
+      });
+    }
+    return didSeek;
   }
 
   async setNarrationEnabled(enabled: boolean): Promise<boolean> {
@@ -164,6 +244,9 @@ export class ImmersiveAudioController {
       ambientTrackId: null,
       narrationTrackId: null,
       narrationPlaying: false,
+      narrationCurrentTimeSeconds: 0,
+      narrationDurationSeconds: 0,
+      narrationCanSeek: false,
       autoplayBlocked: false,
     });
   }
@@ -177,10 +260,18 @@ export class ImmersiveAudioController {
   private stopNarration(): void {
     this.narrationEndedCleanup?.();
     this.narrationEndedCleanup = null;
+    this.narrationProgressCleanup?.();
+    this.narrationProgressCleanup = null;
     this.narrationHandle?.stop();
     this.narrationHandle = null;
     if (this.state.narrationPlaying || this.state.narrationTrackId !== null) {
-      this.update({ narrationPlaying: false, narrationTrackId: null });
+      this.update({
+        narrationPlaying: false,
+        narrationTrackId: null,
+        narrationCurrentTimeSeconds: 0,
+        narrationDurationSeconds: 0,
+        narrationCanSeek: false,
+      });
     }
     this.applyVolumes();
   }
@@ -191,8 +282,16 @@ export class ImmersiveAudioController {
     }
     this.narrationEndedCleanup?.();
     this.narrationEndedCleanup = null;
+    this.narrationProgressCleanup?.();
+    this.narrationProgressCleanup = null;
     this.narrationHandle = null;
-    this.update({ narrationPlaying: false, narrationTrackId: null });
+    this.update({
+      narrationPlaying: false,
+      narrationTrackId: null,
+      narrationCurrentTimeSeconds: 0,
+      narrationDurationSeconds: 0,
+      narrationCanSeek: false,
+    });
     this.applyVolumes();
   }
 

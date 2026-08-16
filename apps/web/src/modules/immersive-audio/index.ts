@@ -7,6 +7,7 @@ export {
 } from './domain/audio.controller';
 export type {
   AudioAdapter,
+  AudioPlaybackSnapshot,
   AudioTrackHandle,
   ImmersiveAudioState,
 } from './domain/audio.controller';
