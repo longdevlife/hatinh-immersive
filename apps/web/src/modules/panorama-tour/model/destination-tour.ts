@@ -1,5 +1,7 @@
 import type {
   ImmersiveAudioTrack,
+  ImmersiveLocale,
+  ImmersiveTranscriptContent,
   PanoramaMediaQuality,
   PanoramaMediaRights,
   PanoramaView,
@@ -22,7 +24,11 @@ export interface DestinationTourScene {
   thumbnailUrl?: string | null;
   mediaQuality: PanoramaMediaQuality;
   mediaRights: PanoramaMediaRights;
+  ambientTrackId?: string | null;
   narrationTrackId?: string | null;
+  narrationTrackIds?: Partial<Record<ImmersiveLocale, string>>;
+  transcripts?: Partial<Record<ImmersiveLocale, ImmersiveTranscriptContent>>;
+  fallbackDurationMs?: number;
 }
 
 export interface DestinationTourLink {
@@ -66,6 +72,14 @@ export interface DestinationTourGraphValidation {
 export function validateDestinationTour(tour: DestinationTour): DestinationTourGraphValidation {
   const issues: string[] = [];
   const scenesById = new Map<string, DestinationTourScene>();
+  const audioTrackIds = new Set<string>();
+
+  for (const track of tour.audioTracks) {
+    if (audioTrackIds.has(track.id)) {
+      issues.push(`DUPLICATE_AUDIO_TRACK:${track.id}`);
+    }
+    audioTrackIds.add(track.id);
+  }
 
   for (const scene of tour.scenes) {
     if (scenesById.has(scene.id)) {
@@ -75,6 +89,21 @@ export function validateDestinationTour(tour: DestinationTour): DestinationTourG
 
     if (scene.destinationSlug !== tour.destinationSlug) {
       issues.push(`SCENE_DESTINATION_MISMATCH:${scene.id}`);
+    }
+
+    for (const locale of ['vi', 'en'] as const) {
+      const trackId = scene.narrationTrackIds?.[locale];
+      if (trackId && !audioTrackIds.has(trackId)) {
+        issues.push(`NARRATION_TRACK_NOT_FOUND:${scene.id}:${locale}:${trackId}`);
+      }
+    }
+
+    if (scene.ambientTrackId && !audioTrackIds.has(scene.ambientTrackId)) {
+      issues.push(`SCENE_AMBIENT_TRACK_NOT_FOUND:${scene.id}:${scene.ambientTrackId}`);
+    }
+
+    if (scene.fallbackDurationMs !== undefined && scene.fallbackDurationMs < 0) {
+      issues.push(`INVALID_FALLBACK_DURATION:${scene.id}`);
     }
   }
 
@@ -122,14 +151,6 @@ export function validateDestinationTour(tour: DestinationTour): DestinationTourG
         issues.push(`HOTSPOT_CROSS_DESTINATION:${hotspot.id}`);
       }
     }
-  }
-
-  const audioTrackIds = new Set<string>();
-  for (const track of tour.audioTracks) {
-    if (audioTrackIds.has(track.id)) {
-      issues.push(`DUPLICATE_AUDIO_TRACK:${track.id}`);
-    }
-    audioTrackIds.add(track.id);
   }
 
   if (tour.ambientTrackId && !audioTrackIds.has(tour.ambientTrackId)) {

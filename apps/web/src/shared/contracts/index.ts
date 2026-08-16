@@ -7,6 +7,8 @@ export type {
   ImmersiveAudioTrackType,
   ImmersiveActions,
   ImmersiveLocale,
+  ImmersiveTranscriptContent,
+  ImmersiveTranscriptSegment,
   ImmersiveMode,
   ImmersiveViewVm,
   GeographicPosition,

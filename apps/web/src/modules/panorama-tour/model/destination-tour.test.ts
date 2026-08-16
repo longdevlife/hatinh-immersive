@@ -136,4 +136,50 @@ describe('DestinationTour graph contract', () => {
       ]),
     );
   });
+
+  it('rejects localized narration references that are not in the audio catalog', () => {
+    const result = validateDestinationTour(
+      tour({
+        scenes: [
+          Object.assign(scene('thien-cam-one'), {
+            narrationTrackIds: { vi: 'missing-vi', en: 'missing-en' },
+          }),
+          scene('thien-cam-two'),
+        ],
+      }),
+    );
+
+    expect(result.issues).toEqual(
+      expect.arrayContaining([
+        'NARRATION_TRACK_NOT_FOUND:thien-cam-one:vi:missing-vi',
+        'NARRATION_TRACK_NOT_FOUND:thien-cam-one:en:missing-en',
+      ]),
+    );
+  });
+
+  it('rejects a scene ambient override that is not in the audio catalog', () => {
+    const result = validateDestinationTour(
+      tour({
+        scenes: [
+          Object.assign(scene('thien-cam-one'), { ambientTrackId: 'missing-ambient' }),
+          scene('thien-cam-two'),
+        ],
+      }),
+    );
+
+    expect(result.issues).toContain('SCENE_AMBIENT_TRACK_NOT_FOUND:thien-cam-one:missing-ambient');
+  });
+
+  it('rejects a negative scene fallback duration', () => {
+    const result = validateDestinationTour(
+      tour({
+        scenes: [
+          Object.assign(scene('thien-cam-one'), { fallbackDurationMs: -1 }),
+          scene('thien-cam-two'),
+        ],
+      }),
+    );
+
+    expect(result.issues).toContain('INVALID_FALLBACK_DURATION:thien-cam-one');
+  });
 });
