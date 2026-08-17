@@ -31,6 +31,9 @@ const audioState: ImmersiveAudioState = {
   ambientVolume: 0.18,
   narrationVolume: 1,
   narrationPlaying: false,
+  narrationCurrentTimeSeconds: 0,
+  narrationDurationSeconds: 0,
+  narrationCanSeek: false,
   autoplayBlocked: false,
 };
 

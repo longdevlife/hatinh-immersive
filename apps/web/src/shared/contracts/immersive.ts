@@ -63,6 +63,23 @@ export interface ImmersiveAudioTrack {
   label: string;
   src: string | null;
   rights: ImmersiveAudioRights;
+  locale?: ImmersiveLocale | null;
+  durationMs?: number | null;
+  voiceId?: string | null;
+  version?: string | null;
+}
+
+export interface ImmersiveTranscriptSegment {
+  id: string;
+  startMs: number;
+  endMs?: number;
+  text: string;
+}
+
+export interface ImmersiveTranscriptContent {
+  locale: ImmersiveLocale;
+  title: string;
+  segments: readonly ImmersiveTranscriptSegment[];
 }
 
 export interface ImmersiveViewVm {
@@ -172,6 +189,9 @@ export interface PanoramaNode {
   mediaRights?: PanoramaMediaRights;
   ambientTrackId?: string | null;
   narrationTrackId?: string | null;
+  narrationTrackIds?: Partial<Record<ImmersiveLocale, string>>;
+  transcripts?: Partial<Record<ImmersiveLocale, ImmersiveTranscriptContent>>;
+  fallbackDurationMs?: number;
   lat: number;
   lng: number;
   initialView: PanoramaView;
