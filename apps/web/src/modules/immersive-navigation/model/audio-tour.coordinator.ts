@@ -151,6 +151,17 @@ export class AudioTourCoordinator {
     }
   }
 
+  cancelNarrationForNavigation(): void {
+    const nextRequestId = ++this.requestId;
+    if (this.activeScene) {
+      this.activeScene = {
+        ...this.activeScene,
+        context: { ...this.activeScene.context, requestId: nextRequestId },
+      };
+    }
+    this.audioController.stopNarration();
+  }
+
   notifyNarrationCompleted(context: ImmersivePlaybackContext): boolean {
     if (!this.isCurrentContext(context) || !this.autoTourController.getState().isActive) {
       return false;

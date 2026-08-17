@@ -257,6 +257,51 @@ describe('useImmersiveAudioTour', () => {
     expect(onNavigateScene).toHaveBeenCalledWith('scene-b', true);
   });
 
+  it('stops and invalidates narration before skip, next, previous, and rail navigation', async () => {
+    const events: string[] = [];
+    const onNavigateScene = vi.fn((sceneId: string) => {
+      events.push(`navigate:${sceneId}`);
+    });
+    const { result, audioController, scheduler } = createHarness(
+      createInput({
+        onNavigateScene,
+        panoramaNodes: [scene('scene-a'), scene('scene-b'), scene('scene-c')],
+        panoramaRenderableNodes: [scene('scene-a'), scene('scene-b'), scene('scene-c')],
+        panoramaTourLinks: [
+          { sourceSceneId: 'scene-a', targetSceneId: 'scene-b' },
+          { sourceSceneId: 'scene-b', targetSceneId: 'scene-c' },
+        ],
+      }),
+    );
+
+    await waitFor(() => expect(audioController.calls).toContain('startAmbient'));
+    await act(async () => {
+      await result.current.playNarration();
+    });
+    act(() => result.current.startAutoTour());
+
+    audioController.calls.length = 0;
+    act(() => result.current.jumpToScene('scene-b'));
+    expect(audioController.calls[0]).toBe('stopNarration');
+    expect(events[0]).toBe('navigate:scene-b');
+
+    audioController.calls.length = 0;
+    act(() => result.current.nextScene());
+    expect(audioController.calls[0]).toBe('stopNarration');
+    expect(events[1]).toBe('navigate:scene-c');
+
+    audioController.calls.length = 0;
+    act(() => result.current.previousScene());
+    expect(audioController.calls[0]).toBe('stopNarration');
+    expect(events[2]).toBe('navigate:scene-b');
+
+    audioController.calls.length = 0;
+    act(() => result.current.skipStory());
+    expect(audioController.calls[0]).toBe('stopNarration');
+
+    act(() => scheduler.flush());
+  });
+
   it('does not stop Auto Tour when the panorama view changes', async () => {
     const { result, audioController } = createHarness();
 

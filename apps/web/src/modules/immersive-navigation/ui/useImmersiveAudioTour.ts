@@ -266,6 +266,7 @@ export function useImmersiveAudioTour(
 
   const jumpToScene = useCallback(
     (sceneId: string) => {
+      runtime.coordinator.cancelNarrationForNavigation();
       if (runtime.autoTourController.getState().isActive) {
         runtime.autoTourController.jumpTo(sceneId);
         return;
@@ -341,9 +342,18 @@ export function useImmersiveAudioTour(
     runtime.autoTourController.onViewportInteraction();
   }, [runtime]);
 
-  const nextScene = useCallback(() => runtime.autoTourController.next(), [runtime]);
-  const previousScene = useCallback(() => runtime.autoTourController.previous(), [runtime]);
-  const skipStory = useCallback(() => runtime.autoTourController.skipStory(), [runtime]);
+  const nextScene = useCallback(() => {
+    runtime.coordinator.cancelNarrationForNavigation();
+    return runtime.autoTourController.next();
+  }, [runtime]);
+  const previousScene = useCallback(() => {
+    runtime.coordinator.cancelNarrationForNavigation();
+    return runtime.autoTourController.previous();
+  }, [runtime]);
+  const skipStory = useCallback(() => {
+    runtime.coordinator.cancelNarrationForNavigation();
+    return runtime.autoTourController.skipStory();
+  }, [runtime]);
   const seekNarration = useCallback(
     (seconds: number) => runtime.audioController.seekNarration(seconds),
     [runtime],
