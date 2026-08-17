@@ -218,6 +218,27 @@ describe('AutoTourController', () => {
     expect(onNarrationRequested).toHaveBeenCalledWith('gate');
   });
 
+  it('keeps a paused tour aligned with the committed scene after a failed jump', () => {
+    const { controller } = createController({ settleDelayMs: 0 });
+
+    controller.start('gate');
+    controller.pause();
+    controller.jumpTo('culture');
+
+    expect(controller.getState()).toMatchObject({
+      isPaused: true,
+      phase: 'paused',
+      currentSceneId: 'culture',
+    });
+    expect(controller.onSceneTransitionFailed('culture', 'gate')).toBe(true);
+    expect(controller.getState()).toMatchObject({
+      isActive: true,
+      isPaused: true,
+      phase: 'paused',
+      currentSceneId: 'gate',
+    });
+  });
+
   it('does not stop because the panorama viewport was manually rotated', () => {
     const { controller } = createController();
 

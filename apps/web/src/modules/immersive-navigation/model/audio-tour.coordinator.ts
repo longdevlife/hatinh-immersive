@@ -183,6 +183,7 @@ export class AudioTourCoordinator {
 
   cancelNarrationForNavigation(): void {
     const nextRequestId = ++this.requestId;
+    this.activeNarration = null;
     if (this.activeScene) {
       this.activeScene = {
         ...this.activeScene,

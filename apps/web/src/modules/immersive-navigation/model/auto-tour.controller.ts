@@ -308,13 +308,18 @@ export class AutoTourController {
   }
 
   onSceneTransitionFailed(failedSceneId: string, committedSceneId: string | null): boolean {
-    if (
-      !this.state.isActive ||
-      this.state.isPaused ||
-      this.state.phase !== 'transitioning' ||
-      this.state.currentSceneId !== failedSceneId ||
-      !committedSceneId
-    ) {
+    if (!this.state.isActive || this.state.currentSceneId !== failedSceneId || !committedSceneId) {
+      return false;
+    }
+
+    if (this.state.isPaused) {
+      this.pausedPhase = 'settling';
+      this.pausedRemainingDelayMs = null;
+      this.updateState({ currentSceneId: committedSceneId });
+      return true;
+    }
+
+    if (this.state.phase !== 'transitioning') {
       return false;
     }
 
