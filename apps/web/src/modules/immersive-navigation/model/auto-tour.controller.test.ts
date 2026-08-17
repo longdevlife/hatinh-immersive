@@ -173,6 +173,77 @@ describe('AutoTourController', () => {
     expect(scheduler.lastDelayMs).toBe(625);
   });
 
+  it('resumes a paused narration that ended into holding and continues progression', () => {
+    const { controller, scheduler, onNavigate } = createController({
+      settleDelayMs: 0,
+      holdDurationMs: 300,
+    });
+
+    controller.start('gate');
+    scheduler.flush();
+    controller.pause();
+
+    expect(controller.onNarrationEnded('gate')).toBe(true);
+    expect(controller.getState()).toMatchObject({
+      isActive: true,
+      isPaused: true,
+      phase: 'paused',
+    });
+
+    controller.resume();
+
+    expect(controller.getState()).toMatchObject({
+      isActive: true,
+      isPaused: false,
+      phase: 'holding',
+    });
+    expect(scheduler.lastDelayMs).toBe(300);
+
+    scheduler.flush();
+    expect(onNavigate).toHaveBeenCalledWith('culture');
+  });
+
+  it('resumes a paused narration failure into fallback and continues progression', () => {
+    const { controller, scheduler, onNavigate } = createController({ settleDelayMs: 0 });
+
+    controller.start('gate');
+    scheduler.flush();
+    controller.pause();
+
+    expect(controller.onNarrationUnavailable('gate', 1_250)).toBe(true);
+    controller.resume();
+
+    expect(controller.getState()).toMatchObject({
+      isActive: true,
+      isPaused: false,
+      phase: 'fallback',
+    });
+    expect(scheduler.lastDelayMs).toBe(1_250);
+
+    scheduler.flush();
+    expect(onNavigate).toHaveBeenCalledWith('culture');
+  });
+
+  it('ignores a stale narration lifecycle for another scene while paused', () => {
+    const { controller, scheduler } = createController({ settleDelayMs: 0 });
+
+    controller.start('gate');
+    scheduler.flush();
+    controller.pause();
+
+    expect(controller.onNarrationEnded('culture')).toBe(false);
+    expect(controller.onNarrationUnavailable('culture')).toBe(false);
+
+    controller.resume();
+
+    expect(controller.getState()).toMatchObject({
+      isActive: true,
+      isPaused: false,
+      phase: 'narrating',
+    });
+    expect(scheduler.callbacks.size).toBe(0);
+  });
+
   it('keeps the tour active when jumping to another scene', () => {
     const { controller, scheduler, onNavigate, onNarrationRequested } = createController({
       settleDelayMs: 100,

@@ -353,6 +353,39 @@ describe('AudioTourCoordinator', () => {
     expect(autoTourController.narrationEnded).not.toHaveBeenCalled();
   });
 
+  it('ignores wrong narration ownership lifecycle events while Auto Tour is paused', async () => {
+    const { audioController, autoTourController, coordinator } = createCoordinator();
+
+    await coordinator.commitScene({
+      destinationSlug: 'son-trang-co-dam',
+      destinationAmbientTrackId: 'ambient-son-trang',
+      scene: scene('scene-a', 'narration-a'),
+      locale: 'vi',
+      mode: 'auto-tour',
+    });
+    await coordinator.requestAutoTourNarration('scene-a');
+    const context = coordinator.getCurrentContext()!;
+    const ownershipId = audioController.getNarrationOwnershipId()!;
+    autoTourController.state.isPaused = true;
+
+    expect(
+      coordinator.notifyNarrationCompleted(context, {
+        type: 'ended',
+        trackId: 'narration-a',
+        ownershipId: ownershipId + 1,
+      }),
+    ).toBe(false);
+    expect(
+      coordinator.notifyNarrationFailed(context, {
+        type: 'error',
+        trackId: 'narration-a',
+        ownershipId: ownershipId + 1,
+      }),
+    ).toBe(false);
+    expect(autoTourController.narrationEnded).not.toHaveBeenCalled();
+    expect(autoTourController.narrationUnavailable).not.toHaveBeenCalled();
+  });
+
   it('uses the Auto Tour fallback when narration playback fails', async () => {
     const { audioController, autoTourController, coordinator } = createCoordinator();
     audioController.playResult = false;

@@ -62,6 +62,9 @@ const INITIAL_STATE: AutoTourControllerState = {
 
 type TimedAutoTourPhase = Extract<AutoTourPhase, 'settling' | 'fallback' | 'holding'>;
 
+type PausedNarrationOutcome =
+  { kind: 'ended' } | { kind: 'unavailable'; fallbackDurationMs: number };
+
 const TIMED_PHASES = new Set<TimedAutoTourPhase>(['settling', 'fallback', 'holding']);
 
 function isTimedPhase(phase: AutoTourPhase): phase is TimedAutoTourPhase {
@@ -103,6 +106,8 @@ export class AutoTourController {
 
   private pausedRemainingDelayMs: number | null = null;
 
+  private pausedNarrationOutcome: PausedNarrationOutcome | null = null;
+
   constructor({
     settleDelayMs = DEFAULT_SETTLE_DELAY_MS,
     fallbackDurationMs = DEFAULT_FALLBACK_DURATION_MS,
@@ -142,6 +147,7 @@ export class AutoTourController {
     this.cancelTimer();
     this.pausedPhase = null;
     this.pausedRemainingDelayMs = null;
+    this.pausedNarrationOutcome = null;
     this.beginSceneLifecycle(currentSceneId);
     return true;
   }
@@ -163,6 +169,7 @@ export class AutoTourController {
     const phase = this.state.phase;
     this.pausedPhase = phase === 'paused' ? this.pausedPhase : phase;
     this.pausedRemainingDelayMs = this.getRemainingTimerDelay();
+    this.pausedNarrationOutcome = null;
     this.cancelTimer();
     this.updateState({ isRunning: false, isPaused: true, phase: 'paused' });
   }
@@ -174,8 +181,20 @@ export class AutoTourController {
 
     const phase = this.pausedPhase ?? 'settling';
     const remainingDelayMs = this.pausedRemainingDelayMs;
+    const pausedNarrationOutcome = this.pausedNarrationOutcome;
     this.pausedPhase = null;
     this.pausedRemainingDelayMs = null;
+    this.pausedNarrationOutcome = null;
+
+    if (phase === 'narrating' && pausedNarrationOutcome) {
+      if (pausedNarrationOutcome.kind === 'ended') {
+        this.schedulePhase('holding', this.holdDurationMs);
+      } else {
+        this.schedulePhase('fallback', pausedNarrationOutcome.fallbackDurationMs);
+      }
+      return;
+    }
+
     this.updateState({ isRunning: true, isPaused: false, phase });
 
     if (isTimedPhase(phase)) {
@@ -187,6 +206,7 @@ export class AutoTourController {
     this.cancelTimer();
     this.pausedPhase = null;
     this.pausedRemainingDelayMs = null;
+    this.pausedNarrationOutcome = null;
     this.updateState({ ...INITIAL_STATE });
   }
 
@@ -237,6 +257,7 @@ export class AutoTourController {
     if (this.state.isPaused) {
       this.pausedPhase = 'settling';
       this.pausedRemainingDelayMs = null;
+      this.pausedNarrationOutcome = null;
       this.updateState({ currentSceneId: sceneId });
       return;
     }
@@ -253,6 +274,16 @@ export class AutoTourController {
   }
 
   onNarrationEnded(sceneId: string): boolean {
+    if (
+      this.state.isPaused &&
+      this.state.isActive &&
+      this.state.currentSceneId === sceneId &&
+      this.pausedPhase === 'narrating'
+    ) {
+      this.pausedNarrationOutcome = { kind: 'ended' };
+      return true;
+    }
+
     if (!this.isCurrentRunningScene(sceneId) || this.state.phase !== 'narrating') {
       return false;
     }
@@ -262,6 +293,19 @@ export class AutoTourController {
   }
 
   onNarrationUnavailable(sceneId: string, fallbackDurationMs = this.fallbackDurationMs): boolean {
+    if (
+      this.state.isPaused &&
+      this.state.isActive &&
+      this.state.currentSceneId === sceneId &&
+      this.pausedPhase === 'narrating'
+    ) {
+      this.pausedNarrationOutcome = {
+        kind: 'unavailable',
+        fallbackDurationMs: Math.max(0, fallbackDurationMs),
+      };
+      return true;
+    }
+
     if (!this.isCurrentRunningScene(sceneId) || this.state.phase !== 'narrating') {
       return false;
     }
@@ -288,6 +332,7 @@ export class AutoTourController {
     this.cancelTimer();
     this.pausedPhase = this.state.isPaused ? 'settling' : null;
     this.pausedRemainingDelayMs = null;
+    this.pausedNarrationOutcome = null;
     this.updateState({
       currentSceneId: sceneId,
       phase: this.state.isPaused ? 'paused' : 'transitioning',
@@ -345,6 +390,7 @@ export class AutoTourController {
     if (this.state.isPaused) {
       this.pausedPhase = 'settling';
       this.pausedRemainingDelayMs = null;
+      this.pausedNarrationOutcome = null;
       this.updateState({ currentSceneId: committedSceneId });
       return true;
     }
@@ -365,6 +411,7 @@ export class AutoTourController {
     this.cancelTimer();
     this.pausedPhase = null;
     this.pausedRemainingDelayMs = null;
+    this.pausedNarrationOutcome = null;
     this.updateState({
       isActive: true,
       isRunning: true,
@@ -386,6 +433,7 @@ export class AutoTourController {
     this.cancelTimer();
     this.pausedPhase = this.state.isPaused ? 'settling' : null;
     this.pausedRemainingDelayMs = null;
+    this.pausedNarrationOutcome = null;
     this.updateState({
       phase: this.state.isPaused ? 'paused' : 'transitioning',
       currentSceneId: sceneId,
