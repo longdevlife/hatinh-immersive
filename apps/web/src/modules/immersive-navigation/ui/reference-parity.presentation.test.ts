@@ -61,10 +61,12 @@ const transcript: ImmersiveTranscriptContent = {
 };
 
 const mediaDockActions: ImmersiveMediaDockActions = {
-  onEnableSound: () => undefined,
+  onEnableSound: async () => true,
   onContinueMuted: () => undefined,
   onPlayNarration: () => undefined,
+  onResumeNarration: () => undefined,
   onPauseNarration: () => undefined,
+  onToggleMasterMute: () => undefined,
   onSeekNarration: () => undefined,
   onToggleCaptions: () => undefined,
   onOpenTranscript: () => undefined,

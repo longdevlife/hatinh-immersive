@@ -85,6 +85,10 @@ export interface ImmersiveMediaDockVm {
   sceneId: string | null;
   sceneLabel: string;
   soundGateRequired: boolean;
+  sound: {
+    available: boolean;
+    masterMuted: boolean;
+  };
   captionsEnabled: boolean;
   narration: {
     available: boolean;
@@ -126,10 +130,12 @@ export interface ImmersiveMediaDockAutoTourCapabilities {
 }
 
 export interface ImmersiveMediaDockActions {
-  onEnableSound(): void;
+  onEnableSound(): Promise<boolean>;
   onContinueMuted(): void;
   onPlayNarration(): void;
+  onResumeNarration(): void;
   onPauseNarration(): void;
+  onToggleMasterMute(): void;
   onSeekNarration(seconds: number): void;
   onToggleCaptions(): void;
   onOpenTranscript(): void;
@@ -187,6 +193,7 @@ export function buildImmersiveMediaDockVm({
         locale,
       })
     : {
+        ambientTrack: null,
         narrationTrack: null,
         transcript: null,
         narrationLocale: null,
@@ -213,6 +220,10 @@ export function buildImmersiveMediaDockVm({
     sceneId: currentSceneId,
     sceneLabel: scene?.name ?? scene?.id ?? '',
     soundGateRequired: soundGateRequired ?? audioState?.autoplayBlocked ?? false,
+    sound: {
+      available: Boolean(resolved.ambientTrack?.src || resolved.narrationTrack?.src),
+      masterMuted: audioState?.masterMuted ?? false,
+    },
     captionsEnabled,
     narration: {
       available: resolved.narrationTrack !== null,

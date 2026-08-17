@@ -24,6 +24,21 @@ describe('ImmersiveTranscriptPanel semantic contract', () => {
     expect(screen.getByText('Bờ biển mở ra trước mắt.')).toBeInTheDocument();
     expect(screen.getByText('Hành trình tiếp tục theo lối dạo.')).toBeInTheDocument();
 
+    expect(screen.getByTestId('immersive-transcript-sheet')).toHaveAttribute(
+      'data-sheet-state',
+      'half',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng toàn bộ bản chép lời' }));
+    expect(screen.getByTestId('immersive-transcript-sheet')).toHaveAttribute(
+      'data-sheet-state',
+      'expanded',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản chép lời' }));
+    expect(screen.getByTestId('immersive-transcript-sheet')).toHaveAttribute(
+      'data-sheet-state',
+      'half',
+    );
+
     fireEvent.click(screen.getByRole('button', { name: 'Đóng bản chép lời' }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });

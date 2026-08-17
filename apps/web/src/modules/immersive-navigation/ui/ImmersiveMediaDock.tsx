@@ -43,9 +43,30 @@ function getActiveTranscriptSegment(
   );
 }
 
+function getAutoTourStatusLabel(phase: ImmersiveMediaDockVm['autoTour']['phase']): string {
+  switch (phase) {
+    case 'narrating':
+      return 'Đang kể chuyện';
+    case 'transitioning':
+      return 'Đang chuyển cảnh';
+    case 'settling':
+      return 'Đang chuẩn bị cảnh';
+    case 'holding':
+      return 'Đang chờ cảnh tiếp theo';
+    case 'fallback':
+      return 'Tiếp tục không có thuyết minh';
+    case 'paused':
+      return 'Đang tạm dừng';
+    case 'idle':
+      return 'Sẵn sàng';
+  }
+}
+
 export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions }) => {
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
   const [soundGateDismissed, setSoundGateDismissed] = useState(false);
+  const [isMobileDockExpanded, setIsMobileDockExpanded] = useState(true);
+
   useEffect(() => {
     if (!vm.soundGateRequired) {
       setSoundGateDismissed(false);
@@ -74,9 +95,13 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
     setIsTranscriptOpen(false);
   };
 
-  const enableSound = () => {
-    setSoundGateDismissed(true);
-    actions.onEnableSound();
+  const enableSound = async () => {
+    try {
+      const didEnable = await actions.onEnableSound();
+      setSoundGateDismissed(didEnable);
+    } catch {
+      setSoundGateDismissed(false);
+    }
   };
 
   const continueMuted = () => {
@@ -84,11 +109,25 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
     actions.onContinueMuted();
   };
 
+  const toggleSound = async () => {
+    if (vm.sound.masterMuted) {
+      try {
+        const didEnable = await actions.onEnableSound();
+        setSoundGateDismissed(didEnable);
+      } catch {
+        setSoundGateDismissed(false);
+      }
+      return;
+    }
+
+    actions.onToggleMasterMute();
+  };
+
   const narrationActionLabel =
     vm.narration.status === 'playing'
       ? 'Tạm dừng câu chuyện'
       : vm.narration.status === 'paused'
-        ? 'Nghe lại câu chuyện'
+        ? 'Tiếp tục câu chuyện'
         : 'Nghe câu chuyện';
   const isNarrationPlayable = vm.narration.available && vm.narration.status !== 'loading';
 
@@ -99,7 +138,32 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
       aria-label="Media dock trải nghiệm"
       data-mode={vm.mode}
       data-scene-id={vm.sceneId ?? undefined}
+      data-mobile-expanded={isMobileDockExpanded}
     >
+      <div className="immersive-media-dock__utility-row">
+        <span className="immersive-media-dock__mobile-scene-label">{vm.sceneLabel}</span>
+        {vm.sound.available && (!vm.soundGateRequired || soundGateDismissed) ? (
+          <button
+            type="button"
+            className="immersive-media-dock__sound-toggle"
+            onClick={toggleSound}
+            aria-pressed={!vm.sound.masterMuted}
+            aria-label={vm.sound.masterMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+          >
+            {vm.sound.masterMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="immersive-media-dock__mobile-toggle"
+          aria-expanded={isMobileDockExpanded}
+          aria-controls="immersive-media-dock-content"
+          onClick={() => setIsMobileDockExpanded((expanded) => !expanded)}
+        >
+          {isMobileDockExpanded ? 'Thu gọn điều khiển âm thanh' : 'Mở điều khiển âm thanh'}
+        </button>
+      </div>
+
       {vm.soundGateRequired && !soundGateDismissed ? (
         <div
           className="immersive-media-dock__sound-gate"
@@ -116,154 +180,146 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
         </div>
       ) : null}
 
-      {activeCaption ? (
-        <div
-          className="immersive-media-dock__captions"
-          role="status"
-          aria-label="Phụ đề câu chuyện"
-        >
-          {activeCaption.text}
-        </div>
-      ) : null}
-
-      <div className="immersive-media-dock__story" aria-label="Câu chuyện hiện tại">
-        <strong>{vm.sceneLabel}</strong>
-        {vm.mode === 'free-explore' ? (
-          isNarrationPlayable ? (
-            <button
-              type="button"
-              onClick={
-                vm.narration.status === 'playing'
-                  ? actions.onPauseNarration
-                  : actions.onPlayNarration
-              }
-              disabled={vm.narration.status === 'loading'}
-            >
-              {narrationActionLabel}
-            </button>
-          ) : vm.transcript.available ? (
-            <p>Âm thanh thuyết minh chưa có</p>
-          ) : null
+      <div
+        id="immersive-media-dock-content"
+        className="immersive-media-dock__content"
+        hidden={!isMobileDockExpanded}
+      >
+        {activeCaption ? (
+          <div className="immersive-media-dock__captions" aria-label="Phụ đề câu chuyện">
+            {activeCaption.text}
+          </div>
         ) : null}
 
-        {vm.narration.available ? (
-          <div className="immersive-media-dock__narration" aria-label="Điều khiển câu chuyện">
-            {vm.mode === 'auto-tour' ? (
+        <div className="immersive-media-dock__story" aria-label="Câu chuyện hiện tại">
+          <strong>{vm.sceneLabel}</strong>
+          {vm.mode === 'free-explore' ? (
+            isNarrationPlayable ? (
               <button
                 type="button"
                 onClick={
                   vm.narration.status === 'playing'
                     ? actions.onPauseNarration
-                    : actions.onPlayNarration
+                    : vm.narration.status === 'paused'
+                      ? actions.onResumeNarration
+                      : actions.onPlayNarration
                 }
-                disabled={!isNarrationPlayable}
-                aria-label={narrationActionLabel}
+                disabled={vm.narration.status === 'loading'}
               >
                 {narrationActionLabel}
               </button>
-            ) : null}
-            <label>
-              <span>Tiến độ câu chuyện</span>
-              <input
-                type="range"
-                min={0}
-                max={Math.max(0, vm.narration.durationSeconds)}
-                step={0.1}
-                value={Math.min(vm.narration.currentTimeSeconds, vm.narration.durationSeconds)}
-                disabled={!vm.narration.canSeek}
-                onChange={onSeek}
-                aria-label="Tiến độ câu chuyện"
-              />
-            </label>
-            <output aria-label="Thời lượng câu chuyện">
-              {formatDuration(vm.narration.currentTimeSeconds)} /{' '}
-              {formatDuration(vm.narration.durationSeconds)}
-            </output>
-          </div>
-        ) : null}
+            ) : vm.transcript.available ? (
+              <p>Âm thanh thuyết minh chưa có</p>
+            ) : null
+          ) : null}
 
-        {vm.transcript.available ? (
-          <div className="immersive-media-dock__transcript-actions">
+          {vm.narration.available ? (
+            <div className="immersive-media-dock__narration" aria-label="Điều khiển câu chuyện">
+              <label>
+                <span>Tiến độ câu chuyện</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.max(0, vm.narration.durationSeconds)}
+                  step={0.1}
+                  value={Math.min(vm.narration.currentTimeSeconds, vm.narration.durationSeconds)}
+                  disabled={!vm.narration.canSeek}
+                  onChange={onSeek}
+                  aria-label="Tiến độ câu chuyện"
+                />
+              </label>
+              <output aria-label="Thời lượng câu chuyện">
+                {formatDuration(vm.narration.currentTimeSeconds)} /{' '}
+                {formatDuration(vm.narration.durationSeconds)}
+              </output>
+            </div>
+          ) : null}
+
+          {vm.transcript.available ? (
+            <div className="immersive-media-dock__transcript-actions">
+              <button
+                type="button"
+                onClick={actions.onToggleCaptions}
+                aria-pressed={vm.captionsEnabled}
+                aria-label={vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
+              >
+                {vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
+              </button>
+              <button type="button" onClick={openTranscript} aria-label="Mở bản chép lời">
+                Bản chép lời
+              </button>
+            </div>
+          ) : null}
+
+          {vm.narration.alternateLocales.map((locale) => (
+            <button
+              key={locale}
+              type="button"
+              onClick={() => actions.onListenInLocale(locale)}
+              aria-label={`Nghe bằng ${LOCALE_LABELS[locale]}`}
+            >
+              Nghe bằng {LOCALE_LABELS[locale]}
+            </button>
+          ))}
+
+          {vm.mode === 'free-explore' && vm.autoTour.canStart ? (
             <button
               type="button"
-              onClick={actions.onToggleCaptions}
-              aria-pressed={vm.captionsEnabled}
-              aria-label={vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
+              className="immersive-media-dock__start-autotour-btn"
+              onClick={actions.onStartAutoTour}
             >
-              {vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
-            </button>
-            <button type="button" onClick={openTranscript} aria-label="Mở bản chép lời">
-              Bản chép lời
-            </button>
-          </div>
-        ) : null}
-
-        {vm.narration.alternateLocales.map((locale) => (
-          <button
-            key={locale}
-            type="button"
-            onClick={() => actions.onListenInLocale(locale)}
-            aria-label={`Nghe bằng ${LOCALE_LABELS[locale]}`}
-          >
-            Nghe bằng {LOCALE_LABELS[locale]}
-          </button>
-        ))}
-
-        {vm.mode === 'free-explore' && vm.autoTour.canStart ? (
-          <button
-            type="button"
-            className="immersive-media-dock__start-autotour-btn"
-            onClick={actions.onStartAutoTour}
-          >
-            Bắt đầu tự động tham quan
-          </button>
-        ) : null}
-      </div>
-
-      {vm.mode === 'auto-tour' && vm.autoTour.isActive ? (
-        <div
-          className="immersive-media-dock__auto-tour"
-          role="group"
-          aria-label="Điều khiển tự động tham quan"
-        >
-          <strong>
-            Tự động tham quan ·{' '}
-            <span data-testid="immersive-media-dock-progress">
-              {`Cảnh ${vm.autoTour.currentIndex} / ${vm.autoTour.total}`}
-            </span>
-          </strong>
-          <span aria-live="polite">{vm.autoTour.phase}</span>
-          {vm.autoTour.isPaused ? (
-            <button type="button" onClick={actions.onResumeAutoTour}>
-              Tiếp tục tự động tham quan
-            </button>
-          ) : vm.autoTour.canPause ? (
-            <button type="button" onClick={actions.onPauseAutoTour}>
-              Tạm dừng tự động tham quan
-            </button>
-          ) : null}
-          {vm.autoTour.canPrevious ? (
-            <button type="button" onClick={actions.onPreviousScene}>
-              Cảnh trước
-            </button>
-          ) : null}
-          {vm.autoTour.canSkipStory ? (
-            <button type="button" onClick={actions.onSkipStory}>
-              Bỏ qua câu chuyện
-            </button>
-          ) : null}
-          {vm.autoTour.canNext ? (
-            <button type="button" onClick={actions.onNextScene}>
-              Cảnh tiếp theo
-            </button>
-          ) : null}
-          {vm.autoTour.canExit ? (
-            <button type="button" onClick={actions.onExitAutoTour}>
-              Thoát tự động tham quan
+              Bắt đầu tự động tham quan
             </button>
           ) : null}
         </div>
-      ) : null}
+
+        {vm.mode === 'auto-tour' && vm.autoTour.isActive ? (
+          <div
+            className="immersive-media-dock__auto-tour"
+            role="group"
+            aria-label="Điều khiển tự động tham quan"
+          >
+            <strong>
+              Tự động tham quan ·{' '}
+              <span data-testid="immersive-media-dock-progress">
+                {`Cảnh ${vm.autoTour.currentIndex} / ${vm.autoTour.total}`}
+              </span>
+            </strong>
+            <span data-testid="immersive-media-dock-status">
+              {vm.autoTour.isPaused ? 'Đang tạm dừng' : getAutoTourStatusLabel(vm.autoTour.phase)}
+            </span>
+            {vm.autoTour.isPaused ? (
+              <button type="button" onClick={actions.onResumeAutoTour}>
+                Tiếp tục tự động tham quan
+              </button>
+            ) : vm.autoTour.canPause ? (
+              <button type="button" onClick={actions.onPauseAutoTour}>
+                Tạm dừng tự động tham quan
+              </button>
+            ) : null}
+            {vm.autoTour.canPrevious ? (
+              <button type="button" onClick={actions.onPreviousScene}>
+                Cảnh trước
+              </button>
+            ) : null}
+            {vm.autoTour.canSkipStory ? (
+              <button type="button" onClick={actions.onSkipStory}>
+                Bỏ qua câu chuyện
+              </button>
+            ) : null}
+            {vm.autoTour.canNext ? (
+              <button type="button" onClick={actions.onNextScene}>
+                Cảnh tiếp theo
+              </button>
+            ) : null}
+            {vm.autoTour.canExit ? (
+              <button type="button" onClick={actions.onExitAutoTour}>
+                Thoát tự động tham quan
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       {isTranscriptOpen && vm.transcript.content ? (
         <ImmersiveTranscriptPanel content={vm.transcript.content} onClose={closeTranscript} />

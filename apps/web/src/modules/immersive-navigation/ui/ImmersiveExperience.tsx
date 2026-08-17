@@ -944,6 +944,7 @@ export function ImmersiveExperience({
     onViewportInteraction,
     playNarration,
     pauseNarration,
+    resumeNarration,
     seekNarration,
     toggleNarration,
     setMasterMuted,
@@ -1035,9 +1036,7 @@ export function ImmersiveExperience({
     setMasterMuted(!audioState.masterMuted);
   }, [audioState.masterMuted, setMasterMuted]);
 
-  const onEnableAudio = useCallback(() => {
-    enableAudio();
-  }, [enableAudio]);
+  const onEnableAudio = useCallback(() => enableAudio(), [enableAudio]);
 
   const onToggleAmbient = useCallback(() => {
     toggleAmbient();
@@ -1150,7 +1149,11 @@ export function ImmersiveExperience({
       onPlayNarration: () => {
         void playNarration();
       },
+      onResumeNarration: () => {
+        void resumeNarration();
+      },
       onPauseNarration: pauseNarration,
+      onToggleMasterMute,
       onSeekNarration: seekNarration,
       onToggleCaptions: () => setCaptionsEnabled((enabled) => !enabled),
       onOpenTranscript: () => undefined,
@@ -1179,12 +1182,14 @@ export function ImmersiveExperience({
       pauseNarration,
       playNarration,
       previousScene,
+      resumeNarration,
       resumeAutoTour,
       seekNarration,
       setMasterMuted,
       skipStory,
       startAutoTour,
       stopAutoTour,
+      onToggleMasterMute,
     ],
   );
 

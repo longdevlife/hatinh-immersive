@@ -404,6 +404,31 @@ describe('useImmersiveAudioTour', () => {
     expect(audioController.calls).toContain('playNarration:narration-b');
   });
 
+  it('returns a sound unlock result and remembers a successful enabled choice', async () => {
+    window.sessionStorage.clear();
+    const { result } = createHarness();
+
+    let didEnable = false;
+    await act(async () => {
+      didEnable = await result.current.enableAudio();
+    });
+
+    expect(didEnable).toBe(true);
+    expect(window.sessionStorage.getItem('hatinh:immersive:sound-preference')).toBe('enabled');
+  });
+
+  it('restores a muted sound choice across an immersive audio remount', async () => {
+    window.sessionStorage.clear();
+    const first = createHarness();
+
+    act(() => first.result.current.setMasterMuted(true));
+    expect(window.sessionStorage.getItem('hatinh:immersive:sound-preference')).toBe('muted');
+    first.unmount();
+
+    const second = createHarness();
+    await waitFor(() => expect(second.result.current.audioState.masterMuted).toBe(true));
+  });
+
   it('advances only after the explicit natural narration completion event', async () => {
     const { result, audioController, scheduler, onNavigateScene } = createHarness();
 

@@ -25,6 +25,35 @@ import {
   type AudioTourCoordinatorOptions,
 } from '../model/audio-tour.coordinator';
 
+export const IMMERSIVE_SOUND_PREFERENCE_STORAGE_KEY = 'hatinh:immersive:sound-preference';
+
+type ImmersiveSoundPreference = 'muted' | 'enabled';
+
+function readSoundPreference(): ImmersiveSoundPreference | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const value = window.sessionStorage.getItem(IMMERSIVE_SOUND_PREFERENCE_STORAGE_KEY);
+    return value === 'muted' || value === 'enabled' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSoundPreference(preference: ImmersiveSoundPreference): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(IMMERSIVE_SOUND_PREFERENCE_STORAGE_KEY, preference);
+  } catch {
+    // Session storage can be unavailable in privacy-restricted browsers.
+  }
+}
+
 export interface ImmersiveAudioTourAudioController extends AudioTourAudioController {
   getState(): ImmersiveAudioState;
   subscribe(listener: (state: ImmersiveAudioState) => void): () => void;
@@ -77,7 +106,7 @@ export interface ImmersiveAudioTourResult {
   resumeNarration(): Promise<boolean>;
   toggleNarration(): void;
   setMasterMuted(muted: boolean): void;
-  enableAudio(): void;
+  enableAudio(): Promise<boolean>;
   toggleAmbient(): void;
   setAmbientEnabled(enabled: boolean): Promise<boolean>;
   seekNarration(seconds: number): boolean;
@@ -174,6 +203,13 @@ export function useImmersiveAudioTour(
   useEffect(() => {
     setAudioState(runtime.audioController.getState());
     return runtime.audioController.subscribe(setAudioState);
+  }, [runtime]);
+
+  useEffect(() => {
+    const preference = readSoundPreference();
+    if (preference) {
+      runtime.audioController.setMasterMuted(preference === 'muted');
+    }
   }, [runtime]);
 
   useEffect(() => {
@@ -328,13 +364,21 @@ export function useImmersiveAudioTour(
   ]);
 
   const setMasterMuted = useCallback(
-    (muted: boolean) => runtime.audioController.setMasterMuted(muted),
+    (muted: boolean) => {
+      runtime.audioController.setMasterMuted(muted);
+      writeSoundPreference(muted ? 'muted' : 'enabled');
+    },
     [runtime],
   );
 
-  const enableAudio = useCallback(() => {
+  const enableAudio = useCallback(async () => {
     runtime.audioController.setMasterMuted(false);
-    void runtime.audioController.startAmbient();
+    const { ambientTrackId } = runtime.audioController.getState();
+    const didStart = ambientTrackId === null || (await runtime.audioController.startAmbient());
+    if (didStart) {
+      writeSoundPreference('enabled');
+    }
+    return didStart;
   }, [runtime]);
 
   const toggleAmbient = useCallback(() => {
