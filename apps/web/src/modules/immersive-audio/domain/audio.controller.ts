@@ -89,6 +89,10 @@ export class ImmersiveAudioController {
 
   private narrationHandle: AudioTrackHandle | null = null;
 
+  private narrationTransportGeneration = 0;
+
+  private narrationDesiredPlaying = false;
+
   private narrationEndedCleanup: (() => void) | null = null;
 
   private narrationErrorCleanup: (() => void) | null = null;
@@ -235,6 +239,8 @@ export class ImmersiveAudioController {
     }
 
     const handle = this.narrationHandle;
+    const transportGeneration = ++this.narrationTransportGeneration;
+    this.narrationDesiredPlaying = true;
     this.narrationProgressCleanup = handle.onProgress((snapshot) => {
       if (this.narrationHandle !== handle) {
         return;
@@ -264,14 +270,22 @@ export class ImmersiveAudioController {
 
     try {
       await handle.play();
-      if (this.narrationHandle !== handle) {
+      if (
+        this.narrationHandle !== handle ||
+        this.narrationTransportGeneration !== transportGeneration ||
+        !this.narrationDesiredPlaying
+      ) {
         return false;
       }
       this.update({ narrationPlaying: true, autoplayBlocked: false });
       await this.applyVolumes(NARRATION_STOP_FADE_MS);
       return true;
     } catch {
-      if (this.narrationHandle !== handle) {
+      if (
+        this.narrationHandle !== handle ||
+        this.narrationTransportGeneration !== transportGeneration ||
+        !this.narrationDesiredPlaying
+      ) {
         return false;
       }
       this.stopNarration();
@@ -281,6 +295,8 @@ export class ImmersiveAudioController {
   }
 
   pauseNarration(): void {
+    this.narrationTransportGeneration += 1;
+    this.narrationDesiredPlaying = false;
     this.narrationHandle?.pause();
     this.update({ narrationPlaying: false });
     void this.applyVolumes(NARRATION_STOP_FADE_MS);
@@ -292,16 +308,26 @@ export class ImmersiveAudioController {
     }
 
     const handle = this.narrationHandle;
+    const transportGeneration = ++this.narrationTransportGeneration;
+    this.narrationDesiredPlaying = true;
     try {
       await handle.play();
-      if (this.narrationHandle !== handle) {
+      if (
+        this.narrationHandle !== handle ||
+        this.narrationTransportGeneration !== transportGeneration ||
+        !this.narrationDesiredPlaying
+      ) {
         return false;
       }
       this.update({ narrationPlaying: true, autoplayBlocked: false });
       await this.applyVolumes(NARRATION_STOP_FADE_MS);
       return true;
     } catch {
-      if (this.narrationHandle !== handle) {
+      if (
+        this.narrationHandle !== handle ||
+        this.narrationTransportGeneration !== transportGeneration ||
+        !this.narrationDesiredPlaying
+      ) {
         return false;
       }
       this.update({ autoplayBlocked: true, narrationPlaying: false });
@@ -437,6 +463,8 @@ export class ImmersiveAudioController {
   }
 
   stopNarration(): void {
+    this.narrationTransportGeneration += 1;
+    this.narrationDesiredPlaying = false;
     this.narrationEndedCleanup?.();
     this.narrationEndedCleanup = null;
     this.narrationErrorCleanup?.();

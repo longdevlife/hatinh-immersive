@@ -103,6 +103,21 @@ class FakeTrack implements AudioTrackHandle {
   }
 }
 
+class Deferred<T> {
+  readonly promise: Promise<T>;
+
+  resolve!: (value: T) => void;
+
+  reject!: (reason?: unknown) => void;
+
+  constructor() {
+    this.promise = new Promise<T>((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+    });
+  }
+}
+
 function track(id: string, type: ImmersiveAudioTrack['type']): ImmersiveAudioTrack {
   return { id, type, label: id, src: `/demo/audio/${id}.ogg`, rights: 'demo-only' };
 }
@@ -256,6 +271,60 @@ describe('ImmersiveAudioController', () => {
     expect(controller.getState()).toMatchObject({
       narrationTrackId: second.id,
       narrationPlaying: true,
+      autoplayBlocked: false,
+    });
+  });
+
+  it('does not resurrect narration when pause invalidates a pending play resolution', async () => {
+    const narration = track('narration-pause-pending-resolve', 'narration');
+    const handle = new FakeTrack();
+    const firstPlay = new Deferred<void>();
+    const secondPlay = new Deferred<void>();
+    handle.playGate = firstPlay.promise;
+    const adapter: AudioAdapter = { create: () => handle };
+    const controller = new ImmersiveAudioController(adapter);
+
+    const pendingPlay = controller.playNarration(narration);
+    await flushMicrotasks();
+    controller.pauseNarration();
+    firstPlay.resolve();
+
+    await expect(pendingPlay).resolves.toBe(false);
+    expect(controller.getState()).toMatchObject({
+      narrationTrackId: narration.id,
+      narrationPlaying: false,
+      autoplayBlocked: false,
+    });
+
+    handle.playGate = secondPlay.promise;
+    const resumedPlay = controller.resumeNarration();
+    await flushMicrotasks();
+    secondPlay.resolve();
+
+    await expect(resumedPlay).resolves.toBe(true);
+    expect(controller.getState()).toMatchObject({
+      narrationTrackId: narration.id,
+      narrationPlaying: true,
+      autoplayBlocked: false,
+    });
+  });
+
+  it('does not mark autoplay blocked when a paused play rejects late', async () => {
+    const narration = track('narration-pause-pending-reject', 'narration');
+    const handle = new FakeTrack();
+    const firstPlay = new Deferred<void>();
+    handle.playGate = firstPlay.promise;
+    const controller = new ImmersiveAudioController({ create: () => handle });
+
+    const pendingPlay = controller.playNarration(narration);
+    await flushMicrotasks();
+    controller.pauseNarration();
+    firstPlay.reject(new Error('PAUSED_TRANSPORT_ABORT'));
+
+    await expect(pendingPlay).resolves.toBe(false);
+    expect(controller.getState()).toMatchObject({
+      narrationTrackId: narration.id,
+      narrationPlaying: false,
       autoplayBlocked: false,
     });
   });
