@@ -1305,8 +1305,6 @@ export function ImmersiveExperience({
                 expectedDeepLinkRef,
               );
             }
-          } else {
-            autoTourController.stop();
           }
         }
         if (

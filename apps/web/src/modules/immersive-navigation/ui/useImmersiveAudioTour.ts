@@ -266,8 +266,12 @@ export function useImmersiveAudioTour(
 
   const jumpToScene = useCallback(
     (sceneId: string) => {
+      const isAutoTourActive = runtime.autoTourController.getState().isActive;
+      if (!isAutoTourActive && sceneId === inputRef.current.committedSceneId) {
+        return;
+      }
       runtime.coordinator.cancelNarrationForNavigation();
-      if (runtime.autoTourController.getState().isActive) {
+      if (isAutoTourActive) {
         runtime.autoTourController.jumpTo(sceneId);
         return;
       }
