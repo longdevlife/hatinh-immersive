@@ -242,6 +242,56 @@ describe('useImmersiveAudioTour', () => {
     await waitFor(() => expect(audioController.calls).toContain('playNarration:narration-a'));
   });
 
+  it('keeps Auto Tour narration ownership when a manual or hotspot narration is requested', async () => {
+    const { result, audioController, scheduler, onNavigateScene } = createHarness();
+
+    await waitFor(() => expect(audioController.calls).toContain('startAmbient'));
+    act(() => result.current.startAutoTour());
+    act(() => scheduler.flush());
+    await waitFor(() => expect(audioController.calls).toContain('playNarration:narration-a'));
+
+    const autoTourOwnershipId = audioController.getNarrationOwnershipId();
+    audioController.calls.length = 0;
+
+    let didPlayManualNarration = true;
+    await act(async () => {
+      didPlayManualNarration = await result.current.playNarration(
+        track('narration-b', 'narration', 'vi'),
+      );
+    });
+
+    expect(didPlayManualNarration).toBe(false);
+    expect(audioController.calls).not.toContain('playNarration:narration-b');
+    expect(audioController.getNarrationOwnershipId()).toBe(autoTourOwnershipId);
+
+    act(() =>
+      audioController.emitNarrationLifecycle({
+        type: 'ended',
+        trackId: 'narration-a',
+        ownershipId: autoTourOwnershipId!,
+      }),
+    );
+    act(() => scheduler.flush());
+
+    expect(onNavigateScene).toHaveBeenCalledWith('scene-b', true);
+  });
+
+  it('allows manual narration in Free Explore when Auto Tour does not own narration', async () => {
+    const { result, audioController } = createHarness();
+
+    await waitFor(() => expect(audioController.calls).toContain('startAmbient'));
+
+    let didPlayManualNarration = false;
+    await act(async () => {
+      didPlayManualNarration = await result.current.playNarration(
+        track('narration-b', 'narration', 'vi'),
+      );
+    });
+
+    expect(didPlayManualNarration).toBe(true);
+    expect(audioController.calls).toContain('playNarration:narration-b');
+  });
+
   it('advances only after the explicit natural narration completion event', async () => {
     const { result, audioController, scheduler, onNavigateScene } = createHarness();
 
@@ -338,6 +388,93 @@ describe('useImmersiveAudioTour', () => {
     expect(audioController.calls[0]).toBe('stopNarration');
 
     act(() => scheduler.flush());
+  });
+
+  it('does not cancel narration when Next is invalid at the last scene', async () => {
+    const { result, audioController } = createHarness(
+      createInput({
+        panoramaNodes: [scene('scene-a'), scene('scene-b'), scene('scene-c')],
+        panoramaRenderableNodes: [scene('scene-a'), scene('scene-b'), scene('scene-c')],
+        panoramaTourLinks: [
+          { sourceSceneId: 'scene-a', targetSceneId: 'scene-b' },
+          { sourceSceneId: 'scene-b', targetSceneId: 'scene-c' },
+        ],
+      }),
+    );
+
+    await waitFor(() => expect(audioController.calls).toContain('startAmbient'));
+    act(() => result.current.startAutoTour());
+    act(() => result.current.nextScene());
+    act(() => result.current.nextScene());
+    await act(async () => {
+      await result.current.playNarration(track('narration-b', 'narration', 'vi'));
+    });
+
+    const stateBefore = result.current.autoTourState;
+    audioController.calls.length = 0;
+    let didNavigate = true;
+    act(() => {
+      didNavigate = result.current.nextScene();
+    });
+
+    expect(didNavigate).toBe(false);
+    expect(audioController.calls).not.toContain('stopNarration');
+    expect(audioController.state.narrationTrackId).toBe('narration-b');
+    expect(result.current.autoTourState).toEqual(stateBefore);
+  });
+
+  it('does not cancel narration when Previous is invalid at the first scene', async () => {
+    const { result, audioController } = createHarness(
+      createInput({
+        panoramaNodes: [scene('scene-a'), scene('scene-b'), scene('scene-c')],
+        panoramaRenderableNodes: [scene('scene-a'), scene('scene-b'), scene('scene-c')],
+        panoramaTourLinks: [
+          { sourceSceneId: 'scene-a', targetSceneId: 'scene-b' },
+          { sourceSceneId: 'scene-b', targetSceneId: 'scene-c' },
+        ],
+      }),
+    );
+
+    await waitFor(() => expect(audioController.calls).toContain('startAmbient'));
+    act(() => result.current.startAutoTour());
+    await act(async () => {
+      await result.current.playNarration(track('narration-b', 'narration', 'vi'));
+    });
+
+    const stateBefore = result.current.autoTourState;
+    audioController.calls.length = 0;
+    let didNavigate = true;
+    act(() => {
+      didNavigate = result.current.previousScene();
+    });
+
+    expect(didNavigate).toBe(false);
+    expect(audioController.calls).not.toContain('stopNarration');
+    expect(audioController.state.narrationTrackId).toBe('narration-b');
+    expect(result.current.autoTourState).toEqual(stateBefore);
+  });
+
+  it('does not corrupt progression or cancel narration when Skip is outside its story phase', async () => {
+    const { result, audioController } = createHarness();
+
+    await waitFor(() => expect(audioController.calls).toContain('startAmbient'));
+    act(() => result.current.startAutoTour());
+    act(() => result.current.pauseAutoTour());
+    await act(async () => {
+      await result.current.playNarration(track('narration-b', 'narration', 'vi'));
+    });
+
+    const stateBefore = result.current.autoTourState;
+    audioController.calls.length = 0;
+    let didSkip = true;
+    act(() => {
+      didSkip = result.current.skipStory();
+    });
+
+    expect(didSkip).toBe(false);
+    expect(audioController.calls).not.toContain('stopNarration');
+    expect(audioController.state.narrationTrackId).toBe('narration-b');
+    expect(result.current.autoTourState).toEqual(stateBefore);
   });
 
   it('does not stop Auto Tour when the panorama view changes', async () => {

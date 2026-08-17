@@ -282,6 +282,10 @@ export function useImmersiveAudioTour(
 
   const playNarration = useCallback(
     async (track?: ImmersiveAudioTrack | null) => {
+      if (runtime.coordinator.hasAutoTourNarrationOwnership()) {
+        return false;
+      }
+
       const resolvedTrack =
         track ??
         (currentScene
@@ -347,14 +351,23 @@ export function useImmersiveAudioTour(
   }, [runtime]);
 
   const nextScene = useCallback(() => {
+    if (!runtime.autoTourController.canNext()) {
+      return false;
+    }
     runtime.coordinator.cancelNarrationForNavigation();
     return runtime.autoTourController.next();
   }, [runtime]);
   const previousScene = useCallback(() => {
+    if (!runtime.autoTourController.canPrevious()) {
+      return false;
+    }
     runtime.coordinator.cancelNarrationForNavigation();
     return runtime.autoTourController.previous();
   }, [runtime]);
   const skipStory = useCallback(() => {
+    if (!runtime.autoTourController.canSkipStory()) {
+      return false;
+    }
     runtime.coordinator.cancelNarrationForNavigation();
     return runtime.autoTourController.skipStory();
   }, [runtime]);

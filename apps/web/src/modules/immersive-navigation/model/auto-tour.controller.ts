@@ -203,6 +203,22 @@ export class AutoTourController {
   /** Viewport rotation is not a progression command. */
   onViewportInteraction(): void {}
 
+  canNext(): boolean {
+    const currentSceneId = this.state.currentSceneId;
+    return Boolean(this.state.isActive && currentSceneId && this.getNextSceneId(currentSceneId));
+  }
+
+  canPrevious(): boolean {
+    const currentSceneId = this.state.currentSceneId;
+    return Boolean(
+      this.state.isActive && currentSceneId && (this.getPreviousSceneId?.(currentSceneId) ?? null),
+    );
+  }
+
+  canSkipStory(): boolean {
+    return this.isCurrentRunningScene(this.state.currentSceneId);
+  }
+
   onSceneCommitted(sceneId: string): void {
     if (!this.state.isActive) {
       return;
@@ -271,11 +287,11 @@ export class AutoTourController {
   }
 
   next(): boolean {
-    const currentSceneId = this.state.currentSceneId;
-    if (!currentSceneId) {
+    if (!this.canNext()) {
       return false;
     }
 
+    const currentSceneId = this.state.currentSceneId!;
     const nextSceneId = this.getNextSceneId(currentSceneId);
     if (!nextSceneId) {
       return false;
@@ -286,7 +302,11 @@ export class AutoTourController {
   }
 
   previous(): boolean {
-    const currentSceneId = this.state.currentSceneId;
+    if (!this.canPrevious()) {
+      return false;
+    }
+
+    const currentSceneId = this.state.currentSceneId!;
     const previousSceneId = currentSceneId
       ? (this.getPreviousSceneId?.(currentSceneId) ?? null)
       : null;
@@ -299,7 +319,7 @@ export class AutoTourController {
   }
 
   skipStory(): boolean {
-    if (!this.isCurrentRunningScene(this.state.currentSceneId)) {
+    if (!this.canSkipStory()) {
       return false;
     }
 
