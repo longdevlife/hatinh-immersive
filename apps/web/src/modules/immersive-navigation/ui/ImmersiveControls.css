@@ -799,4 +799,12 @@
     padding: 0 0.65rem;
     font-size: 0.76rem;
   }
+
+  .reference-parity__scenes {
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+}
+
+.reference-parity__scenes {
+  bottom: clamp(1.25rem, 2.5vw, 1.75rem);
 }

@@ -6,6 +6,7 @@ import {
   type ImmersiveMediaDockVm,
 } from './reference-parity.presentation';
 import { ImmersiveTranscriptPanel } from './ImmersiveTranscriptPanel';
+import './ImmersiveMediaDock.css';
 
 export interface ImmersiveMediaDockProps {
   vm: ImmersiveMediaDockVm;
@@ -115,6 +116,16 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
         </div>
       ) : null}
 
+      {activeCaption ? (
+        <div
+          className="immersive-media-dock__captions"
+          role="status"
+          aria-label="Phụ đề câu chuyện"
+        >
+          {activeCaption.text}
+        </div>
+      ) : null}
+
       <div className="immersive-media-dock__story" aria-label="Câu chuyện hiện tại">
         <strong>{vm.sceneLabel}</strong>
         {vm.mode === 'free-explore' ? (
@@ -197,6 +208,16 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
             Nghe bằng {LOCALE_LABELS[locale]}
           </button>
         ))}
+
+        {vm.mode === 'free-explore' && vm.autoTour.canStart ? (
+          <button
+            type="button"
+            className="immersive-media-dock__start-autotour-btn"
+            onClick={actions.onStartAutoTour}
+          >
+            Bắt đầu tự động tham quan
+          </button>
+        ) : null}
       </div>
 
       {vm.mode === 'auto-tour' && vm.autoTour.isActive ? (
@@ -241,20 +262,6 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
               Thoát tự động tham quan
             </button>
           ) : null}
-        </div>
-      ) : vm.mode === 'free-explore' && vm.autoTour.canStart ? (
-        <button type="button" onClick={actions.onStartAutoTour}>
-          Bắt đầu tự động tham quan
-        </button>
-      ) : null}
-
-      {activeCaption ? (
-        <div
-          className="immersive-media-dock__captions"
-          role="status"
-          aria-label="Phụ đề câu chuyện"
-        >
-          {activeCaption.text}
         </div>
       ) : null}
 

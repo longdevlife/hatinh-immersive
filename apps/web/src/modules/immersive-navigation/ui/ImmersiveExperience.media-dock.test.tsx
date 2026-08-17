@@ -55,4 +55,49 @@ describe('ImmersiveExperience Media Dock integration', () => {
     expect(screen.queryByRole('button', { name: 'Bật thuyết minh' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tự động tham quan' })).not.toBeInTheDocument();
   });
+
+  it('keeps hook order stable when the manifest resolves after the loading render', async () => {
+    const map3d = new FakeMap3DEngine();
+    const minimap = new FakeMinimapEngine();
+    const panorama = new FakePanoramaEngine();
+    const factories: ImmersiveExperienceFactories = {
+      createMap3DEngine: vi.fn(async () => map3d),
+      createMinimapEngine: vi.fn(async () => minimap),
+      createPanoramaEngine: vi.fn(async () => panorama),
+    };
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const destinations = DEMO_DESTINATIONS.map(({ preview }) => preview);
+    const manifest = getDemoManifest('bien-thien-cam', 'synthetic');
+    const renderRoute = (resolvedManifest?: typeof manifest) => (
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter
+          initialEntries={[
+            '/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-boardwalk',
+          ]}
+        >
+          <Routes>
+            <Route
+              path="/explore/:destinationSlug/immersive"
+              element={
+                <ImmersiveExperience
+                  factories={factories}
+                  {...(resolvedManifest ? { manifest: resolvedManifest } : {})}
+                  destinations={destinations}
+                  panoramaTourSource="demo"
+                  panoramaTourMediaMode="synthetic"
+                />
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    const view = render(renderRoute());
+    view.rerender(renderRoute(manifest));
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toBeInTheDocument();
+    });
+  });
 });

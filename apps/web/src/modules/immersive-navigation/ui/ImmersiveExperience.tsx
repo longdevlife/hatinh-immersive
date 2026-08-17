@@ -1143,6 +1143,51 @@ export function ImmersiveExperience({
     ],
   );
 
+  const mediaDockActions = useMemo<ImmersiveMediaDockActions>(
+    () => ({
+      onEnableSound: onEnableAudio,
+      onContinueMuted: () => setMasterMuted(true),
+      onPlayNarration: () => {
+        void playNarration();
+      },
+      onPauseNarration: pauseNarration,
+      onSeekNarration: seekNarration,
+      onToggleCaptions: () => setCaptionsEnabled((enabled) => !enabled),
+      onOpenTranscript: () => undefined,
+      onCloseTranscript: () => undefined,
+      onStartAutoTour: () => {
+        startAutoTour();
+      },
+      onPauseAutoTour: pauseAutoTour,
+      onResumeAutoTour: resumeAutoTour,
+      onSkipStory: () => {
+        skipStory();
+      },
+      onPreviousScene: () => {
+        previousScene();
+      },
+      onNextScene: () => {
+        nextScene();
+      },
+      onExitAutoTour: stopAutoTour,
+      onListenInLocale: setLocale,
+    }),
+    [
+      nextScene,
+      onEnableAudio,
+      pauseAutoTour,
+      pauseNarration,
+      playNarration,
+      previousScene,
+      resumeAutoTour,
+      seekNarration,
+      setMasterMuted,
+      skipStory,
+      startAutoTour,
+      stopAutoTour,
+    ],
+  );
+
   if (!manifest) {
     return <ManifestState kind={manifestQuery.isPending ? 'loading' : 'error'} />;
   }
@@ -1283,50 +1328,6 @@ export function ImmersiveExperience({
           captionsEnabled,
         })
       : undefined;
-  const mediaDockActions = useMemo<ImmersiveMediaDockActions>(
-    () => ({
-      onEnableSound: onEnableAudio,
-      onContinueMuted: () => setMasterMuted(true),
-      onPlayNarration: () => {
-        void playNarration();
-      },
-      onPauseNarration: pauseNarration,
-      onSeekNarration: seekNarration,
-      onToggleCaptions: () => setCaptionsEnabled((enabled) => !enabled),
-      onOpenTranscript: () => undefined,
-      onCloseTranscript: () => undefined,
-      onStartAutoTour: () => {
-        startAutoTour();
-      },
-      onPauseAutoTour: pauseAutoTour,
-      onResumeAutoTour: resumeAutoTour,
-      onSkipStory: () => {
-        skipStory();
-      },
-      onPreviousScene: () => {
-        previousScene();
-      },
-      onNextScene: () => {
-        nextScene();
-      },
-      onExitAutoTour: stopAutoTour,
-      onListenInLocale: setLocale,
-    }),
-    [
-      nextScene,
-      onEnableAudio,
-      pauseAutoTour,
-      pauseNarration,
-      playNarration,
-      previousScene,
-      resumeAutoTour,
-      seekNarration,
-      setMasterMuted,
-      skipStory,
-      startAutoTour,
-      stopAutoTour,
-    ],
-  );
   const rendererContent = (
     <RendererHost
       activeRenderer={navigation.activeRenderer}
