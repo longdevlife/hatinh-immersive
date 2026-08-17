@@ -329,6 +329,34 @@ describe('ImmersiveAudioController', () => {
     });
   });
 
+  it('keeps a paused stale play resumable without treating it as unavailable', async () => {
+    const narration = track('narration-pause-resumable', 'narration');
+    const handle = new FakeTrack();
+    const pendingPlay = new Deferred<void>();
+    handle.playGate = pendingPlay.promise;
+    const controller = new ImmersiveAudioController({ create: () => handle });
+
+    const playRequest = controller.playNarration(narration);
+    await flushMicrotasks();
+    const ownershipId = controller.getNarrationOwnershipId();
+    expect(ownershipId).not.toBeNull();
+    controller.pauseNarration();
+    pendingPlay.resolve();
+
+    await expect(playRequest).resolves.toBe(false);
+    expect(controller.isNarrationPlaybackResumable(ownershipId!)).toBe(true);
+  });
+
+  it('does not mark an actual narration play failure as resumable', async () => {
+    const narration = track('narration-play-failure', 'narration');
+    const handle = new FakeTrack();
+    handle.rejectPlay = true;
+    const controller = new ImmersiveAudioController({ create: () => handle });
+
+    await expect(controller.playNarration(narration)).resolves.toBe(false);
+    expect(controller.isNarrationPlaybackResumable(1)).toBe(false);
+  });
+
   it('master mute silences both channels and restores their effective volumes', async () => {
     const { adapter, created } = adapterWithTracks();
     const controller = new ImmersiveAudioController(adapter);

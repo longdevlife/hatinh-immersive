@@ -31,6 +31,7 @@ export interface AudioTourAudioController {
   startAmbient(): Promise<boolean>;
   playNarration(track: ImmersiveAudioTrack | null): Promise<boolean>;
   getNarrationOwnershipId(): number | null;
+  isNarrationPlaybackResumable(ownershipId: number): boolean;
   stopNarration(): void;
   stop(): void;
 }
@@ -170,6 +171,12 @@ export class AudioTourCoordinator {
         return false;
       }
       if (!didPlay) {
+        if (
+          this.activeNarration?.context.requestId === context.requestId &&
+          this.audioController.isNarrationPlaybackResumable(this.activeNarration.ownershipId)
+        ) {
+          return false;
+        }
         this.notifyNarrationUnavailable(context);
       }
       return didPlay;

@@ -41,6 +41,21 @@ class FakeScheduler implements AutoTourScheduler {
   }
 }
 
+class Deferred<T> {
+  readonly promise: Promise<T>;
+
+  resolve!: (value: T) => void;
+
+  reject!: (reason?: unknown) => void;
+
+  constructor() {
+    this.promise = new Promise<T>((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+    });
+  }
+}
+
 class FakeAudioController implements ImmersiveAudioTourAudioController {
   readonly calls: string[] = [];
 
@@ -51,6 +66,8 @@ class FakeAudioController implements ImmersiveAudioTourAudioController {
   private narrationOwnershipSequence = 0;
 
   private narrationOwnershipId: number | null = null;
+
+  playGate: Promise<boolean> | null = null;
 
   state: ImmersiveAudioState = {
     masterMuted: false,
@@ -94,13 +111,25 @@ class FakeAudioController implements ImmersiveAudioTourAudioController {
   async playNarration(track: ImmersiveAudioTrack | null): Promise<boolean> {
     this.calls.push(`playNarration:${track?.id ?? 'none'}`);
     this.narrationOwnershipId = track ? ++this.narrationOwnershipSequence : null;
-    this.state = { ...this.state, narrationPlaying: true, narrationTrackId: track?.id ?? null };
+    this.state = { ...this.state, narrationPlaying: false, narrationTrackId: track?.id ?? null };
+    this.emit();
+    if (this.playGate) {
+      const didPlay = await this.playGate;
+      this.state = { ...this.state, narrationPlaying: didPlay };
+      this.emit();
+      return didPlay;
+    }
+    this.state = { ...this.state, narrationPlaying: true };
     this.emit();
     return true;
   }
 
   getNarrationOwnershipId(): number | null {
     return this.narrationOwnershipId;
+  }
+
+  isNarrationPlaybackResumable(ownershipId: number): boolean {
+    return this.narrationOwnershipId === ownershipId && this.state.narrationTrackId !== null;
   }
 
   pauseNarration(): void {
@@ -414,6 +443,50 @@ describe('useImmersiveAudioTour', () => {
 
     expect(onNavigateScene).not.toHaveBeenCalled();
     expect(result.current.autoTourState.phase).toBe('narrating');
+  });
+
+  it('does not turn a paused stale play cancellation into fallback', async () => {
+    const { result, audioController, scheduler, onNavigateScene } = createHarness();
+    const pendingPlay = new Deferred<boolean>();
+    audioController.playGate = pendingPlay.promise;
+
+    await waitFor(() => expect(audioController.calls).toContain('startAmbient'));
+    act(() => result.current.startAutoTour());
+    act(() => scheduler.flush());
+    await waitFor(() => expect(audioController.calls).toContain('playNarration:narration-a'));
+
+    const ownershipId = audioController.getNarrationOwnershipId();
+    expect(ownershipId).not.toBeNull();
+    act(() => result.current.pauseAutoTour());
+
+    await act(async () => {
+      pendingPlay.resolve(false);
+      await pendingPlay.promise;
+      await Promise.resolve();
+    });
+
+    expect(result.current.autoTourState).toMatchObject({
+      isActive: true,
+      isPaused: true,
+      phase: 'paused',
+    });
+
+    audioController.playGate = null;
+    act(() => result.current.resumeAutoTour());
+    expect(audioController.calls).toContain('resumeNarration');
+    expect(result.current.autoTourState.phase).toBe('narrating');
+
+    act(() =>
+      audioController.emitNarrationLifecycle({
+        type: 'ended',
+        trackId: 'narration-a',
+        ownershipId: ownershipId!,
+      }),
+    );
+    expect(result.current.autoTourState.phase).toBe('holding');
+
+    act(() => scheduler.flush());
+    expect(onNavigateScene).toHaveBeenCalledWith('scene-b', true);
   });
 
   it('keeps Auto Tour active when the scene rail jumps to another scene', async () => {

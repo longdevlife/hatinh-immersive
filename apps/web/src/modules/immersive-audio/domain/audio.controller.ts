@@ -120,6 +120,14 @@ export class ImmersiveAudioController {
     return this.narrationOwnershipId;
   }
 
+  isNarrationPlaybackResumable(ownershipId: number): boolean {
+    return Boolean(
+      this.narrationHandle &&
+      this.narrationOwnershipId === ownershipId &&
+      !this.narrationDesiredPlaying,
+    );
+  }
+
   subscribe(listener: (state: ImmersiveAudioState) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);

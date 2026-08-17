@@ -59,6 +59,10 @@ class FakeAudioController implements AudioTourAudioController {
     return this.narrationOwnershipId;
   }
 
+  isNarrationPlaybackResumable(): boolean {
+    return false;
+  }
+
   stopNarration(): void {
     this.calls.push('stopNarration');
     this.narrationOwnershipId = null;
