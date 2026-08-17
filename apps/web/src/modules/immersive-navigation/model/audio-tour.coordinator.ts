@@ -1,6 +1,10 @@
 import type { ImmersiveAudioTrack, ImmersiveLocale, PanoramaNode } from '../../../shared/contracts';
 import type { AutoTourControllerState } from './auto-tour.controller';
-import { resolveSceneAudio, type ResolvedSceneAudio } from '../../immersive-audio';
+import {
+  resolveSceneAudio,
+  type NarrationLifecycleEvent,
+  type ResolvedSceneAudio,
+} from '../../immersive-audio';
 
 export type AudioTourMode = 'free-explore' | 'auto-tour';
 
@@ -26,12 +30,14 @@ export interface AudioTourAudioController {
   ): Promise<void>;
   startAmbient(): Promise<boolean>;
   playNarration(track: ImmersiveAudioTrack | null): Promise<boolean>;
+  getNarrationOwnershipId(): number | null;
   stopNarration(): void;
   stop(): void;
 }
 
 export interface AudioTourAutoController {
   getState(): AutoTourControllerState;
+  onSceneCommitted(sceneId: string): void;
   onNarrationUnavailable(sceneId: string, fallbackDurationMs: number): boolean;
   onNarrationEnded(sceneId: string): boolean;
   stop(): void;
@@ -41,6 +47,12 @@ interface ActiveAudioTourScene {
   context: ImmersivePlaybackContext;
   request: AudioTourSceneRequest;
   resolved: ResolvedSceneAudio;
+}
+
+interface ActiveNarrationPlayback {
+  context: ImmersivePlaybackContext;
+  trackId: string;
+  ownershipId: number;
 }
 
 export interface AudioTourCoordinatorOptions {
@@ -65,6 +77,8 @@ export class AudioTourCoordinator {
 
   private activeScene: ActiveAudioTourScene | null = null;
 
+  private activeNarration: ActiveNarrationPlayback | null = null;
+
   constructor({
     audioController,
     autoTourController,
@@ -82,7 +96,15 @@ export class AudioTourCoordinator {
   }
 
   async commitScene(request: AudioTourSceneRequest): Promise<ImmersivePlaybackContext | null> {
+    const previousScene = this.activeScene;
+    const shouldRestartAutoTourLifecycle = Boolean(
+      request.mode === 'auto-tour' &&
+      this.autoTourController.getState().isActive &&
+      previousScene?.request.scene.id === request.scene.id &&
+      previousScene.request.locale !== request.locale,
+    );
     const destinationChanged = this.ensureDestination(request.destinationSlug);
+    this.activeNarration = null;
     if (!destinationChanged) {
       this.audioController.stopNarration();
     }
@@ -110,6 +132,9 @@ export class AudioTourCoordinator {
     }
 
     await this.audioController.startAmbient();
+    if (shouldRestartAutoTourLifecycle && this.isCurrentContext(context)) {
+      this.autoTourController.onSceneCommitted(request.scene.id);
+    }
     return this.isCurrentContext(context) ? { ...context } : null;
   }
 
@@ -136,6 +161,10 @@ export class AudioTourCoordinator {
 
     try {
       const didPlay = await this.audioController.playNarration(narrationTrack);
+      const ownershipId = this.audioController.getNarrationOwnershipId();
+      if (ownershipId !== null) {
+        this.activeNarration = { context, trackId: narrationTrack.id, ownershipId };
+      }
       if (!this.isCurrentContext(context)) {
         return false;
       }
@@ -162,19 +191,41 @@ export class AudioTourCoordinator {
     this.audioController.stopNarration();
   }
 
-  notifyNarrationCompleted(context: ImmersivePlaybackContext): boolean {
-    if (!this.isCurrentContext(context) || !this.autoTourController.getState().isActive) {
+  notifyNarrationCompleted(
+    context: ImmersivePlaybackContext,
+    event: NarrationLifecycleEvent,
+  ): boolean {
+    if (
+      !this.isCurrentContext(context) ||
+      !this.activeNarration ||
+      this.activeNarration.context.requestId !== context.requestId ||
+      this.activeNarration.trackId !== event.trackId ||
+      this.activeNarration.ownershipId !== event.ownershipId ||
+      !this.autoTourController.getState().isActive
+    ) {
       return false;
     }
 
+    this.activeNarration = null;
     return this.autoTourController.onNarrationEnded(context.sceneId);
   }
 
-  notifyNarrationFailed(context: ImmersivePlaybackContext): boolean {
-    if (!this.isCurrentContext(context) || !this.autoTourController.getState().isActive) {
+  notifyNarrationFailed(
+    context: ImmersivePlaybackContext,
+    event: NarrationLifecycleEvent,
+  ): boolean {
+    if (
+      !this.isCurrentContext(context) ||
+      !this.activeNarration ||
+      this.activeNarration.context.requestId !== context.requestId ||
+      this.activeNarration.trackId !== event.trackId ||
+      this.activeNarration.ownershipId !== event.ownershipId ||
+      !this.autoTourController.getState().isActive
+    ) {
       return false;
     }
 
+    this.activeNarration = null;
     this.notifyNarrationUnavailable(context);
     return true;
   }
@@ -183,6 +234,7 @@ export class AudioTourCoordinator {
     this.sessionId += 1;
     this.requestId += 1;
     this.activeScene = null;
+    this.activeNarration = null;
     this.autoTourController.stop();
     this.audioController.stop();
   }
@@ -195,6 +247,7 @@ export class AudioTourCoordinator {
     this.sessionId += 1;
     this.requestId += 1;
     this.activeScene = null;
+    this.activeNarration = null;
     this.autoTourController.stop();
     this.audioController.stop();
     return true;
@@ -205,6 +258,7 @@ export class AudioTourCoordinator {
       return;
     }
 
+    this.activeNarration = null;
     this.autoTourController.onNarrationUnavailable(
       context.sceneId,
       this.activeScene.resolved.fallbackDurationMs,

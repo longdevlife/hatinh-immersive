@@ -184,9 +184,9 @@ export function useImmersiveAudioTour(
       }
 
       if (event.type === 'ended') {
-        runtime.coordinator.notifyNarrationCompleted(context);
+        runtime.coordinator.notifyNarrationCompleted(context, event);
       } else {
-        runtime.coordinator.notifyNarrationFailed(context);
+        runtime.coordinator.notifyNarrationFailed(context, event);
       }
     });
   }, [runtime]);

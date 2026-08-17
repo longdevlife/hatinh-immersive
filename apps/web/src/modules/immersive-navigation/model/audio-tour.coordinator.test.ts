@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ImmersiveAudioTrack, ImmersiveLocale, PanoramaNode } from '../../../shared/contracts';
+import type { NarrationLifecycleEvent } from '../../immersive-audio';
 import type { AutoTourControllerState } from './auto-tour.controller';
 import {
   AudioTourCoordinator,
@@ -26,6 +27,10 @@ class Deferred<T> {
 class FakeAudioController implements AudioTourAudioController {
   readonly calls: string[] = [];
 
+  private narrationOwnershipSequence = 0;
+
+  private narrationOwnershipId: number | null = null;
+
   playResult = true;
 
   playGate: Promise<boolean> | null = null;
@@ -41,18 +46,27 @@ class FakeAudioController implements AudioTourAudioController {
 
   async playNarration(track: ImmersiveAudioTrack | null): Promise<boolean> {
     this.calls.push(`playNarration:${track?.id ?? 'none'}`);
+    if (track?.type === 'narration') {
+      this.narrationOwnershipId = ++this.narrationOwnershipSequence;
+    }
     if (this.playGate) {
       return this.playGate;
     }
     return this.playResult;
   }
 
+  getNarrationOwnershipId(): number | null {
+    return this.narrationOwnershipId;
+  }
+
   stopNarration(): void {
     this.calls.push('stopNarration');
+    this.narrationOwnershipId = null;
   }
 
   stop(): void {
     this.calls.push('stop');
+    this.narrationOwnershipId = null;
   }
 }
 
@@ -69,10 +83,16 @@ class FakeAutoTourController implements AudioTourAutoController {
 
   readonly narrationEnded = vi.fn();
 
+  readonly sceneCommitted = vi.fn();
+
   readonly stop = vi.fn();
 
   getState(): AutoTourControllerState {
     return { ...this.state };
+  }
+
+  onSceneCommitted(sceneId: string): void {
+    this.sceneCommitted(sceneId);
   }
 
   onNarrationUnavailable(sceneId: string, fallbackDurationMs: number): boolean {
@@ -267,7 +287,7 @@ describe('AudioTourCoordinator', () => {
   });
 
   it('forwards narration completion only for the current playback context', async () => {
-    const { autoTourController, coordinator } = createCoordinator();
+    const { audioController, autoTourController, coordinator } = createCoordinator();
 
     await coordinator.commitScene({
       destinationSlug: 'son-trang-co-dam',
@@ -284,12 +304,53 @@ describe('AudioTourCoordinator', () => {
       locale: 'vi',
       mode: 'auto-tour',
     });
-    const currentContext = coordinator.getCurrentContext()!;
-
-    expect(coordinator.notifyNarrationCompleted(staleContext)).toBe(false);
-    expect(coordinator.notifyNarrationCompleted(currentContext)).toBe(true);
+    await coordinator.requestAutoTourNarration('scene-b');
+    const narrationContext = coordinator.getCurrentContext()!;
+    const currentOwnershipId = audioController.getNarrationOwnershipId();
+    expect(currentOwnershipId).not.toBeNull();
+    expect(
+      coordinator.notifyNarrationCompleted(staleContext, {
+        type: 'ended',
+        trackId: 'narration-a',
+        ownershipId: 1,
+      } satisfies NarrationLifecycleEvent),
+    ).toBe(false);
+    expect(
+      coordinator.notifyNarrationCompleted(narrationContext, {
+        type: 'ended',
+        trackId: 'narration-b',
+        ownershipId: currentOwnershipId!,
+      } satisfies NarrationLifecycleEvent),
+    ).toBe(true);
     expect(autoTourController.narrationEnded).toHaveBeenCalledTimes(1);
     expect(autoTourController.narrationEnded).toHaveBeenCalledWith('scene-b');
+  });
+
+  it('rejects a late lifecycle event from an older narration ownership on the same track', async () => {
+    const { audioController, autoTourController, coordinator } = createCoordinator();
+    const currentScene = scene('scene-a', 'narration-a');
+
+    await coordinator.commitScene({
+      destinationSlug: 'son-trang-co-dam',
+      destinationAmbientTrackId: 'ambient-son-trang',
+      scene: currentScene,
+      locale: 'vi',
+      mode: 'auto-tour',
+    });
+    await coordinator.requestAutoTourNarration('scene-a');
+    const firstOwnershipId = audioController.getNarrationOwnershipId();
+    const context = coordinator.getCurrentContext()!;
+
+    await coordinator.requestAutoTourNarration('scene-a');
+
+    expect(
+      coordinator.notifyNarrationCompleted(context, {
+        type: 'ended',
+        trackId: 'narration-a',
+        ownershipId: firstOwnershipId!,
+      }),
+    ).toBe(false);
+    expect(autoTourController.narrationEnded).not.toHaveBeenCalled();
   });
 
   it('uses the Auto Tour fallback when narration playback fails', async () => {
@@ -306,5 +367,29 @@ describe('AudioTourCoordinator', () => {
 
     await expect(coordinator.requestAutoTourNarration('scene-a')).resolves.toBe(false);
     expect(autoTourController.narrationUnavailable).toHaveBeenCalledWith('scene-a', 8_000);
+  });
+
+  it('restarts the current Auto Tour scene lifecycle when the narration locale changes', async () => {
+    const { autoTourController, coordinator } = createCoordinator();
+    const currentScene = scene('scene-a', 'narration-a');
+
+    await coordinator.commitScene({
+      destinationSlug: 'son-trang-co-dam',
+      destinationAmbientTrackId: 'ambient-son-trang',
+      scene: currentScene,
+      locale: 'vi',
+      mode: 'auto-tour',
+    });
+    autoTourController.sceneCommitted.mockClear();
+
+    await coordinator.commitScene({
+      destinationSlug: 'son-trang-co-dam',
+      destinationAmbientTrackId: 'ambient-son-trang',
+      scene: currentScene,
+      locale: 'en',
+      mode: 'auto-tour',
+    });
+
+    expect(autoTourController.sceneCommitted).toHaveBeenCalledWith('scene-a');
   });
 });

@@ -22,6 +22,7 @@ export interface AudioTrackHandle {
 export interface NarrationLifecycleEvent {
   type: 'ended' | 'error';
   trackId: string;
+  ownershipId: number;
 }
 
 export interface AudioAdapter {
@@ -93,6 +94,10 @@ export class ImmersiveAudioController {
 
   private narrationDesiredPlaying = false;
 
+  private narrationOwnershipSequence = 0;
+
+  private narrationOwnershipId: number | null = null;
+
   private narrationEndedCleanup: (() => void) | null = null;
 
   private narrationErrorCleanup: (() => void) | null = null;
@@ -109,6 +114,10 @@ export class ImmersiveAudioController {
 
   getState(): ImmersiveAudioState {
     return { ...this.state };
+  }
+
+  getNarrationOwnershipId(): number | null {
+    return this.narrationOwnershipId;
   }
 
   subscribe(listener: (state: ImmersiveAudioState) => void): () => void {
@@ -240,6 +249,8 @@ export class ImmersiveAudioController {
 
     const handle = this.narrationHandle;
     const transportGeneration = ++this.narrationTransportGeneration;
+    const ownershipId = ++this.narrationOwnershipSequence;
+    this.narrationOwnershipId = ownershipId;
     this.narrationDesiredPlaying = true;
     this.narrationProgressCleanup = handle.onProgress((snapshot) => {
       if (this.narrationHandle !== handle) {
@@ -465,6 +476,7 @@ export class ImmersiveAudioController {
   stopNarration(): void {
     this.narrationTransportGeneration += 1;
     this.narrationDesiredPlaying = false;
+    this.narrationOwnershipId = null;
     this.narrationEndedCleanup?.();
     this.narrationEndedCleanup = null;
     this.narrationErrorCleanup?.();
@@ -493,6 +505,7 @@ export class ImmersiveAudioController {
       return;
     }
     const trackId = this.state.narrationTrackId;
+    const ownershipId = this.narrationOwnershipId;
     this.narrationEndedCleanup?.();
     this.narrationEndedCleanup = null;
     this.narrationErrorCleanup?.();
@@ -500,6 +513,7 @@ export class ImmersiveAudioController {
     this.narrationProgressCleanup?.();
     this.narrationProgressCleanup = null;
     this.narrationHandle = null;
+    this.narrationOwnershipId = null;
     this.update({
       narrationPlaying: false,
       narrationTrackId: null,
@@ -507,8 +521,8 @@ export class ImmersiveAudioController {
       narrationDurationSeconds: 0,
       narrationCanSeek: false,
     });
-    if (trackId) {
-      const event = { type, trackId } satisfies NarrationLifecycleEvent;
+    if (trackId && ownershipId !== null) {
+      const event = { type, trackId, ownershipId } satisfies NarrationLifecycleEvent;
       for (const listener of this.narrationLifecycleListeners) {
         listener(event);
       }
