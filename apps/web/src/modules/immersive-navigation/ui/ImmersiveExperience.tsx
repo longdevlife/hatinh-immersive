@@ -25,9 +25,12 @@ import {
   type MinimapEnginePort,
 } from '../../minimap';
 import { ImmersiveControlsGroup } from './ImmersiveControls';
+import { ImmersiveMediaDock } from './ImmersiveMediaDock';
 import { ReferenceParityControls } from './ReferenceParityControls';
 import {
+  buildImmersiveMediaDockVm,
   buildReferenceParityPresentationVm,
+  type ImmersiveMediaDockActions,
   type ReferenceParityPresentationActions,
 } from './reference-parity.presentation';
 import { useImmersiveDestinations, useImmersiveManifest } from '../../../shared/api/immersive';
@@ -491,6 +494,7 @@ export function ImmersiveExperience({
   const destinationSlug = routeDestinationSlug ?? 'son-trang-co-dam';
   const navigation = useImmersiveNavigation();
   const [locale, setLocale] = useState<ImmersiveLocale>('vi');
+  const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [isCameraTransitioning, setIsCameraTransitioning] = useState(false);
   const [destinationSearchQuery, setDestinationSearchQuery] = useState('');
   const manifestQuery = useImmersiveManifest(destinationSlug, locale, !manifestOverride);
@@ -929,9 +933,18 @@ export function ImmersiveExperience({
     audioState,
     autoTourController,
     autoTourState,
+    startAutoTour,
+    pauseAutoTour,
+    resumeAutoTour,
+    stopAutoTour,
     jumpToScene,
+    nextScene,
+    previousScene,
+    skipStory,
     onViewportInteraction,
     playNarration,
+    pauseNarration,
+    seekNarration,
     toggleNarration,
     setMasterMuted,
     enableAudio,
@@ -1233,6 +1246,87 @@ export function ImmersiveExperience({
           hotspots: view.hotspots,
         })
       : undefined;
+  const committedPanoramaNode =
+    panoramaRenderableNodes.find((node) => node.id === navigation.committedSceneId) ?? null;
+  const mediaDockVm =
+    referenceParityPresentation &&
+    !referenceParityPresentation.mediaUnavailable &&
+    committedPanoramaNode
+      ? buildImmersiveMediaDockVm({
+          mode: autoTourState.isActive ? 'auto-tour' : 'free-explore',
+          scene: committedPanoramaNode,
+          tourEligibleNodes: panoramaRenderableNodes,
+          currentSceneId: navigation.committedSceneId,
+          destinationAmbientTrackId:
+            audioTracks.find((track) => track.type === 'ambient')?.id ?? null,
+          locale,
+          audioTracks,
+          audioState,
+          autoTour: {
+            isActive: autoTourState.isActive,
+            isPaused: autoTourState.isPaused,
+            phase: autoTourState.phase,
+            currentSceneId: autoTourState.currentSceneId,
+            capabilities: {
+              canStart:
+                !autoTourState.isActive &&
+                Boolean(navigation.committedSceneId) &&
+                panoramaRenderableNodes.length > 1,
+              canPause: autoTourState.isActive && !autoTourState.isPaused,
+              canResume: autoTourState.isActive && autoTourState.isPaused,
+              canSkipStory: autoTourController.canSkipStory(),
+              canPrevious: autoTourController.canPrevious(),
+              canNext: autoTourController.canNext(),
+              canExit: autoTourState.isActive,
+            },
+          },
+          captionsEnabled,
+        })
+      : undefined;
+  const mediaDockActions = useMemo<ImmersiveMediaDockActions>(
+    () => ({
+      onEnableSound: onEnableAudio,
+      onContinueMuted: () => setMasterMuted(true),
+      onPlayNarration: () => {
+        void playNarration();
+      },
+      onPauseNarration: pauseNarration,
+      onSeekNarration: seekNarration,
+      onToggleCaptions: () => setCaptionsEnabled((enabled) => !enabled),
+      onOpenTranscript: () => undefined,
+      onCloseTranscript: () => undefined,
+      onStartAutoTour: () => {
+        startAutoTour();
+      },
+      onPauseAutoTour: pauseAutoTour,
+      onResumeAutoTour: resumeAutoTour,
+      onSkipStory: () => {
+        skipStory();
+      },
+      onPreviousScene: () => {
+        previousScene();
+      },
+      onNextScene: () => {
+        nextScene();
+      },
+      onExitAutoTour: stopAutoTour,
+      onListenInLocale: setLocale,
+    }),
+    [
+      nextScene,
+      onEnableAudio,
+      pauseAutoTour,
+      pauseNarration,
+      playNarration,
+      previousScene,
+      resumeAutoTour,
+      seekNarration,
+      setMasterMuted,
+      skipStory,
+      startAutoTour,
+      stopAutoTour,
+    ],
+  );
   const rendererContent = (
     <RendererHost
       activeRenderer={navigation.activeRenderer}
@@ -1345,11 +1439,16 @@ export function ImmersiveExperience({
       />
       {navigation.mode === 'panorama' ? (
         referenceParityPresentation ? (
-          <ReferenceParityControls
-            vm={referenceParityPresentation}
-            actions={referenceParityActions}
-            minimapOpen={navigation.minimapOpen}
-          />
+          <>
+            <ReferenceParityControls
+              vm={referenceParityPresentation}
+              actions={referenceParityActions}
+              minimapOpen={navigation.minimapOpen}
+            />
+            {mediaDockVm ? (
+              <ImmersiveMediaDock vm={mediaDockVm} actions={mediaDockActions} />
+            ) : null}
+          </>
         ) : (
           <ImmersiveControlsGroup
             currentSceneId={navigation.committedSceneId}
