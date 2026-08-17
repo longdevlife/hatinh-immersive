@@ -282,7 +282,7 @@ export function useImmersiveAudioTour(
 
   const playNarration = useCallback(
     async (track?: ImmersiveAudioTrack | null) => {
-      if (runtime.coordinator.hasAutoTourNarrationOwnership()) {
+      if (runtime.autoTourController.getState().isActive) {
         return false;
       }
 

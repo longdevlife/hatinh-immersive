@@ -317,6 +317,36 @@ describe('AutoTourController', () => {
     expect(onNavigate).toHaveBeenCalledWith('culture');
   });
 
+  it.each([
+    ['settling', (_controller: AutoTourController, _scheduler: FakeScheduler) => {}],
+    [
+      'fallback',
+      (controller: AutoTourController, scheduler: FakeScheduler) => {
+        scheduler.flush();
+        controller.onNarrationUnavailable('gate', 1_250);
+      },
+    ],
+    [
+      'holding',
+      (controller: AutoTourController, scheduler: FakeScheduler) => {
+        scheduler.flush();
+        controller.onNarrationEnded('gate');
+      },
+    ],
+  ])('treats Skip as a no-op in the %s phase', (_phase, arrangePhase) => {
+    const { controller, scheduler } = createController({ settleDelayMs: 0 });
+
+    controller.start('gate');
+    arrangePhase(controller, scheduler);
+
+    const stateBefore = controller.getState();
+    const callbackCountBefore = scheduler.callbacks.size;
+    expect(controller.canSkipStory()).toBe(false);
+    expect(controller.skipStory()).toBe(false);
+    expect(controller.getState()).toEqual(stateBefore);
+    expect(scheduler.callbacks.size).toBe(callbackCountBefore);
+  });
+
   it('cannot start a tour with no next scene', () => {
     const controller = new AutoTourController({
       scheduler: new FakeScheduler(),

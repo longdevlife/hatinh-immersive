@@ -205,18 +205,28 @@ export class AutoTourController {
 
   canNext(): boolean {
     const currentSceneId = this.state.currentSceneId;
-    return Boolean(this.state.isActive && currentSceneId && this.getNextSceneId(currentSceneId));
+    return Boolean(
+      this.state.isActive &&
+      this.state.phase !== 'transitioning' &&
+      currentSceneId &&
+      this.getNextSceneId(currentSceneId),
+    );
   }
 
   canPrevious(): boolean {
     const currentSceneId = this.state.currentSceneId;
     return Boolean(
-      this.state.isActive && currentSceneId && (this.getPreviousSceneId?.(currentSceneId) ?? null),
+      this.state.isActive &&
+      this.state.phase !== 'transitioning' &&
+      currentSceneId &&
+      (this.getPreviousSceneId?.(currentSceneId) ?? null),
     );
   }
 
   canSkipStory(): boolean {
-    return this.isCurrentRunningScene(this.state.currentSceneId);
+    return Boolean(
+      this.isCurrentRunningScene(this.state.currentSceneId) && this.state.phase === 'narrating',
+    );
   }
 
   onSceneCommitted(sceneId: string): void {

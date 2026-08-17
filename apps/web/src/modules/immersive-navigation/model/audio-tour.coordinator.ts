@@ -95,10 +95,6 @@ export class AudioTourCoordinator {
     return this.activeScene ? { ...this.activeScene.context } : null;
   }
 
-  hasAutoTourNarrationOwnership(): boolean {
-    return this.activeNarration !== null && this.autoTourController.getState().isActive;
-  }
-
   async commitScene(request: AudioTourSceneRequest): Promise<ImmersivePlaybackContext | null> {
     const previousScene = this.activeScene;
     const shouldRestartAutoTourLifecycle = Boolean(
