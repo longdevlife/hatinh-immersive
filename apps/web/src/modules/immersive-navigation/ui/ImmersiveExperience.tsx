@@ -1289,8 +1289,13 @@ export function ImmersiveExperience({
             }
           } else if (status === 'error') {
             const hadCommittedScene = state.committedSceneId !== null;
+            const failedSceneId = requestedSceneId;
+            const committedSceneId = state.committedSceneId;
             state.rollbackSceneTransition(transitionId);
             if (hadCommittedScene) {
+              if (failedSceneId && committedSceneId) {
+                autoTourController.onSceneTransitionFailed(failedSceneId, committedSceneId);
+              }
               writeDeepLink(
                 navigate,
                 destinationSlug,
@@ -1300,6 +1305,8 @@ export function ImmersiveExperience({
                 expectedDeepLinkRef,
               );
             }
+          } else {
+            autoTourController.stop();
           }
         }
         if (

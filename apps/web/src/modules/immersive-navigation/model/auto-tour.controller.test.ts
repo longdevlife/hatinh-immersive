@@ -195,6 +195,29 @@ describe('AutoTourController', () => {
     expect(controller.getState().isActive).toBe(true);
   });
 
+  it('recovers the committed scene when a renderer transition fails', () => {
+    const { controller, scheduler, onNarrationRequested } = createController({
+      settleDelayMs: 0,
+    });
+
+    controller.start('gate');
+    controller.next();
+
+    expect(controller.getState()).toMatchObject({
+      phase: 'transitioning',
+      currentSceneId: 'culture',
+    });
+    expect(controller.onSceneTransitionFailed('culture', 'gate')).toBe(true);
+    expect(controller.getState()).toMatchObject({
+      phase: 'settling',
+      currentSceneId: 'gate',
+      isActive: true,
+    });
+
+    scheduler.flush();
+    expect(onNarrationRequested).toHaveBeenCalledWith('gate');
+  });
+
   it('does not stop because the panorama viewport was manually rotated', () => {
     const { controller } = createController();
 

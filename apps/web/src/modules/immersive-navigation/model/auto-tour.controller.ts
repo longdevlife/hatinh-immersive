@@ -307,6 +307,21 @@ export class AutoTourController {
     return true;
   }
 
+  onSceneTransitionFailed(failedSceneId: string, committedSceneId: string | null): boolean {
+    if (
+      !this.state.isActive ||
+      this.state.isPaused ||
+      this.state.phase !== 'transitioning' ||
+      this.state.currentSceneId !== failedSceneId ||
+      !committedSceneId
+    ) {
+      return false;
+    }
+
+    this.beginSceneLifecycle(committedSceneId);
+    return true;
+  }
+
   destroy(): void {
     this.stop();
   }
