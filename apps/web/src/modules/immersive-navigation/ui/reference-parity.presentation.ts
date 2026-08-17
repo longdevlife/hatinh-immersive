@@ -11,6 +11,7 @@ import type { ImmersiveAudioState } from '../../immersive-audio';
 import { resolveSceneAudio } from '../../immersive-audio';
 import { getPanoramaTourSceneRole, isPanoramaSceneUsable } from '../../panorama-tour';
 import type { ImmersiveShareResult } from '../model/reference-parity.actions';
+import type { AutoTourPhase } from '../model/auto-tour.controller';
 
 export interface ReferenceParitySceneVm {
   id: string;
@@ -101,9 +102,27 @@ export interface ImmersiveMediaDockVm {
   autoTour: {
     isActive: boolean;
     isPaused: boolean;
+    phase: AutoTourPhase;
     currentIndex: number;
     total: number;
+    canStart: boolean;
+    canPause: boolean;
+    canResume: boolean;
+    canSkipStory: boolean;
+    canPrevious: boolean;
+    canNext: boolean;
+    canExit: boolean;
   };
+}
+
+export interface ImmersiveMediaDockAutoTourCapabilities {
+  canStart: boolean;
+  canPause: boolean;
+  canResume: boolean;
+  canSkipStory: boolean;
+  canPrevious: boolean;
+  canNext: boolean;
+  canExit: boolean;
 }
 
 export interface ImmersiveMediaDockActions {
@@ -128,7 +147,7 @@ export interface ImmersiveMediaDockActions {
 export interface ImmersiveMediaDockVmInput {
   mode: ImmersiveMediaDockMode;
   scene: PanoramaNode | null;
-  nodes: readonly PanoramaNode[];
+  tourEligibleNodes: readonly PanoramaNode[];
   currentSceneId: string | null;
   destinationAmbientTrackId: string | null;
   locale: ImmersiveLocale;
@@ -138,7 +157,9 @@ export interface ImmersiveMediaDockVmInput {
   autoTour: {
     isActive: boolean;
     isPaused: boolean;
+    phase: AutoTourPhase;
     currentSceneId: string | null;
+    capabilities: ImmersiveMediaDockAutoTourCapabilities;
   };
   captionsEnabled: boolean;
   soundGateRequired?: boolean;
@@ -147,7 +168,7 @@ export interface ImmersiveMediaDockVmInput {
 export function buildImmersiveMediaDockVm({
   mode,
   scene,
-  nodes,
+  tourEligibleNodes,
   currentSceneId,
   destinationAmbientTrackId,
   locale,
@@ -184,7 +205,7 @@ export function buildImmersiveMediaDockVm({
           : 'idle';
   const autoTourSceneId = autoTour.isActive ? autoTour.currentSceneId : null;
   const currentIndex = autoTourSceneId
-    ? Math.max(0, nodes.findIndex((node) => node.id === autoTourSceneId) + 1)
+    ? Math.max(0, tourEligibleNodes.findIndex((node) => node.id === autoTourSceneId) + 1)
     : 0;
 
   return {
@@ -213,8 +234,10 @@ export function buildImmersiveMediaDockVm({
     autoTour: {
       isActive: autoTour.isActive,
       isPaused: autoTour.isPaused,
+      phase: autoTour.phase,
       currentIndex,
-      total: nodes.length,
+      total: tourEligibleNodes.length,
+      ...autoTour.capabilities,
     },
   };
 }

@@ -79,6 +79,38 @@ const mediaDockActions: ImmersiveMediaDockActions = {
   onListenInLocale: () => undefined,
 };
 
+const freeExploreAutoTour = {
+  isActive: false,
+  isPaused: false,
+  phase: 'idle' as const,
+  currentSceneId: null,
+  capabilities: {
+    canStart: true,
+    canPause: false,
+    canResume: false,
+    canSkipStory: false,
+    canPrevious: false,
+    canNext: false,
+    canExit: false,
+  },
+};
+
+const activeAutoTour = {
+  isActive: true,
+  isPaused: false,
+  phase: 'narrating' as const,
+  currentSceneId: 'major',
+  capabilities: {
+    canStart: false,
+    canPause: true,
+    canResume: false,
+    canSkipStory: true,
+    canPrevious: true,
+    canNext: true,
+    canExit: true,
+  },
+};
+
 describe('reference parity presentation contract', () => {
   it('builds a compact scene rail with current, visited, role, and thumbnail state', () => {
     const vm = buildReferenceParityPresentationVm({
@@ -182,13 +214,13 @@ describe('reference parity presentation contract', () => {
         narrationTrackId: narrationTrack.id,
         transcripts: { vi: transcript },
       },
-      nodes: [node('major'), node('connector')],
+      tourEligibleNodes: [node('major'), node('connector')],
       currentSceneId: 'major',
       destinationAmbientTrackId: null,
       locale: 'vi',
       audioTracks: [narrationTrack],
       audioState,
-      autoTour: { isActive: false, isPaused: false, currentSceneId: null },
+      autoTour: freeExploreAutoTour,
       captionsEnabled: false,
       soundGateRequired: false,
     });
@@ -208,8 +240,16 @@ describe('reference parity presentation contract', () => {
     expect(vm.autoTour).toEqual({
       isActive: false,
       isPaused: false,
+      phase: 'idle',
       currentIndex: 0,
       total: 2,
+      canStart: true,
+      canPause: false,
+      canResume: false,
+      canSkipStory: false,
+      canPrevious: false,
+      canNext: false,
+      canExit: false,
     });
     expect(mediaDockActions.onPlayNarration).toBeTypeOf('function');
   });
@@ -230,14 +270,14 @@ describe('reference parity presentation contract', () => {
         narrationTrackId: narrationTrack.id,
         transcripts: { vi: transcript },
       },
-      nodes: [node('major'), node('connector')],
+      tourEligibleNodes: [node('major'), node('connector')],
       currentSceneId: 'major',
       destinationAmbientTrackId: null,
       locale: 'vi',
       audioTracks: [narrationTrack],
       audioState: playingState,
       narrationLoading: false,
-      autoTour: { isActive: true, isPaused: false, currentSceneId: 'major' },
+      autoTour: activeAutoTour,
       captionsEnabled: true,
       soundGateRequired: false,
     });
@@ -252,8 +292,16 @@ describe('reference parity presentation contract', () => {
     expect(vm.autoTour).toEqual({
       isActive: true,
       isPaused: false,
+      phase: 'narrating',
       currentIndex: 1,
       total: 2,
+      canStart: false,
+      canPause: true,
+      canResume: false,
+      canSkipStory: true,
+      canPrevious: true,
+      canNext: true,
+      canExit: true,
     });
 
     const pausedVm = buildImmersiveMediaDockVm({
@@ -263,13 +311,22 @@ describe('reference parity presentation contract', () => {
         narrationTrackId: narrationTrack.id,
         transcripts: { vi: transcript },
       },
-      nodes: [node('major'), node('connector')],
+      tourEligibleNodes: [node('major'), node('connector')],
       currentSceneId: 'major',
       destinationAmbientTrackId: null,
       locale: 'vi',
       audioTracks: [narrationTrack],
       audioState: { ...playingState, narrationPlaying: false },
-      autoTour: { isActive: true, isPaused: true, currentSceneId: 'major' },
+      autoTour: {
+        ...activeAutoTour,
+        isPaused: true,
+        phase: 'paused' as const,
+        capabilities: {
+          ...activeAutoTour.capabilities,
+          canPause: false,
+          canResume: true,
+        },
+      },
       captionsEnabled: true,
       soundGateRequired: false,
     });
@@ -291,13 +348,13 @@ describe('reference parity presentation contract', () => {
         narrationTrackIds: { vi: narrationTrack.id },
         transcripts: { en: englishTranscript },
       },
-      nodes: [node('major')],
+      tourEligibleNodes: [node('major')],
       currentSceneId: 'major',
       destinationAmbientTrackId: null,
       locale: 'en',
       audioTracks: [narrationTrack],
       audioState,
-      autoTour: { isActive: false, isPaused: false, currentSceneId: null },
+      autoTour: freeExploreAutoTour,
       captionsEnabled: false,
       soundGateRequired: false,
     });
@@ -315,13 +372,13 @@ describe('reference parity presentation contract', () => {
     const vm = buildImmersiveMediaDockVm({
       mode: 'free-explore',
       scene: { ...node('major'), transcripts: { vi: transcript } },
-      nodes: [node('major')],
+      tourEligibleNodes: [node('major')],
       currentSceneId: 'major',
       destinationAmbientTrackId: null,
       locale: 'vi',
       audioTracks: [],
       audioState: { ...audioState, autoplayBlocked: true },
-      autoTour: { isActive: false, isPaused: false, currentSceneId: null },
+      autoTour: freeExploreAutoTour,
       captionsEnabled: false,
       soundGateRequired: true,
     });

@@ -160,11 +160,12 @@ export class AudioTourCoordinator {
     }
 
     try {
-      const didPlay = await this.audioController.playNarration(narrationTrack);
+      const playPromise = this.audioController.playNarration(narrationTrack);
       const ownershipId = this.audioController.getNarrationOwnershipId();
       if (ownershipId !== null) {
         this.activeNarration = { context, trackId: narrationTrack.id, ownershipId };
       }
+      const didPlay = await playPromise;
       if (!this.isCurrentContext(context)) {
         return false;
       }
