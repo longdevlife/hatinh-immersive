@@ -74,6 +74,45 @@ const manifest = {
   hotspots: [],
 };
 
+const localizedManifest = (locale: 'vi' | 'en') => ({
+  ...manifest,
+  destination: {
+    ...manifest.destination,
+    name: locale === 'en' ? 'Son Trang Heritage' : 'Sơn Trang Cổ Đạm',
+    summary: locale === 'en' ? 'A heritage journey in Ha Tinh.' : 'Hành trình di sản ở Hà Tĩnh.',
+  },
+  nodes: manifest.nodes.map((node, index) => ({
+    ...node,
+    name:
+      locale === 'en'
+        ? index === 0
+          ? 'Entrance'
+          : 'Central courtyard'
+        : index === 0
+          ? 'Cổng vào'
+          : 'Sân trung tâm',
+  })),
+});
+
+const cultureDeepLinkManifest = {
+  ...manifest,
+  defaultSceneId: 'son-trang-culture',
+  destination: {
+    ...manifest.destination,
+    defaultSceneId: 'son-trang-culture',
+  },
+  nodes: [
+    {
+      ...manifest.nodes[0],
+      id: 'son-trang-culture',
+      name: 'Không gian Văn hóa',
+      panoramaManifestUrl: '/demo/360/son-trang-tour/son-trang-culture/manifest.json',
+      panoramaPreviewUrl: '/demo/360/son-trang-tour/son-trang-culture/preview.webp',
+    },
+  ],
+  links: [],
+};
+
 test('connects Sơn Trang detail to linked panorama scene and returns to the destination', async ({
   page,
 }) => {
@@ -124,7 +163,13 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
   );
   await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
 
-  const sceneBrowser = page.getByRole('navigation', { name: 'Danh sách cảnh quan' });
+  const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+  await expect(mediaDock).toBeVisible();
+  await expect(mediaDock.locator('.immersive-media-dock__mobile-toggle')).toBeHidden();
+  await expect(mediaDock.getByRole('button', { name: 'Bắt đầu tự động tham quan' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tự động tham quan', exact: true })).toHaveCount(0);
+
+  const sceneBrowser = page.getByRole('navigation', { name: /Hành trình 360|Danh sách cảnh quan/ });
   await expect(sceneBrowser.getByRole('button', { name: 'Cổng vào' })).toHaveAttribute(
     'aria-current',
     'step',
@@ -133,8 +178,7 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
   await expect(page.getByRole('heading', { name: 'Sân trung tâm' })).toBeVisible();
   await expect(page).toHaveURL(/scene=scene-02/);
 
-  const returnLabel = `Quay lại ${manifest.destination.name}`;
-  await page.getByRole('button', { name: returnLabel }).click();
+  await page.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }).click();
 
   await expect(page).toHaveURL(
     '/explore/son-trang-co-dam?returnTo=%2Fexplore%3Fdestination%3Dson-trang-co-dam%26view%3Dmap',
@@ -166,6 +210,77 @@ test('loads the public selected-3D journey through the manifest REST path', asyn
 
   await expect(page.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
+});
+
+test('switches locale in the unified API panorama presentation', async ({ page }) => {
+  const manifestRequests: string[] = [];
+
+  await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const locale = requestUrl.searchParams.get('locale') === 'en' ? 'en' : 'vi';
+    manifestRequests.push(requestUrl.toString());
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(localizedManifest(locale)),
+      status: 200,
+    });
+  });
+
+  await page.goto(
+    '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-01&scene=scene-01&h=0&p=0&fov=90',
+  );
+
+  await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
+  const localeButton = page.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' });
+  await expect(localeButton).toHaveText('VI');
+
+  const englishManifestRequest = page.waitForRequest(
+    (request) =>
+      request.url().includes('/immersive-manifest') &&
+      new URL(request.url()).searchParams.get('locale') === 'en',
+  );
+  await localeButton.click();
+  await englishManifestRequest;
+
+  await expect(page.getByRole('heading', { name: 'Entrance' })).toBeVisible();
+  const vietnameseLocaleButton = page.getByRole('button', {
+    name: 'Đổi ngôn ngữ sang Tiếng Việt',
+  });
+  await expect(vietnameseLocaleButton).toHaveText('EN');
+
+  await vietnameseLocaleButton.click();
+
+  await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
+  expect(manifestRequests.some((url) => new URL(url).searchParams.get('locale') === 'en')).toBe(
+    true,
+  );
+  expect(manifestRequests.some((url) => new URL(url).searchParams.get('locale') === 'vi')).toBe(
+    true,
+  );
+});
+
+test('keeps a valid Sơn Trang culture deep link aligned across URL, renderer, and rail', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(cultureDeepLinkManifest),
+      status: 200,
+    });
+  });
+
+  await page.goto(
+    '/explore/son-trang-co-dam/immersive?mode=panorama&location=son-trang-co-dam&scene=son-trang-culture&h=228.165&p=-39.233&fov=88.801',
+  );
+
+  await expect(page).toHaveURL(/scene=son-trang-culture/);
+  await expect(page.getByRole('heading', { name: 'Không gian Văn hóa' })).toBeVisible();
+  const rail = page.getByRole('navigation', { name: /Hành trình 360/i });
+  await expect(rail.getByRole('button', { name: 'Không gian Văn hóa' })).toHaveAttribute(
+    'aria-current',
+    'step',
+  );
 });
 
 test('keeps selected 3D scoped to its destination without a generic 360 handoff', async ({

@@ -88,6 +88,7 @@ export interface PhotoSphereViewerRuntime {
 export interface PhotoSphereViewerAdapterOptions {
   loadPanorama?: (node: PanoramaNode) => Promise<unknown>;
   loadRuntime?: () => Promise<PhotoSphereViewerRuntime>;
+  validatePanorama?: (node: PanoramaNode, manifest: PanoramaManifest) => void;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -172,7 +173,10 @@ function toHotspotMarker(hotspot: HotspotVm): PhotoSphereMarkerConfig {
   };
 }
 
-async function loadPanoramaManifest(node: PanoramaNode): Promise<unknown> {
+async function loadPanoramaManifest(
+  node: PanoramaNode,
+  validatePanorama?: PhotoSphereViewerAdapterOptions['validatePanorama'],
+): Promise<unknown> {
   if (typeof fetch !== 'function') {
     throw new Error('PANORAMA_FETCH_UNAVAILABLE');
   }
@@ -183,7 +187,13 @@ async function loadPanoramaManifest(node: PanoramaNode): Promise<unknown> {
     throw new Error(`PANORAMA_MANIFEST_FETCH_FAILED_${response.status}`);
   }
 
-  return hydratePanoramaManifest(await response.json(), response.url || panoramaUrl);
+  return hydratePanoramaManifest(
+    await response.json(),
+    response.url || panoramaUrl,
+    node,
+    validatePanorama,
+    true,
+  );
 }
 
 function requirePanoramaUrl(node: PanoramaNode): string {
@@ -194,12 +204,25 @@ function requirePanoramaUrl(node: PanoramaNode): string {
   return node.panoramaUrl;
 }
 
-function hydratePanoramaManifest(value: unknown, manifestUrl: string): unknown {
+function hydratePanoramaManifest(
+  value: unknown,
+  manifestUrl: string,
+  node?: PanoramaNode,
+  validatePanorama?: PhotoSphereViewerAdapterOptions['validatePanorama'],
+  requireManifest = false,
+): unknown {
   let manifest: PanoramaManifest;
   try {
     manifest = parsePanoramaManifest(value);
-  } catch {
+  } catch (error) {
+    if (requireManifest) {
+      throw error;
+    }
     return value;
+  }
+
+  if (node) {
+    validatePanorama?.(node, manifest);
   }
 
   return toPhotoSphereViewerPanorama(manifest, manifestUrl);
@@ -495,8 +518,14 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
       return cachedPanorama;
     }
 
-    const loadedPanorama = await (this.options.loadPanorama ?? loadPanoramaManifest)(node);
-    const panorama = hydratePanoramaManifest(loadedPanorama, requirePanoramaUrl(node));
+    const panorama = this.options.loadPanorama
+      ? hydratePanoramaManifest(
+          await this.options.loadPanorama(node),
+          requirePanoramaUrl(node),
+          node,
+          this.options.validatePanorama,
+        )
+      : await loadPanoramaManifest(node, this.options.validatePanorama);
     this.panoramaCache.set(node.id, panorama);
     return panorama;
   }

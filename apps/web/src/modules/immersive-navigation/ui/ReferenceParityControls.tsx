@@ -86,7 +86,7 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
           type="button"
           className="panorama-control panorama-tour-back-btn"
           onClick={actions.onBack}
-          aria-label="Quay lại thế giới 3D"
+          aria-label={`Quay lại ${vm.destinationName}`}
           disabled={vm.isTransitioning}
         >
           <svg
@@ -104,7 +104,7 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
           >
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
-          <span className="panorama-tour-back-label">3D</span>
+          <span className="panorama-tour-back-label">Quay lại</span>
         </button>
 
         {currentScene ? (
@@ -140,6 +140,17 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
             <line x1="8" y1="2" x2="8" y2="18" />
             <line x1="16" y1="6" x2="16" y2="22" />
           </svg>
+        </button>
+
+        {/* Locale is a semantic panorama capability, not Explore-only chrome. */}
+        <button
+          type="button"
+          className="panorama-control panorama-locale-control"
+          onClick={actions.onToggleLocale}
+          aria-label={`Đổi ngôn ngữ sang ${vm.locale === 'vi' ? 'Tiếng Anh' : 'Tiếng Việt'}`}
+          title={`Đổi ngôn ngữ sang ${vm.locale === 'vi' ? 'Tiếng Anh' : 'Tiếng Việt'}`}
+        >
+          {vm.locale.toUpperCase()}
         </button>
 
         {/* Share Control */}

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -91,6 +91,18 @@ function createFactories(panorama = new FakePanoramaEngine(), map3d = new FakeMa
   return { factories, map3d, minimap, panorama };
 }
 
+function getSceneRailButton(index: number) {
+  const button = within(screen.getByRole('navigation', { name: /^Hành trình 360/ })).getAllByRole(
+    'button',
+  )[index];
+
+  if (!button) {
+    throw new Error(`Scene rail button ${index} was not rendered`);
+  }
+
+  return button;
+}
+
 class DeferredPanoramaEngine extends FakePanoramaEngine {
   readonly loadRequests = new Map<
     string,
@@ -170,7 +182,7 @@ describe('ImmersiveExperience', () => {
       '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-son-trang-co-dam&scene=scene-01&h=0&p=0&fov=90',
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    fireEvent.click(getSceneRailButton(1));
 
     await waitFor(() => {
       expect(panorama.calls.filter((call) => call.type === 'loadNode')).toHaveLength(2);
@@ -223,6 +235,12 @@ describe('ImmersiveExperience', () => {
     });
     expect(screen.getByText('Hình ảnh độ phân giải cao đang được chuẩn bị.')).toBeVisible();
     expect(screen.getAllByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toHaveLength(1);
+    expect(
+      screen.queryByRole('region', { name: 'Media dock trải nghiệm' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Đang tải không gian 360°')).not.toBeInTheDocument();
+    expect(screen.queryByText('Không thể tải ảnh toàn cảnh')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bản đồ hành trình')).not.toBeInTheDocument();
     expect(screen.queryByText('Trải nghiệm 360° chưa khả dụng')).not.toBeInTheDocument();
     expect(
       screen.queryByText('Đang cập nhật hình ảnh 360° độ phân giải cao.'),
@@ -446,29 +464,21 @@ describe('ImmersiveExperience', () => {
     expect(screen.getByTestId('navigation-type')).toHaveTextContent('REPLACE');
   });
 
-  it('preserves the trusted Explore context when panorama search opens another destination', async () => {
+  it('preserves the trusted Explore context when unified panorama controls return to detail', async () => {
     const { factories } = createFactories();
     const returnTo = '/explore?q=Nguy%E1%BB%85n&destination=son-trang-co-dam&view=map';
 
     renderExperience(
       `/explore/son-trang-co-dam/immersive?mode=panorama&scene=scene-01&returnTo=${encodeURIComponent(returnTo)}`,
       factories,
-      getDemoManifest('son-trang-co-dam'),
+      getDemoManifest('son-trang-co-dam', 'synthetic'),
       DEMO_DESTINATIONS.map(({ preview }) => preview),
     );
 
-    await screen.findByRole('button', { name: 'Mở tìm kiếm' });
-    fireEvent.click(screen.getByRole('button', { name: 'Mở tìm kiếm' }));
-    fireEvent.change(screen.getByRole('searchbox', { name: 'Nhập tên điểm đến' }), {
-      target: { value: 'Nguyễn' },
-    });
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Khu lưu niệm Nguyễn Du/ })).toBeInTheDocument();
-    });
-    fireEvent.click(screen.getByRole('button', { name: /Khu lưu niệm Nguyễn Du/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }));
 
     expect(screen.getByTestId('location')).toHaveTextContent(
-      `/explore/khu-luu-niem-nguyen-du?returnTo=${encodeURIComponent(returnTo)}`,
+      `/explore/son-trang-co-dam?returnTo=${encodeURIComponent(returnTo)}`,
     );
   });
 
@@ -620,7 +630,7 @@ describe('ImmersiveExperience', () => {
       expect(panorama.calls.some((call) => call.type === 'loadNode')).toBe(true);
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    fireEvent.click(getSceneRailButton(1));
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Lối đi di sản 1' })).toBeInTheDocument();
@@ -651,21 +661,21 @@ describe('ImmersiveExperience', () => {
 
     const committedState = useImmersiveNavigation.getState();
     const committedLoadCount = panorama.calls.filter((call) => call.type === 'loadNode').length;
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 1' }));
+    fireEvent.click(getSceneRailButton(0));
 
     expect(useImmersiveNavigation.getState()).toBe(committedState);
     expect(panorama.calls.filter((call) => call.type === 'loadNode')).toHaveLength(
       committedLoadCount,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    fireEvent.click(getSceneRailButton(1));
     await waitFor(() => {
       expect(panorama.loadRequests.get('scene-02')).toBeDefined();
     });
     const pendingState = useImmersiveNavigation.getState();
     const pendingLoadCount = panorama.calls.filter((call) => call.type === 'loadNode').length;
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    fireEvent.click(getSceneRailButton(1));
 
     expect(useImmersiveNavigation.getState()).toBe(pendingState);
     expect(panorama.calls.filter((call) => call.type === 'loadNode')).toHaveLength(
@@ -699,7 +709,7 @@ describe('ImmersiveExperience', () => {
       expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    fireEvent.click(getSceneRailButton(1));
     await waitFor(() => {
       expect(panorama.loadRequests.get('scene-02')).toBeDefined();
     });
@@ -763,12 +773,14 @@ describe('ImmersiveExperience', () => {
       expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    fireEvent.click(getSceneRailButton(1));
     await waitFor(() => {
       expect(panorama.loadRequests.get('scene-02')).toBeDefined();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 3' }));
+    act(() => {
+      useImmersiveNavigation.getState().navigateToScene('scene-03');
+    });
     await waitFor(() => {
       expect(panorama.loadRequests.get('scene-03')).toBeDefined();
       expect(useImmersiveNavigation.getState()).toMatchObject({
@@ -816,7 +828,7 @@ describe('ImmersiveExperience', () => {
       expect(useImmersiveNavigation.getState().committedSceneId).toBe('scene-01');
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lối đi di sản 2' }));
+    fireEvent.click(getSceneRailButton(1));
 
     await waitFor(() => {
       expect(panorama.loadRequests.get('scene-02')).toBeDefined();

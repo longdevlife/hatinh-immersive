@@ -20,7 +20,7 @@ test('explores overview to 360, follows a scene, and restores it after refresh',
   await expect(page.getByRole('heading', { name: 'Lối dạo Thiên Cầm' })).toBeVisible();
 
   await page
-    .getByRole('navigation', { name: 'Danh sách cảnh quan' })
+    .getByRole('navigation', { name: /Hành trình 360|Danh sách cảnh quan/ })
     .getByRole('button')
     .nth(1)
     .click();

@@ -12,7 +12,7 @@ test('keeps one panorama viewport while following a linked scene', async ({ page
 
   await page.evaluate(() => performance.mark('scene-nav-start'));
   await page
-    .getByRole('navigation', { name: 'Danh sách cảnh quan' })
+    .getByRole('navigation', { name: /Hành trình 360|Danh sách cảnh quan/ })
     .getByRole('button')
     .nth(1)
     .click();

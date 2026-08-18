@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "check:bundle": "node ../../tooling/scripts/check-web-bundle.mjs",
-    "lint": "eslint src e2e playwright.config.ts playwright.explore-map.config.ts playwright.explore-map.hybrid.config.ts playwright.explore-map.worker.config.ts playwright.minimap.config.ts playwright.navigation.config.ts playwright.panorama-tour.config.ts playwright.panorama-tour.public.config.ts playwright.panorama-tour.real.config.ts playwright.production.config.ts playwright.reference-parity.config.ts playwright.reference-parity.real.config.ts playwright.selected-3d.config.ts vite.config.ts vitest.setup.ts",
+    "lint": "eslint src e2e playwright.config.ts playwright.explore-map.config.ts playwright.explore-map.hybrid.config.ts playwright.explore-map.worker.config.ts playwright.minimap.config.ts playwright.navigation.config.ts playwright.panorama-tour.config.ts playwright.panorama-tour.public.config.ts playwright.panorama-tour.real.config.ts playwright.production-panorama.real.config.ts playwright.production.config.ts playwright.reference-parity.config.ts playwright.reference-parity.real.config.ts playwright.selected-3d.config.ts vite.config.ts vitest.setup.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test --config=playwright.config.ts && playwright test --config=playwright.production.config.ts",
@@ -20,6 +20,7 @@
     "test:e2e:panorama-tour": "playwright test --config=playwright.panorama-tour.config.ts",
     "test:e2e:panorama-tour:public": "playwright test --config=playwright.panorama-tour.public.config.ts",
     "test:e2e:panorama-tour:real": "playwright test --config=playwright.panorama-tour.real.config.ts",
+    "test:e2e:production-panorama:real": "playwright test --config=playwright.production-panorama.real.config.ts",
     "test:e2e:reference-parity": "playwright test --config=playwright.reference-parity.config.ts",
     "test:e2e:reference-parity:real": "playwright test --config=playwright.reference-parity.real.config.ts"
   },

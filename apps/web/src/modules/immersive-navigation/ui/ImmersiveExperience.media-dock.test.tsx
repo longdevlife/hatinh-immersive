@@ -15,6 +15,53 @@ describe('ImmersiveExperience Media Dock integration', () => {
     vi.unstubAllGlobals();
   });
 
+  it('mounts the unified media dock for a non-demo panorama source', async () => {
+    const map3d = new FakeMap3DEngine();
+    const minimap = new FakeMinimapEngine();
+    const panorama = new FakePanoramaEngine();
+    const factories: ImmersiveExperienceFactories = {
+      createMap3DEngine: vi.fn(async () => map3d),
+      createMinimapEngine: vi.fn(async () => minimap),
+      createPanoramaEngine: vi.fn(async () => panorama),
+    };
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter
+          initialEntries={[
+            '/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-boardwalk',
+          ]}
+        >
+          <Routes>
+            <Route
+              path="/explore/:destinationSlug/immersive"
+              element={
+                <ImmersiveExperience
+                  factories={factories}
+                  manifest={getDemoManifest('bien-thien-cam', 'synthetic')}
+                  destinations={DEMO_DESTINATIONS.map(({ preview }) => preview)}
+                  panoramaTourSource="none"
+                  panoramaTourMediaMode="public"
+                  audioSourcePolicy="browser-file"
+                />
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('button', { name: 'Bắt đầu tự động tham quan' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Bật âm thanh' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tự động tham quan' })).not.toBeInTheDocument();
+  });
+
   it('mounts one unified media dock and does not render the legacy audio/Auto Tour controls', async () => {
     vi.stubGlobal('speechSynthesis', {});
     vi.stubGlobal('SpeechSynthesisUtterance', class SpeechSynthesisUtterance {});

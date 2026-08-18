@@ -24,6 +24,7 @@ export interface ImmersiveControlsProps {
   onSearchDestination?: ((query: string) => void) | undefined;
   onSelectDestination?: ((destination: DestinationPreviewVm) => void) | undefined;
   onLocaleChange?: ((locale: ImmersiveLocale) => void) | undefined;
+  destinationName?: string | undefined;
   tour?: PanoramaTourPresentationVm | undefined;
   tourActions?: PanoramaTourPresentationActions | undefined;
 }
@@ -403,9 +404,11 @@ export function ImmersiveControlsGroup({
   onSearchDestination,
   onSelectDestination,
   onLocaleChange,
+  destinationName,
   tour,
   tourActions,
 }: ImmersiveControlsProps) {
+  const tourDestinationName = destinationName ?? 'điểm đến';
   const visibleNodes = useMemo(() => {
     if (!currentSceneId || links === undefined) {
       return nodes;
@@ -437,9 +440,9 @@ export function ImmersiveControlsGroup({
               type="button"
               className="panorama-tour-unavailable__btn"
               onClick={() => tourActions?.onBack()}
-              aria-label="Quay lại Sơn Trang Cổ Đạm"
+              aria-label={`Quay lại ${tourDestinationName}`}
             >
-              Quay lại Sơn Trang Cổ Đạm
+              Quay lại {tourDestinationName}
             </button>
           </div>
         </div>
@@ -455,7 +458,7 @@ export function ImmersiveControlsGroup({
             type="button"
             className="panorama-control panorama-tour-back-btn"
             onClick={() => tourActions?.onBack()}
-            aria-label="Quay lại thế giới 3D"
+            aria-label={`Quay lại ${tourDestinationName}`}
             disabled={tour.isTransitioning}
           >
             <svg
@@ -470,11 +473,11 @@ export function ImmersiveControlsGroup({
             >
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            <span className="panorama-tour-back-label">3D</span>
+            <span className="panorama-tour-back-label">Quay lại</span>
           </button>
           {currentTourScene ? (
             <div className="panorama-tour-context" aria-live="polite">
-              <span className="panorama-tour-context__badge">Sơn Trang</span>
+              <span className="panorama-tour-context__badge">{tourDestinationName}</span>
               <span className="panorama-tour-context__title">{currentTourScene.label}</span>
             </div>
           ) : null}
