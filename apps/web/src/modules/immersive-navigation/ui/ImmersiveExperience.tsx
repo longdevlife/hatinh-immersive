@@ -1288,7 +1288,7 @@ export function ImmersiveExperience({
       ? selectedHotspot.type
       : null;
   const referenceParityPresentation =
-    navigation.mode === 'panorama' && panoramaTourSource === 'demo'
+    navigation.mode === 'panorama'
       ? buildReferenceParityPresentationVm({
           destination: manifest.destination,
           nodes: manifest.panoramaNodes,
