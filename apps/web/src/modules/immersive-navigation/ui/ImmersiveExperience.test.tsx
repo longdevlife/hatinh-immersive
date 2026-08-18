@@ -92,9 +92,15 @@ function createFactories(panorama = new FakePanoramaEngine(), map3d = new FakeMa
 }
 
 function getSceneRailButton(index: number) {
-  return within(screen.getByRole('navigation', { name: /^Hành trình 360/ })).getAllByRole('button')[
-    index
-  ];
+  const button = within(screen.getByRole('navigation', { name: /^Hành trình 360/ })).getAllByRole(
+    'button',
+  )[index];
+
+  if (!button) {
+    throw new Error(`Scene rail button ${index} was not rendered`);
+  }
+
+  return button;
 }
 
 class DeferredPanoramaEngine extends FakePanoramaEngine {
