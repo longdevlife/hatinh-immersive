@@ -375,6 +375,7 @@ function RendererHost({
         <LazyPanoramaViewport
           key={`panorama-${retryKey}`}
           engine={engine as PanoramaEnginePort}
+          fallback={null}
           hotspots={hotspots}
           initialView={initialView}
           node={panoramaNode}
@@ -1265,9 +1266,17 @@ export function ImmersiveExperience({
       }
     : undefined;
 
+  const deepLinkForPresentation = decodeImmersiveDeepLink(`${location.pathname}${location.search}`);
+  const failedSceneForPresentation =
+    navigation.mode === 'panorama' &&
+    navigation.panoramaStatus === 'error' &&
+    navigation.committedSceneId === null
+      ? resolveSceneId(manifest, deepLinkForPresentation?.sceneId ?? null)
+      : null;
+  const presentationSceneId = failedSceneForPresentation ?? navigation.committedSceneId;
   const currentPanoramaNode =
     panoramaRenderableNodes.find(
-      (node) => node.id === (navigation.requestedSceneId ?? navigation.committedSceneId),
+      (node) => node.id === (navigation.requestedSceneId ?? presentationSceneId),
     ) ?? null;
   const panoramaTargetView = navigation.requestedSceneId
     ? (navigation.requestedView ?? currentPanoramaNode?.initialView ?? navigation.committedView)
@@ -1277,13 +1286,6 @@ export function ImmersiveExperience({
     mapLocations.find((candidate) => candidate.id === navigation.selectedLocationId)
       ?.cameraPreset ??
     routeLocation?.cameraPreset;
-  const deepLinkForPresentation = decodeImmersiveDeepLink(`${location.pathname}${location.search}`);
-  const failedSceneForPresentation =
-    navigation.mode === 'panorama' &&
-    navigation.panoramaStatus === 'error' &&
-    navigation.committedSceneId === null
-      ? resolveSceneId(manifest, deepLinkForPresentation?.sceneId ?? null)
-      : null;
   const view = buildImmersiveView(
     manifest,
     destinationSlug,
@@ -1305,7 +1307,7 @@ export function ImmersiveExperience({
       ? buildReferenceParityPresentationVm({
           destination: manifest.destination,
           nodes: manifest.panoramaNodes,
-          currentSceneId: navigation.committedSceneId,
+          currentSceneId: presentationSceneId,
           visitedSceneIds: navigation.visitedSceneIds,
           status: navigation.panoramaStatus,
           isTransitioning: navigation.transition === 'navigating-scene',
@@ -1316,7 +1318,7 @@ export function ImmersiveExperience({
         })
       : undefined;
   const committedPanoramaNode =
-    panoramaRenderableNodes.find((node) => node.id === navigation.committedSceneId) ?? null;
+    panoramaRenderableNodes.find((node) => node.id === presentationSceneId) ?? null;
   const mediaDockVm =
     referenceParityPresentation &&
     !referenceParityPresentation.mediaUnavailable &&
@@ -1325,7 +1327,7 @@ export function ImmersiveExperience({
           mode: autoTourState.isActive ? 'auto-tour' : 'free-explore',
           scene: committedPanoramaNode,
           tourEligibleNodes: panoramaRenderableNodes,
-          currentSceneId: navigation.committedSceneId,
+          currentSceneId: committedPanoramaNode.id,
           destinationAmbientTrackId:
             audioTracks.find((track) => track.type === 'ambient')?.id ?? null,
           locale,
