@@ -5,11 +5,13 @@ import type { ImmersiveTranscriptContent } from '../../../shared/contracts';
 import { ImmersiveTranscriptPanel } from './ImmersiveTranscriptPanel';
 
 const content: ImmersiveTranscriptContent = {
+  id: 'transcript-thien-cam',
   locale: 'vi',
   title: 'Câu chuyện Thiên Cầm',
+  timingMode: 'timed',
   segments: [
     { id: 'one', startMs: 0, endMs: 1_000, text: 'Bờ biển mở ra trước mắt.' },
-    { id: 'two', startMs: 1_000, text: 'Hành trình tiếp tục theo lối dạo.' },
+    { id: 'two', startMs: 1_000, endMs: null, text: 'Hành trình tiếp tục theo lối dạo.' },
   ],
 };
 

@@ -33,12 +33,17 @@ function getActiveTranscriptSegment(
     return null;
   }
 
+  if (content.timingMode !== 'timed') {
+    return null;
+  }
+
   const currentTimeMs = Math.max(0, currentTimeSeconds * 1000);
   return (
     content.segments.find(
       (segment) =>
+        segment.startMs !== null &&
         currentTimeMs >= segment.startMs &&
-        (segment.endMs === undefined || currentTimeMs < segment.endMs),
+        (segment.endMs === null || currentTimeMs < segment.endMs),
     ) ?? null
   );
 }

@@ -122,9 +122,11 @@ describe('resolveSceneAudio', () => {
 
   it('returns a transcript even when the selected narration audio is missing', () => {
     const transcript = {
+      id: 'transcript-thien-cam',
       locale: 'vi' as const,
       title: 'Câu chuyện Thiên Cầm',
-      segments: [{ id: 'intro', startMs: 0, text: 'Một câu chuyện ngắn.' }],
+      timingMode: 'plain' as const,
+      segments: [{ id: 'intro', startMs: null, endMs: null, text: 'Một câu chuyện ngắn.' }],
     };
 
     const result = resolveSceneAudio({

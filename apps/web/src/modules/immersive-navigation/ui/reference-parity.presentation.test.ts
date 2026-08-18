@@ -55,8 +55,10 @@ const narrationTrack: ImmersiveAudioTrack = {
 };
 
 const transcript: ImmersiveTranscriptContent = {
+  id: 'transcript-major',
   locale: 'vi',
   title: 'Câu chuyện chính',
+  timingMode: 'timed',
   segments: [{ id: 'segment-1', startMs: 0, endMs: 1000, text: 'Một câu chuyện Hà Tĩnh.' }],
 };
 

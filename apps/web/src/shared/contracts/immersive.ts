@@ -56,6 +56,7 @@ export interface HotspotVm {
 export type ImmersiveAudioTrackType = 'ambient' | 'narration';
 
 export type ImmersiveAudioRights = 'customer-owned' | 'licensed' | 'demo-only';
+export type ImmersiveAudioReadiness = 'ready' | 'unavailable' | 'invalid';
 
 export interface ImmersiveAudioTrack {
   id: string;
@@ -67,20 +68,26 @@ export interface ImmersiveAudioTrack {
   durationMs?: number | null;
   voiceId?: string | null;
   version?: string | null;
+  publicationStatus?: 'draft' | 'published';
+  readiness?: ImmersiveAudioReadiness;
 }
 
 export interface ImmersiveTranscriptSegment {
   id: string;
-  startMs: number;
-  endMs?: number;
+  startMs: number | null;
+  endMs: number | null;
   text: string;
 }
 
 export interface ImmersiveTranscriptContent {
+  id: string;
   locale: ImmersiveLocale;
   title: string;
+  timingMode: 'plain' | 'timed';
   segments: readonly ImmersiveTranscriptSegment[];
 }
+
+export type ImmersiveCaptionCapability = 'none' | 'plain-transcript' | 'timed-captions';
 
 export interface ImmersiveViewVm {
   mode: ImmersiveMode;

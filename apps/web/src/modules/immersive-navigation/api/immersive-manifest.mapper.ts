@@ -5,6 +5,7 @@ import type {
   DestinationPreviewVm,
   HotspotVm,
   ImmersiveAudioTrack,
+  ImmersiveTranscriptContent,
   PanoramaNode,
   SceneLinkVm,
   SceneNodeVm,
@@ -19,8 +20,8 @@ export interface ImmersiveManifestVm {
   panoramaNodes: PanoramaNode[];
   links: SceneLinkVm[];
   hotspots: HotspotVm[];
-  audioTracks?: readonly ImmersiveAudioTrack[];
-  ambientTrackId?: string | null;
+  audioTracks: readonly ImmersiveAudioTrack[];
+  ambientTrackId: string | null;
 }
 
 export function mapImmersiveManifest(dto: GetImmersiveManifest200): ImmersiveManifestVm {
@@ -30,6 +31,9 @@ export function mapImmersiveManifest(dto: GetImmersiveManifest200): ImmersiveMan
     .sort((left, right) => left.sortOrder - right.sortOrder);
   const links = dto.links.flatMap(toSceneLinks);
   const nodes = orderedNodes.map(toSceneNode);
+  const audioTracks = dto.audioTracks.map(toAudioTrack);
+  const tracksById = new Map(audioTracks.map((track) => [track.id, track]));
+  const transcriptsById = new Map(dto.transcripts.map((transcript) => [transcript.id, transcript]));
   const panoramaNodeIds = new Set(
     orderedNodes
       .filter((node) => node.panoramaManifestUrl !== null && node.panoramaAssetStatus === 'ready')
@@ -46,7 +50,7 @@ export function mapImmersiveManifest(dto: GetImmersiveManifest200): ImmersiveMan
       return [];
     }
 
-    return [toPanoramaNode(node, panoramaLinks)];
+    return [toPanoramaNode(node, panoramaLinks, tracksById, transcriptsById)];
   });
 
   return {
@@ -57,6 +61,8 @@ export function mapImmersiveManifest(dto: GetImmersiveManifest200): ImmersiveMan
     panoramaNodes,
     links,
     hotspots: dto.hotspots.filter((hotspot) => hotspot.status === 'published').map(toHotspot),
+    audioTracks,
+    ambientTrackId: dto.ambientTrackId,
   };
 }
 
@@ -99,10 +105,15 @@ function toSceneNode(node: GetImmersiveManifest200['nodes'][number]): SceneNodeV
 function toPanoramaNode(
   node: GetImmersiveManifest200['nodes'][number],
   links: SceneLinkVm[],
+  tracksById: Map<string, ImmersiveAudioTrack>,
+  transcriptsById: Map<string, GetImmersiveManifest200['transcripts'][number]>,
 ): PanoramaNode {
   if (node.panoramaManifestUrl === null) {
     throw new Error(`PANORAMA_MANIFEST_URL_REQUIRED:${node.id}`);
   }
+
+  const narrationTrackIds = mapLocalizedIds(node.narrationTrackIds, tracksById, 'narration');
+  const transcripts = mapLocalizedTranscripts(node.transcriptIds, transcriptsById);
 
   return {
     id: node.id,
@@ -117,12 +128,72 @@ function toPanoramaNode(
       pitch: node.initialPitch,
       fov: node.initialFov,
     },
+    ...(node.ambientOverrideTrackId ? { ambientTrackId: node.ambientOverrideTrackId } : {}),
+    ...(Object.keys(narrationTrackIds).length > 0 ? { narrationTrackIds } : {}),
+    ...(Object.keys(transcripts).length > 0 ? { transcripts } : {}),
     links: getSceneLinks(links, node.id).map((link) => ({
       targetNodeId: link.targetSceneId,
       yaw: link.yaw,
       pitch: link.pitch,
     })),
   };
+}
+
+function toAudioTrack(track: GetImmersiveManifest200['audioTracks'][number]): ImmersiveAudioTrack {
+  return {
+    id: track.id,
+    type: track.type,
+    label: track.label,
+    src: track.src,
+    rights: track.rights,
+    locale: track.locale,
+    durationMs: track.durationMs,
+    voiceId: track.voiceId,
+    version: track.version,
+    publicationStatus: 'published',
+    readiness: track.readiness,
+  };
+}
+
+function mapLocalizedIds(
+  ids: GetImmersiveManifest200['nodes'][number]['narrationTrackIds'],
+  tracksById: Map<string, ImmersiveAudioTrack>,
+  expectedType: ImmersiveAudioTrack['type'],
+) {
+  const result: Partial<Record<'vi' | 'en', string>> = {};
+  for (const locale of ['vi', 'en'] as const) {
+    const id = ids[locale];
+    if (id && tracksById.get(id)?.type === expectedType) {
+      result[locale] = id;
+    }
+  }
+  return result;
+}
+
+function mapLocalizedTranscripts(
+  ids: GetImmersiveManifest200['nodes'][number]['transcriptIds'],
+  transcriptsById: Map<string, GetImmersiveManifest200['transcripts'][number]>,
+): Partial<Record<'vi' | 'en', ImmersiveTranscriptContent>> {
+  const result: Partial<Record<'vi' | 'en', ImmersiveTranscriptContent>> = {};
+  for (const locale of ['vi', 'en'] as const) {
+    const id = ids[locale];
+    const transcript = id ? transcriptsById.get(id) : undefined;
+    if (transcript) {
+      result[locale] = {
+        id: transcript.id,
+        locale: transcript.locale,
+        title: transcript.title,
+        timingMode: transcript.timingMode,
+        segments: transcript.segments.map((segment) => ({
+          id: segment.id,
+          startMs: segment.startMs,
+          endMs: segment.endMs,
+          text: segment.text,
+        })),
+      };
+    }
+  }
+  return result;
 }
 
 function resolveMediaQuality(

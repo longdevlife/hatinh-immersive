@@ -9,11 +9,13 @@ import type {
 import { ImmersiveMediaDock } from './ImmersiveMediaDock';
 
 const transcript: ImmersiveTranscriptContent = {
+  id: 'transcript-son-trang',
   locale: 'vi',
   title: 'Câu chuyện Sơn Trang',
+  timingMode: 'timed',
   segments: [
     { id: 'intro', startMs: 0, endMs: 4_000, text: 'Sơn Trang mở ra một không gian văn hóa.' },
-    { id: 'garden', startMs: 4_000, text: 'Lối đi tiếp tục qua khoảng xanh.' },
+    { id: 'garden', startMs: 4_000, endMs: null, text: 'Lối đi tiếp tục qua khoảng xanh.' },
   ],
 };
 
