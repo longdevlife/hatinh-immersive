@@ -100,8 +100,13 @@ One stable semantic identity for an ambient or narration track.
 | `label` | Editorial content label, not UI control copy |
 | `media_asset_id` | Nullable FK to `media_assets.id`; required for a playable track |
 | `rights` | `customer-owned`, `licensed` or `demo-only` |
+| `rights_holder` | Nullable only for explicit project-owner inheritance or demo-only content |
+| `rights_holder_inherited` | Boolean audit flag; true only for customer-owned project-owner inheritance |
+| `rights_reference` | Nullable internal approval, license or provenance reference |
 | `publication_status` | `draft` or `published` |
 | `duration_ms` | Nullable known duration; non-negative when present |
+| `voice_id` | Nullable narration voice/performer identity; always null for ambient |
+| `version` | Nullable content/audio revision; required for published ready production tracks |
 | timestamps | Audit fields |
 
 Database constraints enforce the kind/locale invariant:
@@ -110,12 +115,24 @@ Database constraints enforce the kind/locale invariant:
 - narration tracks have `locale IS NOT NULL`;
 - `duration_ms` is null or non-negative;
 - a non-null `media_asset_id` is unique to one semantic track;
+- ambient tracks have `voice_id IS NULL`;
+- `rights_holder_inherited` is true only when `rights = customer-owned`;
+- published, ready production tracks have a non-empty `version`;
 - a referenced media asset must be `media_kind = audio`.
 
-The last rule is enforced in the domain/repository validation and by a
-database constraint trigger on insert/update of the semantic row. The base
-`media_assets.media_kind` is immutable after an asset is referenced by a
-semantic track.
+Rights provenance is enforced as follows:
+
+- `licensed` requires non-empty `rights_holder` and `rights_reference`;
+- `customer-owned` requires either non-empty `rights_holder` or
+  `rights_holder_inherited = true`;
+- `demo-only` is never eligible for the public production manifest;
+- `rights_reference` is an internal audit value and is not a visitor-facing
+  URL requirement.
+
+The media-kind, kind/locale, provenance and publication/version rules are
+enforced by database constraint triggers in addition to domain/repository
+validation. The base `media_assets.media_kind` is immutable after an asset is
+referenced by a semantic track.
 
 `readiness` is intentionally not duplicated as a mutable semantic column. It
 is resolved by the API from the semantic track and the physical media asset:
@@ -191,7 +208,11 @@ Transcript metadata:
 id                 UUID primary key
 locale             vi | en
 title              editorial transcript title
+timing_mode        plain | timed
 rights             customer-owned | licensed | demo-only
+rights_holder      nullable with the same inheritance rules as audio tracks
+rights_reference   nullable internal approval/license/provenance reference
+rights_holder_inherited boolean customer-owned project-owner inheritance flag
 publication_status draft | published
 ```
 
@@ -200,7 +221,7 @@ publication_status draft | published
 ```text
 id             UUID primary key
 transcript_id  FK immersive_audio_transcripts.id ON DELETE CASCADE
-start_ms       non-negative integer
+start_ms       nullable non-negative integer
 end_ms         nullable integer greater than start_ms when present
 sort_order     non-negative integer
 text           non-empty text
@@ -208,8 +229,51 @@ text           non-empty text
 
 There is a unique `(transcript_id, sort_order)` constraint. Transcript content
 is therefore normalized and independently usable when narration is absent.
+Timing is explicit rather than inferred from nullable values:
 
-### 3.3 Delete behavior
+- `timing_mode = plain`: every segment has `start_ms IS NULL` and
+  `end_ms IS NULL`; `sort_order` is the only semantic ordering;
+- `timing_mode = timed`: every segment has a non-null `start_ms`; `end_ms` is
+  non-null and greater than `start_ms` except for an explicitly valid final
+  open-ended segment;
+- timed segments are monotonic and non-overlapping in `sort_order`;
+- a plain transcript is not advertised as caption-timestamp capable.
+
+Database constraint triggers validate the mode/segment combinations and the
+timed ordering. Domain validation duplicates these checks for friendly errors.
+
+### 3.3 Database-level semantic integrity
+
+Foreign keys and unique indexes protect ownership and cardinality. Cross-table
+semantic invariants are enforced by PostgreSQL `CONSTRAINT TRIGGER`s marked
+`DEFERRABLE INITIALLY DEFERRED`, so a transaction can create related rows in a
+safe order while the database remains authoritative at commit:
+
+- destination ambient assignment checks the target track exists, has
+  `kind = ambient` and `locale IS NULL`;
+- scene ambient override checks the target track exists, has
+  `kind = ambient` and `locale IS NULL`;
+- scene narration assignment checks the target track, when non-null, has
+  `kind = narration` and `track.locale = assignment.locale`;
+- scene narration transcript assignment checks the target transcript, when
+  non-null, has `transcript.locale = assignment.locale`;
+- every non-null audio `media_asset_id` checks the target
+  `media_assets.media_kind = audio`;
+- track rights/provenance, voice/ambient and publication/version constraints
+  are checked at commit;
+- transcript segment triggers enforce plain/timed mode and timed ordering.
+
+Where PostgreSQL composite foreign keys can express a relation without
+duplicating mutable kind/locale data, they may be used; the constraint trigger
+is the required fallback for the cross-table kind and locale checks. Domain and
+repository validation repeats the same rules for actionable error messages,
+but cannot weaken or replace the database constraints.
+
+Migration tests must attempt each invalid assignment against a real PostgreSQL
+test database and assert that the database rejects it, not only that a service
+method rejects it.
+
+### 3.4 Delete behavior
 
 - deleting a destination cascades its destination ambient assignment;
 - deleting a scene cascades its scene ambient and narration assignments;
@@ -222,15 +286,16 @@ is therefore normalized and independently usable when narration is absent.
 The system uses semantic deletion/unpublishing for customer content rather
 than deleting referenced production records.
 
-### 3.4 Migration and backfill
+### 3.5 Migration and backfill
 
 The migration is additive:
 
 1. add semantic enums and tables;
 2. add the media-kind constraint validation;
-3. deploy API read/write support;
-4. regenerate the client from the exported OpenAPI document;
-5. create assignments only for approved audio content.
+3. add rights/provenance, voice/version and transcript timing constraints;
+4. deploy API read/write support;
+5. regenerate the client from the exported OpenAPI document;
+6. create assignments only for approved audio content.
 
 There is no automatic backfill from hotspot JSON, fake catalog fixtures or
 existing panorama records. Existing destinations/scenes remain valid with no
@@ -294,9 +359,11 @@ type AudioTrackResponse = {
   locale: 'vi' | 'en' | null;
   src: string | null;
   durationMs: number | null;
-  rights: 'customer-owned' | 'licensed' | 'demo-only';
-  publicationStatus: 'draft' | 'published';
+  // Public DTO: only approved public rights are representable here.
+  rights: 'customer-owned' | 'licensed';
   readiness: 'ready' | 'unavailable' | 'invalid';
+  voiceId: string | null;
+  version: string | null;
 };
 ```
 
@@ -307,11 +374,12 @@ type TranscriptResponse = {
   id: string;
   locale: 'vi' | 'en';
   title: string;
-  rights: 'customer-owned' | 'licensed' | 'demo-only';
-  publicationStatus: 'draft' | 'published';
+  timingMode: 'plain' | 'timed';
+  // Public DTO: internal demo/draft rights are filtered before serialization.
+  rights: 'customer-owned' | 'licensed';
   segments: Array<{
     id: string;
-    startMs: number;
+    startMs: number | null;
     endMs: number | null;
     text: string;
   }>;
@@ -324,6 +392,27 @@ The public manifest query returns only records that are published for public
 use. `demo-only` tracks and transcripts are excluded from the production API
 response; they remain available only through the explicit fake/demo
 composition.
+
+The public manifest has a strict referential-closure invariant:
+
+> Every non-null audio ID returned by the public manifest references an object
+> included in that same manifest.
+
+Therefore:
+
+- `ambientTrackId` is null unless its track is present in `audioTracks`;
+- `ambientOverrideTrackId` is null unless its track is present in
+  `audioTracks`;
+- `narrationTrackIds.vi` and `.en` are null unless the corresponding tracks are
+  present in `audioTracks`;
+- `transcriptIds.vi` and `.en` are null unless the corresponding transcripts
+  are present in `transcripts`;
+- draft, demo-only, cross-destination or otherwise filtered records cause the
+  relevant reference to be null, never a dangling ID.
+
+The query builds the public track/transcript sets first, then projects scene
+and destination references against those sets. The API test suite must assert
+closure for empty, partial and filtered assignments.
 
 Published metadata-only narration is allowed when it has a transcript but no
 ready file. In that case:
@@ -350,6 +439,29 @@ streaming or proxy endpoint.
 The API query also validates that every returned scene assignment belongs to a
 scene in the requested destination and that every returned track/transcript is
 reachable from that manifest. Unrelated destination audio is never leaked.
+
+`publicationStatus`, `rightsReference`, `rightsHolder` and
+`rightsHolderInherited` are internal/domain provenance facts and are not
+serialized in the public manifest. The public DTO intentionally cannot express
+draft or demo-only records. The shared web/demo type remains broader for
+explicit fake-mode fixtures, but production mapping accepts only the public
+DTO shape.
+
+The backend audit rules are:
+
+- customer-owned content requires an explicit rights holder or an explicit
+  `rights_holder_inherited = true` reference to the configured project owner;
+- licensed content requires both rights holder and an internal
+  `rights_reference` (license, approval or provenance record);
+- demo-only content may retain internal provenance but is excluded from the
+  public production query;
+- the same provenance requirements apply to published transcripts;
+- `version` is required for a published ready production track and identifies
+  the approved audio/content revision;
+- `voice_id` is nullable for narration when the approved source does not expose
+  a voice identity, and is always null for ambient;
+- no rights reference or holder is exposed to visitors unless a later product
+  contract explicitly requires a coarse attribution display.
 
 ## 5. Generated client and web mapping
 
@@ -396,10 +508,51 @@ type ImmersiveAudioTrack = {
   rights: 'customer-owned' | 'licensed' | 'demo-only';
   locale: 'vi' | 'en' | null;
   durationMs: number | null;
-  publicationStatus: 'draft' | 'published';
-  readiness: 'ready' | 'unavailable' | 'invalid';
+  voiceId?: string | null;
+  version?: string | null;
+  publicationStatus?: 'draft' | 'published';
+  readiness?: 'ready' | 'unavailable' | 'invalid';
 };
 ```
+
+The optional publication/readiness fields preserve compatibility with the
+existing fake/demo catalog, whose broader shared type can still represent
+explicit `demo-only` fixtures. Production mapper output is always
+`publicationStatus = published`, a public rights value and an API-provided
+readiness value. `voiceId` is metadata for a pre-generated narration voice or
+performer identity; it is never an instruction to invoke SpeechSynthesis.
+`version` identifies the approved content/audio revision and is preserved
+through API and mapper updates.
+
+Transcript mapping preserves the explicit timing mode:
+
+```ts
+type ImmersiveTranscriptContent = {
+  id: string;
+  locale: 'vi' | 'en';
+  title: string;
+  timingMode: 'plain' | 'timed';
+  segments: readonly {
+    id: string;
+    startMs: number | null;
+    endMs: number | null;
+    text: string;
+  }[];
+};
+```
+
+The mapper does not infer timed captions from non-null timestamps. It maps
+`timingMode` directly and exposes an explicit presentation capability to the
+Media Dock contract:
+
+```ts
+type ImmersiveCaptionCapability = 'none' | 'plain-transcript' | 'timed-captions';
+```
+
+`none` means no transcript exists, `plain-transcript` means readable ordered
+text exists without synchronization, and `timed-captions` means the transcript
+is eligible for timestamp-following captions. Presentation code must consume
+this fact rather than inspect segment nullability.
 
 The production API mapper never changes `demo-only` into production content,
 never turns `src: null` into a source, and never chooses Vietnamese for a
@@ -583,55 +736,66 @@ by boundary.
 5. Narration assignment accepts only same-locale narration tracks.
 6. Non-audio media assets cannot be assigned to audio tracks.
 7. Deletion restrictions preserve referenced production records.
-8. Transcript segments reject invalid time ranges and duplicate order.
+8. Plain transcript segments accept null timing values and preserve semantic
+   order.
+9. Timed transcript segments require explicit timing and reject invalid ranges,
+   overlap and invalid open-ended segments.
+10. Rights/provenance, voice/ambient and published-version constraints are
+    enforced by the database.
 
 ### API and generated contract
 
-9. The public manifest returns `audioTracks`, `transcripts` and
-   `ambientTrackId`.
-10. Scene response returns ambient override, localized narration IDs and
+11. The public manifest returns `audioTracks`, `transcripts` and
+    `ambientTrackId`.
+12. Scene response returns ambient override, localized narration IDs and
     transcript IDs.
-11. Ready approved file-backed audio receives a resolved public `src`.
-12. Missing/non-ready files receive `src: null` and non-ready readiness.
-13. Draft and demo-only production content is not returned as playable.
-14. Cross-destination assignments are rejected.
-15. `pnpm api:generate` produces the new client fields without manual edits.
+13. Ready approved file-backed audio receives a resolved public `src`.
+14. Missing/non-ready files receive `src: null` and non-ready readiness.
+15. Draft and demo-only production content is not returned as playable.
+16. Cross-destination assignments are rejected.
+17. Every non-null public audio reference has a corresponding object in the
+    same manifest; filtered records produce null references.
+18. `pnpm api:generate` produces the new client fields without manual edits.
 
 ### Web mapper and resolver
 
-16. Mapper does not drop audio tracks or transcript content.
-17. Mapper joins scene references to the correct localized transcript.
-18. Browser-file source resolves a real `src` only when the API says the track
+19. Mapper does not drop audio tracks, voice/version metadata or transcript
+    content.
+20. Mapper joins scene references to the correct localized transcript and
+    preserves `plain` versus `timed` timing mode.
+21. Browser-file source resolves a real `src` only when the API says the track
     is public-ready and the browser capability exists.
-19. `src: null` is unavailable under browser-file policy.
-20. Demo SpeechSynthesis remains reachable only under explicit demo policy.
-21. English missing narration never selects Vietnamese.
-22. Transcript availability remains true when its audio track is absent.
+22. `src: null` is unavailable under browser-file policy.
+23. Demo SpeechSynthesis remains reachable only under explicit demo policy.
+24. English missing narration never selects Vietnamese.
+25. Transcript availability remains true when its audio track is absent.
+26. Media Dock receives explicit `none`, `plain-transcript` or
+    `timed-captions` capability rather than inferring timing.
 
 ### Audio controller and Auto Tour integration
 
-23. Destination ambient starts only after the existing sound/user-gesture
+27. Destination ambient starts only after the existing sound/user-gesture
     policy.
-24. Same ambient track is not restarted across a normal scene change.
-25. Scene ambient override transitions and restores the destination ambient.
-26. Narration ducks ambient and restores it on pause/end/failure.
-27. Pause/resume preserves narration ownership and position.
-28. Scene change stops old narration and new narration does not autoplay.
-29. Narration failure restores ambient and leaves immersive usable.
-30. Auto Tour continues through missing/unavailable narration using fallback.
-31. Auto Tour continues through narration play failure using fallback.
-32. Stale scene/request/track/locale completion cannot mutate current state.
+28. Same ambient track is not restarted across a normal scene change.
+29. Scene ambient override transitions and restores the destination ambient.
+30. Narration ducks ambient and restores it on pause/end/failure.
+31. Pause/resume preserves narration ownership and position.
+32. Scene change stops old narration and new narration does not autoplay.
+33. Narration failure restores ambient and leaves immersive usable.
+34. Auto Tour continues through missing/unavailable narration using fallback.
+35. Auto Tour continues through narration play failure using fallback.
+36. Stale scene/request/track/locale completion cannot mutate current state.
 
 ### Media Dock and production-shaped E2E
 
-33. Media Dock capability reflects semantic readiness plus browser-file source
+37. Media Dock capability reflects semantic readiness plus browser-file source
     capability.
-34. Unavailable audio does not render a misleading playable control.
-35. A production-shaped manifest with a real test audio file reaches the
+38. Unavailable audio does not render a misleading playable control.
+39. A production-shaped manifest with a real test audio file reaches the
     browser `Audio` adapter and emits play/progress/end behavior.
-36. Desktop and mobile cover sound enabled, narration playing, narration
+40. Desktop and mobile cover sound enabled, narration playing, narration
     paused and audio unavailable states.
-37. Panorama navigation and Back behavior remain green when audio fails.
+41. Panorama navigation and Back behavior remain green when audio fails.
 
 Test fixtures use a local, explicitly test-labelled audio file or deterministic
 adapter. They do not become production records or public demo content.
@@ -740,10 +904,19 @@ This spec was reviewed against the required risks:
 - **Nullable states:** missing audio may be represented as a transcript-only
   assignment or an unavailable track, but no unavailable track receives a
   playable URL.
+- **Transcript timing:** `plain` and `timed` are explicit modes; plain
+  segments use null timing and timed caption capability is never inferred.
+- **Public closure:** every non-null manifest reference is projected only after
+  its target survives public filtering and is included in the same manifest.
+- **Database integrity:** kind, locale, media-kind, assignment, provenance and
+  transcript timing rules are enforced with PostgreSQL constraints/triggers,
+  not only repository checks.
 - **Locale fallback:** EN never falls back silently to VI; transcript and
   audio capabilities are independent.
 - **Rights/readiness:** demo-only, draft, non-ready and failed content are
   never silently presented as production-playable audio.
+- **Metadata compatibility:** `voiceId` and `version` remain available through
+  DB, public API and shared web/demo contracts with their production semantics.
 - **Transcript ownership:** transcripts are first-class normalized records and
   can exist without audio.
 - **Frontend-derived state:** business rights/readiness comes from the API;
