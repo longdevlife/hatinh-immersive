@@ -74,7 +74,9 @@ describe('ImmersiveExperience Auto Tour progression', () => {
     const { factories, panorama } = createFactories();
     renderTour(factories);
 
-    const autoTourButton = await screen.findByRole('button', { name: 'Tự động tham quan' });
+    const autoTourButton = await screen.findByRole('button', {
+      name: 'Bắt đầu tự động tham quan',
+    });
     await waitFor(() => {
       expect(autoTourButton).not.toBeDisabled();
       expect(useImmersiveNavigation.getState().committedSceneId).toBe('thien-cam-boardwalk');

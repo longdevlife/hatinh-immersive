@@ -18,6 +18,7 @@ import {
   LazyPanoramaViewport,
   type PanoramaEnginePort,
 } from '../../panorama';
+import { type ImmersiveAudioSourcePolicy } from '../../immersive-audio';
 import {
   FakeMinimapEngine,
   createLazyMapLibreMinimapEngine,
@@ -25,9 +26,12 @@ import {
   type MinimapEnginePort,
 } from '../../minimap';
 import { ImmersiveControlsGroup } from './ImmersiveControls';
+import { ImmersiveMediaDock } from './ImmersiveMediaDock';
 import { ReferenceParityControls } from './ReferenceParityControls';
 import {
+  buildImmersiveMediaDockVm,
   buildReferenceParityPresentationVm,
+  type ImmersiveMediaDockActions,
   type ReferenceParityPresentationActions,
 } from './reference-parity.presentation';
 import { useImmersiveDestinations, useImmersiveManifest } from '../../../shared/api/immersive';
@@ -97,6 +101,7 @@ export interface ImmersiveExperienceProps {
   selected3DAnchorSource?: Selected3DAnchorSource;
   panoramaTourSource?: PanoramaTourSource;
   panoramaTourMediaMode?: PanoramaTourMediaMode;
+  audioSourcePolicy?: ImmersiveAudioSourcePolicy;
 }
 
 const EMPTY_SELECTED_3D_ANCHORS: readonly Selected3DAnchor[] = [];
@@ -484,6 +489,7 @@ export function ImmersiveExperience({
   selected3DAnchorSource = 'none',
   panoramaTourSource = 'none',
   panoramaTourMediaMode = 'public',
+  audioSourcePolicy,
 }: ImmersiveExperienceProps) {
   const { destinationSlug: routeDestinationSlug } = useParams<{ destinationSlug: string }>();
   const location = useLocation();
@@ -491,6 +497,7 @@ export function ImmersiveExperience({
   const destinationSlug = routeDestinationSlug ?? 'son-trang-co-dam';
   const navigation = useImmersiveNavigation();
   const [locale, setLocale] = useState<ImmersiveLocale>('vi');
+  const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [isCameraTransitioning, setIsCameraTransitioning] = useState(false);
   const [destinationSearchQuery, setDestinationSearchQuery] = useState('');
   const manifestQuery = useImmersiveManifest(destinationSlug, locale, !manifestOverride);
@@ -500,6 +507,8 @@ export function ImmersiveExperience({
   const destinationsQuery = useImmersiveDestinations(locale, shouldFetchDestinations);
   const destinations = destinationsOverride ?? destinationsQuery.data;
   const sourceManifest = manifestOverride ?? manifestQuery.data;
+  const resolvedAudioSourcePolicy =
+    audioSourcePolicy ?? (panoramaTourSource === 'demo' ? 'demo-speech-synthesis' : 'browser-file');
   const manifest = useMemo(
     () =>
       sourceManifest
@@ -915,6 +924,7 @@ export function ImmersiveExperience({
 
   const audioTour = useImmersiveAudioTour({
     destinationSlug,
+    audioSourcePolicy: resolvedAudioSourcePolicy,
     destinationAmbientTrackId: audioTracks.find((track) => track.type === 'ambient')?.id ?? null,
     audioTracks,
     locale,
@@ -929,9 +939,19 @@ export function ImmersiveExperience({
     audioState,
     autoTourController,
     autoTourState,
+    startAutoTour,
+    pauseAutoTour,
+    resumeAutoTour,
+    stopAutoTour,
     jumpToScene,
+    nextScene,
+    previousScene,
+    skipStory,
     onViewportInteraction,
     playNarration,
+    pauseNarration,
+    resumeNarration,
+    seekNarration,
     toggleNarration,
     setMasterMuted,
     enableAudio,
@@ -1022,9 +1042,7 @@ export function ImmersiveExperience({
     setMasterMuted(!audioState.masterMuted);
   }, [audioState.masterMuted, setMasterMuted]);
 
-  const onEnableAudio = useCallback(() => {
-    enableAudio();
-  }, [enableAudio]);
+  const onEnableAudio = useCallback(() => enableAudio(), [enableAudio]);
 
   const onToggleAmbient = useCallback(() => {
     toggleAmbient();
@@ -1130,6 +1148,57 @@ export function ImmersiveExperience({
     ],
   );
 
+  const mediaDockActions = useMemo<ImmersiveMediaDockActions>(
+    () => ({
+      onEnableSound: onEnableAudio,
+      onContinueMuted: () => setMasterMuted(true),
+      onPlayNarration: () => {
+        void playNarration();
+      },
+      onResumeNarration: () => {
+        void resumeNarration();
+      },
+      onPauseNarration: pauseNarration,
+      onToggleMasterMute,
+      onSeekNarration: seekNarration,
+      onToggleCaptions: () => setCaptionsEnabled((enabled) => !enabled),
+      onOpenTranscript: () => undefined,
+      onCloseTranscript: () => undefined,
+      onStartAutoTour: () => {
+        startAutoTour();
+      },
+      onPauseAutoTour: pauseAutoTour,
+      onResumeAutoTour: resumeAutoTour,
+      onSkipStory: () => {
+        skipStory();
+      },
+      onPreviousScene: () => {
+        previousScene();
+      },
+      onNextScene: () => {
+        nextScene();
+      },
+      onExitAutoTour: stopAutoTour,
+      onListenInLocale: setLocale,
+    }),
+    [
+      nextScene,
+      onEnableAudio,
+      pauseAutoTour,
+      pauseNarration,
+      playNarration,
+      previousScene,
+      resumeNarration,
+      resumeAutoTour,
+      seekNarration,
+      setMasterMuted,
+      skipStory,
+      startAutoTour,
+      stopAutoTour,
+      onToggleMasterMute,
+    ],
+  );
+
   if (!manifest) {
     return <ManifestState kind={manifestQuery.isPending ? 'loading' : 'error'} />;
   }
@@ -1231,6 +1300,44 @@ export function ImmersiveExperience({
           audioTracks,
           autoTour: autoTourState,
           hotspots: view.hotspots,
+        })
+      : undefined;
+  const committedPanoramaNode =
+    panoramaRenderableNodes.find((node) => node.id === navigation.committedSceneId) ?? null;
+  const mediaDockVm =
+    referenceParityPresentation &&
+    !referenceParityPresentation.mediaUnavailable &&
+    committedPanoramaNode
+      ? buildImmersiveMediaDockVm({
+          mode: autoTourState.isActive ? 'auto-tour' : 'free-explore',
+          scene: committedPanoramaNode,
+          tourEligibleNodes: panoramaRenderableNodes,
+          currentSceneId: navigation.committedSceneId,
+          destinationAmbientTrackId:
+            audioTracks.find((track) => track.type === 'ambient')?.id ?? null,
+          locale,
+          audioTracks,
+          canPlayTrack: audioTour.canPlayTrack,
+          audioState,
+          autoTour: {
+            isActive: autoTourState.isActive,
+            isPaused: autoTourState.isPaused,
+            phase: autoTourState.phase,
+            currentSceneId: autoTourState.currentSceneId,
+            capabilities: {
+              canStart:
+                !autoTourState.isActive &&
+                Boolean(navigation.committedSceneId) &&
+                panoramaRenderableNodes.length > 1,
+              canPause: autoTourState.isActive && !autoTourState.isPaused,
+              canResume: autoTourState.isActive && autoTourState.isPaused,
+              canSkipStory: autoTourController.canSkipStory(),
+              canPrevious: autoTourController.canPrevious(),
+              canNext: autoTourController.canNext(),
+              canExit: autoTourState.isActive,
+            },
+          },
+          captionsEnabled,
         })
       : undefined;
   const rendererContent = (
@@ -1345,11 +1452,16 @@ export function ImmersiveExperience({
       />
       {navigation.mode === 'panorama' ? (
         referenceParityPresentation ? (
-          <ReferenceParityControls
-            vm={referenceParityPresentation}
-            actions={referenceParityActions}
-            minimapOpen={navigation.minimapOpen}
-          />
+          <>
+            <ReferenceParityControls
+              vm={referenceParityPresentation}
+              actions={referenceParityActions}
+              minimapOpen={navigation.minimapOpen}
+            />
+            {mediaDockVm ? (
+              <ImmersiveMediaDock vm={mediaDockVm} actions={mediaDockActions} />
+            ) : null}
+          </>
         ) : (
           <ImmersiveControlsGroup
             currentSceneId={navigation.committedSceneId}

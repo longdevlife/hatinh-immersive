@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-  createBrowserAudioAdapter,
+  createImmersiveAudioSource,
   ImmersiveAudioController,
   resolveSceneAudio,
+  type ImmersiveAudioSource,
+  type ImmersiveAudioSourcePolicy,
   type ImmersiveAudioState,
   type NarrationLifecycleEvent,
 } from '../../immersive-audio';
@@ -25,6 +27,35 @@ import {
   type AudioTourCoordinatorOptions,
 } from '../model/audio-tour.coordinator';
 
+export const IMMERSIVE_SOUND_PREFERENCE_STORAGE_KEY = 'hatinh:immersive:sound-preference';
+
+type ImmersiveSoundPreference = 'muted' | 'enabled';
+
+function readSoundPreference(): ImmersiveSoundPreference | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const value = window.sessionStorage.getItem(IMMERSIVE_SOUND_PREFERENCE_STORAGE_KEY);
+    return value === 'muted' || value === 'enabled' ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSoundPreference(preference: ImmersiveSoundPreference): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(IMMERSIVE_SOUND_PREFERENCE_STORAGE_KEY, preference);
+  } catch {
+    // Session storage can be unavailable in privacy-restricted browsers.
+  }
+}
+
 export interface ImmersiveAudioTourAudioController extends AudioTourAudioController {
   getState(): ImmersiveAudioState;
   subscribe(listener: (state: ImmersiveAudioState) => void): () => void;
@@ -39,6 +70,7 @@ export interface ImmersiveAudioTourAudioController extends AudioTourAudioControl
 
 export interface ImmersiveAudioTourInput {
   destinationSlug: string;
+  audioSourcePolicy: ImmersiveAudioSourcePolicy;
   destinationAmbientTrackId: string | null;
   audioTracks: readonly ImmersiveAudioTrack[];
   locale: ImmersiveLocale;
@@ -58,6 +90,7 @@ export interface ImmersiveAudioTourFactories {
 
 export interface ImmersiveAudioTourResult {
   audioController: ImmersiveAudioTourAudioController;
+  canPlayTrack(track: ImmersiveAudioTrack): boolean;
   audioState: ImmersiveAudioState;
   autoTourController: AutoTourController;
   autoTourState: AutoTourControllerState;
@@ -77,7 +110,7 @@ export interface ImmersiveAudioTourResult {
   resumeNarration(): Promise<boolean>;
   toggleNarration(): void;
   setMasterMuted(muted: boolean): void;
-  enableAudio(): void;
+  enableAudio(): Promise<boolean>;
   toggleAmbient(): void;
   setAmbientEnabled(enabled: boolean): Promise<boolean>;
   seekNarration(seconds: number): boolean;
@@ -85,6 +118,7 @@ export interface ImmersiveAudioTourResult {
 
 interface AudioTourRuntime {
   audioController: ImmersiveAudioTourAudioController;
+  audioSource: ImmersiveAudioSource;
   autoTourController: AutoTourController;
   coordinator: AudioTourCoordinator;
 }
@@ -134,9 +168,9 @@ export function useImmersiveAudioTour(
   }));
   const runtime = useMemo<AudioTourRuntime>(() => {
     let coordinator: AudioTourCoordinator | null = null;
+    const audioSource = createImmersiveAudioSource(input.audioSourcePolicy);
     const audioController =
-      factories.createAudioController?.() ??
-      new ImmersiveAudioController(createBrowserAudioAdapter());
+      factories.createAudioController?.() ?? new ImmersiveAudioController(audioSource.adapter);
     const createAutoTourController =
       factories.createAutoTourController ??
       ((options: AutoTourControllerOptions) => new AutoTourController(options));
@@ -158,11 +192,12 @@ export function useImmersiveAudioTour(
       tracks: input.audioTracks,
     });
 
-    return { audioController, autoTourController, coordinator };
+    return { audioController, audioSource, autoTourController, coordinator };
   }, [
     factories.createAudioController,
     factories.createAutoTourController,
     factories.createCoordinator,
+    input.audioSourcePolicy,
     input.audioTracks,
     input.destinationSlug,
   ]);
@@ -174,6 +209,13 @@ export function useImmersiveAudioTour(
   useEffect(() => {
     setAudioState(runtime.audioController.getState());
     return runtime.audioController.subscribe(setAudioState);
+  }, [runtime]);
+
+  useEffect(() => {
+    const preference = readSoundPreference();
+    if (preference) {
+      runtime.audioController.setMasterMuted(preference === 'muted');
+    }
   }, [runtime]);
 
   useEffect(() => {
@@ -328,13 +370,21 @@ export function useImmersiveAudioTour(
   ]);
 
   const setMasterMuted = useCallback(
-    (muted: boolean) => runtime.audioController.setMasterMuted(muted),
+    (muted: boolean) => {
+      runtime.audioController.setMasterMuted(muted);
+      writeSoundPreference(muted ? 'muted' : 'enabled');
+    },
     [runtime],
   );
 
-  const enableAudio = useCallback(() => {
+  const enableAudio = useCallback(async () => {
     runtime.audioController.setMasterMuted(false);
-    void runtime.audioController.startAmbient();
+    const { ambientTrackId } = runtime.audioController.getState();
+    const didStart = ambientTrackId === null || (await runtime.audioController.startAmbient());
+    if (didStart) {
+      writeSoundPreference('enabled');
+    }
+    return didStart;
   }, [runtime]);
 
   const toggleAmbient = useCallback(() => {
@@ -382,6 +432,7 @@ export function useImmersiveAudioTour(
     autoTourController: runtime.autoTourController,
     autoTourState,
     coordinator: runtime.coordinator,
+    canPlayTrack: runtime.audioSource.canPlayTrack,
     startAutoTour,
     toggleAutoTour,
     pauseAutoTour,

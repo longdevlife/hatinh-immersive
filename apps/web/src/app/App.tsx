@@ -32,6 +32,7 @@ import {
   resolvePanoramaTourMediaMode,
   resolvePanoramaTourSource,
 } from '../modules/immersive-navigation/model/panorama-tour-source';
+import type { ImmersiveAudioSourcePolicy } from '../modules/immersive-audio';
 import {
   DEMO_SON_TRANG_ZONE_MEDIA,
   getDemoDestinationMedia,
@@ -79,6 +80,8 @@ const destinationCapabilityConfig = resolveDestinationCapabilityConfig(import.me
 const selected3DAnchorSource = resolveSelected3DAnchorSource(import.meta.env);
 const panoramaTourSource = resolvePanoramaTourSource(import.meta.env);
 const panoramaTourMediaMode = resolvePanoramaTourMediaMode(import.meta.env);
+const audioSourcePolicy: ImmersiveAudioSourcePolicy =
+  panoramaTourSource === 'demo' ? 'demo-speech-synthesis' : 'browser-file';
 const HOME_DESTINATIONS = createHomeDestinationVms(DEMO_DESTINATIONS.map(({ preview }) => preview));
 
 function FakeImmersiveExperience() {
@@ -99,6 +102,7 @@ function FakeImmersiveExperience() {
         selected3DAnchors={getDemoSelected3DAnchors(destinationSlug)}
         panoramaTourSource={panoramaTourSource}
         panoramaTourMediaMode={panoramaTourMediaMode}
+        audioSourcePolicy={audioSourcePolicy}
       />
     </Suspense>
   );
@@ -118,6 +122,7 @@ function PublicImmersiveExperience() {
       <LazyImmersiveExperience
         panoramaTourSource={panoramaTourSource}
         panoramaTourMediaMode={panoramaTourMediaMode}
+        audioSourcePolicy={audioSourcePolicy}
         selected3DAnchorSource={selected3DAnchorSource}
       />
     </Suspense>

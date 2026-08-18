@@ -110,26 +110,18 @@ describe('ReferenceParityControls', () => {
     expect(screen.getAllByText('Lối dạo Thiên Cầm').length).toBeGreaterThan(0);
   });
 
-  it('renders truthful audio controls and handles toggle callbacks', () => {
+  it('leaves audio presentation to the unified media dock', () => {
     const actions = createMockActions();
     const vm = createMockVm();
 
     render(<ReferenceParityControls vm={vm} actions={actions} />);
 
-    const muteBtn = screen.getByRole('button', { name: 'Tắt âm thanh' });
-    expect(muteBtn).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(muteBtn);
-    expect(actions.onToggleMasterMute).toHaveBeenCalled();
-
-    const ambientBtn = screen.getByRole('button', { name: 'Tắt âm thanh môi trường' });
-    expect(ambientBtn).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(ambientBtn);
-    expect(actions.onToggleAmbient).toHaveBeenCalled();
-
-    const narrationBtn = screen.getByRole('button', { name: 'Bật thuyết minh' });
-    expect(narrationBtn).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(narrationBtn);
-    expect(actions.onToggleNarration).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /âm thanh/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /thuyết minh/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /tự động tham quan/i })).not.toBeInTheDocument();
+    expect(actions.onToggleMasterMute).not.toHaveBeenCalled();
+    expect(actions.onToggleAmbient).not.toHaveBeenCalled();
+    expect(actions.onToggleNarration).not.toHaveBeenCalled();
   });
 
   it('omits audio buttons when audio sources are not available', () => {
@@ -152,7 +144,7 @@ describe('ReferenceParityControls', () => {
     expect(screen.queryByRole('button', { name: /thuyết minh/i })).not.toBeInTheDocument();
   });
 
-  it('disables auto-tour button truthfully when canStart is false', () => {
+  it('does not render a legacy auto-tour control', () => {
     const actions = createMockActions();
     const vm = createMockVm({
       autoTour: {
@@ -164,11 +156,10 @@ describe('ReferenceParityControls', () => {
 
     render(<ReferenceParityControls vm={vm} actions={actions} />);
 
-    const autoTourBtn = screen.getByRole('button', { name: 'Tự động tham quan' });
-    expect(autoTourBtn).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /tự động tham quan/i })).not.toBeInTheDocument();
   });
 
-  it('handles auto-tour toggle when canStart is true', () => {
+  it('does not render a second auto-tour control while the dock owns the flow', () => {
     const actions = createMockActions();
     const vm = createMockVm({
       autoTour: {
@@ -180,10 +171,8 @@ describe('ReferenceParityControls', () => {
 
     render(<ReferenceParityControls vm={vm} actions={actions} />);
 
-    const autoTourBtn = screen.getByRole('button', { name: 'Dừng tự động tham quan' });
-    expect(autoTourBtn).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(autoTourBtn);
-    expect(actions.onToggleAutoTour).toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: /tự động tham quan/i })).not.toBeInTheDocument();
+    expect(actions.onToggleAutoTour).not.toHaveBeenCalled();
   });
 
   it('renders bottom scene rail and selects a scene on click', () => {
@@ -290,7 +279,7 @@ describe('ReferenceParityControls', () => {
     );
   });
 
-  it('renders audio prompt affordance when autoplayBlocked is true and genuine audio sources exist', () => {
+  it('does not render a second sound-gate prompt', () => {
     const actions = createMockActions();
     const vm = createMockVm({
       audio: {
@@ -306,10 +295,10 @@ describe('ReferenceParityControls', () => {
 
     render(<ReferenceParityControls vm={vm} actions={actions} />);
 
-    const promptBtn = screen.getByRole('button', { name: 'Bật âm thanh trải nghiệm' });
-    expect(promptBtn).toBeInTheDocument();
-    fireEvent.click(promptBtn);
-    expect(actions.onEnableAudio).toHaveBeenCalled();
+    expect(
+      screen.queryByRole('button', { name: 'Bật âm thanh trải nghiệm' }),
+    ).not.toBeInTheDocument();
+    expect(actions.onEnableAudio).not.toHaveBeenCalled();
   });
 
   it('does not render audio prompt when autoplayBlocked is true but no audio sources exist', () => {

@@ -85,6 +85,10 @@ export interface ImmersiveMediaDockVm {
   sceneId: string | null;
   sceneLabel: string;
   soundGateRequired: boolean;
+  sound: {
+    available: boolean;
+    masterMuted: boolean;
+  };
   captionsEnabled: boolean;
   narration: {
     available: boolean;
@@ -126,10 +130,12 @@ export interface ImmersiveMediaDockAutoTourCapabilities {
 }
 
 export interface ImmersiveMediaDockActions {
-  onEnableSound(): void;
+  onEnableSound(): Promise<boolean>;
   onContinueMuted(): void;
   onPlayNarration(): void;
+  onResumeNarration(): void;
   onPauseNarration(): void;
+  onToggleMasterMute(): void;
   onSeekNarration(seconds: number): void;
   onToggleCaptions(): void;
   onOpenTranscript(): void;
@@ -152,6 +158,7 @@ export interface ImmersiveMediaDockVmInput {
   destinationAmbientTrackId: string | null;
   locale: ImmersiveLocale;
   audioTracks?: readonly ImmersiveAudioTrack[];
+  canPlayTrack: (track: ImmersiveAudioTrack) => boolean;
   audioState?: ImmersiveAudioState;
   narrationLoading?: boolean;
   autoTour: {
@@ -173,6 +180,7 @@ export function buildImmersiveMediaDockVm({
   destinationAmbientTrackId,
   locale,
   audioTracks = [],
+  canPlayTrack,
   audioState,
   narrationLoading = false,
   autoTour,
@@ -187,6 +195,7 @@ export function buildImmersiveMediaDockVm({
         locale,
       })
     : {
+        ambientTrack: null,
         narrationTrack: null,
         transcript: null,
         narrationLocale: null,
@@ -194,7 +203,9 @@ export function buildImmersiveMediaDockVm({
       };
   const narrationTrackId = resolved.narrationTrack?.id ?? null;
   const narrationMatchesCurrentTrack = audioState?.narrationTrackId === narrationTrackId;
-  const narrationStatus: ImmersiveMediaDockNarrationStatus = !resolved.narrationTrack
+  const narrationAvailable =
+    resolved.narrationTrack !== null && canPlayTrack(resolved.narrationTrack);
+  const narrationStatus: ImmersiveMediaDockNarrationStatus = !narrationAvailable
     ? 'unavailable'
     : narrationLoading
       ? 'loading'
@@ -207,15 +218,26 @@ export function buildImmersiveMediaDockVm({
   const currentIndex = autoTourSceneId
     ? Math.max(0, tourEligibleNodes.findIndex((node) => node.id === autoTourSceneId) + 1)
     : 0;
+  // Playability comes from the active source policy. The VM must not infer it
+  // from a resolved track or URL because demo narration can be source-backed
+  // without a file while browser-file mode cannot play that same track.
+  const soundAvailable =
+    (resolved.ambientTrack !== null && canPlayTrack(resolved.ambientTrack)) ||
+    (resolved.narrationTrack !== null && canPlayTrack(resolved.narrationTrack));
 
   return {
     mode,
     sceneId: currentSceneId,
     sceneLabel: scene?.name ?? scene?.id ?? '',
-    soundGateRequired: soundGateRequired ?? audioState?.autoplayBlocked ?? false,
+    soundGateRequired:
+      soundAvailable && (soundGateRequired ?? audioState?.autoplayBlocked ?? false),
+    sound: {
+      available: soundAvailable,
+      masterMuted: audioState?.masterMuted ?? false,
+    },
     captionsEnabled,
     narration: {
-      available: resolved.narrationTrack !== null,
+      available: narrationAvailable,
       status: narrationStatus,
       currentTimeSeconds: narrationMatchesCurrentTrack
         ? (audioState?.narrationCurrentTimeSeconds ?? 0)
