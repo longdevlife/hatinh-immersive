@@ -39,7 +39,7 @@ function createVm(overrides: Partial<ImmersiveMediaDockVm> = {}): ImmersiveMedia
       activeLocale: 'vi',
       alternateLocales: [],
     },
-    transcript: { available: true, content: transcript },
+    transcript: { available: true, capability: 'timed-captions', content: transcript },
     autoTour: {
       isActive: false,
       isPaused: false,
@@ -171,7 +171,7 @@ describe('ImmersiveMediaDock semantic contract', () => {
     const vm = createVm({
       sound: { available: false, masterMuted: false },
       narration: { ...createVm().narration, available: false, status: 'unavailable' },
-      transcript: { available: false, content: null },
+      transcript: { available: false, capability: 'none', content: null },
     });
 
     render(<ImmersiveMediaDock vm={vm} actions={actions} />);

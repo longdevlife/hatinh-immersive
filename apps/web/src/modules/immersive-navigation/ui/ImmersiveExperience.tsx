@@ -942,7 +942,7 @@ export function ImmersiveExperience({
   const audioTour = useImmersiveAudioTour({
     destinationSlug,
     audioSourcePolicy: resolvedAudioSourcePolicy,
-    destinationAmbientTrackId: audioTracks.find((track) => track.type === 'ambient')?.id ?? null,
+    destinationAmbientTrackId: manifest?.ambientTrackId ?? null,
     audioTracks,
     locale,
     panoramaNodes: manifest?.panoramaNodes ?? EMPTY_PANORAMA_NODES,
@@ -1320,6 +1320,8 @@ export function ImmersiveExperience({
           locale,
           audioState,
           audioTracks,
+          canPlayTrack: audioTour.canPlayTrack,
+          destinationAmbientTrackId: manifest.ambientTrackId,
           autoTour: autoTourState,
           hotspots: view.hotspots,
         })
@@ -1335,8 +1337,7 @@ export function ImmersiveExperience({
           scene: committedPanoramaNode,
           tourEligibleNodes: panoramaRenderableNodes,
           currentSceneId: committedPanoramaNode.id,
-          destinationAmbientTrackId:
-            audioTracks.find((track) => track.type === 'ambient')?.id ?? null,
+          destinationAmbientTrackId: manifest.ambientTrackId,
           locale,
           audioTracks,
           canPlayTrack: audioTour.canPlayTrack,
