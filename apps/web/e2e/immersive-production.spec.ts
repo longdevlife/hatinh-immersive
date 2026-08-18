@@ -74,6 +74,25 @@ const manifest = {
   hotspots: [],
 };
 
+const cultureDeepLinkManifest = {
+  ...manifest,
+  defaultSceneId: 'son-trang-culture',
+  destination: {
+    ...manifest.destination,
+    defaultSceneId: 'son-trang-culture',
+  },
+  nodes: [
+    {
+      ...manifest.nodes[0],
+      id: 'son-trang-culture',
+      name: 'Không gian Văn hóa',
+      panoramaManifestUrl: '/demo/360/son-trang-tour/son-trang-culture/manifest.json',
+      panoramaPreviewUrl: '/demo/360/son-trang-tour/son-trang-culture/preview.webp',
+    },
+  ],
+  links: [],
+};
+
 test('connects Sơn Trang detail to linked panorama scene and returns to the destination', async ({
   page,
 }) => {
@@ -170,6 +189,30 @@ test('loads the public selected-3D journey through the manifest REST path', asyn
 
   await expect(page.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
+});
+
+test('keeps a valid Sơn Trang culture deep link aligned across URL, renderer, and rail', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(cultureDeepLinkManifest),
+      status: 200,
+    });
+  });
+
+  await page.goto(
+    '/explore/son-trang-co-dam/immersive?mode=panorama&location=son-trang-co-dam&scene=son-trang-culture&h=228.165&p=-39.233&fov=88.801',
+  );
+
+  await expect(page).toHaveURL(/scene=son-trang-culture/);
+  await expect(page.getByRole('heading', { name: 'Không gian Văn hóa' })).toBeVisible();
+  const rail = page.getByRole('navigation', { name: /Hành trình 360/i });
+  await expect(rail.getByRole('button', { name: 'Không gian Văn hóa' })).toHaveAttribute(
+    'aria-current',
+    'step',
+  );
 });
 
 test('keeps selected 3D scoped to its destination without a generic 360 handoff', async ({
