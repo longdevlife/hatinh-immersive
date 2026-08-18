@@ -9,10 +9,15 @@ import {
 import {
   PUBLIC_MEDIA_URL_OPTIONS,
   resolvePanoramaMediaUrls,
+  resolvePublicMediaUrl,
   type PublicMediaUrlOptions,
 } from '../../media/application/public-media-url';
 import type { MediaAsset } from '../../media/domain/media-asset';
-import { VIRTUAL_TOUR_REPOSITORY, type VirtualTourRepository } from './virtual-tour.repository';
+import {
+  VIRTUAL_TOUR_REPOSITORY,
+  type ImmersiveAudioReadRows,
+  type VirtualTourRepository,
+} from './virtual-tour.repository';
 import type { Hotspot } from '../domain/hotspot';
 import type { SceneLink } from '../domain/scene-link';
 import type { SceneNode } from '../domain/scene-node';
@@ -33,6 +38,45 @@ export interface SceneNodeResponse {
   initialFov: number;
   status: string;
   sortOrder: number;
+  ambientOverrideTrackId: string | null;
+  narrationTrackIds: LocalizedAudioIds;
+  transcriptIds: LocalizedAudioIds;
+}
+
+export interface LocalizedAudioIds {
+  vi: string | null;
+  en: string | null;
+}
+
+export type AudioTrackReadiness = 'ready' | 'unavailable' | 'invalid';
+
+export interface AudioTrackResponse {
+  id: string;
+  type: 'ambient' | 'narration';
+  label: string;
+  locale: 'vi' | 'en' | null;
+  src: string | null;
+  durationMs: number | null;
+  rights: 'customer-owned' | 'licensed';
+  readiness: AudioTrackReadiness;
+  voiceId: string | null;
+  version: string | null;
+}
+
+export interface TranscriptSegmentResponse {
+  id: string;
+  startMs: number | null;
+  endMs: number | null;
+  text: string;
+}
+
+export interface TranscriptResponse {
+  id: string;
+  locale: 'vi' | 'en';
+  title: string;
+  timingMode: 'plain' | 'timed';
+  rights: 'customer-owned' | 'licensed';
+  segments: TranscriptSegmentResponse[];
 }
 
 export interface SceneLinkResponse {
@@ -58,6 +102,9 @@ export interface HotspotResponse {
 export interface ImmersiveManifestResponse {
   destination: DestinationDetail;
   defaultSceneId: string | null;
+  ambientTrackId: string | null;
+  audioTracks: AudioTrackResponse[];
+  transcripts: TranscriptResponse[];
   nodes: SceneNodeResponse[];
   links: SceneLinkResponse[];
   hotspots: HotspotResponse[];
@@ -90,15 +137,21 @@ export class VirtualTourQueryService {
 
     const scenes = await this.repository.findScenesByDestinationId(destination.id, 'published');
     const sceneIds = scenes.map((scene) => scene.id);
-    const [links, hotspots] = await Promise.all([
+    const [links, hotspots, audioRows] = await Promise.all([
       this.repository.findLinksByFromSceneIds(sceneIds),
       this.repository.findHotspotsBySceneIds(sceneIds, 'published'),
+      this.repository.findImmersiveAudioReadRows(destination.id, sceneIds),
     ]);
-    const mediaAssets = await this.mediaAssetRepository.findByIds(
-      scenes
+    const audioAssetIds = audioRows.tracks
+      .map((track) => track.mediaAssetId)
+      .filter((assetId): assetId is string => assetId !== null);
+    const mediaAssets = await this.mediaAssetRepository.findByIds([
+      ...scenes
         .map((scene) => scene.toPrimitives().panoramaAssetId)
         .filter((assetId): assetId is string => assetId !== null),
-    );
+      ...audioAssetIds,
+    ]);
+    const publicAudio = toPublicAudioReadModel(audioRows, mediaAssets, this.publicMediaUrlOptions);
 
     const defaultSceneId =
       destination.defaultSceneId && sceneIds.includes(destination.defaultSceneId)
@@ -108,9 +161,18 @@ export class VirtualTourQueryService {
     return {
       destination,
       defaultSceneId,
-      nodes: scenes.map((scene) =>
-        toSceneResponse(scene, getSceneMediaAsset(scene, mediaAssets), this.publicMediaUrlOptions),
-      ),
+      ambientTrackId: publicAudio.ambientTrackId,
+      audioTracks: publicAudio.audioTracks,
+      transcripts: publicAudio.transcripts,
+      nodes: scenes.map((scene) => {
+        const audio = projectSceneAudio(scene.id, audioRows, publicAudio);
+        return toSceneResponse(
+          scene,
+          getSceneMediaAsset(scene, mediaAssets),
+          this.publicMediaUrlOptions,
+          audio,
+        );
+      }),
       links: links.map(toLinkResponse),
       hotspots: hotspots.map(toHotspotResponse),
     };
@@ -166,6 +228,15 @@ function toSceneResponse(
   scene: SceneNode,
   mediaAsset: MediaAsset | null,
   publicMediaUrlOptions: PublicMediaUrlOptions,
+  audio: {
+    ambientOverrideTrackId: string | null;
+    narrationTrackIds: LocalizedAudioIds;
+    transcriptIds: LocalizedAudioIds;
+  } = {
+    ambientOverrideTrackId: null,
+    narrationTrackIds: { vi: null, en: null },
+    transcriptIds: { vi: null, en: null },
+  },
 ): SceneNodeResponse {
   const props = scene.toPrimitives();
   const panoramaUrls =
@@ -192,6 +263,130 @@ function toSceneResponse(
     initialFov: props.initialFov,
     status: props.status,
     sortOrder: props.sortOrder,
+    ...audio,
+  };
+}
+
+function toPublicAudioReadModel(
+  rows: ImmersiveAudioReadRows,
+  mediaAssets: Map<string, MediaAsset>,
+  publicMediaUrlOptions: PublicMediaUrlOptions,
+) {
+  const publicTracks = rows.tracks.filter(isPublicAudioTrack);
+  const publicTranscripts = rows.transcripts.filter(isPublicTranscript);
+  const publicTrackIds = new Set(publicTracks.map((track) => track.id));
+  const publicTranscriptIds = new Set(publicTranscripts.map((transcript) => transcript.id));
+  const trackById = new Map(publicTracks.map((track) => [track.id, track]));
+
+  const audioTracks = publicTracks.map((track) =>
+    toAudioTrackResponse(track, mediaAssets, publicMediaUrlOptions),
+  );
+  const transcripts = publicTranscripts.map((transcript) => ({
+    id: transcript.id,
+    locale: transcript.locale,
+    title: transcript.title,
+    timingMode: transcript.timingMode,
+    rights: transcript.rights as 'customer-owned' | 'licensed',
+    segments: rows.transcriptSegments
+      .filter((segment) => segment.transcriptId === transcript.id)
+      .map((segment) => ({
+        id: segment.id,
+        startMs: segment.startMs,
+        endMs: segment.endMs,
+        text: segment.text,
+      })),
+  }));
+
+  const destinationAmbientTrackId = rows.destinationAmbient?.trackId ?? null;
+  const ambientTrackId =
+    destinationAmbientTrackId !== null &&
+    publicTrackIds.has(destinationAmbientTrackId) &&
+    trackById.get(destinationAmbientTrackId)?.kind === 'ambient'
+      ? destinationAmbientTrackId
+      : null;
+
+  return {
+    ambientTrackId,
+    audioTracks,
+    transcripts,
+    publicTrackIds,
+    publicTranscriptIds,
+    trackById,
+  };
+}
+
+function projectSceneAudio(
+  sceneId: string,
+  rows: ImmersiveAudioReadRows,
+  publicAudio: ReturnType<typeof toPublicAudioReadModel>,
+) {
+  const ambientOverride = rows.sceneAmbientOverrides.find((row) => row.sceneId === sceneId);
+  const ambientOverrideTrackId =
+    ambientOverride &&
+    publicAudio.publicTrackIds.has(ambientOverride.trackId) &&
+    publicAudio.trackById.get(ambientOverride.trackId)?.kind === 'ambient'
+      ? ambientOverride.trackId
+      : null;
+
+  const narrationTrackIds: LocalizedAudioIds = { vi: null, en: null };
+  const transcriptIds: LocalizedAudioIds = { vi: null, en: null };
+  for (const narration of rows.sceneNarrations) {
+    const locale = narration.locale;
+    if (
+      narration.trackId &&
+      publicAudio.publicTrackIds.has(narration.trackId) &&
+      publicAudio.trackById.get(narration.trackId)?.kind === 'narration'
+    ) {
+      narrationTrackIds[locale] = narration.trackId;
+    }
+    if (narration.transcriptId && publicAudio.publicTranscriptIds.has(narration.transcriptId)) {
+      transcriptIds[locale] = narration.transcriptId;
+    }
+  }
+
+  return { ambientOverrideTrackId, narrationTrackIds, transcriptIds };
+}
+
+function isPublicAudioTrack(track: ImmersiveAudioReadRows['tracks'][number]) {
+  return track.publicationStatus === 'published' && track.rights !== 'demo-only';
+}
+
+function isPublicTranscript(transcript: ImmersiveAudioReadRows['transcripts'][number]) {
+  return transcript.publicationStatus === 'published' && transcript.rights !== 'demo-only';
+}
+
+function toAudioTrackResponse(
+  track: ImmersiveAudioReadRows['tracks'][number],
+  mediaAssets: Map<string, MediaAsset>,
+  publicMediaUrlOptions: PublicMediaUrlOptions,
+): AudioTrackResponse {
+  const asset = track.mediaAssetId ? mediaAssets.get(track.mediaAssetId) : null;
+  const assetProps = asset?.toPrimitives();
+  const isAudioAsset = assetProps?.mediaKind === 'audio';
+  const src =
+    isAudioAsset && assetProps.status === 'ready'
+      ? resolvePublicMediaUrl(assetProps.storageKey, publicMediaUrlOptions)
+      : null;
+  const readiness: AudioTrackReadiness =
+    !assetProps || !isAudioAsset
+      ? 'invalid'
+      : assetProps.status === 'ready' && src
+        ? 'ready'
+        : assetProps.status === 'ready'
+          ? 'invalid'
+          : 'unavailable';
+
+  return {
+    id: track.id,
+    type: track.kind,
+    label: track.label,
+    locale: track.locale,
+    src: readiness === 'ready' ? src : null,
+    durationMs: track.durationMs,
+    rights: track.rights as 'customer-owned' | 'licensed',
+    readiness,
+    voiceId: track.voiceId,
+    version: track.version,
   };
 }
 
