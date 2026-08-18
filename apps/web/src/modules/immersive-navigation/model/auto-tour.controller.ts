@@ -496,7 +496,11 @@ export class AutoTourController {
       return;
     }
 
-    this.updateState({ phase: 'transitioning' });
+    // Own the requested scene before handing navigation to the renderer. This
+    // keeps transition failures correlated with the target scene, allowing the
+    // caller to stop safely on runtime-unavailable media instead of treating
+    // the failure as if the committed scene were still transitioning.
+    this.updateState({ phase: 'transitioning', currentSceneId: nextSceneId });
     this.onNavigate(nextSceneId);
   }
 
