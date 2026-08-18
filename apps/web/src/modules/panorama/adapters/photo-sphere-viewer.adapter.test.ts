@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PanoramaNode, PanoramaView } from '../domain/panorama-engine.port';
 import {
@@ -155,6 +155,10 @@ function createDeferred<T>() {
 }
 
 describe('PhotoSphereViewerEngine', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     virtualTourPlugin.listeners.clear();
@@ -168,6 +172,57 @@ describe('PhotoSphereViewerEngine', () => {
     fakeViewer.zoomCalls.length = 0;
     fakeViewer.position = { pitch: 0, yaw: Math.PI / 2 };
     fakeViewer.zoomLevel = 50;
+  });
+
+  it('fails closed when the default manifest loader receives invalid JSON shape', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ bad: 'manifest' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const engine = new PhotoSphereViewerEngine({
+      loadRuntime: async () => runtime,
+    });
+
+    await engine.mount(document.createElement('div'));
+
+    await expect(engine.loadNode(node)).rejects.toThrow();
+  });
+
+  it('validates the parsed default manifest before creating the panorama', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          version: 1,
+          type: 'equirectangular-tiles',
+          preview: 'preview.webp',
+          tileUrlTemplate: 'tiles/{level}/{col}_{row}.webp',
+          levels: [{ width: 256, cols: 2, rows: 1 }],
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const validatePanorama = vi.fn(() => {
+      throw new Error('PANORAMA_PUBLIC_RESOLUTION_TOO_LOW:scene-01:256:4096');
+    });
+    const engine = new PhotoSphereViewerEngine({
+      loadRuntime: async () => runtime,
+      validatePanorama,
+    });
+
+    await engine.mount(document.createElement('div'));
+
+    await expect(engine.loadNode(node)).rejects.toThrow(/PANORAMA_PUBLIC_RESOLUTION_TOO_LOW/);
+    expect(validatePanorama).toHaveBeenCalledWith(
+      expect.objectContaining({ id: node.id }),
+      expect.objectContaining({ type: 'equirectangular-tiles' }),
+    );
   });
 
   it('leaves the viewer on the newest scene when an older panorama resolves late', async () => {

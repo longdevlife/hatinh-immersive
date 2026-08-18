@@ -12,10 +12,12 @@ import {
   type Selected3DAnchor,
 } from '../../map3d';
 import {
+  assertPanoramaRuntimeMediaAllowed,
   createLazyPhotoSphereViewerEngine,
   FakePanoramaEngine,
   HotspotPanel,
   LazyPanoramaViewport,
+  type PanoramaRuntimeMediaPolicy,
   type PanoramaEnginePort,
 } from '../../panorama';
 import { type ImmersiveAudioSourcePolicy } from '../../immersive-audio';
@@ -115,7 +117,10 @@ interface PanoramaEntryRouteState {
   origin?: 'destination-detail' | 'explore';
 }
 
-function createDefaultFactories(initialTarget?: CameraTarget): ImmersiveExperienceFactories {
+function createDefaultFactories(
+  initialTarget?: CameraTarget,
+  panoramaRuntimeMediaPolicy: PanoramaRuntimeMediaPolicy = 'public',
+): ImmersiveExperienceFactories {
   const rendererModes = resolveRendererModes(import.meta.env);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -134,7 +139,11 @@ function createDefaultFactories(initialTarget?: CameraTarget): ImmersiveExperien
     createPanoramaEngine:
       rendererModes.panorama === 'fake'
         ? async () => new FakePanoramaEngine()
-        : () => createLazyPhotoSphereViewerEngine(),
+        : () =>
+            createLazyPhotoSphereViewerEngine({
+              validatePanorama: (node, manifest) =>
+                assertPanoramaRuntimeMediaAllowed(node, manifest, panoramaRuntimeMediaPolicy),
+            }),
     createMinimapEngine:
       rendererModes.minimap === 'fake'
         ? async () => new FakeMinimapEngine()
@@ -591,8 +600,12 @@ export function ImmersiveExperience({
   }, []);
 
   const defaultFactories = useMemo(
-    () => createDefaultFactories(manifest?.overviewTarget),
-    [manifest?.overviewTarget],
+    () =>
+      createDefaultFactories(
+        manifest?.overviewTarget,
+        panoramaTourMediaMode === 'synthetic' ? 'demo' : 'public',
+      ),
+    [manifest?.overviewTarget, panoramaTourMediaMode],
   );
   const resolvedFactories = factories ?? defaultFactories;
   const audioTracks = manifest?.audioTracks ?? EMPTY_AUDIO_TRACKS;
