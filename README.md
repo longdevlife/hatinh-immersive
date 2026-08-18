@@ -1,12 +1,12 @@
 # Hà Tĩnh Immersive
 
-A production-oriented digital tourism platform for Hà Tĩnh, combining province-wide discovery, destination storytelling, selective 3D, immersive 360° journeys, audio narration and Auto Tour.
+A production-oriented digital tourism platform for Hà Tĩnh focused on **2D discovery, destination storytelling and immersive 360° experiences**.
 
-> **MAP FOR DISCOVERY. CONTENT FOR DECISION. SƠN TRANG FOR FOCUS. 360 FOR IMMERSION. 3D ONLY WHERE IT ADDS VALUE.**
+> **MAP FOR DISCOVERY. CONTENT FOR DECISION. SƠN TRANG FOR FOCUS. 360 FOR IMMERSION.**
 
 ## Product direction
 
-Hà Tĩnh Immersive is not a GIS dashboard, a Google Maps clone, or a standalone 3D/360 demo. The intended visitor journey is:
+The current product journey is:
 
 ```text
 Home
@@ -19,9 +19,9 @@ Destination detail / editorial content
   ↓
 Sơn Trang Cổ Đạm focus experience
   ↓
-Selected 3D / 360 where it adds value
+Immersive 360°
   ↓
-Story, planning, navigation and conversion-ready journey
+Narration / Auto Tour / hotspots / planning-ready journey
 ```
 
 Each layer has one primary job:
@@ -30,14 +30,19 @@ Each layer has one primary job:
 - **Destination content** — evaluation and decision-making.
 - **Sơn Trang Cổ Đạm** — the deepest showcase/focus experience.
 - **360° panorama** — immersion and spatial storytelling.
-- **3D** — selective enhancement, not the default discovery surface.
 - **Audio / narration / Auto Tour** — guided storytelling inside immersive scenes.
+
+### About Google 3D
+
+The repository still contains an optional Google Maps 3D adapter and related engineering/tests from earlier exploration work, but **Google 3D is not part of the active production journey or the current 4-phase delivery roadmap**.
+
+Do not treat Google 3D as the primary discovery surface and do not make Phase 2/3/4 work depend on it. If 3D is reconsidered later, it must be justified as a separate product decision where it adds clear user value.
 
 ## Current milestone
 
-### Phase 1 — Production Immersive Recovery: complete
+### Phase 1 — Production Immersive Recovery: technical PASS
 
-The production panorama path now has the same unified product presentation as the demo path instead of falling back to legacy controls.
+The production panorama path now uses the same unified product presentation as the non-production/demo path instead of falling back to legacy controls.
 
 Implemented and regression-gated:
 
@@ -52,6 +57,8 @@ Implemented and regression-gated:
 - Deep links preserve the requested scene identity across URL, heading and scene rail.
 - Dedicated production-like real-PSV rejection E2E coverage.
 
+The remaining Sơn Trang media blocker is content, not renderer correctness: real customer-owned/licensed high-resolution panorama assets are still required.
+
 ### Next milestone — Phase 2: Contract Freeze & Product Acceptance
 
 Phase 2 freezes the semantic presentation boundary before visual redesign:
@@ -64,14 +71,14 @@ Domain / state / sources / renderer / routing
              presentation layer
 ```
 
-The next contract-freeze work covers:
+The contract-freeze work covers:
 
 - Unified Media Dock VM/actions;
 - scene rail semantics;
 - minimap semantics;
-- source/capability boundaries;
+- locale and source/capability boundaries;
 - Free Explore and Auto Tour acceptance behavior;
-- language/audio failure semantics;
+- audio/language/failure semantics;
 - accessibility requirements;
 - exact file ownership for Agy.
 
@@ -82,7 +89,7 @@ The next contract-freeze work covers:
 ### Phase 1 — Production Immersive Recovery
 
 **Owner:** Codex  
-**Status:** complete / merge gate
+**Status:** technical PASS / merge gate
 
 Recover production correctness, expose the unified panorama experience, reject invalid public media and add product-facing acceptance tests.
 
@@ -98,7 +105,7 @@ Freeze stable presentation VMs/actions and durable product acceptance tests so p
 **Visual owner:** Agy  
 **Engineering/integration owner:** Codex
 
-Redesign the panorama HUD into a premium tourism experience: Media Dock, scene rail, minimap, typography, hierarchy, spacing, mobile behavior, transcript presentation and cinematic motion.
+Redesign the panorama experience into a premium tourism interface: Media Dock, scene rail, minimap, typography, hierarchy, spacing, mobile behavior, transcript presentation and cinematic motion.
 
 ### Phase 4 — Sơn Trang Production Storytelling & Showcase Release
 
@@ -107,7 +114,7 @@ Redesign the panorama HUD into a premium tourism experience: Media Dock, scene r
 
 Replace placeholders with approved scene-specific 360 media, pre-generated narration, ambient sound, transcript/captions, coherent Auto Tour storytelling, production media metadata, performance hardening and release QA.
 
-## Immersive architecture
+## Active immersive architecture
 
 ```text
 Route / deep link
@@ -115,8 +122,7 @@ Route / deep link
 ImmersiveExperience composition root
       ↓
 Navigation + source capability + renderer state
-      ├── MapLibre / minimap
-      ├── selected Google 3D
+      ├── MapLibre discovery / minimap
       ├── Photo Sphere Viewer 360
       └── audio / Auto Tour orchestration
       ↓
@@ -155,9 +161,9 @@ explicit invalid/missing media is rejected
 invalid manifest parsing fails closed
 ```
 
-Low-resolution demo fixtures may still be used under an explicit demo policy for deterministic testing.
+Low-resolution fixtures may still be used under an explicit demo/test policy for deterministic verification.
 
-> The current committed Sơn Trang 128/256 px panorama fixtures are development/demo placeholders. They are intentionally rejected on the public production path. Real customer-owned/licensed Sơn Trang panorama media remains a content requirement for Phase 4.
+> The current committed Sơn Trang 128/256 px panorama fixtures are development placeholders. They are intentionally rejected on the public production path. Real customer-owned/licensed Sơn Trang panorama media remains a Phase 4 content requirement.
 
 ## Audio and Auto Tour
 
@@ -194,10 +200,9 @@ Production narration is intended to use reviewed, pre-generated files. Demo Spee
 
 - MapLibre-based province discovery foundation;
 - destination detail flow and preserved Explore return context;
-- selected-location 3D support where useful;
-- deterministic fake engines for tests;
 - deep-link scene/camera state;
-- responsive minimap foundation.
+- responsive minimap foundation;
+- deterministic fake engines for tests.
 
 ### Immersive 360
 
@@ -222,6 +227,11 @@ Production narration is intended to use reviewed, pre-generated files. Demo Spee
 - captions/transcript presentation foundation;
 - Auto Tour orchestration.
 
+### Optional / non-active capability
+
+- Google Maps JavaScript 3D adapter and related test coverage remain in the codebase.
+- This capability is **not active in the current production product journey** and is **not a prerequisite for Phase 2–4**.
+
 ### Platform foundation
 
 - NestJS/Fastify REST API;
@@ -238,7 +248,7 @@ Production narration is intended to use reviewed, pre-generated files. Demo Spee
 ```text
 hatinh-immersive/
 ├── apps/
-│   ├── web/                  # public Explore / 3D / 360 experience
+│   ├── web/                  # public Explore / 360 experience
 │   ├── admin/                # authenticated CMS/editor
 │   └── api/                  # NestJS/Fastify REST API
 ├── packages/
@@ -262,7 +272,9 @@ hatinh-immersive/
 
 ## Tech stack
 
-**Web:** React 19, Vite 8, TypeScript 6, React Router, TanStack Query, Zustand 5, MapLibre GL JS 6, Google Maps JavaScript 3D, Photo Sphere Viewer 5.
+**Web:** React 19, Vite 8, TypeScript 6, React Router, TanStack Query, Zustand 5, MapLibre GL JS 6, Photo Sphere Viewer 5.
+
+**Optional legacy/experimental adapter:** Google Maps JavaScript 3D remains in the repository but is not part of the active production journey.
 
 **API:** NestJS 11, Fastify 5, PostgreSQL 17 + PostGIS 3.5, Drizzle ORM, Zod, Pino, S3-compatible storage, Swagger/OpenAPI.
 
@@ -314,19 +326,18 @@ pnpm --filter @hatinh/admin dev
 
 ## Renderer/runtime modes
 
-Renderer selection is independently configurable:
+The active public journey depends on MapLibre and Photo Sphere Viewer. The repository also retains fake renderers for deterministic testing.
 
 ```dotenv
 # All-fake deterministic mode
 VITE_IMMERSIVE_RENDERER_MODE=fake
 
-# Or configure surfaces independently
-VITE_IMMERSIVE_MAP3D_MODE=fake
+# Surface-specific test/runtime overrides
 VITE_IMMERSIVE_MINIMAP_MODE=fake
 VITE_IMMERSIVE_PANORAMA_MODE=fake
 ```
 
-When the per-surface values are not `fake`, current runtime defaults are Google 3D, MapLibre minimap and Photo Sphere Viewer respectively.
+`VITE_IMMERSIVE_MAP3D_MODE` exists because the optional Google 3D adapter remains in the codebase; it is not part of the current production roadmap.
 
 Panorama tour content policy is separate from renderer selection. Demo content/source must never be used merely to make production presentation appear.
 
@@ -389,7 +400,7 @@ pnpm build
 pnpm test:e2e
 ```
 
-Immersive-specific CI additionally covers real/fake panorama paths, public panorama quality, production-like real PSV rejection, reference parity, Selected3D, navigation, minimap, MapLibre worker and production manifest journeys.
+Immersive-specific CI additionally covers real/fake panorama paths, public panorama quality, production-like real PSV rejection, reference parity, navigation, minimap, MapLibre worker and production manifest journeys. Existing Google 3D/Selected3D tests protect dormant code but do not define the active product journey.
 
 A green unit test run is **not** sufficient for immersive release approval. Production-facing milestones also require product-level E2E and visual evidence.
 
