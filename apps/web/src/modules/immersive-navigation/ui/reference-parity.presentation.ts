@@ -158,6 +158,7 @@ export interface ImmersiveMediaDockVmInput {
   destinationAmbientTrackId: string | null;
   locale: ImmersiveLocale;
   audioTracks?: readonly ImmersiveAudioTrack[];
+  canPlayTrack: (track: ImmersiveAudioTrack) => boolean;
   audioState?: ImmersiveAudioState;
   narrationLoading?: boolean;
   autoTour: {
@@ -179,6 +180,7 @@ export function buildImmersiveMediaDockVm({
   destinationAmbientTrackId,
   locale,
   audioTracks = [],
+  canPlayTrack,
   audioState,
   narrationLoading = false,
   autoTour,
@@ -201,7 +203,9 @@ export function buildImmersiveMediaDockVm({
       };
   const narrationTrackId = resolved.narrationTrack?.id ?? null;
   const narrationMatchesCurrentTrack = audioState?.narrationTrackId === narrationTrackId;
-  const narrationStatus: ImmersiveMediaDockNarrationStatus = !resolved.narrationTrack
+  const narrationAvailable =
+    resolved.narrationTrack !== null && canPlayTrack(resolved.narrationTrack);
+  const narrationStatus: ImmersiveMediaDockNarrationStatus = !narrationAvailable
     ? 'unavailable'
     : narrationLoading
       ? 'loading'
@@ -214,10 +218,12 @@ export function buildImmersiveMediaDockVm({
   const currentIndex = autoTourSceneId
     ? Math.max(0, tourEligibleNodes.findIndex((node) => node.id === autoTourSceneId) + 1)
     : 0;
-  // The resolver is the audio source boundary. A resolved track may be backed
-  // by a URL or by an explicit demo-only adapter such as SpeechSynthesis, so
-  // URL presence is not a valid capability signal.
-  const soundAvailable = resolved.ambientTrack !== null || resolved.narrationTrack !== null;
+  // Playability comes from the active source policy. The VM must not infer it
+  // from a resolved track or URL because demo narration can be source-backed
+  // without a file while browser-file mode cannot play that same track.
+  const soundAvailable =
+    (resolved.ambientTrack !== null && canPlayTrack(resolved.ambientTrack)) ||
+    (resolved.narrationTrack !== null && canPlayTrack(resolved.narrationTrack));
 
   return {
     mode,
@@ -231,7 +237,7 @@ export function buildImmersiveMediaDockVm({
     },
     captionsEnabled,
     narration: {
-      available: resolved.narrationTrack !== null,
+      available: narrationAvailable,
       status: narrationStatus,
       currentTimeSeconds: narrationMatchesCurrentTrack
         ? (audioState?.narrationCurrentTimeSeconds ?? 0)

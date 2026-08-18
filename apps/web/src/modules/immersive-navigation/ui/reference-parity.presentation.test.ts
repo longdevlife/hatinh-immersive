@@ -81,6 +81,16 @@ const mediaDockActions: ImmersiveMediaDockActions = {
   onListenInLocale: () => undefined,
 };
 
+function buildVmWithSourceCapability(
+  input: Omit<Parameters<typeof buildImmersiveMediaDockVm>[0], 'canPlayTrack'>,
+  canPlayTrack: (track: ImmersiveAudioTrack) => boolean,
+) {
+  return buildImmersiveMediaDockVm({
+    ...input,
+    canPlayTrack,
+  });
+}
+
 const freeExploreAutoTour = {
   isActive: false,
   isPaused: false,
@@ -221,6 +231,7 @@ describe('reference parity presentation contract', () => {
       destinationAmbientTrackId: null,
       locale: 'vi',
       audioTracks: [narrationTrack],
+      canPlayTrack: () => true,
       audioState,
       autoTour: freeExploreAutoTour,
       captionsEnabled: false,
@@ -277,6 +288,7 @@ describe('reference parity presentation contract', () => {
       destinationAmbientTrackId: null,
       locale: 'vi',
       audioTracks: [narrationTrack],
+      canPlayTrack: () => true,
       audioState: playingState,
       narrationLoading: false,
       autoTour: activeAutoTour,
@@ -318,6 +330,7 @@ describe('reference parity presentation contract', () => {
       destinationAmbientTrackId: null,
       locale: 'vi',
       audioTracks: [narrationTrack],
+      canPlayTrack: () => true,
       audioState: { ...playingState, narrationPlaying: false },
       autoTour: {
         ...activeAutoTour,
@@ -355,6 +368,7 @@ describe('reference parity presentation contract', () => {
       destinationAmbientTrackId: null,
       locale: 'en',
       audioTracks: [narrationTrack],
+      canPlayTrack: () => false,
       audioState,
       autoTour: freeExploreAutoTour,
       captionsEnabled: false,
@@ -379,6 +393,7 @@ describe('reference parity presentation contract', () => {
       destinationAmbientTrackId: null,
       locale: 'vi',
       audioTracks: [],
+      canPlayTrack: () => false,
       audioState: { ...audioState, autoplayBlocked: true },
       autoTour: freeExploreAutoTour,
       captionsEnabled: false,
@@ -396,24 +411,82 @@ describe('reference parity presentation contract', () => {
       ...narrationTrack,
       src: null,
     };
-    const vm = buildImmersiveMediaDockVm({
-      mode: 'free-explore',
-      scene: {
-        ...node('major'),
-        narrationTrackId: speechNarrationTrack.id,
-        transcripts: { vi: transcript },
+    const vm = buildVmWithSourceCapability(
+      {
+        mode: 'free-explore',
+        scene: {
+          ...node('major'),
+          narrationTrackId: speechNarrationTrack.id,
+          transcripts: { vi: transcript },
+        },
+        tourEligibleNodes: [node('major')],
+        currentSceneId: 'major',
+        destinationAmbientTrackId: null,
+        locale: 'vi',
+        audioTracks: [speechNarrationTrack],
+        audioState,
+        autoTour: freeExploreAutoTour,
+        captionsEnabled: false,
       },
-      tourEligibleNodes: [node('major')],
-      currentSceneId: 'major',
-      destinationAmbientTrackId: null,
-      locale: 'vi',
-      audioTracks: [speechNarrationTrack],
-      audioState,
-      autoTour: freeExploreAutoTour,
-      captionsEnabled: false,
-    });
+      () => true,
+    );
 
     expect(vm.sound.available).toBe(true);
     expect(vm.narration.available).toBe(true);
+  });
+
+  it('does not advertise a null-url narration for the browser-file-only source', () => {
+    const browserNarrationTrack: ImmersiveAudioTrack = {
+      ...narrationTrack,
+      src: null,
+    };
+    const vm = buildVmWithSourceCapability(
+      {
+        mode: 'free-explore',
+        scene: {
+          ...node('major'),
+          narrationTrackId: browserNarrationTrack.id,
+          transcripts: { vi: transcript },
+        },
+        tourEligibleNodes: [node('major')],
+        currentSceneId: 'major',
+        destinationAmbientTrackId: null,
+        locale: 'vi',
+        audioTracks: [browserNarrationTrack],
+        audioState,
+        autoTour: freeExploreAutoTour,
+        captionsEnabled: false,
+      },
+      () => false,
+    );
+
+    expect(vm.sound.available).toBe(false);
+    expect(vm.narration.available).toBe(false);
+    expect(vm.soundGateRequired).toBe(false);
+  });
+
+  it('does not advertise a file track when the active browser source cannot play it', () => {
+    const vm = buildVmWithSourceCapability(
+      {
+        mode: 'free-explore',
+        scene: {
+          ...node('major'),
+          narrationTrackId: narrationTrack.id,
+          transcripts: { vi: transcript },
+        },
+        tourEligibleNodes: [node('major')],
+        currentSceneId: 'major',
+        destinationAmbientTrackId: null,
+        locale: 'vi',
+        audioTracks: [narrationTrack],
+        audioState,
+        autoTour: freeExploreAutoTour,
+        captionsEnabled: false,
+      },
+      () => false,
+    );
+
+    expect(vm.sound.available).toBe(false);
+    expect(vm.soundGateRequired).toBe(false);
   });
 });

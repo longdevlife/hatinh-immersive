@@ -1,6 +1,11 @@
 export { createBrowserAudioAdapter } from './adapters/browser-audio.adapter';
 export { createSpeechSynthesisAudioAdapter } from './adapters/speech-synthesis.adapter';
 export {
+  createImmersiveAudioSource,
+  type ImmersiveAudioSource,
+  type ImmersiveAudioSourcePolicy,
+} from './adapters/immersive-audio-source';
+export {
   DEFAULT_AMBIENT_VOLUME,
   AMBIENT_DESTINATION_CROSSFADE_MS,
   AMBIENT_SCENE_CROSSFADE_MS,

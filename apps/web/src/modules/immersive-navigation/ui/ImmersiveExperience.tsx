@@ -18,6 +18,7 @@ import {
   LazyPanoramaViewport,
   type PanoramaEnginePort,
 } from '../../panorama';
+import { type ImmersiveAudioSourcePolicy } from '../../immersive-audio';
 import {
   FakeMinimapEngine,
   createLazyMapLibreMinimapEngine,
@@ -100,6 +101,7 @@ export interface ImmersiveExperienceProps {
   selected3DAnchorSource?: Selected3DAnchorSource;
   panoramaTourSource?: PanoramaTourSource;
   panoramaTourMediaMode?: PanoramaTourMediaMode;
+  audioSourcePolicy?: ImmersiveAudioSourcePolicy;
 }
 
 const EMPTY_SELECTED_3D_ANCHORS: readonly Selected3DAnchor[] = [];
@@ -487,6 +489,7 @@ export function ImmersiveExperience({
   selected3DAnchorSource = 'none',
   panoramaTourSource = 'none',
   panoramaTourMediaMode = 'public',
+  audioSourcePolicy,
 }: ImmersiveExperienceProps) {
   const { destinationSlug: routeDestinationSlug } = useParams<{ destinationSlug: string }>();
   const location = useLocation();
@@ -504,6 +507,8 @@ export function ImmersiveExperience({
   const destinationsQuery = useImmersiveDestinations(locale, shouldFetchDestinations);
   const destinations = destinationsOverride ?? destinationsQuery.data;
   const sourceManifest = manifestOverride ?? manifestQuery.data;
+  const resolvedAudioSourcePolicy =
+    audioSourcePolicy ?? (panoramaTourSource === 'demo' ? 'demo-speech-synthesis' : 'browser-file');
   const manifest = useMemo(
     () =>
       sourceManifest
@@ -919,6 +924,7 @@ export function ImmersiveExperience({
 
   const audioTour = useImmersiveAudioTour({
     destinationSlug,
+    audioSourcePolicy: resolvedAudioSourcePolicy,
     destinationAmbientTrackId: audioTracks.find((track) => track.type === 'ambient')?.id ?? null,
     audioTracks,
     locale,
@@ -1311,6 +1317,7 @@ export function ImmersiveExperience({
             audioTracks.find((track) => track.type === 'ambient')?.id ?? null,
           locale,
           audioTracks,
+          canPlayTrack: audioTour.canPlayTrack,
           audioState,
           autoTour: {
             isActive: autoTourState.isActive,

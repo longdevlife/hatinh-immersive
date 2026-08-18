@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
-  createBrowserAudioAdapter,
+  createImmersiveAudioSource,
   ImmersiveAudioController,
   resolveSceneAudio,
+  type ImmersiveAudioSource,
+  type ImmersiveAudioSourcePolicy,
   type ImmersiveAudioState,
   type NarrationLifecycleEvent,
 } from '../../immersive-audio';
@@ -68,6 +70,7 @@ export interface ImmersiveAudioTourAudioController extends AudioTourAudioControl
 
 export interface ImmersiveAudioTourInput {
   destinationSlug: string;
+  audioSourcePolicy: ImmersiveAudioSourcePolicy;
   destinationAmbientTrackId: string | null;
   audioTracks: readonly ImmersiveAudioTrack[];
   locale: ImmersiveLocale;
@@ -87,6 +90,7 @@ export interface ImmersiveAudioTourFactories {
 
 export interface ImmersiveAudioTourResult {
   audioController: ImmersiveAudioTourAudioController;
+  canPlayTrack(track: ImmersiveAudioTrack): boolean;
   audioState: ImmersiveAudioState;
   autoTourController: AutoTourController;
   autoTourState: AutoTourControllerState;
@@ -114,6 +118,7 @@ export interface ImmersiveAudioTourResult {
 
 interface AudioTourRuntime {
   audioController: ImmersiveAudioTourAudioController;
+  audioSource: ImmersiveAudioSource;
   autoTourController: AutoTourController;
   coordinator: AudioTourCoordinator;
 }
@@ -163,9 +168,9 @@ export function useImmersiveAudioTour(
   }));
   const runtime = useMemo<AudioTourRuntime>(() => {
     let coordinator: AudioTourCoordinator | null = null;
+    const audioSource = createImmersiveAudioSource(input.audioSourcePolicy);
     const audioController =
-      factories.createAudioController?.() ??
-      new ImmersiveAudioController(createBrowserAudioAdapter());
+      factories.createAudioController?.() ?? new ImmersiveAudioController(audioSource.adapter);
     const createAutoTourController =
       factories.createAutoTourController ??
       ((options: AutoTourControllerOptions) => new AutoTourController(options));
@@ -187,11 +192,12 @@ export function useImmersiveAudioTour(
       tracks: input.audioTracks,
     });
 
-    return { audioController, autoTourController, coordinator };
+    return { audioController, audioSource, autoTourController, coordinator };
   }, [
     factories.createAudioController,
     factories.createAutoTourController,
     factories.createCoordinator,
+    input.audioSourcePolicy,
     input.audioTracks,
     input.destinationSlug,
   ]);
@@ -426,6 +432,7 @@ export function useImmersiveAudioTour(
     autoTourController: runtime.autoTourController,
     autoTourState,
     coordinator: runtime.coordinator,
+    canPlayTrack: runtime.audioSource.canPlayTrack,
     startAutoTour,
     toggleAutoTour,
     pauseAutoTour,

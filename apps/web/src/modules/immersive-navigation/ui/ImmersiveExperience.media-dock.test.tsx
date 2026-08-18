@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { FakeMap3DEngine } from '../../map3d';
 import { FakeMinimapEngine } from '../../minimap';
@@ -11,7 +11,14 @@ import type { ImmersiveExperienceFactories } from './ImmersiveExperience';
 import { ImmersiveExperience } from './ImmersiveExperience';
 
 describe('ImmersiveExperience Media Dock integration', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('mounts one unified media dock and does not render the legacy audio/Auto Tour controls', async () => {
+    vi.stubGlobal('speechSynthesis', {});
+    vi.stubGlobal('SpeechSynthesisUtterance', class SpeechSynthesisUtterance {});
+
     const map3d = new FakeMap3DEngine();
     const minimap = new FakeMinimapEngine();
     const panorama = new FakePanoramaEngine();

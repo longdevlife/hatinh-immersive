@@ -228,6 +228,7 @@ function scene(id: string, narrationTrackId: string | null = 'narration-a'): Pan
 function createInput(overrides: Partial<ImmersiveAudioTourInput> = {}): ImmersiveAudioTourInput {
   return {
     destinationSlug: 'son-trang-co-dam',
+    audioSourcePolicy: 'browser-file',
     destinationAmbientTrackId: 'ambient-a',
     audioTracks: [track('ambient-a', 'ambient'), track('narration-a', 'narration', 'vi')],
     locale: 'vi',
