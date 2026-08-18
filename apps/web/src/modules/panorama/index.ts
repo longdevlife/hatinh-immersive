@@ -1,5 +1,10 @@
 export { FakePanoramaEngine } from './adapters/fake-panorama.adapter';
 export type { FakePanoramaCall } from './adapters/fake-panorama.adapter';
+export {
+  assertPanoramaRuntimeMediaAllowed,
+  MIN_PUBLIC_PANORAMA_WIDTH,
+} from './domain/panorama-media-quality';
+export type { PanoramaRuntimeMediaPolicy } from './domain/panorama-media-quality';
 export { createLazyPhotoSphereViewerEngine } from './adapters/lazy-photo-sphere-viewer.adapter';
 export type {
   PhotoSphereViewerAdapterOptions,
