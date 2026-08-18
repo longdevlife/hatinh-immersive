@@ -357,6 +357,52 @@ describe('ImmersiveAudioController', () => {
     expect(controller.isNarrationPlaybackResumable(1)).toBe(false);
   });
 
+  it('keeps the resumed ownership when the initial play settles after resume', async () => {
+    const narration = track('narration-resume-before-initial-settles', 'narration');
+    const handle = new FakeTrack();
+    const initialPlay = new Deferred<void>();
+    const resumedPlay = new Deferred<void>();
+    handle.playGate = initialPlay.promise;
+    const controller = new ImmersiveAudioController({ create: () => handle });
+
+    const initialRequest = controller.playNarration(narration);
+    await flushMicrotasks();
+    const ownershipId = controller.getNarrationOwnershipId();
+    expect(ownershipId).not.toBeNull();
+
+    controller.pauseNarration();
+    handle.playGate = resumedPlay.promise;
+    const resumeRequest = controller.resumeNarration();
+    await flushMicrotasks();
+
+    initialPlay.resolve();
+    await expect(initialRequest).resolves.toBe(false);
+    expect(controller.isNarrationPlaybackResumable(ownershipId!)).toBe(true);
+
+    resumedPlay.resolve();
+    await expect(resumeRequest).resolves.toBe(true);
+    expect(controller.getState().narrationPlaying).toBe(true);
+  });
+
+  it('emits an owned error lifecycle when the current resume fails', async () => {
+    const narration = track('narration-current-resume-failure', 'narration');
+    const handle = new FakeTrack();
+    const controller = new ImmersiveAudioController({ create: () => handle });
+    const events: Array<{ type: string; trackId: string; ownershipId: number }> = [];
+    controller.subscribeNarrationLifecycle((event) => events.push(event));
+
+    await controller.playNarration(narration);
+    const ownershipId = controller.getNarrationOwnershipId();
+    expect(ownershipId).not.toBeNull();
+    controller.pauseNarration();
+    handle.rejectPlay = true;
+
+    await expect(controller.resumeNarration()).resolves.toBe(false);
+
+    expect(events).toEqual([{ type: 'error', trackId: narration.id, ownershipId: ownershipId! }]);
+    expect(controller.getNarrationOwnershipId()).toBeNull();
+  });
+
   it('master mute silences both channels and restores their effective volumes', async () => {
     const { adapter, created } = adapterWithTracks();
     const controller = new ImmersiveAudioController(adapter);
