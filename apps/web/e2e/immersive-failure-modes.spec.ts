@@ -180,7 +180,7 @@ test('restores the previous scene after a next-scene load failure', async ({ pag
   ).toHaveAttribute('data-renderer-status', 'ready');
 
   await page
-    .getByRole('navigation', { name: 'Danh sách cảnh quan' })
+    .getByRole('navigation', { name: /Hành trình 360|Danh sách cảnh quan/ })
     .getByRole('button')
     .nth(1)
     .click();

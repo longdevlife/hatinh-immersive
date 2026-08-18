@@ -84,11 +84,7 @@ const manifest = (locale: string) => ({
   ],
 });
 
-test('wires search, scene browser, locale, fullscreen, share, and hotspot panels', async ({
-  page,
-}) => {
-  const manifestLocales: string[] = [];
-
+test('wires unified scene, fullscreen, share, and hotspot controls', async ({ page }) => {
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.route(
     /\/api\/v1\/destinations\/[^/?]+\/immersive-manifest(?:\?.*)?$/,
@@ -96,7 +92,6 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
       const requestUrl = new URL(route.request().url());
 
       const locale = requestUrl.searchParams.get('locale') ?? 'vi';
-      manifestLocales.push(locale);
       await route.fulfill({
         contentType: 'application/json',
         body: JSON.stringify(manifest(locale)),
@@ -137,21 +132,15 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
 
   await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90');
   await expect(page.getByRole('region', { name: 'Các công cụ tiện ích' })).toBeVisible();
-
-  await page.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' }).click();
-  await expect(page.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Việt' })).toHaveText('EN');
-  if (manifestLocales.length > 0) {
-    await expect.poll(() => manifestLocales.at(-1)).toBe('en');
-    await expect(page.getByRole('heading', { name: 'Entrance' })).toBeVisible();
-    expect(manifestLocales.at(-1)).toBe('en');
-  }
+  await expect(page.getByRole('button', { name: 'Mở tìm kiếm' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Đổi ngôn ngữ/ })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Câu chuyện địa danh' }).click();
   await expect(page.getByRole('dialog')).toContainText('Câu chuyện địa danh');
   await page.getByRole('button', { name: 'Đóng chi tiết điểm khám phá' }).click();
 
   await page
-    .getByRole('navigation', { name: 'Danh sách cảnh quan' })
+    .getByRole('navigation', { name: 'Hành trình 360 Sơn Trang Cổ Đạm' })
     .getByRole('button')
     .nth(1)
     .click();
@@ -163,15 +152,4 @@ test('wires search, scene browser, locale, fullscreen, share, and hotspot panels
     'true',
   );
   await page.getByRole('button', { name: 'Chia sẻ cảnh này' }).click();
-
-  await page.getByRole('button', { name: 'Mở tìm kiếm' }).click();
-  const searchInput = page
-    .getByRole('search')
-    .getByRole('searchbox', { name: 'Nhập tên điểm đến' });
-  await searchInput.fill('Nguyễn');
-  await expect(page.getByRole('button', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
-  await page.getByRole('button', { name: 'Khu lưu niệm Nguyễn Du' }).click();
-  await expect(page).toHaveURL('/explore/khu-luu-niem-nguyen-du');
-  await expect(page.getByRole('main', { name: 'Thông tin điểm đến' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
 });

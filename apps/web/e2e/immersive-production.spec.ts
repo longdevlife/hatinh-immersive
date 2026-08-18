@@ -124,7 +124,12 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
   );
   await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
 
-  const sceneBrowser = page.getByRole('navigation', { name: 'Danh sách cảnh quan' });
+  const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+  await expect(mediaDock).toBeVisible();
+  await expect(mediaDock.getByRole('button', { name: 'Bắt đầu tự động tham quan' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Tự động tham quan', exact: true })).toHaveCount(0);
+
+  const sceneBrowser = page.getByRole('navigation', { name: /Hành trình 360|Danh sách cảnh quan/ });
   await expect(sceneBrowser.getByRole('button', { name: 'Cổng vào' })).toHaveAttribute(
     'aria-current',
     'step',
@@ -133,8 +138,7 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
   await expect(page.getByRole('heading', { name: 'Sân trung tâm' })).toBeVisible();
   await expect(page).toHaveURL(/scene=scene-02/);
 
-  const returnLabel = `Quay lại ${manifest.destination.name}`;
-  await page.getByRole('button', { name: returnLabel }).click();
+  await page.getByRole('button', { name: 'Quay lại thế giới 3D' }).click();
 
   await expect(page).toHaveURL(
     '/explore/son-trang-co-dam?returnTo=%2Fexplore%3Fdestination%3Dson-trang-co-dam%26view%3Dmap',
