@@ -20,6 +20,7 @@ class FakeTrack implements AudioTrackHandle {
   fadeGate: Promise<void> | null = null;
   rejectPlay = false;
   private endedListeners = new Set<() => void>();
+  private errorListeners = new Set<() => void>();
   private progressListeners = new Set<
     (snapshot: { currentTimeSeconds: number; durationSeconds: number; canSeek: boolean }) => void
   >();
@@ -84,10 +85,36 @@ class FakeTrack implements AudioTrackHandle {
     return () => this.endedListeners.delete(listener);
   }
 
+  onError(listener: () => void): () => void {
+    this.errorListeners.add(listener);
+    return () => this.errorListeners.delete(listener);
+  }
+
   finish(): void {
     for (const listener of this.endedListeners) {
       listener();
     }
+  }
+
+  fail(): void {
+    for (const listener of this.errorListeners) {
+      listener();
+    }
+  }
+}
+
+class Deferred<T> {
+  readonly promise: Promise<T>;
+
+  resolve!: (value: T) => void;
+
+  reject!: (reason?: unknown) => void;
+
+  constructor() {
+    this.promise = new Promise<T>((resolve, reject) => {
+      this.resolve = resolve;
+      this.reject = reject;
+    });
   }
 }
 
@@ -113,6 +140,24 @@ async function flushMicrotasks(): Promise<void> {
 }
 
 describe('ImmersiveAudioController', () => {
+  it('distinguishes natural narration completion from narration errors', async () => {
+    const { adapter, created } = adapterWithTracks();
+    const controller = new ImmersiveAudioController(adapter);
+    const narration = track('narration-lifecycle', 'narration');
+    const events: string[] = [];
+
+    controller.subscribeNarrationLifecycle((event) => {
+      events.push(`${event.trackId}:${event.type}`);
+    });
+
+    await controller.playNarration(narration);
+    created.get(narration.id)?.finish();
+    await controller.playNarration(narration);
+    created.get(narration.id)?.fail();
+
+    expect(events).toEqual([`${narration.id}:ended`, `${narration.id}:error`]);
+  });
+
   it('starts one ambient track and does not recreate it when the scene changes', async () => {
     const { adapter, created } = adapterWithTracks();
     const controller = new ImmersiveAudioController(adapter);
@@ -228,6 +273,88 @@ describe('ImmersiveAudioController', () => {
       narrationPlaying: true,
       autoplayBlocked: false,
     });
+  });
+
+  it('does not resurrect narration when pause invalidates a pending play resolution', async () => {
+    const narration = track('narration-pause-pending-resolve', 'narration');
+    const handle = new FakeTrack();
+    const firstPlay = new Deferred<void>();
+    const secondPlay = new Deferred<void>();
+    handle.playGate = firstPlay.promise;
+    const adapter: AudioAdapter = { create: () => handle };
+    const controller = new ImmersiveAudioController(adapter);
+
+    const pendingPlay = controller.playNarration(narration);
+    await flushMicrotasks();
+    controller.pauseNarration();
+    firstPlay.resolve();
+
+    await expect(pendingPlay).resolves.toBe(false);
+    expect(controller.getState()).toMatchObject({
+      narrationTrackId: narration.id,
+      narrationPlaying: false,
+      autoplayBlocked: false,
+    });
+
+    handle.playGate = secondPlay.promise;
+    const resumedPlay = controller.resumeNarration();
+    await flushMicrotasks();
+    secondPlay.resolve();
+
+    await expect(resumedPlay).resolves.toBe(true);
+    expect(controller.getState()).toMatchObject({
+      narrationTrackId: narration.id,
+      narrationPlaying: true,
+      autoplayBlocked: false,
+    });
+  });
+
+  it('does not mark autoplay blocked when a paused play rejects late', async () => {
+    const narration = track('narration-pause-pending-reject', 'narration');
+    const handle = new FakeTrack();
+    const firstPlay = new Deferred<void>();
+    handle.playGate = firstPlay.promise;
+    const controller = new ImmersiveAudioController({ create: () => handle });
+
+    const pendingPlay = controller.playNarration(narration);
+    await flushMicrotasks();
+    controller.pauseNarration();
+    firstPlay.reject(new Error('PAUSED_TRANSPORT_ABORT'));
+
+    await expect(pendingPlay).resolves.toBe(false);
+    expect(controller.getState()).toMatchObject({
+      narrationTrackId: narration.id,
+      narrationPlaying: false,
+      autoplayBlocked: false,
+    });
+  });
+
+  it('keeps a paused stale play resumable without treating it as unavailable', async () => {
+    const narration = track('narration-pause-resumable', 'narration');
+    const handle = new FakeTrack();
+    const pendingPlay = new Deferred<void>();
+    handle.playGate = pendingPlay.promise;
+    const controller = new ImmersiveAudioController({ create: () => handle });
+
+    const playRequest = controller.playNarration(narration);
+    await flushMicrotasks();
+    const ownershipId = controller.getNarrationOwnershipId();
+    expect(ownershipId).not.toBeNull();
+    controller.pauseNarration();
+    pendingPlay.resolve();
+
+    await expect(playRequest).resolves.toBe(false);
+    expect(controller.isNarrationPlaybackResumable(ownershipId!)).toBe(true);
+  });
+
+  it('does not mark an actual narration play failure as resumable', async () => {
+    const narration = track('narration-play-failure', 'narration');
+    const handle = new FakeTrack();
+    handle.rejectPlay = true;
+    const controller = new ImmersiveAudioController({ create: () => handle });
+
+    await expect(controller.playNarration(narration)).resolves.toBe(false);
+    expect(controller.isNarrationPlaybackResumable(1)).toBe(false);
   });
 
   it('master mute silences both channels and restores their effective volumes', async () => {

@@ -21,6 +21,7 @@ function createHandle(
   Utterance: typeof SpeechSynthesisUtterance,
 ): AudioTrackHandle {
   const endedListeners = new Set<() => void>();
+  const errorListeners = new Set<() => void>();
   let activeUtterance: SpeechSynthesisUtterance | null = null;
   let mutedByVolume = false;
   let pausedManually = false;
@@ -33,6 +34,18 @@ function createHandle(
     mutedByVolume = false;
     pausedManually = false;
     for (const listener of endedListeners) {
+      listener();
+    }
+  };
+
+  const fail = (utterance: SpeechSynthesisUtterance) => {
+    if (activeUtterance !== utterance) {
+      return;
+    }
+    activeUtterance = null;
+    mutedByVolume = false;
+    pausedManually = false;
+    for (const listener of errorListeners) {
       listener();
     }
   };
@@ -52,7 +65,7 @@ function createHandle(
       const utterance = new Utterance(track.label);
       utterance.lang = localeToSpeechLanguage(track.locale);
       utterance.onend = () => finish(utterance);
-      utterance.onerror = () => finish(utterance);
+      utterance.onerror = () => fail(utterance);
       activeUtterance = utterance;
 
       try {
@@ -98,6 +111,10 @@ function createHandle(
     onEnded: (listener) => {
       endedListeners.add(listener);
       return () => endedListeners.delete(listener);
+    },
+    onError: (listener) => {
+      errorListeners.add(listener);
+      return () => errorListeners.delete(listener);
     },
   };
 }

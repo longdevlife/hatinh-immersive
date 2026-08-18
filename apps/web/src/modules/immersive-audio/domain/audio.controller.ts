@@ -16,6 +16,13 @@ export interface AudioTrackHandle {
   getPlaybackSnapshot(): AudioPlaybackSnapshot;
   onProgress(listener: (snapshot: AudioPlaybackSnapshot) => void): () => void;
   onEnded(listener: () => void): () => void;
+  onError?(listener: () => void): () => void;
+}
+
+export interface NarrationLifecycleEvent {
+  type: 'ended' | 'error';
+  trackId: string;
+  ownershipId: number;
 }
 
 export interface AudioAdapter {
@@ -83,7 +90,17 @@ export class ImmersiveAudioController {
 
   private narrationHandle: AudioTrackHandle | null = null;
 
+  private narrationTransportGeneration = 0;
+
+  private narrationDesiredPlaying = false;
+
+  private narrationOwnershipSequence = 0;
+
+  private narrationOwnershipId: number | null = null;
+
   private narrationEndedCleanup: (() => void) | null = null;
+
+  private narrationErrorCleanup: (() => void) | null = null;
 
   private narrationProgressCleanup: (() => void) | null = null;
 
@@ -91,15 +108,34 @@ export class ImmersiveAudioController {
 
   private listeners = new Set<(state: ImmersiveAudioState) => void>();
 
+  private narrationLifecycleListeners = new Set<(event: NarrationLifecycleEvent) => void>();
+
   constructor(private readonly adapter: AudioAdapter) {}
 
   getState(): ImmersiveAudioState {
     return { ...this.state };
   }
 
+  getNarrationOwnershipId(): number | null {
+    return this.narrationOwnershipId;
+  }
+
+  isNarrationPlaybackResumable(ownershipId: number): boolean {
+    return Boolean(
+      this.narrationHandle &&
+      this.narrationOwnershipId === ownershipId &&
+      !this.narrationDesiredPlaying,
+    );
+  }
+
   subscribe(listener: (state: ImmersiveAudioState) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  subscribeNarrationLifecycle(listener: (event: NarrationLifecycleEvent) => void): () => void {
+    this.narrationLifecycleListeners.add(listener);
+    return () => this.narrationLifecycleListeners.delete(listener);
   }
 
   async setAmbientTrack(
@@ -220,6 +256,10 @@ export class ImmersiveAudioController {
     }
 
     const handle = this.narrationHandle;
+    const transportGeneration = ++this.narrationTransportGeneration;
+    const ownershipId = ++this.narrationOwnershipSequence;
+    this.narrationOwnershipId = ownershipId;
+    this.narrationDesiredPlaying = true;
     this.narrationProgressCleanup = handle.onProgress((snapshot) => {
       if (this.narrationHandle !== handle) {
         return;
@@ -231,8 +271,12 @@ export class ImmersiveAudioController {
       });
     });
     this.narrationEndedCleanup = handle.onEnded(() => {
-      this.finishNarration(handle);
+      this.finishNarration(handle, 'ended');
     });
+    this.narrationErrorCleanup =
+      handle.onError?.(() => {
+        this.finishNarration(handle, 'error');
+      }) ?? null;
     const snapshot = handle.getPlaybackSnapshot();
     this.update({
       narrationTrackId: track.id,
@@ -245,14 +289,22 @@ export class ImmersiveAudioController {
 
     try {
       await handle.play();
-      if (this.narrationHandle !== handle) {
+      if (
+        this.narrationHandle !== handle ||
+        this.narrationTransportGeneration !== transportGeneration ||
+        !this.narrationDesiredPlaying
+      ) {
         return false;
       }
       this.update({ narrationPlaying: true, autoplayBlocked: false });
       await this.applyVolumes(NARRATION_STOP_FADE_MS);
       return true;
     } catch {
-      if (this.narrationHandle !== handle) {
+      if (
+        this.narrationHandle !== handle ||
+        this.narrationTransportGeneration !== transportGeneration ||
+        !this.narrationDesiredPlaying
+      ) {
         return false;
       }
       this.stopNarration();
@@ -262,6 +314,8 @@ export class ImmersiveAudioController {
   }
 
   pauseNarration(): void {
+    this.narrationTransportGeneration += 1;
+    this.narrationDesiredPlaying = false;
     this.narrationHandle?.pause();
     this.update({ narrationPlaying: false });
     void this.applyVolumes(NARRATION_STOP_FADE_MS);
@@ -273,16 +327,26 @@ export class ImmersiveAudioController {
     }
 
     const handle = this.narrationHandle;
+    const transportGeneration = ++this.narrationTransportGeneration;
+    this.narrationDesiredPlaying = true;
     try {
       await handle.play();
-      if (this.narrationHandle !== handle) {
+      if (
+        this.narrationHandle !== handle ||
+        this.narrationTransportGeneration !== transportGeneration ||
+        !this.narrationDesiredPlaying
+      ) {
         return false;
       }
       this.update({ narrationPlaying: true, autoplayBlocked: false });
       await this.applyVolumes(NARRATION_STOP_FADE_MS);
       return true;
     } catch {
-      if (this.narrationHandle !== handle) {
+      if (
+        this.narrationHandle !== handle ||
+        this.narrationTransportGeneration !== transportGeneration ||
+        !this.narrationDesiredPlaying
+      ) {
         return false;
       }
       this.update({ autoplayBlocked: true, narrationPlaying: false });
@@ -417,9 +481,14 @@ export class ImmersiveAudioController {
     );
   }
 
-  private stopNarration(): void {
+  stopNarration(): void {
+    this.narrationTransportGeneration += 1;
+    this.narrationDesiredPlaying = false;
+    this.narrationOwnershipId = null;
     this.narrationEndedCleanup?.();
     this.narrationEndedCleanup = null;
+    this.narrationErrorCleanup?.();
+    this.narrationErrorCleanup = null;
     this.narrationProgressCleanup?.();
     this.narrationProgressCleanup = null;
     this.narrationHandle?.stop();
@@ -436,15 +505,23 @@ export class ImmersiveAudioController {
     void this.applyVolumes(NARRATION_STOP_FADE_MS);
   }
 
-  private finishNarration(handle: AudioTrackHandle | null): void {
+  private finishNarration(
+    handle: AudioTrackHandle | null,
+    type: NarrationLifecycleEvent['type'],
+  ): void {
     if (!handle || handle !== this.narrationHandle) {
       return;
     }
+    const trackId = this.state.narrationTrackId;
+    const ownershipId = this.narrationOwnershipId;
     this.narrationEndedCleanup?.();
     this.narrationEndedCleanup = null;
+    this.narrationErrorCleanup?.();
+    this.narrationErrorCleanup = null;
     this.narrationProgressCleanup?.();
     this.narrationProgressCleanup = null;
     this.narrationHandle = null;
+    this.narrationOwnershipId = null;
     this.update({
       narrationPlaying: false,
       narrationTrackId: null,
@@ -452,6 +529,12 @@ export class ImmersiveAudioController {
       narrationDurationSeconds: 0,
       narrationCanSeek: false,
     });
+    if (trackId && ownershipId !== null) {
+      const event = { type, trackId, ownershipId } satisfies NarrationLifecycleEvent;
+      for (const listener of this.narrationLifecycleListeners) {
+        listener(event);
+      }
+    }
     void this.applyVolumes(NARRATION_STOP_FADE_MS);
   }
 
