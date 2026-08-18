@@ -385,8 +385,35 @@ describe('reference parity presentation contract', () => {
       soundGateRequired: true,
     });
 
-    expect(vm.soundGateRequired).toBe(true);
+    expect(vm.sound.available).toBe(false);
+    expect(vm.soundGateRequired).toBe(false);
     expect(vm.narration).toMatchObject({ available: false, status: 'unavailable' });
     expect(vm.transcript).toEqual({ available: true, content: transcript });
+  });
+
+  it('treats a resolved source-capable narration with no file URL as available sound', () => {
+    const speechNarrationTrack: ImmersiveAudioTrack = {
+      ...narrationTrack,
+      src: null,
+    };
+    const vm = buildImmersiveMediaDockVm({
+      mode: 'free-explore',
+      scene: {
+        ...node('major'),
+        narrationTrackId: speechNarrationTrack.id,
+        transcripts: { vi: transcript },
+      },
+      tourEligibleNodes: [node('major')],
+      currentSceneId: 'major',
+      destinationAmbientTrackId: null,
+      locale: 'vi',
+      audioTracks: [speechNarrationTrack],
+      audioState,
+      autoTour: freeExploreAutoTour,
+      captionsEnabled: false,
+    });
+
+    expect(vm.sound.available).toBe(true);
+    expect(vm.narration.available).toBe(true);
   });
 });

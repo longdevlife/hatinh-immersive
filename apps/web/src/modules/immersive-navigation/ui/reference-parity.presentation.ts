@@ -214,14 +214,19 @@ export function buildImmersiveMediaDockVm({
   const currentIndex = autoTourSceneId
     ? Math.max(0, tourEligibleNodes.findIndex((node) => node.id === autoTourSceneId) + 1)
     : 0;
+  // The resolver is the audio source boundary. A resolved track may be backed
+  // by a URL or by an explicit demo-only adapter such as SpeechSynthesis, so
+  // URL presence is not a valid capability signal.
+  const soundAvailable = resolved.ambientTrack !== null || resolved.narrationTrack !== null;
 
   return {
     mode,
     sceneId: currentSceneId,
     sceneLabel: scene?.name ?? scene?.id ?? '',
-    soundGateRequired: soundGateRequired ?? audioState?.autoplayBlocked ?? false,
+    soundGateRequired:
+      soundAvailable && (soundGateRequired ?? audioState?.autoplayBlocked ?? false),
     sound: {
-      available: Boolean(resolved.ambientTrack?.src || resolved.narrationTrack?.src),
+      available: soundAvailable,
       masterMuted: audioState?.masterMuted ?? false,
     },
     captionsEnabled,
