@@ -403,6 +403,21 @@ export class AutoTourController {
     return true;
   }
 
+  /**
+   * A runtime media-quality rejection is terminal for the current Auto Tour
+   * attempt. Restarting the committed scene here would immediately request
+   * the same unavailable target again, so the safe recovery is to stop the
+   * tour and let navigation keep the last committed scene visible.
+   */
+  onSceneTransitionUnavailable(failedSceneId: string, committedSceneId: string | null): boolean {
+    if (!this.state.isActive || this.state.currentSceneId !== failedSceneId || !committedSceneId) {
+      return false;
+    }
+
+    this.stop();
+    return true;
+  }
+
   destroy(): void {
     this.stop();
   }

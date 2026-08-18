@@ -1422,8 +1422,12 @@ export function ImmersiveExperience({
             const committedSceneId = state.committedSceneId;
             state.rollbackSceneTransition(transitionId);
             if (hadCommittedScene) {
-              if (status === 'error' && failedSceneId && committedSceneId) {
-                autoTourController.onSceneTransitionFailed(failedSceneId, committedSceneId);
+              if (failedSceneId && committedSceneId) {
+                if (status === 'error') {
+                  autoTourController.onSceneTransitionFailed(failedSceneId, committedSceneId);
+                } else {
+                  autoTourController.onSceneTransitionUnavailable(failedSceneId, committedSceneId);
+                }
               }
               writeDeepLink(
                 navigate,
@@ -1498,6 +1502,7 @@ export function ImmersiveExperience({
             links={view.links}
             locale={locale}
             nodes={view.nodes}
+            destinationName={manifest.destination.name}
             searchLoading={shouldFetchDestinations && destinationsQuery.isPending}
             onLocaleChange={onLocaleChange}
             onNavigateScene={actions.onNavigateScene}

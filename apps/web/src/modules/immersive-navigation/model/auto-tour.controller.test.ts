@@ -289,6 +289,33 @@ describe('AutoTourController', () => {
     expect(onNarrationRequested).toHaveBeenCalledWith('gate');
   });
 
+  it('stops safely when a requested scene is runtime-unavailable', () => {
+    const { controller, scheduler, onNavigate } = createController({
+      settleDelayMs: 0,
+    });
+
+    controller.start('gate');
+    controller.next();
+
+    expect(controller.getState()).toMatchObject({
+      isActive: true,
+      phase: 'transitioning',
+      currentSceneId: 'culture',
+    });
+    expect(controller.onSceneTransitionUnavailable('culture', 'gate')).toBe(true);
+    expect(controller.getState()).toEqual({
+      isActive: false,
+      isRunning: false,
+      isPaused: false,
+      phase: 'idle',
+      currentSceneId: null,
+    });
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+
+    scheduler.flush();
+    expect(onNavigate).toHaveBeenCalledTimes(1);
+  });
+
   it('keeps a paused tour aligned with the committed scene after a failed jump', () => {
     const { controller } = createController({ settleDelayMs: 0 });
 

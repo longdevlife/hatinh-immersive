@@ -163,6 +163,7 @@ describe('ImmersiveControls', () => {
     render(
       <ImmersiveControlsGroup
         nodes={[]}
+        destinationName="Sơn Trang Cổ Đạm"
         tour={{
           currentSceneId: null,
           status: 'unavailable',
