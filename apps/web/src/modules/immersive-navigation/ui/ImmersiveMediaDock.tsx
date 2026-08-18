@@ -130,6 +130,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
         ? 'Tiếp tục câu chuyện'
         : 'Nghe câu chuyện';
   const isNarrationPlayable = vm.narration.available && vm.narration.status !== 'loading';
+  const hasAudioControls = vm.sound.available || vm.narration.available;
 
   return (
     <section
@@ -153,15 +154,17 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
             {vm.sound.masterMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
           </button>
         ) : null}
-        <button
-          type="button"
-          className="immersive-media-dock__mobile-toggle"
-          aria-expanded={isMobileDockExpanded}
-          aria-controls="immersive-media-dock-content"
-          onClick={() => setIsMobileDockExpanded((expanded) => !expanded)}
-        >
-          {isMobileDockExpanded ? 'Thu gọn điều khiển âm thanh' : 'Mở điều khiển âm thanh'}
-        </button>
+        {hasAudioControls ? (
+          <button
+            type="button"
+            className="immersive-media-dock__mobile-toggle"
+            aria-expanded={isMobileDockExpanded}
+            aria-controls="immersive-media-dock-content"
+            onClick={() => setIsMobileDockExpanded((expanded) => !expanded)}
+          >
+            {isMobileDockExpanded ? 'Thu gọn điều khiển âm thanh' : 'Mở điều khiển âm thanh'}
+          </button>
+        ) : null}
       </div>
 
       {vm.soundGateRequired && !soundGateDismissed ? (

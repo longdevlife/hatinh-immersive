@@ -60,26 +60,14 @@ test('rejects a low-resolution public panorama before real PSV renders it', asyn
     '/explore/son-trang-co-dam/immersive?mode=panorama&location=son-trang-co-dam&scene=son-trang-culture&h=228.165&p=-39.233&fov=88.801',
   );
 
-  const viewport = page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' });
-  await expect(page.getByRole('region', { name: 'Media dock trải nghiệm' })).toBeVisible();
-  await expect(viewport).toHaveAttribute('data-renderer-status', 'error');
-  await expect(
-    page.getByRole('region', { name: 'Các công cụ tiện ích' }).getByRole('alert'),
-  ).toContainText('Không thể tải dữ liệu cảnh 360°');
-  await expect(page.getByRole('heading', { name: 'Không gian Văn hóa' })).toBeVisible();
-  await expect(page).toHaveURL(/scene=son-trang-culture/);
+  await expect(page.getByRole('heading', { name: '360° đang được cập nhật' })).toBeVisible();
+  await expect(page.getByText('Hình ảnh độ phân giải cao đang được chuẩn bị.')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Media dock trải nghiệm' })).toHaveCount(0);
   await expect(
     page.getByRole('navigation', { name: 'Hành trình 360 Sơn Trang Cổ Đạm' }),
-  ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Quay lại thế giới 3D' })).toBeVisible();
+  ).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Bản đồ tuyến tham quan' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toBeVisible();
+  await expect(page.locator('[data-renderer-status]')).toHaveCount(0);
   expect(manifestRequestCount).toBeGreaterThan(0);
-
-  await expect(page.locator('[data-e2e-panorama-mount-count]')).toHaveAttribute(
-    'data-e2e-panorama-mount-count',
-    '1',
-  );
-  await expect(page.locator('[data-e2e-panorama-destroy-count]')).toHaveAttribute(
-    'data-e2e-panorama-destroy-count',
-    '0',
-  );
 });

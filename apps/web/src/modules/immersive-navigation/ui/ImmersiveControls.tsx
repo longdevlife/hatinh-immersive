@@ -455,7 +455,7 @@ export function ImmersiveControlsGroup({
             type="button"
             className="panorama-control panorama-tour-back-btn"
             onClick={() => tourActions?.onBack()}
-            aria-label="Quay lại thế giới 3D"
+            aria-label="Quay lại Sơn Trang Cổ Đạm"
             disabled={tour.isTransitioning}
           >
             <svg
@@ -470,7 +470,7 @@ export function ImmersiveControlsGroup({
             >
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            <span className="panorama-tour-back-label">3D</span>
+            <span className="panorama-tour-back-label">Quay lại</span>
           </button>
           {currentTourScene ? (
             <div className="panorama-tour-context" aria-live="polite">

@@ -164,6 +164,20 @@ describe('ImmersiveMediaDock semantic contract', () => {
     expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
   });
 
+  it('does not expose an audio-control toggle when no sound capability exists', () => {
+    const actions = createActions();
+    const vm = createVm({
+      sound: { available: false, masterMuted: false },
+      narration: { ...createVm().narration, available: false, status: 'unavailable' },
+      transcript: { available: false, content: null },
+    });
+
+    render(<ImmersiveMediaDock vm={vm} actions={actions} />);
+
+    expect(screen.queryByRole('button', { name: /điều khiển âm thanh/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /âm thanh/i })).not.toBeInTheDocument();
+  });
+
   it('renders the sound gate without starting audio and supports continue-muted', async () => {
     const actions = createActions();
 

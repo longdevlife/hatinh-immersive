@@ -86,7 +86,7 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
           type="button"
           className="panorama-control panorama-tour-back-btn"
           onClick={actions.onBack}
-          aria-label="Quay lại thế giới 3D"
+          aria-label={`Quay lại ${vm.destinationName}`}
           disabled={vm.isTransitioning}
         >
           <svg
@@ -104,7 +104,7 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
           >
             <path d="M19 12H5M12 19l-7-7 7-7" />
           </svg>
-          <span className="panorama-tour-back-label">3D</span>
+          <span className="panorama-tour-back-label">Quay lại</span>
         </button>
 
         {currentScene ? (

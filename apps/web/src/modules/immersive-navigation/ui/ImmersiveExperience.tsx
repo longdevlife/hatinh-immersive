@@ -671,7 +671,10 @@ export function ImmersiveExperience({
       return;
     }
 
-    if (!sceneId) {
+    const scene = sceneId
+      ? manifest.panoramaNodes.find((candidate) => candidate.id === sceneId)
+      : undefined;
+    if (!sceneId || !scene || !isPanoramaSceneUsable(scene)) {
       if (current.mode !== 'panorama' || current.panoramaStatus !== 'unavailable') {
         current.markPanoramaUnavailable();
       }
@@ -1413,13 +1416,13 @@ export function ImmersiveExperience({
                 );
               }
             }
-          } else if (status === 'error') {
+          } else if (status === 'error' || status === 'unavailable') {
             const hadCommittedScene = state.committedSceneId !== null;
             const failedSceneId = requestedSceneId;
             const committedSceneId = state.committedSceneId;
             state.rollbackSceneTransition(transitionId);
             if (hadCommittedScene) {
-              if (failedSceneId && committedSceneId) {
+              if (status === 'error' && failedSceneId && committedSceneId) {
                 autoTourController.onSceneTransitionFailed(failedSceneId, committedSceneId);
               }
               writeDeepLink(
@@ -1431,11 +1434,18 @@ export function ImmersiveExperience({
                 expectedDeepLinkRef,
               );
             }
+            if (!hadCommittedScene && status === 'unavailable') {
+              state.markPanoramaUnavailable();
+            }
           }
         }
         if (
           state.activeRenderer !== 'none' &&
-          !(state.activeRenderer === 'panorama' && requestedSceneId && status === 'error')
+          !(
+            state.activeRenderer === 'panorama' &&
+            requestedSceneId &&
+            (status === 'error' || status === 'unavailable')
+          )
         ) {
           state.setRendererStatus(state.activeRenderer, status);
         }

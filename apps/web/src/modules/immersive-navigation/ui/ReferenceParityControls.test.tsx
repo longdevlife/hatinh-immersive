@@ -103,8 +103,9 @@ describe('ReferenceParityControls', () => {
 
     render(<ReferenceParityControls vm={vm} actions={actions} />);
 
-    const backButton = screen.getByRole('button', { name: 'Quay lại thế giới 3D' });
+    const backButton = screen.getByRole('button', { name: 'Quay lại Biển Thiên Cầm' });
     expect(backButton).toBeInTheDocument();
+    expect(screen.queryByText('3D')).not.toBeInTheDocument();
     fireEvent.click(backButton);
     expect(actions.onBack).toHaveBeenCalled();
 

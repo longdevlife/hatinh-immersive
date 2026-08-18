@@ -7,6 +7,7 @@ import type {
   PanoramaNode,
   PanoramaView,
 } from '../domain/panorama-engine.port';
+import { isPanoramaRuntimeMediaUnavailableError } from '../domain/panorama-media-quality';
 
 import './PanoramaViewport.css';
 
@@ -185,8 +186,8 @@ export function PanoramaViewport({
         }
 
         reportStatus('ready');
-      } catch {
-        reportStatus('error');
+      } catch (error) {
+        reportStatus(isPanoramaRuntimeMediaUnavailableError(error) ? 'unavailable' : 'error');
       }
     })();
 

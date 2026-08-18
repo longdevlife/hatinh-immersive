@@ -16,7 +16,7 @@ test('restores exact Explore context across Detail, immersive Back, browser Back
   await page.getByRole('button', { name: 'Khám phá 360°' }).click();
   await expect(page).toHaveURL(/\/explore\/khu-luu-niem-nguyen-du\/immersive\?mode=panorama/);
 
-  await page.getByRole('button', { name: 'Quay lại thế giới 3D' }).click();
+  await page.getByRole('button', { name: 'Quay lại Khu lưu niệm Nguyễn Du' }).click();
   await expect(page).toHaveURL(detailUrl);
   await expect(page.getByRole('heading', { name: 'Khu lưu niệm Nguyễn Du' })).toBeVisible();
 
@@ -37,7 +37,7 @@ test('direct immersive deep link falls back safely to matching Detail', async ({
   await page.goto('/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-boardwalk');
 
   await expect(page.getByRole('heading', { name: 'Lối dạo Thiên Cầm' })).toBeVisible();
-  await page.getByRole('button', { name: 'Quay lại thế giới 3D' }).click();
+  await page.getByRole('button', { name: 'Quay lại Biển Thiên Cầm' }).click();
   await expect(page).toHaveURL('/explore/bien-thien-cam');
   await expect(page.getByRole('heading', { name: 'Biển Thiên Cầm' })).toBeVisible();
 });

@@ -41,7 +41,7 @@
 }
 
 .immersive-media-dock__mobile-scene-label,
-.immersive-media-dock__mobile-toggle {
+.immersive-media-dock__utility-row .immersive-media-dock__mobile-toggle {
   display: none;
 }
 
@@ -197,6 +197,10 @@
 .immersive-media-dock__utility-row button:focus-visible {
   outline: 2px solid var(--color-accent-primary, #e5a95f);
   outline-offset: 2px;
+}
+
+.immersive-media-dock__utility-row .immersive-media-dock__mobile-toggle {
+  display: none;
 }
 
 .immersive-media-dock__story button:disabled,
@@ -581,7 +585,7 @@
     width: 100%;
   }
 
-  .immersive-media-dock__mobile-toggle {
+  .immersive-media-dock__utility-row .immersive-media-dock__mobile-toggle {
     display: inline-flex;
   }
 
@@ -635,6 +639,12 @@
 
   .immersive-transcript-panel[data-sheet-state='expanded'] {
     max-height: min(38rem, 88dvh);
+  }
+}
+
+@media (min-width: 768px) {
+  .immersive-media-dock__utility-row .immersive-media-dock__mobile-toggle {
+    display: none;
   }
 }
 

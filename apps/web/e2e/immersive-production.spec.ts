@@ -165,6 +165,7 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
 
   const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
   await expect(mediaDock).toBeVisible();
+  await expect(mediaDock.locator('.immersive-media-dock__mobile-toggle')).toBeHidden();
   await expect(mediaDock.getByRole('button', { name: 'Bắt đầu tự động tham quan' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Tự động tham quan', exact: true })).toHaveCount(0);
 
@@ -177,7 +178,7 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
   await expect(page.getByRole('heading', { name: 'Sân trung tâm' })).toBeVisible();
   await expect(page).toHaveURL(/scene=scene-02/);
 
-  await page.getByRole('button', { name: 'Quay lại thế giới 3D' }).click();
+  await page.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }).click();
 
   await expect(page).toHaveURL(
     '/explore/son-trang-co-dam?returnTo=%2Fexplore%3Fdestination%3Dson-trang-co-dam%26view%3Dmap',

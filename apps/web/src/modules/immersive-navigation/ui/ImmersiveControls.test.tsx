@@ -137,6 +137,28 @@ describe('ImmersiveControls', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('does not use 3D as the panorama Back semantics', () => {
+    render(
+      <ImmersiveControlsGroup
+        nodes={[]}
+        tour={{
+          currentSceneId: 'gate',
+          status: 'ready',
+          isTransitioning: false,
+          scenes: [],
+        }}
+        tourActions={{
+          onBack: vi.fn(),
+          onRetry: vi.fn(),
+          onSelectScene: vi.fn(),
+        }}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Quay lại thế giới 3D' })).not.toBeInTheDocument();
+    expect(screen.queryByText('3D')).not.toBeInTheDocument();
+  });
+
   it('renders one intentional escape composition when every tour scene is unavailable', () => {
     render(
       <ImmersiveControlsGroup

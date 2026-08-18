@@ -103,6 +103,24 @@ describe('PanoramaViewport', () => {
     );
   });
 
+  it('maps public media quality rejection to content-unavailable instead of renderer error', async () => {
+    const engine: PanoramaEnginePort = {
+      mount: async () => undefined,
+      loadNode: async () => {
+        throw new Error('PANORAMA_PUBLIC_MEDIA_NOT_READY:scene-01:low-resolution');
+      },
+      setView: () => undefined,
+      subscribeViewChanged: () => () => undefined,
+      destroy: () => undefined,
+    };
+
+    render(<PanoramaViewport engine={engine} node={node} />);
+
+    const viewport = screen.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' });
+    await waitFor(() => expect(viewport).toHaveAttribute('data-renderer-status', 'unavailable'));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('keeps one mounted viewer while loading another scene', async () => {
     const engine = new FakePanoramaEngine();
     const { rerender, unmount } = render(<PanoramaViewport engine={engine} node={node} />);

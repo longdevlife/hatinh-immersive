@@ -6,6 +6,23 @@ export type PanoramaRuntimeMediaPolicy = 'public' | 'demo';
 
 export const MIN_PUBLIC_PANORAMA_WIDTH = 4096;
 
+const PANORAMA_RUNTIME_MEDIA_UNAVAILABLE_PREFIXES = [
+  'PANORAMA_PUBLIC_DEMO_MEDIA_FORBIDDEN:',
+  'PANORAMA_PUBLIC_MEDIA_NOT_READY:',
+  'PANORAMA_PUBLIC_RESOLUTION_TOO_LOW:',
+] as const;
+
+/**
+ * Runtime media policy failures are an expected content state for a public
+ * tour. They must not be presented as a broken panorama renderer.
+ */
+export function isPanoramaRuntimeMediaUnavailableError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    PANORAMA_RUNTIME_MEDIA_UNAVAILABLE_PREFIXES.some((prefix) => error.message.startsWith(prefix))
+  );
+}
+
 export function assertPanoramaRuntimeMediaAllowed(
   node: PanoramaNode,
   manifest: PanoramaManifest,

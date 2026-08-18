@@ -235,6 +235,12 @@ describe('ImmersiveExperience', () => {
     });
     expect(screen.getByText('Hình ảnh độ phân giải cao đang được chuẩn bị.')).toBeVisible();
     expect(screen.getAllByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toHaveLength(1);
+    expect(
+      screen.queryByRole('region', { name: 'Media dock trải nghiệm' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Đang tải không gian 360°')).not.toBeInTheDocument();
+    expect(screen.queryByText('Không thể tải ảnh toàn cảnh')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bản đồ hành trình')).not.toBeInTheDocument();
     expect(screen.queryByText('Trải nghiệm 360° chưa khả dụng')).not.toBeInTheDocument();
     expect(
       screen.queryByText('Đang cập nhật hình ảnh 360° độ phân giải cao.'),
@@ -469,7 +475,7 @@ describe('ImmersiveExperience', () => {
       DEMO_DESTINATIONS.map(({ preview }) => preview),
     );
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Quay lại thế giới 3D' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }));
 
     expect(screen.getByTestId('location')).toHaveTextContent(
       `/explore/son-trang-co-dam?returnTo=${encodeURIComponent(returnTo)}`,
