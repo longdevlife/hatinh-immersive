@@ -142,6 +142,17 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
           </svg>
         </button>
 
+        {/* Locale is a semantic panorama capability, not Explore-only chrome. */}
+        <button
+          type="button"
+          className="panorama-control panorama-locale-control"
+          onClick={actions.onToggleLocale}
+          aria-label={`Đổi ngôn ngữ sang ${vm.locale === 'vi' ? 'Tiếng Anh' : 'Tiếng Việt'}`}
+          title={`Đổi ngôn ngữ sang ${vm.locale === 'vi' ? 'Tiếng Anh' : 'Tiếng Việt'}`}
+        >
+          {vm.locale.toUpperCase()}
+        </button>
+
         {/* Share Control */}
         <button
           type="button"

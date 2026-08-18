@@ -13,6 +13,7 @@ function createMockVm(
   return {
     destinationSlug: 'bien-thien-cam',
     destinationName: 'Biển Thiên Cầm',
+    locale: 'vi',
     currentSceneId: 'boardwalk',
     status: 'ready',
     isTransitioning: false,
@@ -79,6 +80,7 @@ function createMockActions(
 ): ReferenceParityPresentationActions {
   return {
     onBack: vi.fn(),
+    onToggleLocale: vi.fn(),
     onSelectScene: vi.fn(),
     onSelectHotspot: vi.fn(),
     onToggleMinimap: vi.fn(),
@@ -243,6 +245,18 @@ describe('ReferenceParityControls', () => {
     const fsBtn = screen.getByRole('button', { name: 'Toàn màn hình' });
     fireEvent.click(fsBtn);
     expect(actions.onFullscreen).toHaveBeenCalled();
+  });
+
+  it('exposes the controlled locale capability and delegates the toggle', () => {
+    const actions = createMockActions();
+    const vm = createMockVm({ locale: 'vi' });
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
+    const localeButton = screen.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' });
+    expect(localeButton).toHaveTextContent('VI');
+    fireEvent.click(localeButton);
+    expect(actions.onToggleLocale).toHaveBeenCalled();
   });
 
   it('syncs fullscreen button state on document fullscreenchange', () => {

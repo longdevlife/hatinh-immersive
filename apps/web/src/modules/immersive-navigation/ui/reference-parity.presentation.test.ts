@@ -132,6 +132,7 @@ describe('reference parity presentation contract', () => {
       visitedSceneIds: ['major'],
       status: 'ready',
       isTransitioning: false,
+      locale: 'vi',
       audioState,
       audioTracks: [
         {
@@ -167,6 +168,7 @@ describe('reference parity presentation contract', () => {
       visitedSceneIds: [],
       status: 'unavailable',
       isTransitioning: false,
+      locale: 'vi',
       autoTour: { isRunning: false, isPaused: false },
       hotspots: [],
     });
@@ -184,6 +186,7 @@ describe('reference parity presentation contract', () => {
       visitedSceneIds: ['gate'],
       status: 'ready',
       isTransitioning: false,
+      locale: 'vi',
       autoTour: { isRunning: false, isPaused: false },
     });
 
@@ -198,6 +201,7 @@ describe('reference parity presentation contract', () => {
       visitedSceneIds: ['one'],
       status: 'ready',
       isTransitioning: false,
+      locale: 'vi',
       audioState,
       autoTour: { isRunning: true, isPaused: false },
       hotspots: [

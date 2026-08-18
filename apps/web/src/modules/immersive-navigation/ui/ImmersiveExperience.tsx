@@ -1122,6 +1122,7 @@ export function ImmersiveExperience({
   const referenceParityActions = useMemo<ReferenceParityPresentationActions>(
     () => ({
       onBack: onReturnToDestination,
+      onToggleLocale: () => onLocaleChange(locale === 'vi' ? 'en' : 'vi'),
       onSelectScene: onNavigateScene,
       onSelectHotspot,
       onToggleMinimap,
@@ -1149,7 +1150,9 @@ export function ImmersiveExperience({
     [
       destinationSlug,
       manifest,
+      locale,
       onEnableAudio,
+      onLocaleChange,
       onNavigateScene,
       onRetryRenderer,
       onReturnToDestination,
@@ -1311,6 +1314,7 @@ export function ImmersiveExperience({
           visitedSceneIds: navigation.visitedSceneIds,
           status: navigation.panoramaStatus,
           isTransitioning: navigation.transition === 'navigating-scene',
+          locale,
           audioState,
           audioTracks,
           autoTour: autoTourState,

@@ -45,6 +45,7 @@ export interface ReferenceParityAutoTourVm {
 export interface ReferenceParityPresentationVm {
   destinationSlug: string;
   destinationName: string;
+  locale: ImmersiveLocale;
   currentSceneId: string | null;
   status: RendererStatus;
   isTransitioning: boolean;
@@ -57,6 +58,7 @@ export interface ReferenceParityPresentationVm {
 
 export interface ReferenceParityPresentationActions {
   onBack(): void;
+  onToggleLocale(): void;
   onSelectScene(sceneId: string): void;
   onSelectHotspot(hotspotId: string): void;
   onToggleMinimap(): void;
@@ -271,6 +273,7 @@ export function buildReferenceParityPresentationVm({
   visitedSceneIds,
   status,
   isTransitioning,
+  locale,
   audioState,
   audioTracks = [],
   autoTour,
@@ -282,6 +285,7 @@ export function buildReferenceParityPresentationVm({
   visitedSceneIds: readonly string[];
   status: RendererStatus;
   isTransitioning: boolean;
+  locale: ImmersiveLocale;
   audioState?: ImmersiveAudioState;
   audioTracks?: readonly ImmersiveAudioTrack[];
   autoTour: Pick<ReferenceParityAutoTourVm, 'isRunning' | 'isPaused'>;
@@ -313,6 +317,7 @@ export function buildReferenceParityPresentationVm({
   return {
     destinationSlug: destination.slug,
     destinationName: destination.name,
+    locale,
     currentSceneId,
     status,
     isTransitioning,

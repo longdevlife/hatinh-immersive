@@ -74,6 +74,26 @@ const manifest = {
   hotspots: [],
 };
 
+const localizedManifest = (locale: 'vi' | 'en') => ({
+  ...manifest,
+  destination: {
+    ...manifest.destination,
+    name: locale === 'en' ? 'Son Trang Heritage' : 'Sơn Trang Cổ Đạm',
+    summary: locale === 'en' ? 'A heritage journey in Ha Tinh.' : 'Hành trình di sản ở Hà Tĩnh.',
+  },
+  nodes: manifest.nodes.map((node, index) => ({
+    ...node,
+    name:
+      locale === 'en'
+        ? index === 0
+          ? 'Entrance'
+          : 'Central courtyard'
+        : index === 0
+          ? 'Cổng vào'
+          : 'Sân trung tâm',
+  })),
+});
+
 const cultureDeepLinkManifest = {
   ...manifest,
   defaultSceneId: 'son-trang-culture',
@@ -189,6 +209,53 @@ test('loads the public selected-3D journey through the manifest REST path', asyn
 
   await expect(page.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
+});
+
+test('switches locale in the unified API panorama presentation', async ({ page }) => {
+  const manifestRequests: string[] = [];
+
+  await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
+    const requestUrl = new URL(route.request().url());
+    const locale = requestUrl.searchParams.get('locale') === 'en' ? 'en' : 'vi';
+    manifestRequests.push(requestUrl.toString());
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(localizedManifest(locale)),
+      status: 200,
+    });
+  });
+
+  await page.goto(
+    '/explore/son-trang-co-dam/immersive?mode=panorama&location=destination-01&scene=scene-01&h=0&p=0&fov=90',
+  );
+
+  await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
+  const localeButton = page.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' });
+  await expect(localeButton).toHaveText('VI');
+
+  const englishManifestRequest = page.waitForRequest(
+    (request) =>
+      request.url().includes('/immersive-manifest') &&
+      new URL(request.url()).searchParams.get('locale') === 'en',
+  );
+  await localeButton.click();
+  await englishManifestRequest;
+
+  await expect(page.getByRole('heading', { name: 'Entrance' })).toBeVisible();
+  const vietnameseLocaleButton = page.getByRole('button', {
+    name: 'Đổi ngôn ngữ sang Tiếng Việt',
+  });
+  await expect(vietnameseLocaleButton).toHaveText('EN');
+
+  await vietnameseLocaleButton.click();
+
+  await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
+  expect(manifestRequests.some((url) => new URL(url).searchParams.get('locale') === 'en')).toBe(
+    true,
+  );
+  expect(manifestRequests.some((url) => new URL(url).searchParams.get('locale') === 'vi')).toBe(
+    true,
+  );
 });
 
 test('keeps a valid Sơn Trang culture deep link aligned across URL, renderer, and rail', async ({
