@@ -17,6 +17,34 @@ afterEach(() => {
 });
 
 describe('immersive audio source policy', () => {
+  it('allows a ready file-backed production track when the browser audio capability exists', () => {
+    vi.stubGlobal('Audio', class Audio {});
+    const source = createImmersiveAudioSource('browser-file');
+
+    expect(
+      source.canPlayTrack({
+        ...demoNarration,
+        rights: 'licensed',
+        src: '/audio/vi.mp3',
+        readiness: 'ready',
+      }),
+    ).toBe(true);
+  });
+
+  it('rejects a source URL when the API marks the production track unavailable', () => {
+    vi.stubGlobal('Audio', class Audio {});
+    const source = createImmersiveAudioSource('browser-file');
+
+    expect(
+      source.canPlayTrack({
+        ...demoNarration,
+        rights: 'customer-owned',
+        src: '/audio/vi.mp3',
+        readiness: 'unavailable',
+      }),
+    ).toBe(false);
+  });
+
   it('keeps null-url narration unavailable for browser-file-only mode', () => {
     const source = createImmersiveAudioSource('browser-file');
 

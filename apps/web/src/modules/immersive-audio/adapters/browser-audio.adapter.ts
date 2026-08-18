@@ -25,7 +25,11 @@ function getSnapshot(element: HTMLAudioElement): AudioPlaybackSnapshot {
 export function createBrowserAudioAdapter(): AudioAdapter {
   return {
     create(track: ImmersiveAudioTrack): AudioTrackHandle | null {
-      if (!track.src || typeof Audio === 'undefined') {
+      if (
+        !track.src ||
+        (track.readiness !== undefined && track.readiness !== 'ready') ||
+        typeof Audio === 'undefined'
+      ) {
         return null;
       }
 

@@ -11,13 +11,18 @@ export interface ImmersiveAudioSource {
 }
 
 function canPlayBrowserFile(track: ImmersiveAudioTrack): boolean {
-  return Boolean(track.src) && typeof Audio !== 'undefined';
+  return (
+    (track.readiness === undefined || track.readiness === 'ready') &&
+    Boolean(track.src) &&
+    typeof Audio !== 'undefined'
+  );
 }
 
 function canPlayDemoSpeech(track: ImmersiveAudioTrack): boolean {
   return (
     track.type === 'narration' &&
     track.rights === 'demo-only' &&
+    (track.readiness === undefined || track.readiness === 'ready') &&
     track.src === null &&
     typeof speechSynthesis !== 'undefined' &&
     typeof SpeechSynthesisUtterance !== 'undefined'
