@@ -1995,6 +1995,72 @@
               "application/json": {
                 "schema": {
                   "properties": {
+                    "ambientTrackId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "audioTracks": {
+                      "items": {
+                        "properties": {
+                          "durationMs": {
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "id": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          },
+                          "locale": {
+                            "enum": ["vi", "en"],
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "readiness": {
+                            "enum": ["ready", "unavailable", "invalid"],
+                            "type": "string"
+                          },
+                          "rights": {
+                            "enum": ["customer-owned", "licensed"],
+                            "type": "string"
+                          },
+                          "src": {
+                            "format": "uri",
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "type": {
+                            "enum": ["ambient", "narration"],
+                            "type": "string"
+                          },
+                          "version": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "voiceId": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "label",
+                          "locale",
+                          "src",
+                          "durationMs",
+                          "rights",
+                          "readiness",
+                          "voiceId",
+                          "version"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
                     "defaultSceneId": {
                       "format": "uuid",
                       "nullable": true,
@@ -2207,6 +2273,11 @@
                             "nullable": true,
                             "type": "number"
                           },
+                          "ambientOverrideTrackId": {
+                            "format": "uuid",
+                            "nullable": true,
+                            "type": "string"
+                          },
                           "destinationId": {
                             "format": "uuid",
                             "type": "string"
@@ -2232,6 +2303,22 @@
                           },
                           "name": {
                             "type": "string"
+                          },
+                          "narrationTrackIds": {
+                            "properties": {
+                              "en": {
+                                "format": "uuid",
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "vi": {
+                                "format": "uuid",
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": ["vi", "en"],
+                            "type": "object"
                           },
                           "panoramaAssetId": {
                             "format": "uuid",
@@ -2259,6 +2346,22 @@
                           "status": {
                             "enum": ["draft", "published", "archived"],
                             "type": "string"
+                          },
+                          "transcriptIds": {
+                            "properties": {
+                              "en": {
+                                "format": "uuid",
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "vi": {
+                                "format": "uuid",
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": ["vi", "en"],
+                            "type": "object"
                           }
                         },
                         "required": [
@@ -2276,14 +2379,78 @@
                           "initialPitch",
                           "initialFov",
                           "status",
-                          "sortOrder"
+                          "sortOrder",
+                          "ambientOverrideTrackId",
+                          "narrationTrackIds",
+                          "transcriptIds"
                         ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "transcripts": {
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "format": "uuid",
+                            "type": "string"
+                          },
+                          "locale": {
+                            "enum": ["vi", "en"],
+                            "type": "string"
+                          },
+                          "rights": {
+                            "enum": ["customer-owned", "licensed"],
+                            "type": "string"
+                          },
+                          "segments": {
+                            "items": {
+                              "properties": {
+                                "endMs": {
+                                  "nullable": true,
+                                  "type": "integer"
+                                },
+                                "id": {
+                                  "format": "uuid",
+                                  "type": "string"
+                                },
+                                "startMs": {
+                                  "nullable": true,
+                                  "type": "integer"
+                                },
+                                "text": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["id", "startMs", "endMs", "text"],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "timingMode": {
+                            "enum": ["plain", "timed"],
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "locale", "title", "timingMode", "rights", "segments"],
                         "type": "object"
                       },
                       "type": "array"
                     }
                   },
-                  "required": ["destination", "defaultSceneId", "nodes", "links", "hotspots"],
+                  "required": [
+                    "destination",
+                    "defaultSceneId",
+                    "ambientTrackId",
+                    "audioTracks",
+                    "transcripts",
+                    "nodes",
+                    "links",
+                    "hotspots"
+                  ],
                   "type": "object"
                 }
               }
@@ -2349,6 +2516,11 @@
                       "nullable": true,
                       "type": "number"
                     },
+                    "ambientOverrideTrackId": {
+                      "format": "uuid",
+                      "nullable": true,
+                      "type": "string"
+                    },
                     "destinationId": {
                       "format": "uuid",
                       "type": "string"
@@ -2374,6 +2546,22 @@
                     },
                     "name": {
                       "type": "string"
+                    },
+                    "narrationTrackIds": {
+                      "properties": {
+                        "en": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "vi": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["vi", "en"],
+                      "type": "object"
                     },
                     "panoramaAssetId": {
                       "format": "uuid",
@@ -2401,6 +2589,22 @@
                     "status": {
                       "enum": ["draft", "published", "archived"],
                       "type": "string"
+                    },
+                    "transcriptIds": {
+                      "properties": {
+                        "en": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "vi": {
+                          "format": "uuid",
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["vi", "en"],
+                      "type": "object"
                     }
                   },
                   "required": [
@@ -2418,7 +2622,10 @@
                     "initialPitch",
                     "initialFov",
                     "status",
-                    "sortOrder"
+                    "sortOrder",
+                    "ambientOverrideTrackId",
+                    "narrationTrackIds",
+                    "transcriptIds"
                   ],
                   "type": "object"
                 }
@@ -2501,6 +2708,11 @@
                             "nullable": true,
                             "type": "number"
                           },
+                          "ambientOverrideTrackId": {
+                            "format": "uuid",
+                            "nullable": true,
+                            "type": "string"
+                          },
                           "destinationId": {
                             "format": "uuid",
                             "type": "string"
@@ -2526,6 +2738,22 @@
                           },
                           "name": {
                             "type": "string"
+                          },
+                          "narrationTrackIds": {
+                            "properties": {
+                              "en": {
+                                "format": "uuid",
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "vi": {
+                                "format": "uuid",
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": ["vi", "en"],
+                            "type": "object"
                           },
                           "panoramaAssetId": {
                             "format": "uuid",
@@ -2553,6 +2781,22 @@
                           "status": {
                             "enum": ["draft", "published", "archived"],
                             "type": "string"
+                          },
+                          "transcriptIds": {
+                            "properties": {
+                              "en": {
+                                "format": "uuid",
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "vi": {
+                                "format": "uuid",
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": ["vi", "en"],
+                            "type": "object"
                           }
                         },
                         "required": [
@@ -2570,7 +2814,10 @@
                           "initialPitch",
                           "initialFov",
                           "status",
-                          "sortOrder"
+                          "sortOrder",
+                          "ambientOverrideTrackId",
+                          "narrationTrackIds",
+                          "transcriptIds"
                         ],
                         "type": "object"
                       }

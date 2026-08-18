@@ -185,6 +185,9 @@ export const sceneNodeResponseSchema = {
     'initialFov',
     'status',
     'sortOrder',
+    'ambientOverrideTrackId',
+    'narrationTrackIds',
+    'transcriptIds',
   ],
   properties: {
     id: uuidSchema,
@@ -206,6 +209,75 @@ export const sceneNodeResponseSchema = {
     initialFov: { type: 'number' },
     status: { type: 'string', enum: ['draft', 'published', 'archived'] },
     sortOrder: { type: 'integer' },
+    ambientOverrideTrackId: { ...uuidSchema, nullable: true },
+    narrationTrackIds: {
+      type: 'object',
+      required: ['vi', 'en'],
+      properties: {
+        vi: { ...uuidSchema, nullable: true },
+        en: { ...uuidSchema, nullable: true },
+      },
+    },
+    transcriptIds: {
+      type: 'object',
+      required: ['vi', 'en'],
+      properties: {
+        vi: { ...uuidSchema, nullable: true },
+        en: { ...uuidSchema, nullable: true },
+      },
+    },
+  },
+};
+
+const immersiveAudioTrackResponseSchema = {
+  type: 'object',
+  required: [
+    'id',
+    'type',
+    'label',
+    'locale',
+    'src',
+    'durationMs',
+    'rights',
+    'readiness',
+    'voiceId',
+    'version',
+  ],
+  properties: {
+    id: uuidSchema,
+    type: { type: 'string', enum: ['ambient', 'narration'] },
+    label: { type: 'string' },
+    locale: { type: 'string', enum: ['vi', 'en'], nullable: true },
+    src: { type: 'string', format: 'uri', nullable: true },
+    durationMs: { type: 'integer', nullable: true },
+    rights: { type: 'string', enum: ['customer-owned', 'licensed'] },
+    readiness: { type: 'string', enum: ['ready', 'unavailable', 'invalid'] },
+    voiceId: { type: 'string', nullable: true },
+    version: { type: 'string', nullable: true },
+  },
+};
+
+const immersiveTranscriptSegmentResponseSchema = {
+  type: 'object',
+  required: ['id', 'startMs', 'endMs', 'text'],
+  properties: {
+    id: uuidSchema,
+    startMs: { type: 'integer', nullable: true },
+    endMs: { type: 'integer', nullable: true },
+    text: { type: 'string' },
+  },
+};
+
+const immersiveTranscriptResponseSchema = {
+  type: 'object',
+  required: ['id', 'locale', 'title', 'timingMode', 'rights', 'segments'],
+  properties: {
+    id: uuidSchema,
+    locale: { type: 'string', enum: ['vi', 'en'] },
+    title: { type: 'string' },
+    timingMode: { type: 'string', enum: ['plain', 'timed'] },
+    rights: { type: 'string', enum: ['customer-owned', 'licensed'] },
+    segments: { type: 'array', items: immersiveTranscriptSegmentResponseSchema },
   },
 };
 
@@ -323,10 +395,22 @@ export const hotspotAdminResponseSchema = {
 
 export const immersiveManifestResponseSchema = {
   type: 'object',
-  required: ['destination', 'defaultSceneId', 'nodes', 'links', 'hotspots'],
+  required: [
+    'destination',
+    'defaultSceneId',
+    'ambientTrackId',
+    'audioTracks',
+    'transcripts',
+    'nodes',
+    'links',
+    'hotspots',
+  ],
   properties: {
     destination: destinationDetailResponseSchema,
     defaultSceneId: { ...uuidSchema, nullable: true },
+    ambientTrackId: { ...uuidSchema, nullable: true },
+    audioTracks: { type: 'array', items: immersiveAudioTrackResponseSchema },
+    transcripts: { type: 'array', items: immersiveTranscriptResponseSchema },
     nodes: { type: 'array', items: sceneNodeResponseSchema },
     links: { type: 'array', items: sceneLinkResponseSchema },
     hotspots: { type: 'array', items: hotspotResponseSchema },
