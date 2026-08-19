@@ -560,11 +560,6 @@ html::-webkit-scrollbar {
     height: 100%;
   }
 
-  .explore-experience__layout[data-explore-mode='destination-list']
-    .destination-panel__list-container {
-    overflow: visible;
-  }
-
   .explore-experience__layout[data-explore-mode='map'] .explore-experience__destinations {
     display: none;
   }
