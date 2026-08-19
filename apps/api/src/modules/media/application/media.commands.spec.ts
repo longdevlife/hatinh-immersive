@@ -42,6 +42,12 @@ class FakeObjectStorage implements ObjectStoragePort {
   async headObject() {
     return this.object;
   }
+
+  async openObjectReadStream() {
+    return null;
+  }
+
+  async putObject() {}
 }
 
 describe('MediaCommandService', () => {

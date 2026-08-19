@@ -19,7 +19,16 @@ export interface StoredObjectMetadata {
   sizeBytes: number;
 }
 
+export interface PutStoredObjectInput {
+  storageKey: string;
+  contentType: string;
+  body: Uint8Array;
+  cacheControl?: string;
+}
+
 export interface ObjectStoragePort {
   createPresignedUpload(input: CreatePresignedUploadInput): Promise<PresignedUpload>;
   headObject(storageKey: string): Promise<StoredObjectMetadata | null>;
+  openObjectReadStream(storageKey: string): Promise<NodeJS.ReadableStream | null>;
+  putObject(input: PutStoredObjectInput): Promise<void>;
 }
