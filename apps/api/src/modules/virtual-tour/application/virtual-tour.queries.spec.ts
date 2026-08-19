@@ -5,11 +5,45 @@ import { describe, expect, it } from 'vitest';
 import type { DestinationDetail } from '../../catalog/application/destination.queries';
 import type { MediaAsset } from '../../media/domain/media-asset';
 import { MediaAsset as MediaAssetEntity } from '../../media/domain/media-asset';
+import type { PanoramaAssetMetadata } from '../../media/application/panorama-metadata.repository';
 import { VirtualTourQueryService } from './virtual-tour.queries';
 import type { VirtualTourRepository } from './virtual-tour.repository';
 import { SceneNode } from '../domain/scene-node';
 
 describe('VirtualTourQueryService immersive audio read model', () => {
+  it('publishes processed panorama derivatives and never the original source key', async () => {
+    const destinationId = randomUUID();
+    const sceneId = randomUUID();
+    const result = await createMultiSceneService({
+      destinationId,
+      scenes: [{ id: sceneId, name: 'Processed panorama', sortOrder: 0 }],
+      audio: emptyAudio(),
+    });
+
+    expect(result?.nodes[0]?.panoramaManifestUrl).toContain('/processed/panorama/');
+    expect(result?.nodes[0]?.panoramaManifestUrl).toMatch(/\/manifest\.json$/);
+    expect(result?.nodes[0]?.panoramaPreviewUrl).toMatch(/\/preview\.webp$/);
+    expect(result?.nodes[0]?.panoramaManifestUrl).not.toContain('/original/');
+  });
+
+  it('fails closed when panorama production metadata is rejected', async () => {
+    const destinationId = randomUUID();
+    const sceneId = randomUUID();
+    const result = await createMultiSceneService({
+      destinationId,
+      scenes: [{ id: sceneId, name: 'Rejected panorama', sortOrder: 0 }],
+      audio: emptyAudio(),
+      panoramaMetadataOverrides: new Map([
+        [sceneId, { qualityStatus: 'rejected', manifestKey: null, previewKey: null }],
+      ]),
+    });
+
+    expect(result?.nodes[0]).toMatchObject({
+      panoramaManifestUrl: null,
+      panoramaPreviewUrl: null,
+    });
+  });
+
   it('projects public ambient, narration, and transcript references without dangling ids', async () => {
     const destinationId = randomUUID();
     const sceneId = randomUUID();
@@ -312,6 +346,7 @@ async function createMultiSceneService(input: {
     transcripts: unknown[];
     assetStatusMap?: Map<string, 'pending' | 'uploaded' | 'processing' | 'ready' | 'failed'>;
   };
+  panoramaMetadataOverrides?: Map<string, Partial<PanoramaAssetMetadata> | null>;
 }) {
   const defaultSceneId = input.scenes[0]?.id ?? randomUUID();
   const destination = {
@@ -365,6 +400,7 @@ async function createMultiSceneService(input: {
   } as unknown as VirtualTourRepository;
 
   const panoramaMediaAssets = new Map<string, MediaAsset>();
+  const panoramaMetadata = new Map<string, PanoramaAssetMetadata>();
   for (const scene of sceneEntities) {
     const panoAssetId = scene.toPrimitives().panoramaAssetId!;
     const panoAsset = MediaAssetEntity.create({
@@ -378,6 +414,29 @@ async function createMultiSceneService(input: {
     panoAsset.markProcessing();
     panoAsset.markReady();
     panoramaMediaAssets.set(panoAssetId, panoAsset);
+    const override = input.panoramaMetadataOverrides?.get(scene.id);
+    if (override !== null) {
+      const now = new Date();
+      panoramaMetadata.set(panoAssetId, {
+        mediaAssetId: panoAssetId,
+        projection: 'equirectangular',
+        sourceWidthPx: 4096,
+        sourceHeightPx: 2048,
+        qualityStatus: 'accepted',
+        qualityCode: null,
+        manifestKey: `processed/panorama/${panoAssetId}/manifest.json`,
+        previewKey: `processed/panorama/${panoAssetId}/preview.webp`,
+        rights: 'customer-owned',
+        rightsHolder: 'Test Owner',
+        rightsReference: 'approval:test',
+        sourceReference: 'delivery:test',
+        version: 'test-v1',
+        processedAt: now,
+        createdAt: now,
+        updatedAt: now,
+        ...override,
+      });
+    }
   }
 
   const audioMediaAssets = (input.audio.tracks as Array<{ mediaAssetId: string | null }>).reduce(
@@ -416,13 +475,31 @@ async function createMultiSceneService(input: {
   const mediaAssetRepository = {
     findByIds: async () => new Map([...panoramaMediaAssets, ...audioMediaAssets]),
   };
+  const panoramaMetadataRepository = {
+    findByMediaAssetId: async (id: string) => panoramaMetadata.get(id) ?? null,
+    findByMediaAssetIds: async (ids: string[]) =>
+      new Map(
+        ids.flatMap((id) => (panoramaMetadata.has(id) ? [[id, panoramaMetadata.get(id)!]] : [])),
+      ),
+  };
 
   return new VirtualTourQueryService(
     destinationQueryService as never,
     repository,
     mediaAssetRepository as never,
+    panoramaMetadataRepository as never,
     { publicOrigin: 'https://cdn.example.test' },
   ).findManifestByDestinationSlug(destination.slug);
+}
+
+function emptyAudio() {
+  return {
+    destinationAmbient: null,
+    sceneAmbientOverrides: [],
+    narrations: [],
+    tracks: [],
+    transcripts: [],
+  };
 }
 
 function audioTrack(

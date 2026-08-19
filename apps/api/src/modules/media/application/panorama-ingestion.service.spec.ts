@@ -156,6 +156,13 @@ class InMemoryPanoramaMetadataRepository implements PanoramaMetadataRepository {
         .find((metadata) => metadata.mediaAssetId === mediaAssetId) ?? null
     );
   }
+  async findByMediaAssetIds(mediaAssetIds: string[]) {
+    return new Map(
+      this.saved
+        .filter((metadata) => mediaAssetIds.includes(metadata.mediaAssetId))
+        .map((metadata) => [metadata.mediaAssetId, metadata]),
+    );
+  }
 }
 
 class FakeStorage implements ObjectStoragePort {

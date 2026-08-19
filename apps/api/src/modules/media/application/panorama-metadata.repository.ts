@@ -25,4 +25,5 @@ export interface PanoramaAssetMetadata {
 export interface PanoramaMetadataRepository {
   save(metadata: PanoramaAssetMetadata): Promise<void>;
   findByMediaAssetId(mediaAssetId: string): Promise<PanoramaAssetMetadata | null>;
+  findByMediaAssetIds(mediaAssetIds: string[]): Promise<Map<string, PanoramaAssetMetadata>>;
 }

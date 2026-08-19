@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 
 import { DatabaseService } from '../../../core/database/database.module';
 import {
@@ -46,6 +46,16 @@ export class DrizzlePanoramaMetadataRepository implements PanoramaMetadataReposi
       .from(panoramaAssetMetadata)
       .where(eq(panoramaAssetMetadata.mediaAssetId, mediaAssetId));
     return row ? toMetadata(row) : null;
+  }
+
+  async findByMediaAssetIds(mediaAssetIds: string[]): Promise<Map<string, PanoramaAssetMetadata>> {
+    const uniqueIds = [...new Set(mediaAssetIds)];
+    if (uniqueIds.length === 0) return new Map();
+    const rows = await this.database.db
+      .select()
+      .from(panoramaAssetMetadata)
+      .where(inArray(panoramaAssetMetadata.mediaAssetId, uniqueIds));
+    return new Map(rows.map((row) => [row.mediaAssetId, toMetadata(row)]));
   }
 }
 
