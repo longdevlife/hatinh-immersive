@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import '../../../app/styles/site-shell.css';
 import type { PublicNavItem } from '../model/public-navigation';
+import { LanguageSwitcher } from '../../../shared/i18n';
 
 export type PublicHeaderProps = { activePath: string; items: readonly PublicNavItem[] };
 
@@ -107,6 +108,12 @@ export function PublicHeader({ activePath, items }: PublicHeaderProps) {
                 </li>
               );
             })}
+            <li
+              className="site-shell-header__nav-item"
+              style={{ display: 'flex', alignItems: 'center', marginLeft: '1rem' }}
+            >
+              <LanguageSwitcher />
+            </li>
           </ul>
         </nav>
       </div>
