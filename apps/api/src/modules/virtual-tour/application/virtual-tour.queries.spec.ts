@@ -44,6 +44,37 @@ describe('VirtualTourQueryService immersive audio read model', () => {
     });
   });
 
+  it.each([
+    [
+      'original source keys',
+      {
+        manifestKey: 'original/panorama/source.jpg',
+        previewKey: 'original/panorama/preview.webp',
+      },
+    ],
+    [
+      'another asset derivative keys',
+      {
+        manifestKey: 'processed/panorama/another-asset/manifest.json',
+        previewKey: 'processed/panorama/another-asset/preview.webp',
+      },
+    ],
+  ])('fails closed for %s', async (_case, metadataOverride) => {
+    const destinationId = randomUUID();
+    const sceneId = randomUUID();
+    const result = await createMultiSceneService({
+      destinationId,
+      scenes: [{ id: sceneId, name: 'Invalid derivative namespace', sortOrder: 0 }],
+      audio: emptyAudio(),
+      panoramaMetadataOverrides: new Map([[sceneId, metadataOverride]]),
+    });
+
+    expect(result?.nodes[0]).toMatchObject({
+      panoramaManifestUrl: null,
+      panoramaPreviewUrl: null,
+    });
+  });
+
   it('projects public ambient, narration, and transcript references without dangling ids', async () => {
     const destinationId = randomUUID();
     const sceneId = randomUUID();

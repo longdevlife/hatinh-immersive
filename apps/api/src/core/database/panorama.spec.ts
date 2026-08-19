@@ -67,6 +67,20 @@ describe('production panorama database contract', () => {
     await expect(insertMetadata({ mediaAssetId, widthPx: 4096, heightPx: 2048 })).rejects.toThrow();
   });
 
+  it('rejects accepted derivative keys outside the owning panorama asset namespace', async () => {
+    const mediaAssetId = await insertMediaAsset('panorama', 'ready');
+
+    await expect(
+      insertMetadata({
+        mediaAssetId,
+        widthPx: 4096,
+        heightPx: 2048,
+        manifestKey: 'processed/panorama/another-asset/manifest.json',
+        previewKey: 'processed/panorama/another-asset/preview.webp',
+      }),
+    ).rejects.toThrow();
+  });
+
   it('rejects publishing a scene backed by a non-ready panorama', async () => {
     const mediaAssetId = await insertMediaAsset('panorama', 'processing');
     await insertMetadata({

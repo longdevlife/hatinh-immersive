@@ -16,6 +16,14 @@ describe('VirtualTourCommandService panorama assignment', () => {
     ['missing preview', {}, acceptedMetadata({ previewKey: null })],
     ['missing version', {}, acceptedMetadata({ version: '' })],
     ['missing provenance', {}, acceptedMetadata({ rightsReference: '' })],
+    [
+      'another asset derivative namespace',
+      {},
+      acceptedMetadata({
+        manifestKey: 'processed/panorama/another-asset/manifest.json',
+        previewKey: 'processed/panorama/another-asset/preview.webp',
+      }),
+    ],
   ])('rejects %s', async (_case, assetOverrides, metadata) => {
     const context = createContext(createAsset(assetOverrides), metadata);
 
@@ -35,6 +43,44 @@ describe('VirtualTourCommandService panorama assignment', () => {
       panoramaAssetStatus: 'ready',
     });
     expect(context.repository.savedScenes).toEqual([scene]);
+  });
+
+  it('rejects a ready panorama assignment through generic scene creation', async () => {
+    const context = createContext(
+      createAsset(),
+      acceptedMetadata({ manifestKey: 'processed/panorama/another-asset/manifest.json' }),
+    );
+
+    await expect(
+      context.service.createScene({
+        id: 'new-scene',
+        destinationId: 'destination-1',
+        name: 'Scene with bypassed assignment',
+        geoPoint: { latitude: 18.3, longitude: 105.9 },
+        panoramaAssetId: 'panorama-asset',
+        panoramaAssetStatus: 'ready',
+        initialHeading: 0,
+        initialPitch: 0,
+        initialFov: 90,
+        sortOrder: 1,
+      }),
+    ).rejects.toMatchObject({ code: 'PANORAMA_NOT_PUBLICATION_READY' });
+    expect(context.repository.savedScenes).toHaveLength(0);
+  });
+
+  it('rejects a ready panorama assignment through generic scene update', async () => {
+    const context = createContext(
+      createAsset(),
+      acceptedMetadata({ previewKey: 'processed/panorama/another-asset/preview.webp' }),
+    );
+
+    await expect(
+      context.service.updateScene('scene-1', {
+        panoramaAssetId: 'panorama-asset',
+        panoramaAssetStatus: 'ready',
+      }),
+    ).rejects.toMatchObject({ code: 'PANORAMA_NOT_PUBLICATION_READY' });
+    expect(context.repository.savedScenes).toHaveLength(0);
   });
 });
 

@@ -13,6 +13,7 @@ import {
   type PublicMediaUrlOptions,
 } from '../../media/application/public-media-url';
 import type { MediaAsset } from '../../media/domain/media-asset';
+import { hasCanonicalPanoramaDerivativeKeys } from '../../media/domain/panorama-derivative';
 import {
   PANORAMA_METADATA_REPOSITORY,
   type PanoramaAssetMetadata,
@@ -301,7 +302,8 @@ function isPublicPanorama(
     metadata.rightsHolder.trim() &&
     metadata.rightsReference.trim() &&
     metadata.sourceReference.trim() &&
-    metadata.version.trim(),
+    metadata.version.trim() &&
+    hasCanonicalPanoramaDerivativeKeys(metadata),
   );
 }
 

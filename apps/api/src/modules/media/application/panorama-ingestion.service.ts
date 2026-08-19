@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { MediaAssetStateError } from '../domain/media-asset';
+import { panoramaDerivativePrefix } from '../domain/panorama-derivative';
 import { MEDIA_ASSET_REPOSITORY, type MediaAssetRepository } from './media.repository';
 import { OBJECT_STORAGE, type ObjectStoragePort } from './object-storage.port';
 import {
@@ -62,7 +63,7 @@ export class PanoramaIngestionService {
         sourceContentType: asset.contentType,
       });
 
-      const prefix = derivativePrefix(asset.id);
+      const prefix = panoramaDerivativePrefix(asset.id);
       await this.putDerivative(`${prefix}/preview.webp`, 'image/webp', output.preview);
       for (const tile of output.tiles) {
         await this.putDerivative(`${prefix}/${tile.keySuffix}`, tile.contentType, tile.body);
@@ -120,7 +121,8 @@ function validateInput(input: ProcessPanoramaInput): ProcessPanoramaInput {
     ['version', 'PANORAMA_VERSION_REQUIRED'],
   ];
   for (const [field, code] of required) {
-    if (!String(input[field]).trim()) throw new PanoramaIngestionError(code);
+    const value = input[field];
+    if (typeof value !== 'string' || !value.trim()) throw new PanoramaIngestionError(code);
   }
   if (!['customer-owned', 'licensed'].includes(input.rights)) {
     throw new PanoramaIngestionError('PANORAMA_RIGHTS_INCOMPLETE');
@@ -133,10 +135,6 @@ function validateInput(input: ProcessPanoramaInput): ProcessPanoramaInput {
     sourceReference: input.sourceReference.trim(),
     version: input.version.trim(),
   };
-}
-
-function derivativePrefix(mediaAssetId: string) {
-  return `processed/panorama/${mediaAssetId}`;
 }
 
 function createMetadata(

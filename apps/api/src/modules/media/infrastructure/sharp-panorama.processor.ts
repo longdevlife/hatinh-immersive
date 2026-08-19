@@ -1,4 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { createWriteStream } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { type Readable, Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import sharp from 'sharp';
 
 import type {
@@ -11,6 +17,9 @@ const TILE_SIZE = 512;
 const FIRST_LEVEL_WIDTH = 1024;
 const PREVIEW_WIDTH = 1024;
 const WEBP_QUALITY = 82;
+const MAX_SOURCE_BYTES = 64 * 1024 * 1024;
+const MAX_DERIVATIVE_BYTES = 256 * 1024 * 1024;
+const MAX_INPUT_PIXELS = 16_384 * 8_192;
 const SUPPORTED_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 interface PanoramaTileLevel {
@@ -37,8 +46,11 @@ export class SharpPanoramaProcessor implements PanoramaProcessorPort {
       throw new PanoramaProcessingError('PANORAMA_CONTENT_TYPE_UNSUPPORTED');
     }
 
-    const sourceBytes = await readAll(input.source);
-    const source = sharp(sourceBytes, { sequentialRead: true });
+    const temporarySource = await materializeSource(input.source);
+    const source = sharp(temporarySource.path, {
+      sequentialRead: true,
+      limitInputPixels: MAX_INPUT_PIXELS,
+    });
 
     try {
       const metadata = await source.metadata().catch(() => {
@@ -62,7 +74,7 @@ export class SharpPanoramaProcessor implements PanoramaProcessorPort {
         .resize({ width: PREVIEW_WIDTH, height: PREVIEW_WIDTH / 2, fit: 'fill' })
         .webp({ quality: WEBP_QUALITY })
         .toBuffer();
-      const tiles = await renderTiles(source, levels);
+      const tiles = await renderTiles(source, levels, preview.byteLength);
       const manifest = await createManifest(levels);
 
       return {
@@ -78,6 +90,7 @@ export class SharpPanoramaProcessor implements PanoramaProcessorPort {
       throw new PanoramaProcessingError('PANORAMA_PROCESSING_FAILED');
     } finally {
       source.destroy();
+      await temporarySource.cleanup();
     }
   }
 }
@@ -103,8 +116,13 @@ async function createManifest(levels: PanoramaTileLevel[]) {
   });
 }
 
-async function renderTiles(source: sharp.Sharp, levels: PanoramaTileLevel[]) {
+async function renderTiles(
+  source: sharp.Sharp,
+  levels: PanoramaTileLevel[],
+  initialDerivativeBytes: number,
+) {
   const output: PanoramaTileOutput[] = [];
+  let derivativeBytes = initialDerivativeBytes;
 
   for (const [levelIndex, level] of levels.entries()) {
     const resized = source.clone().resize({
@@ -125,6 +143,10 @@ async function renderTiles(source: sharp.Sharp, levels: PanoramaTileLevel[]) {
             })
             .webp({ quality: WEBP_QUALITY })
             .toBuffer();
+          derivativeBytes += body.byteLength;
+          if (derivativeBytes > MAX_DERIVATIVE_BYTES) {
+            throw new PanoramaProcessingError('PANORAMA_DERIVATIVES_TOO_LARGE');
+          }
           output.push({
             keySuffix: `tiles/${levelIndex}/${column}-${row}.webp`,
             contentType: 'image/webp',
@@ -140,20 +162,30 @@ async function renderTiles(source: sharp.Sharp, levels: PanoramaTileLevel[]) {
   return output;
 }
 
-async function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
-  const chunks: Buffer[] = [];
+async function materializeSource(stream: NodeJS.ReadableStream) {
+  const directory = await mkdtemp(join(tmpdir(), 'hatinh-panorama-'));
+  const sourcePath = join(directory, 'source');
+  let receivedBytes = 0;
+  const limit = new Transform({
+    transform(chunk: Buffer | string, _encoding, callback) {
+      const bytes = typeof chunk === 'string' ? Buffer.byteLength(chunk) : chunk.byteLength;
+      receivedBytes += bytes;
+      if (receivedBytes > MAX_SOURCE_BYTES) {
+        callback(new PanoramaProcessingError('PANORAMA_SOURCE_TOO_LARGE'));
+        return;
+      }
+      callback(null, chunk);
+    },
+  });
   try {
-    for await (const chunk of stream) {
-      chunks.push(
-        Buffer.isBuffer(chunk)
-          ? chunk
-          : typeof chunk === 'string'
-            ? Buffer.from(chunk)
-            : Buffer.from(chunk as Uint8Array),
-      );
-    }
-  } catch {
+    await pipeline(stream as Readable, limit, createWriteStream(sourcePath, { flags: 'wx' }));
+  } catch (error) {
+    await rm(directory, { recursive: true, force: true });
+    if (error instanceof PanoramaProcessingError) throw error;
     throw new PanoramaProcessingError('PANORAMA_METADATA_UNREADABLE');
   }
-  return Buffer.concat(chunks);
+  return {
+    path: sourcePath,
+    cleanup: () => rm(directory, { recursive: true, force: true }),
+  };
 }

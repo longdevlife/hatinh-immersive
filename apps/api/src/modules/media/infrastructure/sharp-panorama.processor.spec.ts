@@ -66,6 +66,23 @@ describe('SharpPanoramaProcessor', () => {
       }),
     ).rejects.toThrow('PANORAMA_CONTENT_TYPE_UNSUPPORTED');
   });
+
+  it('rejects an oversized source stream with a stable code instead of buffering it indefinitely', async () => {
+    const oneMiB = Buffer.alloc(1024 * 1024);
+    const oversizedSource = Readable.from(
+      (async function* () {
+        for (let index = 0; index < 65; index += 1) yield oneMiB;
+      })(),
+    );
+
+    await expect(
+      processor.process({
+        assetId: 'oversized-source',
+        source: oversizedSource,
+        sourceContentType: 'image/png',
+      }),
+    ).rejects.toThrow('PANORAMA_SOURCE_TOO_LARGE');
+  });
 });
 
 async function createImage(width: number, height: number) {

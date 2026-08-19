@@ -21,6 +21,21 @@ const validInput = {
 };
 
 describe('PanoramaIngestionService', () => {
+  it.each([
+    [
+      'undefined rights holder',
+      { ...validInput, rightsHolder: undefined },
+      'PANORAMA_RIGHTS_INCOMPLETE',
+    ],
+    ['null media asset id', { ...validInput, mediaAssetId: null }, 'PANORAMA_MEDIA_ASSET_REQUIRED'],
+  ])('rejects %s with a stable validation code', async (_case, input, code) => {
+    const context = createContext();
+
+    await expect(context.service.process(input as never)).rejects.toMatchObject({ code });
+    expect(context.storage.openCalls).toEqual([]);
+    expect(context.processor.calls).toBe(0);
+  });
+
   it('rejects incomplete rights before opening or processing the source', async () => {
     const context = createContext();
 

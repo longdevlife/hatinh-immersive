@@ -67,8 +67,8 @@ export const panoramaAssetMetadata = pgTable(
         "source_height_px" >= 2048 AND
         "source_width_px" * 100 >= "source_height_px" * 195 AND
         "source_width_px" * 100 <= "source_height_px" * 205 AND
-        "manifest_key" IS NOT NULL AND length(trim("manifest_key")) > 0 AND
-        "preview_key" IS NOT NULL AND length(trim("preview_key")) > 0
+        "manifest_key" = 'processed/panorama/' || "media_asset_id"::text || '/manifest.json' AND
+        "preview_key" = 'processed/panorama/' || "media_asset_id"::text || '/preview.webp'
       )`,
     ),
   }),
