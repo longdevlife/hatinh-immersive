@@ -132,16 +132,17 @@ export function LanguageSwitcher() {
           alignItems: 'center',
           gap: '8px',
           borderRadius: '9999px',
-          border: '1px solid #e2e8f0',
-          background: 'white',
+          border: '1px solid var(--theme-border, #e2e8f0)',
+          background: 'var(--theme-bg-surface, #ffffff)',
           padding: '0 12px',
           fontSize: '12px',
           fontWeight: '800',
           textTransform: 'uppercase',
           letterSpacing: '0.025em',
-          color: '#475569',
+          color: 'var(--theme-text-primary, #475569)',
           cursor: 'pointer',
-          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+          boxShadow: 'var(--theme-shadow, 0 1px 2px 0 rgba(0, 0, 0, 0.05))',
+          transition: 'all 0.2s ease',
         }}
         aria-label="Change language"
       >
@@ -157,7 +158,7 @@ export function LanguageSwitcher() {
           strokeWidth="2"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ color: '#94a3b8' }}
+          style={{ color: 'var(--theme-text-muted, #94a3b8)' }}
         >
           <path d="m6 9 6 6 6-6" />
         </svg>
@@ -177,10 +178,10 @@ export function LanguageSwitcher() {
               top: 'calc(100% + 4px)',
               width: '176px',
               borderRadius: '12px',
-              border: '1px solid #e2e8f0',
-              background: 'white',
+              border: '1px solid var(--theme-border, #e2e8f0)',
+              background: 'var(--theme-bg-surface-elevated, #ffffff)',
               padding: '6px',
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+              boxShadow: 'var(--theme-shadow-lg, 0 20px 25px -5px rgba(0, 0, 0, 0.1))',
               zIndex: 50,
             }}
           >
@@ -203,13 +204,18 @@ export function LanguageSwitcher() {
                   fontSize: '14px',
                   fontWeight: '700',
                   border: 'none',
-                  background: item.code === language ? '#eff6ff' : 'transparent',
-                  color: item.code === language ? '#2563eb' : '#475569',
+                  background:
+                    item.code === language ? 'var(--theme-primary-bg, #eff6ff)' : 'transparent',
+                  color:
+                    item.code === language
+                      ? 'var(--theme-primary, #2563eb)'
+                      : 'var(--theme-text-primary, #475569)',
                   textAlign: 'left',
+                  transition: 'background-color 0.15s ease',
                 }}
                 onMouseOver={(e) => {
                   if (item.code !== language) {
-                    e.currentTarget.style.background = '#f8fafc';
+                    e.currentTarget.style.background = 'var(--theme-bg-subtle, #f8fafc)';
                   }
                 }}
                 onMouseOut={(e) => {

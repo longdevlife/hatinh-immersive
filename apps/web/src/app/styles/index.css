@@ -1,12 +1,86 @@
 @import './site-shell.css';
 
+:root {
+  --theme-bg-app: #f4f0e8;
+  --theme-bg-surface: #ffffff;
+  --theme-bg-surface-elevated: #fffdf8;
+  --theme-bg-subtle: #f8f6f0;
+  --theme-text-primary: #17261f;
+  --theme-text-secondary: #52665b;
+  --theme-text-muted: #72847a;
+  --theme-border: rgba(23, 38, 31, 0.1);
+  --theme-border-strong: rgba(23, 38, 31, 0.2);
+  --theme-primary: #00875a;
+  --theme-primary-hover: #007041;
+  --theme-primary-bg: rgba(0, 135, 90, 0.08);
+  --theme-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  --theme-shadow-lg: 0 1rem 3rem rgba(23, 38, 31, 0.08);
+}
+
+:root.dark,
+[data-theme='dark'] {
+  --theme-bg-app: #0c1410;
+  --theme-bg-surface: #131f19;
+  --theme-bg-surface-elevated: #192720;
+  --theme-bg-subtle: #1f3027;
+  --theme-text-primary: #f2f7f4;
+  --theme-text-secondary: #b0c4b9;
+  --theme-text-muted: #7e968a;
+  --theme-border: rgba(255, 255, 255, 0.12);
+  --theme-border-strong: rgba(255, 255, 255, 0.22);
+  --theme-primary: #00a862;
+  --theme-primary-hover: #00c473;
+  --theme-primary-bg: rgba(0, 168, 98, 0.16);
+  --theme-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --theme-shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.5);
+}
+
+/* ==========================================================================
+   Global Scrollbar Hiding (Preserves full scrolling behavior)
+   ========================================================================== */
+
+html,
+body,
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* ==========================================================================
+   Base App & Typography Color Standards
+   ========================================================================== */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--theme-bg-app);
+  color: var(--theme-text-primary);
+  font-family: inherit;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
 .public-app {
   min-height: 100vh;
-  background: #f4f0e8;
+  background: var(--theme-bg-app);
+  color: var(--theme-text-primary);
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
 }
 
 .eyebrow {
-  color: #577064;
+  color: var(--theme-text-muted);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -30,10 +104,11 @@
   letter-spacing: -0.06em;
   line-height: 0.98;
   margin: 0.7rem 0 1.25rem;
+  color: var(--theme-text-primary);
 }
 
 .public-home p:not(.eyebrow) {
-  color: #52665b;
+  color: var(--theme-text-secondary);
   font-size: clamp(1rem, 2vw, 1.25rem);
   line-height: 1.6;
   margin: 0 auto 1.75rem;
