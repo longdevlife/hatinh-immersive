@@ -331,6 +331,10 @@ function projectSceneAudio(
   const narrationTrackIds: LocalizedAudioIds = { vi: null, en: null };
   const transcriptIds: LocalizedAudioIds = { vi: null, en: null };
   for (const narration of rows.sceneNarrations) {
+    if (narration.sceneId !== sceneId) {
+      continue;
+    }
+
     const locale = narration.locale;
     if (
       narration.trackId &&
@@ -367,14 +371,16 @@ function toAudioTrackResponse(
     isAudioAsset && assetProps.status === 'ready'
       ? resolvePublicMediaUrl(assetProps.storageKey, publicMediaUrlOptions)
       : null;
-  const readiness: AudioTrackReadiness =
-    !assetProps || !isAudioAsset
-      ? 'invalid'
-      : assetProps.status === 'ready' && src
-        ? 'ready'
-        : assetProps.status === 'ready'
-          ? 'invalid'
-          : 'unavailable';
+  let readiness: AudioTrackReadiness;
+  if (track.mediaAssetId === null) {
+    readiness = 'unavailable';
+  } else if (!assetProps || !isAudioAsset || assetProps.status === 'failed') {
+    readiness = 'invalid';
+  } else if (assetProps.status === 'ready') {
+    readiness = src ? 'ready' : 'invalid';
+  } else {
+    readiness = 'unavailable';
+  }
 
   return {
     id: track.id,

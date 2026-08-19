@@ -141,6 +141,18 @@ BEGIN
     RAISE EXCEPTION 'IMMERSIVE_AUDIO_MEDIA_ASSET_KIND_IMMUTABLE';
   END IF;
 
+  IF EXISTS (
+    SELECT 1
+    FROM immersive_audio_tracks AS track
+    JOIN media_assets AS asset ON asset.id = track.media_asset_id
+    WHERE asset.id = NEW.id
+      AND asset.status::text = 'ready'
+      AND track.publication_status::text = 'published'
+      AND NULLIF(trim(track.version), '') IS NULL
+  ) THEN
+    RAISE EXCEPTION 'IMMERSIVE_AUDIO_PUBLISHED_READY_VERSION_REQUIRED';
+  END IF;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;--> statement-breakpoint
@@ -329,7 +341,7 @@ AFTER INSERT OR UPDATE ON immersive_audio_tracks
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION validate_immersive_audio_track_integrity();--> statement-breakpoint
 CREATE CONSTRAINT TRIGGER immersive_audio_media_kind_trigger
-AFTER UPDATE OF media_kind ON media_assets
+AFTER UPDATE OF media_kind, status ON media_assets
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION validate_immersive_audio_media_kind();--> statement-breakpoint
 CREATE CONSTRAINT TRIGGER immersive_destination_ambient_track_trigger
