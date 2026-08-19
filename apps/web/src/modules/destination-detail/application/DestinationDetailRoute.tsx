@@ -70,6 +70,7 @@ export function DestinationDetailRoute({
   const destination = destinations?.find((candidate) => candidate.slug === destinationSlug);
   const destinationId = destination?.id;
   const destinationMainRef = useRef<HTMLElement>(null);
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
 
   useEffect(() => {
     if (!destinationId) {
@@ -100,9 +101,10 @@ export function DestinationDetailRoute({
     destinationSlug: destination.slug,
   };
   const exploreReturnHref = createExploreReturnHref(resolvedExploreReturnContext);
-  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
   const cameFromExplore = (location.state as DestinationRouteState | null)?.origin === 'explore';
   const onBackToExplore = () => {
+    setIsNavigatingBack(true);
+
     if (cameFromExplore) {
       navigate(-1);
       return;
