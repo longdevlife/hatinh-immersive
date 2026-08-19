@@ -113,6 +113,39 @@ describe('production panorama database contract', () => {
     ).rejects.toThrow(/PANORAMA_METADATA_MEDIA_ASSET_MUST_BE_PANORAMA/);
   });
 
+  it.each([
+    ['version', sql`version = 'mutated-v2'`],
+    ['provenance', sql`rights_reference = 'approval:mutated'`],
+    ['dimensions', sql`source_width_px = 8192, source_height_px = 4096`],
+    [
+      'derivative keys',
+      sql`manifest_key = 'processed/panorama/other/manifest.json', preview_key = 'processed/panorama/other/preview.webp'`,
+    ],
+  ])(
+    'rejects mutating %s after accepted panorama metadata becomes ready',
+    async (_case, update) => {
+      const mediaAssetId = await insertMediaAsset('panorama', 'ready');
+      await insertMetadata({ mediaAssetId, widthPx: 4096, heightPx: 2048 });
+
+      await expectDatabaseErrorCode(
+        db.execute(
+          sql`update panorama_asset_metadata set ${update} where media_asset_id = ${mediaAssetId}`,
+        ),
+        'PANORAMA_READY_METADATA_IMMUTABLE',
+      );
+    },
+  );
+
+  it('rejects deleting accepted panorama metadata after its asset becomes ready', async () => {
+    const mediaAssetId = await insertMediaAsset('panorama', 'ready');
+    await insertMetadata({ mediaAssetId, widthPx: 4096, heightPx: 2048 });
+
+    await expectDatabaseErrorCode(
+      db.execute(sql`delete from panorama_asset_metadata where media_asset_id = ${mediaAssetId}`),
+      'PANORAMA_READY_METADATA_IMMUTABLE',
+    );
+  });
+
   async function insertMediaAsset(mediaKind: 'panorama' | 'image', status: 'processing' | 'ready') {
     const id = randomUUID();
     await db.execute(sql`
@@ -130,6 +163,20 @@ describe('production panorama database contract', () => {
         )
     `);
     return id;
+  }
+
+  async function expectDatabaseErrorCode(promise: Promise<unknown>, code: string) {
+    try {
+      await promise;
+      throw new Error(`Expected database error ${code}`);
+    } catch (error) {
+      let current: unknown = error;
+      while (current instanceof Error) {
+        if (current.message.includes(code)) return;
+        current = current.cause;
+      }
+      throw error;
+    }
   }
 
   async function insertMetadata(input: {

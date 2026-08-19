@@ -5,6 +5,7 @@ import { MediaAsset, type MediaAssetProps } from '../domain/media-asset';
 import type { MediaAssetRepository } from './media.repository';
 import type { ObjectStoragePort, PutStoredObjectInput } from './object-storage.port';
 import type { PanoramaProcessingOutput, PanoramaProcessorPort } from './panorama-processing.port';
+import type { PanoramaProcessingLockPort } from './panorama-processing-lock.port';
 import type {
   PanoramaAssetMetadata,
   PanoramaMetadataRepository,
@@ -33,7 +34,7 @@ describe('PanoramaIngestionService', () => {
 
     await expect(context.service.process(input as never)).rejects.toMatchObject({ code });
     expect(context.storage.openCalls).toEqual([]);
-    expect(context.processor.calls).toBe(0);
+    expect((context.processor as FakeProcessor).calls).toBe(0);
   });
 
   it('rejects incomplete rights before opening or processing the source', async () => {
@@ -43,7 +44,7 @@ describe('PanoramaIngestionService', () => {
       'PANORAMA_VERSION_REQUIRED',
     );
     expect(context.storage.openCalls).toEqual([]);
-    expect(context.processor.calls).toBe(0);
+    expect((context.processor as FakeProcessor).calls).toBe(0);
   });
 
   it('rejects non-panorama and non-processable assets', async () => {
@@ -107,19 +108,51 @@ describe('PanoramaIngestionService', () => {
       previewKey: null,
     });
   });
+
+  it('serializes concurrent processing ownership so a stale attempt cannot overwrite success', async () => {
+    const processor = new DeferredFirstProcessor();
+    const context = createContext(createAsset(), processor, true);
+
+    const first = context.service.process(validInput);
+    await processor.firstStarted;
+    const second = context.service.process(validInput);
+    const resultsPromise = Promise.allSettled([first, second]);
+    await Promise.resolve();
+    processor.completeFirst();
+
+    const results = await resultsPromise;
+
+    expect(processor.calls).toBe(1);
+    expect(results[0]?.status).toBe('fulfilled');
+    expect(results[1]).toMatchObject({
+      status: 'rejected',
+      reason: { code: 'MEDIA_NOT_PROCESSABLE' },
+    });
+    expect(context.media.asset.status).toBe('ready');
+    expect(context.metadata.saved.at(-1)?.qualityStatus).toBe('accepted');
+  });
 });
 
-function createContext(asset = createAsset()) {
-  const media = new InMemoryMediaRepository(asset);
+function createContext(
+  asset = createAsset(),
+  processor: PanoramaProcessorPort = new FakeProcessor(),
+  snapshotReads = false,
+) {
+  const media = new InMemoryMediaRepository(asset, snapshotReads);
   const metadata = new InMemoryPanoramaMetadataRepository();
   const storage = new FakeStorage();
-  const processor = new FakeProcessor();
   return {
     media,
     metadata,
     storage,
     processor,
-    service: new PanoramaIngestionService(media, metadata, storage, processor),
+    service: new PanoramaIngestionService(
+      media,
+      metadata,
+      storage,
+      processor,
+      new InMemoryProcessingLock(),
+    ),
   };
 }
 
@@ -145,13 +178,17 @@ function createAsset(overrides: Partial<MediaAssetProps> = {}) {
 
 class InMemoryMediaRepository implements MediaAssetRepository {
   readonly savedStatuses: string[] = [];
-  constructor(public asset: MediaAsset) {}
+  constructor(
+    public asset: MediaAsset,
+    private readonly snapshotReads = false,
+  ) {}
   async save(asset: MediaAsset) {
     this.asset = asset;
     this.savedStatuses.push(asset.status);
   }
   async findById(id: string) {
-    return id === this.asset.id ? this.asset : null;
+    if (id !== this.asset.id) return null;
+    return this.snapshotReads ? MediaAsset.rehydrate(this.asset.toPrimitives()) : this.asset;
   }
   async findByIds(ids: string[]) {
     return ids.includes(this.asset.id) ? new Map([[this.asset.id, this.asset]]) : new Map();
@@ -219,4 +256,66 @@ class FakeProcessor implements PanoramaProcessorPort {
       ],
     };
   }
+}
+
+class DeferredFirstProcessor extends FakeProcessor {
+  private releaseFirst!: () => void;
+  private markFirstStarted!: () => void;
+  readonly firstStarted = new Promise<void>((resolve) => {
+    this.markFirstStarted = resolve;
+  });
+
+  override async process(): Promise<PanoramaProcessingOutput> {
+    this.calls += 1;
+    if (this.calls === 1) {
+      this.markFirstStarted();
+      await new Promise<void>((resolve) => {
+        this.releaseFirst = resolve;
+      });
+    }
+    return successfulProcessingOutput();
+  }
+
+  completeFirst() {
+    this.releaseFirst();
+  }
+}
+
+class InMemoryProcessingLock implements PanoramaProcessingLockPort {
+  private readonly tails = new Map<string, Promise<void>>();
+
+  async withLock<T>(mediaAssetId: string, work: () => Promise<T>): Promise<T> {
+    const previous = this.tails.get(mediaAssetId) ?? Promise.resolve();
+    let release!: () => void;
+    const current = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    this.tails.set(
+      mediaAssetId,
+      previous.then(() => current),
+    );
+    await previous;
+    try {
+      return await work();
+    } finally {
+      release();
+    }
+  }
+}
+
+function successfulProcessingOutput(): PanoramaProcessingOutput {
+  return {
+    widthPx: 4096,
+    heightPx: 2048,
+    projection: 'equirectangular',
+    preview: new Uint8Array([1]),
+    manifest: new Uint8Array([2]),
+    tiles: [
+      {
+        keySuffix: 'tiles/0/0-0.webp',
+        contentType: 'image/webp',
+        body: new Uint8Array([3]),
+      },
+    ],
+  };
 }

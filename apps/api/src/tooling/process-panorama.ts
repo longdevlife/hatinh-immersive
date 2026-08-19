@@ -47,28 +47,42 @@ export function parsePanoramaProcessArgs(args: string[]): PanoramaProcessArgs {
   };
 }
 
+interface PanoramaProcessDependencies {
+  ingestion: Pick<PanoramaIngestionService, 'findReadyResult' | 'process'>;
+  commands: Pick<VirtualTourCommandService, 'assignPanoramaToScene'>;
+}
+
+export async function runPanoramaProcess(
+  input: PanoramaProcessArgs,
+  dependencies: PanoramaProcessDependencies,
+) {
+  const metadata =
+    (await dependencies.ingestion.findReadyResult(input)) ??
+    (await dependencies.ingestion.process(input));
+  let assignedSceneId: string | null = null;
+  if (input.sceneId) {
+    assignedSceneId = (
+      await dependencies.commands.assignPanoramaToScene(input.sceneId, input.mediaAssetId)
+    ).id;
+  }
+  return {
+    mediaAssetId: metadata.mediaAssetId,
+    qualityStatus: metadata.qualityStatus,
+    dimensions: { width: metadata.sourceWidthPx, height: metadata.sourceHeightPx },
+    manifestKey: metadata.manifestKey,
+    previewKey: metadata.previewKey,
+    sceneId: assignedSceneId,
+  };
+}
+
 async function main() {
   const input = parsePanoramaProcessArgs(process.argv.slice(2));
   const app = await NestFactory.createApplicationContext(AppModule, { logger: false });
   try {
     const ingestion = app.get(PanoramaIngestionService);
-    const metadata = await ingestion.process(input);
-    let assignedSceneId: string | null = null;
-    if (input.sceneId) {
-      const commands = app.get(VirtualTourCommandService);
-      assignedSceneId = (await commands.assignPanoramaToScene(input.sceneId, input.mediaAssetId))
-        .id;
-    }
-    process.stdout.write(
-      `${JSON.stringify({
-        mediaAssetId: metadata.mediaAssetId,
-        qualityStatus: metadata.qualityStatus,
-        dimensions: { width: metadata.sourceWidthPx, height: metadata.sourceHeightPx },
-        manifestKey: metadata.manifestKey,
-        previewKey: metadata.previewKey,
-        sceneId: assignedSceneId,
-      })}\n`,
-    );
+    const commands = app.get(VirtualTourCommandService);
+    const result = await runPanoramaProcess(input, { ingestion, commands });
+    process.stdout.write(`${JSON.stringify(result)}\n`);
   } finally {
     await app.close();
   }

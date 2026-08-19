@@ -9,9 +9,11 @@ import { OBJECT_STORAGE } from './application/object-storage.port';
 import { PanoramaIngestionService } from './application/panorama-ingestion.service';
 import { PANORAMA_METADATA_REPOSITORY } from './application/panorama-metadata.repository';
 import { PANORAMA_PROCESSOR } from './application/panorama-processing.port';
+import { PANORAMA_PROCESSING_LOCK } from './application/panorama-processing-lock.port';
 import { PUBLIC_MEDIA_URL_OPTIONS } from './application/public-media-url';
 import { DrizzleMediaAssetRepository } from './infrastructure/drizzle-media.repository';
 import { DrizzlePanoramaMetadataRepository } from './infrastructure/drizzle-panorama-metadata.repository';
+import { PostgresPanoramaProcessingLockAdapter } from './infrastructure/postgres-panorama-processing-lock.adapter';
 import { S3ObjectStorageAdapter } from './infrastructure/s3-object-storage.adapter';
 import { SharpPanoramaProcessor } from './infrastructure/sharp-panorama.processor';
 import { AdminMediaController } from './presentation/http/admin-media.controller';
@@ -26,6 +28,7 @@ import { AdminMediaController } from './presentation/http/admin-media.controller
     DrizzlePanoramaMetadataRepository,
     S3ObjectStorageAdapter,
     SharpPanoramaProcessor,
+    PostgresPanoramaProcessingLockAdapter,
     {
       provide: MEDIA_ASSET_REPOSITORY,
       useExisting: DrizzleMediaAssetRepository,
@@ -41,6 +44,10 @@ import { AdminMediaController } from './presentation/http/admin-media.controller
     {
       provide: PANORAMA_PROCESSOR,
       useExisting: SharpPanoramaProcessor,
+    },
+    {
+      provide: PANORAMA_PROCESSING_LOCK,
+      useExisting: PostgresPanoramaProcessingLockAdapter,
     },
     {
       provide: PUBLIC_MEDIA_URL_OPTIONS,

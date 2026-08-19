@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { MediaAssetStateError } from '../domain/media-asset';
-import { panoramaDerivativePrefix } from '../domain/panorama-derivative';
+import {
+  hasCanonicalPanoramaDerivativeKeys,
+  panoramaDerivativePrefix,
+} from '../domain/panorama-derivative';
 import { MEDIA_ASSET_REPOSITORY, type MediaAssetRepository } from './media.repository';
 import { OBJECT_STORAGE, type ObjectStoragePort } from './object-storage.port';
 import {
@@ -15,6 +18,10 @@ import {
   type PanoramaProcessingOutput,
   type PanoramaProcessorPort,
 } from './panorama-processing.port';
+import {
+  PANORAMA_PROCESSING_LOCK,
+  type PanoramaProcessingLockPort,
+} from './panorama-processing-lock.port';
 
 export interface ProcessPanoramaInput {
   mediaAssetId: string;
@@ -40,10 +47,42 @@ export class PanoramaIngestionService {
     private readonly metadataRepository: PanoramaMetadataRepository,
     @Inject(OBJECT_STORAGE) private readonly storage: ObjectStoragePort,
     @Inject(PANORAMA_PROCESSOR) private readonly processor: PanoramaProcessorPort,
+    @Inject(PANORAMA_PROCESSING_LOCK) private readonly processingLock: PanoramaProcessingLockPort,
   ) {}
 
   async process(input: ProcessPanoramaInput): Promise<PanoramaAssetMetadata> {
     const normalized = validateInput(input);
+    return this.processingLock.withLock(normalized.mediaAssetId, () =>
+      this.processOwned(normalized),
+    );
+  }
+
+  async findReadyResult(input: ProcessPanoramaInput): Promise<PanoramaAssetMetadata | null> {
+    const normalized = validateInput(input);
+    const [asset, metadata] = await Promise.all([
+      this.mediaRepository.findById(normalized.mediaAssetId),
+      this.metadataRepository.findByMediaAssetId(normalized.mediaAssetId),
+    ]);
+    if (
+      asset?.status !== 'ready' ||
+      metadata?.qualityStatus !== 'accepted' ||
+      !hasCanonicalPanoramaDerivativeKeys(metadata)
+    ) {
+      return null;
+    }
+    if (
+      metadata.rights !== normalized.rights ||
+      metadata.rightsHolder !== normalized.rightsHolder ||
+      metadata.rightsReference !== normalized.rightsReference ||
+      metadata.sourceReference !== normalized.sourceReference ||
+      metadata.version !== normalized.version
+    ) {
+      throw new PanoramaIngestionError('PANORAMA_READY_METADATA_MISMATCH');
+    }
+    return metadata;
+  }
+
+  private async processOwned(normalized: ProcessPanoramaInput): Promise<PanoramaAssetMetadata> {
     const asset = await this.mediaRepository.findById(normalized.mediaAssetId);
     if (!asset) throw new PanoramaIngestionError('PANORAMA_MEDIA_ASSET_NOT_FOUND');
     if (asset.mediaKind !== 'panorama') {
