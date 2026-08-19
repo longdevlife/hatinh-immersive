@@ -10,12 +10,12 @@
   --explore-panel-max-width: 420px;
   --explore-card-radius: 12px;
   --explore-gap: 16px;
-  --explore-bg: var(--color-surface, #ffffff);
-  --explore-text: var(--color-text, #111111);
-  --explore-text-muted: var(--color-text-muted, #666666);
-  --explore-border: var(--color-border, #e5e5e5);
-  --explore-primary: var(--color-primary, #00875a);
-  --explore-primary-bg: rgba(0, 135, 90, 0.08);
+  --explore-bg: var(--theme-bg-surface, #ffffff);
+  --explore-text: var(--theme-text-primary, #111111);
+  --explore-text-muted: var(--theme-text-secondary, #666666);
+  --explore-border: var(--theme-border, #e5e5e5);
+  --explore-primary: var(--theme-primary, #00875a);
+  --explore-primary-bg: var(--theme-primary-bg, rgba(0, 135, 90, 0.08));
 }
 
 /* ============================================================================
@@ -27,8 +27,8 @@
   flex-direction: column;
   height: calc(100vh - 4.5rem);
   height: calc(100dvh - 4.5rem);
-  background: #f4f0e8;
-  color: #17261f;
+  background: var(--theme-bg-app, #f4f0e8);
+  color: var(--theme-text-primary, #17261f);
   overflow: hidden;
 }
 
@@ -39,10 +39,10 @@
   min-height: 0;
   margin: 1rem clamp(1rem, 2vw, 2rem) 1rem;
   overflow: hidden;
-  border: 1px solid rgba(23, 38, 31, 0.12);
+  border: 1px solid var(--theme-border, rgba(23, 38, 31, 0.12));
   border-radius: 1.25rem;
-  background: #fffdf8;
-  box-shadow: 0 1rem 3rem rgba(23, 38, 31, 0.08);
+  background: var(--theme-bg-surface-elevated, #fffdf8);
+  box-shadow: var(--theme-shadow-lg, 0 1rem 3rem rgba(23, 38, 31, 0.08));
 }
 
 .explore-experience__header {
@@ -55,11 +55,12 @@
   font-size: clamp(1.8rem, 4vw, 2.5rem);
   letter-spacing: -0.04em;
   line-height: 1.1;
+  color: var(--theme-text-primary, #17261f);
 }
 
 .explore-experience__header > p:last-child {
   margin: 0;
-  color: #52665b;
+  color: var(--theme-text-secondary, #52665b);
   line-height: 1.5;
   font-size: 0.95rem;
 }
@@ -70,10 +71,8 @@
   height: 100%;
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-width: none;
-  border-right: 1px solid rgba(23, 38, 31, 0.08);
+  overflow: hidden;
+  border-right: 1px solid var(--theme-border, rgba(23, 38, 31, 0.08));
 }
 
 .explore-experience__destinations::-webkit-scrollbar {
@@ -103,7 +102,7 @@ html::-webkit-scrollbar {
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: #f4f0e8;
+  background: var(--theme-bg-app, #f4f0e8);
 }
 
 .explore-experience__selection {
@@ -120,11 +119,11 @@ html::-webkit-scrollbar {
   max-width: min(28rem, calc(100% - 2rem));
   margin: 0;
   padding: 0.65rem 0.85rem;
-  border: 1px solid rgba(23, 38, 31, 0.14);
+  border: 1px solid var(--theme-border, rgba(23, 38, 31, 0.14));
   border-radius: 999px;
-  background: rgb(255 253 248 / 0.92);
-  color: #173c31;
-  box-shadow: 0 0.5rem 1.5rem rgb(23 38 31 / 0.14);
+  background: var(--theme-bg-surface-elevated, rgb(255 253 248 / 0.92));
+  color: var(--theme-text-primary, #173c31);
+  box-shadow: var(--theme-shadow, 0 0.5rem 1.5rem rgb(23 38 31 / 0.14));
   font-size: 0.875rem;
   font-weight: 700;
 }
@@ -136,8 +135,8 @@ html::-webkit-scrollbar {
 .explore-experience__detail-action {
   border: 0;
   border-radius: 999px;
-  background: #173c31;
-  color: #fffdf8;
+  background: var(--theme-primary, #00875a);
+  color: #ffffff;
   cursor: pointer;
   font: inherit;
   font-size: 0.8rem;
@@ -219,12 +218,15 @@ html::-webkit-scrollbar {
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
   background-color: var(--explore-bg);
   box-sizing: border-box;
 }
 
 .destination-panel__header {
-  padding: 24px var(--explore-gap) 16px;
+  padding: 16px var(--explore-gap) 16px;
   border-bottom: 1px solid var(--explore-border);
   flex-shrink: 0;
 }
@@ -319,9 +321,16 @@ html::-webkit-scrollbar {
 }
 
 .destination-panel__list-container {
-  flex: 1;
-  overflow: visible;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
   padding: var(--explore-gap);
+}
+
+.destination-panel__list-container::-webkit-scrollbar {
+  display: none;
 }
 
 .destination-panel__list {
@@ -551,11 +560,6 @@ html::-webkit-scrollbar {
     height: 100%;
   }
 
-  .explore-experience__layout[data-explore-mode='destination-list']
-    .destination-panel__list-container {
-    overflow: visible;
-  }
-
   .explore-experience__layout[data-explore-mode='map'] .explore-experience__destinations {
     display: none;
   }
@@ -624,4 +628,61 @@ html::-webkit-scrollbar {
   .explore-experience__detail-action {
     transition: none !important;
   }
+}
+
+/* ==========================================================================
+   Dark Mode Overrides for Explore
+   ========================================================================== */
+
+:root.dark .explore-experience__selection,
+[data-theme='dark'] .explore-experience__selection {
+  background: rgba(26, 39, 33, 0.95);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: var(--theme-text-primary);
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.4);
+}
+
+:root.dark .explore-experience__detail-action,
+[data-theme='dark'] .explore-experience__detail-action {
+  background: var(--theme-primary);
+  color: #ffffff;
+}
+
+:root.dark .explore-experience__detail-action:hover,
+[data-theme='dark'] .explore-experience__detail-action:hover {
+  background: var(--theme-primary-hover);
+}
+
+:root.dark .destination-panel__search-input,
+[data-theme='dark'] .destination-panel__search-input {
+  background-color: var(--theme-bg-subtle, #1e2e27);
+  color: var(--theme-text-primary, #f2f7f4);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.12));
+}
+
+:root.dark .destination-panel__filter-chip:hover,
+[data-theme='dark'] .destination-panel__filter-chip:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+:root.dark .destination-panel__filter-chip--active,
+[data-theme='dark'] .destination-panel__filter-chip--active {
+  background-color: var(--theme-primary);
+  color: #ffffff;
+  border-color: var(--theme-primary);
+}
+
+:root.dark .destination-card:hover,
+[data-theme='dark'] .destination-card:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+:root.dark .destination-card--selected,
+[data-theme='dark'] .destination-card--selected {
+  background-color: rgba(0, 168, 98, 0.15);
+}
+
+:root.dark .destination-panel__selected-preview,
+[data-theme='dark'] .destination-panel__selected-preview {
+  background-color: rgba(255, 255, 255, 0.05);
 }

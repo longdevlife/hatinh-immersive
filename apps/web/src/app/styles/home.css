@@ -57,6 +57,14 @@ body:has(.home-cinematic) .site-shell-header__mobile-toggle {
   color: #f4f0e8;
 }
 
+.site-shell-layout:has(.home-cinematic) .site-shell-header button[data-no-i18n],
+body:has(.home-cinematic) .site-shell-header button[data-no-i18n] {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(8px);
+}
+
 /* ==========================================================================
    ROOT & BASE CONTAINER
    ========================================================================== */

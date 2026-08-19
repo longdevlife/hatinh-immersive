@@ -201,28 +201,111 @@ function toGeoJson(
   };
 }
 
-function createDestinationPinImage(color: readonly [number, number, number]): ExploreMapImage {
-  const width = 32;
-  const height = 40;
+function createDestinationPinImage(
+  color: readonly [number, number, number],
+  isSelected = false,
+): ExploreMapImage {
+  const width = 36;
+  const height = 46;
   const data = new Uint8Array(width * height * 4);
 
+  if (typeof document !== 'undefined') {
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, width, height);
+
+        const cx = width / 2;
+        const cy = 16;
+        const r = 13.5;
+        const tipY = height - 3;
+
+        // Drop shadow
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetY = 2;
+
+        // Pin outer path
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, Math.PI * 0.8, Math.PI * 0.2, false);
+        ctx.lineTo(cx, tipY);
+        ctx.closePath();
+
+        // Fill pin body
+        ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+        ctx.fill();
+
+        // White outer stroke
+        ctx.shadowColor = 'transparent';
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+
+        // Inner white circle
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        // Inner accent center dot
+        ctx.beginPath();
+        ctx.arc(cx, cy, 3.2, 0, Math.PI * 2);
+        ctx.fillStyle = isSelected ? '#d97706' : '#00875a';
+        ctx.fill();
+
+        const imgData = ctx.getImageData(0, 0, width, height);
+        return {
+          data: new Uint8Array(
+            imgData.data.buffer,
+            imgData.data.byteOffset,
+            imgData.data.byteLength,
+          ),
+          height,
+          width,
+        };
+      }
+    } catch {
+      // Fall through to procedural buffer
+    }
+  }
+
+  // High quality procedural buffer fallback
+  const cx = width / 2;
+  const cy = 16;
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const dx = x - 15.5;
-      const circleDy = y - 11.5;
-      const inCircle = dx * dx + circleDy * circleDy <= 11.5 * 11.5;
-      const tailProgress = (y - 11.5) / 26;
-      const tailHalfWidth = Math.max(0, 11.5 * (1 - tailProgress));
-      const inTail = y >= 11.5 && y <= 39 && Math.abs(dx) <= tailHalfWidth;
+      const dx = x - cx;
+      const circleDy = y - cy;
+      const dist = Math.sqrt(dx * dx + circleDy * circleDy);
+      const tailProgress = (y - cy) / (height - 3 - cy);
+      const tailHalfWidth = Math.max(0, 13.5 * (1 - tailProgress));
+      const inCircle = dist <= 13.5;
+      const inTail = y >= cy && y <= height - 3 && Math.abs(dx) <= tailHalfWidth;
+
       if (!inCircle && !inTail) {
         continue;
       }
 
       const offset = (y * width + x) * 4;
-      data[offset] = color[0];
-      data[offset + 1] = color[1];
-      data[offset + 2] = color[2];
-      data[offset + 3] = 255;
+      if (dist <= 3.2) {
+        data[offset] = isSelected ? 217 : 0;
+        data[offset + 1] = isSelected ? 119 : 135;
+        data[offset + 2] = isSelected ? 6 : 90;
+        data[offset + 3] = 255;
+      } else if (dist <= 6) {
+        data[offset] = 255;
+        data[offset + 1] = 255;
+        data[offset + 2] = 255;
+        data[offset + 3] = 255;
+      } else {
+        data[offset] = color[0];
+        data[offset + 1] = color[1];
+        data[offset + 2] = color[2];
+        data[offset + 3] = 255;
+      }
     }
   }
 
@@ -231,10 +314,10 @@ function createDestinationPinImage(color: readonly [number, number, number]): Ex
 
 function ensureDestinationPinImages(map: ExploreMapInstance): void {
   if (!map.hasImage(DESTINATION_PIN_IMAGE_ID)) {
-    map.addImage(DESTINATION_PIN_IMAGE_ID, createDestinationPinImage([22, 119, 82]));
+    map.addImage(DESTINATION_PIN_IMAGE_ID, createDestinationPinImage([0, 135, 90], false));
   }
   if (!map.hasImage(DESTINATION_SELECTED_PIN_IMAGE_ID)) {
-    map.addImage(DESTINATION_SELECTED_PIN_IMAGE_ID, createDestinationPinImage([190, 128, 45]));
+    map.addImage(DESTINATION_SELECTED_PIN_IMAGE_ID, createDestinationPinImage([217, 119, 6], true));
   }
 }
 

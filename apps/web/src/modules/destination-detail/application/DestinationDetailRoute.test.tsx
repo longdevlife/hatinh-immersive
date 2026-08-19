@@ -102,6 +102,35 @@ describe('DestinationDetailRoute', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/explore');
   });
 
+  it('shows a navigation status while returning from a detail route', () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter
+          initialEntries={[
+            '/explore/bien-thien-cam',
+            { pathname: '/explore/son-trang-co-dam', state: { origin: 'explore' } },
+          ]}
+          initialIndex={1}
+        >
+          <Routes>
+            <Route
+              path="/explore/:destinationSlug"
+              element={
+                <DestinationDetailRoute destinations={[destinationFixture, ...destinations]} />
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /Khám phá Hà Tĩnh/ }));
+
+    expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+
   it('opens the focused Sơn Trang location on the map', () => {
     renderRoute('/explore/son-trang-co-dam', [destinationFixture, ...destinations]);
 

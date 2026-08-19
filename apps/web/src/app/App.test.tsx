@@ -57,23 +57,25 @@ describe('public application shell', () => {
     );
   });
 
-  it('renders the cinematic destination home from the governed catalog', () => {
+  it('renders the cinematic destination home from the governed catalog', async () => {
     render(<App />);
 
-    expect(screen.getByTestId('home-cinematic-hero')).toHaveAttribute(
-      'data-active-slug',
-      'son-trang-co-dam',
-    );
-    expect(
-      within(screen.getByTestId('home-cinematic-hero')).getByRole('heading', {
-        name: 'Sơn Trang Cổ Đạm',
-      }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Khám phá Sơn Trang Cổ Đạm' })).toHaveAttribute(
-      'href',
-      '/explore/son-trang-co-dam',
-    );
-    expect(screen.getByRole('main')).not.toHaveTextContent('location-first');
+    await waitFor(() => {
+      expect(screen.getByTestId('home-cinematic-hero')).toHaveAttribute(
+        'data-active-slug',
+        'son-trang-co-dam',
+      );
+      expect(
+        within(screen.getByTestId('home-cinematic-hero')).getByRole('heading', {
+          name: 'Sơn Trang Cổ Đạm',
+        }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Khám phá Sơn Trang Cổ Đạm' })).toHaveAttribute(
+        'href',
+        '/explore/son-trang-co-dam',
+      );
+      expect(screen.getByRole('main')).not.toHaveTextContent('location-first');
+    });
   });
 
   it('renders the Hybrid C discovery entry at /explore', async () => {
@@ -89,13 +91,15 @@ describe('public application shell', () => {
     );
   });
 
-  it('exposes a real home discovery link to /explore', () => {
+  it('exposes a real home discovery link to /explore', async () => {
     render(<App />);
 
-    expect(screen.getByRole('link', { name: 'Mở bản đồ khám phá' })).toHaveAttribute(
-      'href',
-      '/explore',
-    );
+    await waitFor(() => {
+      expect(screen.getByRole('link', { name: 'Mở bản đồ khám phá' })).toHaveAttribute(
+        'href',
+        '/explore',
+      );
+    });
   });
 
   it('migrates legacy immersive query links to the explicit immersive route', async () => {

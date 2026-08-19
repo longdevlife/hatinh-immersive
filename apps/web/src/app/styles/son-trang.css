@@ -1,11 +1,78 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&display=swap');
 
+/* ==========================================================================
+   HEADER OVERLAY (SCOPED SPECIFICALLY TO SƠN TRANG EXPERIENCE)
+   ========================================================================== */
+
+.site-shell-layout:has(.son-trang-experience) .site-shell-header,
+body:has(.son-trang-experience) .site-shell-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: transparent;
+  background: linear-gradient(
+    180deg,
+    rgba(7, 14, 11, 0.75) 0%,
+    rgba(7, 14, 11, 0.25) 60%,
+    transparent 100%
+  );
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.site-shell-layout:has(.son-trang-experience) .site-shell-header__brand-name,
+body:has(.son-trang-experience) .site-shell-header__brand-name {
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.site-shell-layout:has(.son-trang-experience) .site-shell-header__brand-slogan,
+body:has(.son-trang-experience) .site-shell-header__brand-slogan {
+  color: #b5c4bc;
+}
+
+.site-shell-layout:has(.son-trang-experience) .site-shell-header__nav-link,
+body:has(.son-trang-experience) .site-shell-header__nav-link {
+  color: #f4f0e8;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+
+.site-shell-layout:has(.son-trang-experience) .site-shell-header__nav-link:hover,
+body:has(.son-trang-experience) .site-shell-header__nav-link:hover {
+  color: #72b08d;
+}
+
+.site-shell-layout:has(.son-trang-experience) .site-shell-header__nav-link.is-active,
+body:has(.son-trang-experience) .site-shell-header__nav-link.is-active,
+.site-shell-layout:has(.son-trang-experience) .site-shell-header__nav-link[aria-current='page'],
+body:has(.son-trang-experience) .site-shell-header__nav-link[aria-current='page'] {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.site-shell-layout:has(.son-trang-experience) .site-shell-header__mobile-toggle,
+body:has(.son-trang-experience) .site-shell-header__mobile-toggle {
+  color: #f4f0e8;
+}
+
+.site-shell-layout:has(.son-trang-experience) .site-shell-header button[data-no-i18n],
+body:has(.son-trang-experience) .site-shell-header button[data-no-i18n] {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #ffffff !important;
+  backdrop-filter: blur(8px);
+}
+
 .son-trang-experience {
   display: flex;
   flex-direction: column;
-  background-color: #fcfbf9; /* match generic theme background */
+  background-color: var(--theme-bg-app, #fcfbf9);
   min-height: 100vh;
-  color: #2c3e35;
+  color: var(--theme-text-primary, #2c3e35);
   position: relative;
 }
 
@@ -22,7 +89,7 @@
   display: flex;
   justify-content: flex-start;
   position: absolute;
-  top: 0;
+  top: 5rem;
   left: 0;
   width: 100%;
   z-index: 10;
@@ -65,7 +132,8 @@
 
 .son-trang-experience__hero {
   position: relative;
-  min-height: 85vh;
+  min-height: 90vh;
+  min-height: 90svh;
   display: flex;
   align-items: flex-end;
   padding: 0;
@@ -79,9 +147,9 @@
   inset: 0;
   background: linear-gradient(
     to top,
-    rgba(20, 30, 24, 0.95) 0%,
-    rgba(20, 30, 24, 0.4) 50%,
-    rgba(20, 30, 24, 0.1) 100%
+    rgba(12, 20, 16, 0.95) 0%,
+    rgba(12, 20, 16, 0.45) 50%,
+    rgba(7, 14, 11, 0.65) 100%
   );
   z-index: 2;
   pointer-events: none;
@@ -92,7 +160,7 @@
   z-index: 3;
   width: 100%;
   max-width: 1200px;
-  padding: 4rem clamp(1rem, 4vw, 4rem);
+  padding: clamp(6.5rem, 14vh, 9rem) clamp(1rem, 4vw, 4rem) 4rem;
 }
 
 .son-trang-experience__hero-content h1 {
@@ -210,9 +278,9 @@
 
 .son-trang-experience__status-notice {
   font-size: 0.95rem;
-  color: #52665b;
-  background-color: rgba(44, 62, 53, 0.04);
-  border: 1px solid rgba(44, 62, 53, 0.08);
+  color: var(--theme-text-secondary, #52665b);
+  background-color: var(--theme-bg-subtle, rgba(44, 62, 53, 0.04));
+  border: 1px solid var(--theme-border, rgba(44, 62, 53, 0.08));
   padding: 0.875rem 1.25rem;
   border-radius: 9999px;
   display: inline-flex;
@@ -231,12 +299,12 @@
 
 .son-trang-experience__quick-facts {
   padding: 3rem clamp(1rem, 4vw, 4rem);
-  background-color: #ffffff;
+  background-color: var(--theme-bg-surface-elevated, #ffffff);
   border-radius: 24px;
   margin: -3rem clamp(1rem, 4vw, 4rem) 0;
   position: relative;
   z-index: 10;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--theme-shadow-lg, 0 20px 40px rgba(0, 0, 0, 0.08));
   animation: son-trang-fade-up 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) both;
   animation-delay: 0.1s;
 }
@@ -247,10 +315,10 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background-color: #ffffff;
+  background-color: var(--theme-bg-surface, #ffffff);
   border-radius: 50%;
-  color: #2c3e35;
-  box-shadow: 0 4px 12px rgba(44, 62, 53, 0.08);
+  color: var(--theme-text-primary, #2c3e35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .son-trang-experience__facts-list {
@@ -261,7 +329,7 @@
   gap: 3rem;
   flex-wrap: wrap;
   font-size: 1rem;
-  color: #2c3e35;
+  color: var(--theme-text-primary, #2c3e35);
 }
 
 .son-trang-experience__pillars {
@@ -275,11 +343,11 @@
 
 .son-trang-experience__pillar {
   padding: 2.5rem;
-  background: #ffffff;
+  background: var(--theme-bg-surface-elevated, #ffffff);
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-  border: 1px solid rgba(87, 112, 100, 0.05);
-  border-left: 4px solid #577064;
+  box-shadow: var(--theme-shadow, 0 4px 20px rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--theme-border, rgba(87, 112, 100, 0.05));
+  border-left: 4px solid var(--theme-primary, #577064);
   transition: transform 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -293,7 +361,7 @@
   font-weight: 700;
   font-size: 1.25rem;
   margin: 0;
-  color: #1a2520;
+  color: var(--theme-text-primary, #1a2520);
   position: relative;
   z-index: 1;
 }
@@ -309,7 +377,7 @@
   font-weight: 800;
   margin: 0 0 3rem 0;
   letter-spacing: -0.03em;
-  color: #1a2520;
+  color: var(--theme-text-primary, #1a2520);
 }
 
 .son-trang-experience__zones {
@@ -345,6 +413,24 @@
 .son-trang-experience__zone-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+}
+
+.son-trang-experience__zone-media-btn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.son-trang-experience__zone-media-btn:focus-visible {
+  outline: 3px solid #00875a;
+  outline-offset: 2px;
 }
 
 .son-trang-experience__zone-media {
@@ -404,11 +490,11 @@
 .son-trang-experience__gallery-kicker {
   display: inline-block;
   color: #577064;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 0.5rem 0;
 }
 
 /* Mobile: Horizontal Snap Gallery */
@@ -430,25 +516,48 @@
   display: none;
 }
 
-.son-trang-experience__gallery-image {
+.son-trang-experience__gallery-btn {
   flex: 0 0 80vw;
   height: 320px;
-  object-fit: cover;
   border-radius: 16px; /* modern rounded look */
   scroll-snap-align: center;
+  padding: 0;
+  margin: 0;
+  border: none;
   background-color: #e2e8f0;
+  cursor: pointer;
+  overflow: hidden;
+  display: block;
   transition:
     transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
     box-shadow 0.4s ease;
 }
 
 /* Mobile Large Lead */
-.son-trang-experience__gallery-image:first-child {
+.son-trang-experience__gallery-btn:first-child {
   flex: 0 0 85vw;
   height: 400px;
 }
 
+.son-trang-experience__gallery-btn:focus-visible {
+  outline: 3px solid #00875a;
+  outline-offset: 2px;
+}
+
+.son-trang-experience__gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.son-trang-experience__gallery-btn:hover .son-trang-experience__gallery-image {
+  transform: scale(1.03);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .son-trang-experience__gallery-btn,
   .son-trang-experience__gallery-image {
     transition: none !important;
   }
@@ -466,7 +575,7 @@
     padding: 0;
   }
 
-  .son-trang-experience__gallery-image {
+  .son-trang-experience__gallery-btn {
     width: 100%;
     height: 100%;
     flex: auto;
@@ -474,39 +583,96 @@
     grid-row: span 1;
   }
 
-  .son-trang-experience__gallery-image:hover {
-    transform: scale(1.03);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+  .son-trang-experience__gallery-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.18);
     z-index: 10;
   }
 
   /* Common structure for the first 3 items */
-  .son-trang-experience__gallery-image:first-child {
+  .son-trang-experience__gallery-btn:first-child {
     grid-column: span 6;
     grid-row: span 2;
+    height: 100%;
   }
-  .son-trang-experience__gallery-image:nth-child(2),
-  .son-trang-experience__gallery-image:nth-child(3) {
+  .son-trang-experience__gallery-btn:nth-child(2),
+  .son-trang-experience__gallery-btn:nth-child(3) {
     grid-column: span 3;
   }
 
   /* Exactly 5 children */
-  .son-trang-experience__gallery-image:first-child:nth-last-child(5)
-    ~ .son-trang-experience__gallery-image:nth-child(n + 4) {
+  .son-trang-experience__gallery-btn:first-child:nth-last-child(5)
+    ~ .son-trang-experience__gallery-btn:nth-child(n + 4) {
     grid-column: span 6;
   }
 
   /* Exactly 6 children */
-  .son-trang-experience__gallery-image:first-child:nth-last-child(6)
-    ~ .son-trang-experience__gallery-image:nth-child(n + 4) {
+  .son-trang-experience__gallery-btn:first-child:nth-last-child(6)
+    ~ .son-trang-experience__gallery-btn:nth-child(n + 4) {
     grid-column: span 4;
   }
 
   /* Exactly 8 children */
-  .son-trang-experience__gallery-image:first-child:nth-last-child(8)
-    ~ .son-trang-experience__gallery-image:nth-child(n + 4) {
+  .son-trang-experience__gallery-btn:first-child:nth-last-child(8)
+    ~ .son-trang-experience__gallery-btn:nth-child(n + 4) {
     grid-column: span 3;
   }
+}
+
+/* Fullscreen Lightbox Modal */
+.son-trang-experience__fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: son-trang-fade-in 0.25s ease;
+  cursor: zoom-out;
+  padding: 2rem;
+}
+
+@keyframes son-trang-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.son-trang-experience__fullscreen-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10000;
+}
+
+.son-trang-experience__fullscreen-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.08);
+}
+
+.son-trang-experience__fullscreen-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  cursor: default;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
 }
 
 /* Media Credits Styling */
@@ -597,4 +763,43 @@
   .son-trang-experience__section {
     animation: none !important;
   }
+}
+
+/* ==========================================================================
+   Dark Mode Overrides for Son Trang Experience
+   ========================================================================== */
+
+:root.dark .son-trang-experience__quick-facts,
+[data-theme='dark'] .son-trang-experience__quick-facts {
+  background-color: var(--theme-bg-surface-elevated, #1b2a22);
+  border: 1px solid var(--theme-border, rgba(255, 255, 255, 0.1));
+}
+
+:root.dark .son-trang-experience__section,
+[data-theme='dark'] .son-trang-experience__section {
+  border-top-color: var(--theme-border, rgba(255, 255, 255, 0.08));
+}
+
+:root.dark .son-trang-experience__pillar,
+[data-theme='dark'] .son-trang-experience__pillar {
+  background: var(--theme-bg-surface-elevated, #1b2a22);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.1));
+}
+
+:root.dark .son-trang-experience__zone-card,
+[data-theme='dark'] .son-trang-experience__zone-card {
+  background: var(--theme-bg-surface-elevated, #1b2a22);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.1));
+}
+
+:root.dark .son-trang-experience__zone-summary,
+[data-theme='dark'] .son-trang-experience__zone-summary {
+  color: var(--theme-text-secondary, #a3b8ad);
+}
+
+:root.dark .media-credits,
+[data-theme='dark'] .media-credits {
+  background: var(--theme-bg-surface-elevated, #1b2a22);
+  border-color: var(--theme-border, rgba(255, 255, 255, 0.1));
+  color: var(--theme-text-secondary, #a3b8ad);
 }

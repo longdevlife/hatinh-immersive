@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import '../../../app/styles/site-shell.css';
 import type { PublicNavItem } from '../model/public-navigation';
+import { LanguageSwitcher } from '../../../shared/i18n';
+import { ThemeToggle } from '../../../shared/theme';
 
 export type PublicHeaderProps = { activePath: string; items: readonly PublicNavItem[] };
 
@@ -107,6 +109,13 @@ export function PublicHeader({ activePath, items }: PublicHeaderProps) {
                 </li>
               );
             })}
+            <li
+              className="site-shell-header__nav-item"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '1rem' }}
+            >
+              <ThemeToggle />
+              <LanguageSwitcher />
+            </li>
           </ul>
         </nav>
       </div>

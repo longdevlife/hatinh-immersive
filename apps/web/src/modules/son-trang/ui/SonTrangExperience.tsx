@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { RefObject } from 'react';
 import '../../../app/styles/son-trang.css';
 import type { DestinationCapabilities } from '../../../shared/contracts';
@@ -28,6 +28,21 @@ export function SonTrangExperience({
   const creditedAssets = [hero, ...zones.map((zone) => zone.media), ...gallery].filter(
     (asset): asset is NonNullable<typeof asset> => asset !== null,
   );
+
+  const [activeImage, setActiveImage] = useState<NonNullable<typeof hero> | null>(null);
+
+  useEffect(() => {
+    if (!activeImage) {
+      return;
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveImage(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeImage]);
 
   return (
     <main
@@ -243,11 +258,18 @@ export function SonTrangExperience({
             {zones.map((zone) => (
               <article key={zone.id} className="son-trang-experience__zone-card">
                 {zone.media ? (
-                  <ResponsiveImage
-                    asset={zone.media}
-                    className="son-trang-experience__zone-media"
-                    loading="lazy"
-                  />
+                  <button
+                    type="button"
+                    className="son-trang-experience__zone-media-btn"
+                    onClick={() => setActiveImage(zone.media)}
+                    aria-label={`Xem ảnh phân khu ${zone.name}`}
+                  >
+                    <ResponsiveImage
+                      asset={zone.media}
+                      className="son-trang-experience__zone-media"
+                      loading="lazy"
+                    />
+                  </button>
                 ) : (
                   <div className="son-trang-experience__zone-media son-trang-experience__zone-media--empty">
                     Chưa có hình ảnh
@@ -276,18 +298,60 @@ export function SonTrangExperience({
           </div>
           <div className="son-trang-experience__gallery-grid">
             {gallery.map((asset) => (
-              <ResponsiveImage
+              <button
                 key={asset.id}
-                asset={asset}
-                className="son-trang-experience__gallery-image"
-                sizes="(max-width: 767px) 85vw, (max-width: 1199px) 45vw, 32vw"
-              />
+                type="button"
+                className="son-trang-experience__gallery-btn"
+                onClick={() => setActiveImage(asset)}
+                aria-label="Xem hình ảnh này ở kích thước lớn"
+              >
+                <ResponsiveImage
+                  asset={asset}
+                  className="son-trang-experience__gallery-image"
+                  sizes="(max-width: 767px) 85vw, (max-width: 1199px) 45vw, 32vw"
+                />
+              </button>
             ))}
           </div>
         </section>
       )}
 
       <MediaCredits assets={creditedAssets} />
+
+      {activeImage && (
+        <div
+          className="son-trang-experience__fullscreen"
+          onClick={() => setActiveImage(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Xem ảnh toàn màn hình"
+        >
+          <button
+            type="button"
+            className="son-trang-experience__fullscreen-close"
+            onClick={() => setActiveImage(null)}
+            aria-label="Đóng"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ width: '1.5rem', height: '1.5rem' }}
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+          <ResponsiveImage
+            asset={activeImage}
+            className="son-trang-experience__fullscreen-image"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </main>
   );
 }
