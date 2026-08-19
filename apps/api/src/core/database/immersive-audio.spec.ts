@@ -149,16 +149,50 @@ describe('immersive audio database contract', () => {
   async function insertDestinationAndScene() {
     const destinationId = randomUUID();
     const sceneId = randomUUID();
+    const panoramaAssetId = randomUUID();
 
     await db.execute(sql`
       insert into catalog_destinations (id, slug, status)
       values (${destinationId}, ${`immersive-audio-${destinationId}`}, 'published')
     `);
     await db.execute(sql`
-      insert into virtual_tour_scenes
-        (id, destination_id, name, geo_point, status)
+      insert into media_assets
+        (id, media_kind, original_filename, content_type, size_bytes, storage_key, status)
       values
-        (${sceneId}, ${destinationId}, 'Audio test scene', st_setsrid(st_point(105.9, 18.3), 4326), 'published')
+        (
+          ${panoramaAssetId}, 'panorama'::media_asset_kind, 'audio-scene-panorama.jpg',
+          'image/jpeg', 4096, ${`test/panorama/${panoramaAssetId}.jpg`},
+          'ready'::media_asset_status
+        )
+    `);
+    await db.execute(sql`
+      insert into panorama_asset_metadata
+        (
+          media_asset_id, source_width_px, source_height_px, quality_status,
+          manifest_key, preview_key, rights, rights_holder, rights_reference,
+          source_reference, version, processed_at
+        )
+      values
+        (
+          ${panoramaAssetId}, 4096, 2048, 'accepted'::panorama_quality_status,
+          ${`processed/panorama/${panoramaAssetId}/manifest.json`},
+          ${`processed/panorama/${panoramaAssetId}/preview.webp`},
+          'customer-owned'::panorama_rights, 'Audio Test Owner',
+          'approval:audio-test', ${`scene:${sceneId}`}, 'audio-test-v1', now()
+        )
+    `);
+    await db.execute(sql`
+      insert into virtual_tour_scenes
+        (
+          id, destination_id, name, geo_point, panorama_asset_id,
+          panorama_asset_status, status
+        )
+      values
+        (
+          ${sceneId}, ${destinationId}, 'Audio test scene',
+          st_setsrid(st_point(105.9, 18.3), 4326), ${panoramaAssetId},
+          'ready'::panorama_asset_status, 'published'
+        )
     `);
 
     return { destinationId, sceneId };
