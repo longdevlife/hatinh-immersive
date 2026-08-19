@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 
 test('public API destination runtime receives explicit demo local anchors', async ({ page }) => {
   const manifest = {
+    ambientTrackId: null,
+    audioTracks: [],
     defaultSceneId: 'son-trang-gate',
     destination: {
       categoryId: null,
@@ -26,6 +28,7 @@ test('public API destination runtime receives explicit demo local anchors', asyn
     nodes: [
       {
         altitude: 12,
+        ambientOverrideTrackId: null,
         destinationId: 'destination-01',
         id: 'son-trang-gate',
         initialFov: 90,
@@ -34,17 +37,20 @@ test('public API destination runtime receives explicit demo local anchors', asyn
         lat: 18.3421,
         lng: 105.9032,
         name: 'Cổng Sơn Trang',
+        narrationTrackIds: { en: null, vi: null },
         panoramaAssetId: 'asset-01',
         panoramaAssetStatus: 'ready',
         panoramaManifestUrl: '/demo/360/son-trang-gate/manifest.json',
         panoramaPreviewUrl: '/demo/360/son-trang-gate/preview.webp',
         sortOrder: 0,
         status: 'published',
+        transcriptIds: { en: null, vi: null },
       },
     ],
     panoramaNodes: [],
     links: [],
     hotspots: [],
+    transcripts: [],
   };
 
   await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {

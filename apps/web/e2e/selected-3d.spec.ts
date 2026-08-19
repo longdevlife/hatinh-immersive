@@ -45,6 +45,8 @@ const genericFallbackDestination = {
 };
 
 interface MockManifest {
+  ambientTrackId: string | null;
+  audioTracks: Array<Record<string, unknown>>;
   defaultSceneId: string | null;
   destination: MockDestination & {
     categoryId: null;
@@ -55,9 +57,12 @@ interface MockManifest {
   nodes: Array<Record<string, unknown>>;
   links: Array<Record<string, unknown>>;
   hotspots: Array<Record<string, unknown>>;
+  transcripts: Array<Record<string, unknown>>;
 }
 
 const manifest: MockManifest = {
+  ambientTrackId: null,
+  audioTracks: [],
   defaultSceneId: 'scene-01',
   destination: {
     ...destination,
@@ -69,6 +74,7 @@ const manifest: MockManifest = {
   nodes: [
     {
       altitude: 12,
+      ambientOverrideTrackId: null,
       destinationId: destination.id,
       id: 'scene-01',
       initialFov: 90,
@@ -77,16 +83,19 @@ const manifest: MockManifest = {
       lat: destination.geoPoint.latitude,
       lng: destination.geoPoint.longitude,
       name: 'Cổng vào',
+      narrationTrackIds: { en: null, vi: null },
       panoramaAssetId: 'asset-01',
       panoramaAssetStatus: 'ready',
       panoramaManifestUrl: 'https://media.example.vn/scene-01/manifest.json',
       panoramaPreviewUrl: 'https://media.example.vn/scene-01/preview.webp',
       sortOrder: 0,
       status: 'published',
+      transcriptIds: { en: null, vi: null },
     },
   ],
   links: [],
   hotspots: [],
+  transcripts: [],
 };
 
 async function mockSelected3DJourney(

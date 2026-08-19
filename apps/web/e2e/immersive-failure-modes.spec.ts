@@ -4,6 +4,8 @@ const manifestUrl = '**/api/v1/destinations/*/immersive-manifest*';
 const firstSceneHeading = /^(?:Lối đi di sản 1|Cổng vào|Cổng Sơn Trang Cổ Đạm|Lối dạo Thiên Cầm)$/;
 
 const apiManifest = {
+  ambientTrackId: null,
+  audioTracks: [],
   defaultSceneId: 'scene-01',
   destination: {
     categoryId: null,
@@ -22,6 +24,7 @@ const apiManifest = {
   nodes: [
     {
       altitude: 12,
+      ambientOverrideTrackId: null,
       destinationId: 'destination-01',
       id: 'scene-01',
       initialFov: 90,
@@ -30,15 +33,18 @@ const apiManifest = {
       lat: 18.3421,
       lng: 105.9032,
       name: 'Cổng vào',
+      narrationTrackIds: { en: null, vi: null },
       panoramaAssetId: 'asset-01',
       panoramaAssetStatus: 'ready',
       panoramaManifestUrl: 'https://media.example.vn/scene-01/manifest.json',
       panoramaPreviewUrl: 'https://media.example.vn/scene-01/preview.webp',
       sortOrder: 0,
       status: 'published',
+      transcriptIds: { en: null, vi: null },
     },
     {
       altitude: 12,
+      ambientOverrideTrackId: null,
       destinationId: 'destination-01',
       id: 'scene-02',
       initialFov: 90,
@@ -47,12 +53,14 @@ const apiManifest = {
       lat: 18.3424,
       lng: 105.9034,
       name: 'Sân trung tâm',
+      narrationTrackIds: { en: null, vi: null },
       panoramaAssetId: 'asset-02',
       panoramaAssetStatus: 'ready',
       panoramaManifestUrl: 'https://media.example.vn/scene-02/manifest.json',
       panoramaPreviewUrl: 'https://media.example.vn/scene-02/preview.webp',
       sortOrder: 1,
       status: 'published',
+      transcriptIds: { en: null, vi: null },
     },
   ],
   links: [
@@ -67,6 +75,7 @@ const apiManifest = {
     },
   ],
   hotspots: [],
+  transcripts: [],
 };
 
 const thienCamManifest = {
