@@ -43,13 +43,6 @@
       "when": 1787082641938,
       "tag": "0005_smart_rockslide",
       "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1787083010184,
-      "tag": "0006_foamy_quicksilver",
-      "breakpoints": true
     }
   ]
 }
