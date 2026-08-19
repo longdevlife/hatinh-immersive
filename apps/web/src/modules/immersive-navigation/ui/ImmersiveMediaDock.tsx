@@ -245,14 +245,16 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
 
           {vm.transcript.available ? (
             <div className="immersive-media-dock__transcript-actions">
-              <button
-                type="button"
-                onClick={actions.onToggleCaptions}
-                aria-pressed={vm.captionsEnabled}
-                aria-label={vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
-              >
-                {vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
-              </button>
+              {vm.transcript.capability === 'timed-captions' ? (
+                <button
+                  type="button"
+                  onClick={actions.onToggleCaptions}
+                  aria-pressed={vm.captionsEnabled}
+                  aria-label={vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
+                >
+                  {vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
+                </button>
+              ) : null}
               <button type="button" onClick={openTranscript} aria-label="Mở bản chép lời">
                 Bản chép lời
               </button>
