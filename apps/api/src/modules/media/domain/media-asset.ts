@@ -79,6 +79,18 @@ export class MediaAsset {
     return this.props.status;
   }
 
+  get mediaKind() {
+    return this.props.mediaKind;
+  }
+
+  get contentType() {
+    return this.props.contentType;
+  }
+
+  get storageKey() {
+    return this.props.storageKey;
+  }
+
   get failureCode() {
     return this.props.failureCode;
   }
@@ -113,6 +125,17 @@ export class MediaAsset {
       status: 'processing',
       updatedAt: new Date(),
     };
+  }
+
+  beginOrResumeProcessing() {
+    if (this.props.status === 'processing') return;
+    if (this.props.status !== 'uploaded') {
+      throw new MediaAssetStateError(
+        'MEDIA_NOT_PROCESSABLE',
+        `Media asset cannot begin processing from ${this.props.status}.`,
+      );
+    }
+    this.markProcessing();
   }
 
   markReady() {
