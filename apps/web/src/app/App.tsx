@@ -37,7 +37,6 @@ import {
   DEMO_SON_TRANG_ZONE_MEDIA,
   getDemoDestinationMedia,
 } from '../modules/immersive-navigation/fake-mode/demo-media';
-import { CinematicHome } from '../modules/home/ui';
 import { createHomeDestinationVms } from '../modules/home/model/home-destination';
 import { PUBLIC_NAV_ITEMS, PublicLayout } from '../modules/site-shell';
 import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
@@ -58,6 +57,12 @@ const LazyExploreExperience = lazy(() =>
 const LazyDestinationDetailRoute = lazy(() =>
   import('../modules/destination-detail').then(({ DestinationDetailRoute }) => ({
     default: DestinationDetailRoute,
+  })),
+);
+
+const LazyCinematicHome = lazy(() =>
+  import('../modules/home/ui').then(({ CinematicHome }) => ({
+    default: CinematicHome,
   })),
 );
 
@@ -283,9 +288,20 @@ function DestinationRoute() {
 
   return <PublicDestinationDetail />;
 }
+function HomeRouteLoading() {
+  return (
+    <main className="home-cinematic-state" aria-live="polite">
+      <p>Loading Ha Tinh discovery...</p>
+    </main>
+  );
+}
 
 function PublicHome() {
-  return <CinematicHome destinations={HOME_DESTINATIONS} exploreHref="/explore" />;
+  return (
+    <Suspense fallback={<HomeRouteLoading />}>
+      <LazyCinematicHome destinations={HOME_DESTINATIONS} exploreHref="/explore" />
+    </Suspense>
+  );
 }
 
 export function App() {
