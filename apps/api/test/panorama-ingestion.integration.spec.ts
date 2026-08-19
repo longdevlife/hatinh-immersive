@@ -89,7 +89,7 @@ describe('Panorama MinIO ingestion integration', () => {
     const uploadResponse = await fetch(presigned.uploadUrl, {
       method: 'PUT',
       headers: presigned.requiredHeaders,
-      body: panoramaBuffer,
+      body: new Uint8Array(panoramaBuffer),
     });
     expect(uploadResponse.ok).toBe(true);
 
@@ -175,7 +175,7 @@ describe('Panorama MinIO ingestion integration', () => {
     const uploadResponse = await fetch(presigned.uploadUrl, {
       method: 'PUT',
       headers: presigned.requiredHeaders,
-      body: lowResBuffer,
+      body: new Uint8Array(lowResBuffer),
     });
     expect(uploadResponse.ok).toBe(true);
 
