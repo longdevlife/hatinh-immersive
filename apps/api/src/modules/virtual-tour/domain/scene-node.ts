@@ -143,6 +143,18 @@ export class SceneNode {
     };
   }
 
+  assignPanorama(mediaAssetId: string) {
+    if (!mediaAssetId.trim()) {
+      throw new VirtualTourRuleError('INVALID_PANORAMA_ASSET', 'Panorama asset id is required.');
+    }
+    this.props = {
+      ...this.props,
+      panoramaAssetId: mediaAssetId.trim(),
+      panoramaAssetStatus: 'ready',
+      updatedAt: new Date(),
+    };
+  }
+
   archive() {
     this.props = {
       ...this.props,

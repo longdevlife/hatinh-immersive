@@ -1,11 +1,23 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import {
+  MEDIA_ASSET_REPOSITORY,
+  type MediaAssetRepository,
+} from '../../media/application/media.repository';
+import {
+  PANORAMA_METADATA_REPOSITORY,
+  type PanoramaAssetMetadata,
+  type PanoramaMetadataRepository,
+} from '../../media/application/panorama-metadata.repository';
+import type { MediaAssetProps } from '../../media/domain/media-asset';
+
 import { type CreateHotspotInput, Hotspot, type UpdateHotspotInput } from '../domain/hotspot';
 import { SceneLink, type CreateSceneLinkInput } from '../domain/scene-link';
 import {
   type CreateSceneNodeInput,
   SceneNode,
   type UpdateSceneNodeInput,
+  VirtualTourRuleError,
 } from '../domain/scene-node';
 import { VIRTUAL_TOUR_REPOSITORY, type VirtualTourRepository } from './virtual-tour.repository';
 import { VirtualTourNotFoundError } from './virtual-tour.errors';
@@ -19,6 +31,9 @@ export type CreateSceneLinkCommandInput = Omit<
 export class VirtualTourCommandService {
   constructor(
     @Inject(VIRTUAL_TOUR_REPOSITORY) private readonly repository: VirtualTourRepository,
+    @Inject(MEDIA_ASSET_REPOSITORY) private readonly mediaRepository: MediaAssetRepository,
+    @Inject(PANORAMA_METADATA_REPOSITORY)
+    private readonly panoramaMetadataRepository: PanoramaMetadataRepository,
   ) {}
 
   async createScene(input: CreateSceneNodeInput): Promise<SceneNode> {
@@ -45,6 +60,25 @@ export class VirtualTourCommandService {
     }
 
     scene.publish();
+    await this.repository.saveScene(scene);
+    return scene;
+  }
+
+  async assignPanoramaToScene(sceneId: string, mediaAssetId: string): Promise<SceneNode> {
+    const [scene, asset, metadata] = await Promise.all([
+      this.repository.findSceneById(sceneId),
+      this.mediaRepository.findById(mediaAssetId),
+      this.panoramaMetadataRepository.findByMediaAssetId(mediaAssetId),
+    ]);
+    if (!scene) throw new VirtualTourNotFoundError('Scene', sceneId);
+    if (!isPublicationEligible(asset?.toPrimitives() ?? null, metadata)) {
+      throw new VirtualTourRuleError(
+        'PANORAMA_NOT_PUBLICATION_READY',
+        'Only a validated production panorama may be assigned to a scene.',
+      );
+    }
+
+    scene.assignPanorama(mediaAssetId);
     await this.repository.saveScene(scene);
     return scene;
   }
@@ -98,4 +132,21 @@ export class VirtualTourCommandService {
     await this.repository.saveHotspot(hotspot);
     return hotspot;
   }
+}
+
+function isPublicationEligible(
+  asset: MediaAssetProps | null,
+  metadata: PanoramaAssetMetadata | null,
+) {
+  return (
+    asset?.mediaKind === 'panorama' &&
+    asset.status === 'ready' &&
+    metadata?.qualityStatus === 'accepted' &&
+    Boolean(metadata.manifestKey?.trim()) &&
+    Boolean(metadata.previewKey?.trim()) &&
+    Boolean(metadata.rightsHolder.trim()) &&
+    Boolean(metadata.rightsReference.trim()) &&
+    Boolean(metadata.sourceReference.trim()) &&
+    Boolean(metadata.version.trim())
+  );
 }
