@@ -100,6 +100,52 @@ describe('immersive audio database contract', () => {
     ).rejects.toThrow();
   });
 
+  it('rejects processing-to-ready media asset transition when a published track has null version', async () => {
+    const mediaAssetId = await insertMediaAsset('audio', 'processing');
+    await insertTrack({
+      mediaAssetId,
+      kind: 'narration',
+      locale: 'vi',
+      version: null,
+    });
+
+    await expect(
+      db.transaction(async (tx) => {
+        await tx.execute(sql`
+          update media_assets
+          set status = 'ready'::media_asset_status
+          where id = ${mediaAssetId}
+        `);
+      }),
+    ).rejects.toThrow(/IMMERSIVE_AUDIO_PUBLISHED_READY_VERSION_REQUIRED/);
+  });
+
+  it('allows processing-to-ready media asset transition when published track has non-empty version', async () => {
+    const mediaAssetId = await insertMediaAsset('audio', 'processing');
+    await insertTrack({
+      mediaAssetId,
+      kind: 'narration',
+      locale: 'vi',
+      version: 'v1.0',
+    });
+
+    await expect(
+      db.transaction(async (tx) => {
+        await tx.execute(sql`
+          update media_assets
+          set status = 'ready'::media_asset_status
+          where id = ${mediaAssetId}
+        `);
+      }),
+    ).resolves.not.toThrow();
+
+    const [updatedAsset] = (await db.execute(sql`
+      select status from media_assets where id = ${mediaAssetId}
+    `)) as unknown as Array<{ status: string }>;
+
+    expect(updatedAsset?.status).toBe('ready');
+  });
+
   async function insertDestinationAndScene() {
     const destinationId = randomUUID();
     const sceneId = randomUUID();
@@ -118,13 +164,16 @@ describe('immersive audio database contract', () => {
     return { destinationId, sceneId };
   }
 
-  async function insertMediaAsset(mediaKind: 'audio' | 'image') {
+  async function insertMediaAsset(
+    mediaKind: 'audio' | 'image',
+    status: 'pending' | 'uploaded' | 'processing' | 'ready' | 'failed' = 'ready',
+  ) {
     const id = randomUUID();
     await db.execute(sql`
       insert into media_assets
         (id, media_kind, original_filename, content_type, size_bytes, storage_key, status)
       values
-        (${id}, ${mediaKind}::media_asset_kind, 'audio-test.mp3', 'audio/mpeg', 12, ${`test/${id}.mp3`}, 'ready')
+        (${id}, ${mediaKind}::media_asset_kind, 'audio-test.mp3', 'audio/mpeg', 12, ${`test/${id}.mp3`}, ${status}::media_asset_status)
     `);
     return id;
   }
@@ -137,6 +186,7 @@ describe('immersive audio database contract', () => {
     rightsHolder?: string | null;
     rightsReference?: string | null;
     voiceId?: string | null;
+    version?: string | null;
   }) {
     const id = randomUUID();
     await db.execute(sql`
@@ -158,7 +208,7 @@ describe('immersive audio database contract', () => {
           'published'::immersive_audio_publication_status,
           1000,
           ${input.voiceId ?? (input.kind === 'narration' ? 'voice-test' : null)},
-          'test-v1'
+          ${input.version === undefined ? 'test-v1' : input.version}
         )
     `);
     return id;

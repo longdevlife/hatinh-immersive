@@ -83,6 +83,188 @@ describe('VirtualTourQueryService immersive audio read model', () => {
     expect(result?.nodes[0]?.ambientOverrideTrackId).toBeNull();
     expect(result?.nodes[0]?.narrationTrackIds.vi).toBeNull();
   });
+
+  it('preserves distinct VI narration and transcript across scenes and isolates EN projections', async () => {
+    const destinationId = randomUUID();
+    const scene1 = randomUUID();
+    const scene2 = randomUUID();
+    const scene3 = randomUUID();
+
+    const trackVi1 = randomUUID();
+    const trackVi2 = randomUUID();
+    const trackEn1 = randomUUID();
+    const trackEn3 = randomUUID();
+
+    const transcriptVi1 = randomUUID();
+    const transcriptVi2 = randomUUID();
+    const transcriptEn1 = randomUUID();
+    const transcriptEn3 = randomUUID();
+
+    const result = await createMultiSceneService({
+      destinationId,
+      scenes: [
+        { id: scene1, name: 'Scene 1', sortOrder: 0 },
+        { id: scene2, name: 'Scene 2', sortOrder: 1 },
+        { id: scene3, name: 'Scene 3', sortOrder: 2 },
+      ],
+      audio: {
+        destinationAmbient: null,
+        sceneAmbientOverrides: [],
+        narrations: [
+          { sceneId: scene1, locale: 'vi', trackId: trackVi1, transcriptId: transcriptVi1 },
+          { sceneId: scene1, locale: 'en', trackId: trackEn1, transcriptId: transcriptEn1 },
+          { sceneId: scene2, locale: 'vi', trackId: trackVi2, transcriptId: transcriptVi2 },
+          { sceneId: scene3, locale: 'en', trackId: trackEn3, transcriptId: transcriptEn3 },
+        ],
+        tracks: [
+          audioTrack(trackVi1, 'narration', 'vi', 'published'),
+          audioTrack(trackVi2, 'narration', 'vi', 'published'),
+          audioTrack(trackEn1, 'narration', 'en', 'published'),
+          audioTrack(trackEn3, 'narration', 'en', 'published'),
+        ],
+        transcripts: [
+          transcript(transcriptVi1, 'vi', 'published'),
+          transcript(transcriptVi2, 'vi', 'published'),
+          transcript(transcriptEn1, 'en', 'published'),
+          transcript(transcriptEn3, 'en', 'published'),
+        ],
+      },
+    });
+
+    const node1 = result?.nodes.find((node) => node.id === scene1);
+    const node2 = result?.nodes.find((node) => node.id === scene2);
+    const node3 = result?.nodes.find((node) => node.id === scene3);
+
+    expect(node1?.narrationTrackIds).toEqual({ vi: trackVi1, en: trackEn1 });
+    expect(node1?.transcriptIds).toEqual({ vi: transcriptVi1, en: transcriptEn1 });
+
+    expect(node2?.narrationTrackIds).toEqual({ vi: trackVi2, en: null });
+    expect(node2?.transcriptIds).toEqual({ vi: transcriptVi2, en: null });
+
+    expect(node3?.narrationTrackIds).toEqual({ vi: null, en: trackEn3 });
+    expect(node3?.transcriptIds).toEqual({ vi: null, en: transcriptEn3 });
+  });
+
+  it('projects metadata-only track with mediaAssetId null as unavailable', async () => {
+    const destinationId = randomUUID();
+    const sceneId = randomUUID();
+    const trackId = randomUUID();
+
+    const track = {
+      ...audioTrack(trackId, 'ambient', null, 'published'),
+      mediaAssetId: null,
+    };
+
+    const result = await createService({
+      destinationId,
+      sceneId,
+      audio: {
+        destinationAmbient: trackId,
+        sceneAmbientOverride: null,
+        narrations: [],
+        tracks: [track],
+        transcripts: [],
+      },
+    });
+
+    const projectedTrack = result?.audioTracks.find((item) => item.id === trackId);
+    expect(projectedTrack).toBeDefined();
+    expect(projectedTrack?.readiness).toBe('unavailable');
+    expect(projectedTrack?.src).toBeNull();
+  });
+
+  it.each(['pending', 'uploaded', 'processing'] as const)(
+    'projects track with %s audio asset as unavailable',
+    async (assetStatus) => {
+      const destinationId = randomUUID();
+      const sceneId = randomUUID();
+      const trackId = randomUUID();
+      const mediaAssetId = randomUUID();
+
+      const track = {
+        ...audioTrack(trackId, 'narration', 'vi', 'published'),
+        mediaAssetId,
+      };
+
+      const result = await createMultiSceneService({
+        destinationId,
+        scenes: [{ id: sceneId, name: 'Audio scene', sortOrder: 0 }],
+        audio: {
+          destinationAmbient: null,
+          sceneAmbientOverrides: [],
+          narrations: [{ sceneId, locale: 'vi', trackId, transcriptId: null }],
+          tracks: [track],
+          transcripts: [],
+          assetStatusMap: new Map([[mediaAssetId, assetStatus]]),
+        },
+      });
+
+      const projectedTrack = result?.audioTracks.find((item) => item.id === trackId);
+      expect(projectedTrack).toBeDefined();
+      expect(projectedTrack?.readiness).toBe('unavailable');
+      expect(projectedTrack?.src).toBeNull();
+    },
+  );
+
+  it('projects track with failed audio asset as invalid', async () => {
+    const destinationId = randomUUID();
+    const sceneId = randomUUID();
+    const trackId = randomUUID();
+    const mediaAssetId = randomUUID();
+
+    const track = {
+      ...audioTrack(trackId, 'narration', 'vi', 'published'),
+      mediaAssetId,
+    };
+
+    const result = await createMultiSceneService({
+      destinationId,
+      scenes: [{ id: sceneId, name: 'Audio scene', sortOrder: 0 }],
+      audio: {
+        destinationAmbient: null,
+        sceneAmbientOverrides: [],
+        narrations: [{ sceneId, locale: 'vi', trackId, transcriptId: null }],
+        tracks: [track],
+        transcripts: [],
+        assetStatusMap: new Map([[mediaAssetId, 'failed']]),
+      },
+    });
+
+    const projectedTrack = result?.audioTracks.find((item) => item.id === trackId);
+    expect(projectedTrack).toBeDefined();
+    expect(projectedTrack?.readiness).toBe('invalid');
+    expect(projectedTrack?.src).toBeNull();
+  });
+
+  it('projects track with ready audio asset and valid storage key as ready with public URL', async () => {
+    const destinationId = randomUUID();
+    const sceneId = randomUUID();
+    const trackId = randomUUID();
+    const mediaAssetId = randomUUID();
+
+    const track = {
+      ...audioTrack(trackId, 'narration', 'vi', 'published'),
+      mediaAssetId,
+    };
+
+    const result = await createMultiSceneService({
+      destinationId,
+      scenes: [{ id: sceneId, name: 'Audio scene', sortOrder: 0 }],
+      audio: {
+        destinationAmbient: null,
+        sceneAmbientOverrides: [],
+        narrations: [{ sceneId, locale: 'vi', trackId, transcriptId: null }],
+        tracks: [track],
+        transcripts: [],
+        assetStatusMap: new Map([[mediaAssetId, 'ready']]),
+      },
+    });
+
+    const projectedTrack = result?.audioTracks.find((item) => item.id === trackId);
+    expect(projectedTrack).toBeDefined();
+    expect(projectedTrack?.readiness).toBe('ready');
+    expect(projectedTrack?.src).toMatch(/^https:\/\/cdn\.example\.test\/audio\//);
+  });
 });
 
 async function createService(input: {
@@ -96,6 +278,42 @@ async function createService(input: {
     transcripts: unknown[];
   };
 }) {
+  return createMultiSceneService({
+    destinationId: input.destinationId,
+    scenes: [{ id: input.sceneId, name: 'Audio scene', sortOrder: 0 }],
+    audio: {
+      destinationAmbient: input.audio.destinationAmbient,
+      sceneAmbientOverrides: input.audio.sceneAmbientOverride
+        ? [{ sceneId: input.sceneId, trackId: input.audio.sceneAmbientOverride }]
+        : [],
+      narrations: input.audio.narrations.map((item) => ({
+        sceneId: input.sceneId,
+        ...item,
+      })),
+      tracks: input.audio.tracks,
+      transcripts: input.audio.transcripts,
+    },
+  });
+}
+
+async function createMultiSceneService(input: {
+  destinationId: string;
+  scenes: Array<{ id: string; name: string; sortOrder: number }>;
+  audio: {
+    destinationAmbient: string | null;
+    sceneAmbientOverrides: Array<{ sceneId: string; trackId: string }>;
+    narrations: Array<{
+      sceneId: string;
+      locale: 'vi' | 'en';
+      trackId: string | null;
+      transcriptId: string | null;
+    }>;
+    tracks: unknown[];
+    transcripts: unknown[];
+    assetStatusMap?: Map<string, 'pending' | 'uploaded' | 'processing' | 'ready' | 'failed'>;
+  };
+}) {
+  const defaultSceneId = input.scenes[0]?.id ?? randomUUID();
   const destination = {
     id: input.destinationId,
     slug: 'audio-read-model-destination',
@@ -103,66 +321,71 @@ async function createService(input: {
     summary: '',
     coverImageUrl: null,
     categoryLabel: null,
-    defaultSceneId: input.sceneId,
+    defaultSceneId,
     geoPoint: { latitude: 18.3, longitude: 105.9 },
     status: 'published',
     description: '',
     categoryId: null,
     coverMediaId: null,
   } satisfies DestinationDetail;
-  const scene = SceneNode.rehydrate({
-    id: input.sceneId,
-    destinationId: input.destinationId,
-    name: 'Audio scene',
-    geoPoint: { latitude: 18.3, longitude: 105.9 },
-    altitude: null,
-    panoramaAssetId: randomUUID(),
-    panoramaAssetStatus: 'ready',
-    initialHeading: 0,
-    initialPitch: 0,
-    initialFov: 90,
-    status: 'published',
-    sortOrder: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  });
+
+  const sceneEntities = input.scenes.map((s) =>
+    SceneNode.rehydrate({
+      id: s.id,
+      destinationId: input.destinationId,
+      name: s.name,
+      geoPoint: { latitude: 18.3, longitude: 105.9 },
+      altitude: null,
+      panoramaAssetId: randomUUID(),
+      panoramaAssetStatus: 'ready',
+      initialHeading: 0,
+      initialPitch: 0,
+      initialFov: 90,
+      status: 'published',
+      sortOrder: s.sortOrder,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }),
+  );
 
   const repository = {
-    findScenesByDestinationId: async () => [scene],
+    findScenesByDestinationId: async () => sceneEntities,
     findLinksByFromSceneIds: async () => [],
     findHotspotsBySceneIds: async () => [],
     findImmersiveAudioReadRows: async () => ({
       destinationAmbient: input.audio.destinationAmbient
         ? { destinationId: input.destinationId, trackId: input.audio.destinationAmbient }
         : null,
-      sceneAmbientOverrides: input.audio.sceneAmbientOverride
-        ? [{ sceneId: input.sceneId, trackId: input.audio.sceneAmbientOverride }]
-        : [],
-      sceneNarrations: input.audio.narrations.map((item) => ({
-        sceneId: input.sceneId,
-        ...item,
-      })),
+      sceneAmbientOverrides: input.audio.sceneAmbientOverrides,
+      sceneNarrations: input.audio.narrations,
       tracks: input.audio.tracks,
       transcripts: input.audio.transcripts,
       transcriptSegments: [],
     }),
   } as unknown as VirtualTourRepository;
 
-  const mediaAsset = MediaAssetEntity.create({
-    mediaKind: 'panorama',
-    originalFilename: 'scene.jpg',
-    contentType: 'image/jpeg',
-    sizeBytes: 100,
-    storageKey: `panorama/${input.sceneId}.jpg`,
-  });
-  mediaAsset.markUploaded({ etag: 'etag', sizeBytes: 100 });
-  mediaAsset.markProcessing();
-  mediaAsset.markReady();
+  const panoramaMediaAssets = new Map<string, MediaAsset>();
+  for (const scene of sceneEntities) {
+    const panoAssetId = scene.toPrimitives().panoramaAssetId!;
+    const panoAsset = MediaAssetEntity.create({
+      mediaKind: 'panorama',
+      originalFilename: `scene-${scene.id}.jpg`,
+      contentType: 'image/jpeg',
+      sizeBytes: 100,
+      storageKey: `panorama/${scene.id}.jpg`,
+    });
+    panoAsset.markUploaded({ etag: 'etag', sizeBytes: 100 });
+    panoAsset.markProcessing();
+    panoAsset.markReady();
+    panoramaMediaAssets.set(panoAssetId, panoAsset);
+  }
+
   const audioMediaAssets = (input.audio.tracks as Array<{ mediaAssetId: string | null }>).reduce(
     (assets, track) => {
       if (!track.mediaAssetId) {
         return assets;
       }
+      const status = input.audio.assetStatusMap?.get(track.mediaAssetId) ?? 'ready';
       const audioAsset = MediaAssetEntity.create({
         mediaKind: 'audio',
         originalFilename: 'audio-test.mp3',
@@ -170,9 +393,17 @@ async function createService(input: {
         sizeBytes: 100,
         storageKey: `audio/${track.mediaAssetId}.mp3`,
       });
-      audioAsset.markUploaded({ etag: 'audio-etag', sizeBytes: 100 });
-      audioAsset.markProcessing();
-      audioAsset.markReady();
+      if (status !== 'pending') {
+        audioAsset.markUploaded({ etag: 'audio-etag', sizeBytes: 100 });
+        if (status !== 'uploaded') {
+          audioAsset.markProcessing();
+          if (status === 'ready') {
+            audioAsset.markReady();
+          } else if (status === 'failed') {
+            audioAsset.markFailed('Audio processing failed');
+          }
+        }
+      }
       assets.set(track.mediaAssetId, audioAsset);
       return assets;
     },
@@ -183,8 +414,7 @@ async function createService(input: {
     findPublishedBySlug: async () => destination,
   };
   const mediaAssetRepository = {
-    findByIds: async () =>
-      new Map([[scene.toPrimitives().panoramaAssetId!, mediaAsset], ...audioMediaAssets]),
+    findByIds: async () => new Map([...panoramaMediaAssets, ...audioMediaAssets]),
   };
 
   return new VirtualTourQueryService(
