@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 const lowResolutionPublicManifest = {
+  ambientTrackId: null,
+  audioTracks: [],
   defaultSceneId: 'son-trang-culture',
   destination: {
     categoryId: null,
@@ -25,6 +27,7 @@ const lowResolutionPublicManifest = {
   nodes: [
     {
       altitude: 12,
+      ambientOverrideTrackId: null,
       destinationId: 'son-trang-co-dam',
       id: 'son-trang-culture',
       initialFov: 88,
@@ -33,16 +36,19 @@ const lowResolutionPublicManifest = {
       lat: 18.3421,
       lng: 105.9032,
       name: 'Không gian Văn hóa',
+      narrationTrackIds: { en: null, vi: null },
       panoramaAssetId: 'asset-son-trang-culture',
       panoramaAssetStatus: 'ready',
       panoramaManifestUrl: '/demo/360/son-trang-tour/son-trang-culture/manifest.json',
       panoramaPreviewUrl: '/demo/360/son-trang-tour/son-trang-culture/preview.webp',
       sortOrder: 0,
       status: 'published',
+      transcriptIds: { en: null, vi: null },
     },
   ],
   links: [],
   hotspots: [],
+  transcripts: [],
 };
 
 test('rejects a low-resolution public panorama before real PSV renders it', async ({ page }) => {

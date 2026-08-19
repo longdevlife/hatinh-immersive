@@ -9,11 +9,13 @@ import type {
 import { ImmersiveMediaDock } from './ImmersiveMediaDock';
 
 const transcript: ImmersiveTranscriptContent = {
+  id: 'transcript-son-trang',
   locale: 'vi',
   title: 'Câu chuyện Sơn Trang',
+  timingMode: 'timed',
   segments: [
     { id: 'intro', startMs: 0, endMs: 4_000, text: 'Sơn Trang mở ra một không gian văn hóa.' },
-    { id: 'garden', startMs: 4_000, text: 'Lối đi tiếp tục qua khoảng xanh.' },
+    { id: 'garden', startMs: 4_000, endMs: null, text: 'Lối đi tiếp tục qua khoảng xanh.' },
   ],
 };
 
@@ -37,7 +39,7 @@ function createVm(overrides: Partial<ImmersiveMediaDockVm> = {}): ImmersiveMedia
       activeLocale: 'vi',
       alternateLocales: [],
     },
-    transcript: { available: true, content: transcript },
+    transcript: { available: true, capability: 'timed-captions', content: transcript },
     autoTour: {
       isActive: false,
       isPaused: false,
@@ -164,12 +166,38 @@ describe('ImmersiveMediaDock semantic contract', () => {
     expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
   });
 
+  it('hides captions toggle when capability is plain-transcript but keeps transcript drawer accessible', () => {
+    const actions = createActions();
+    const vm = createVm({
+      transcript: {
+        available: true,
+        capability: 'plain-transcript',
+        content: {
+          id: 'transcript-plain',
+          locale: 'vi',
+          title: 'Văn bản thuyết minh',
+          timingMode: 'plain',
+          segments: [{ id: '1', startMs: null, endMs: null, text: 'Nội dung thuần văn bản.' }],
+        },
+      },
+    });
+
+    render(<ImmersiveMediaDock vm={vm} actions={actions} />);
+
+    expect(screen.queryByRole('button', { name: /phụ đề/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mở bản chép lời' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở bản chép lời' }));
+    expect(actions.onOpenTranscript).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog', { name: 'Bản chép lời' })).toBeInTheDocument();
+  });
+
   it('does not expose an audio-control toggle when no sound capability exists', () => {
     const actions = createActions();
     const vm = createVm({
       sound: { available: false, masterMuted: false },
       narration: { ...createVm().narration, available: false, status: 'unavailable' },
-      transcript: { available: false, content: null },
+      transcript: { available: false, capability: 'none', content: null },
     });
 
     render(<ImmersiveMediaDock vm={vm} actions={actions} />);

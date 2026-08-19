@@ -5,12 +5,16 @@
  * REST API for the Hà Tĩnh immersive tourism platform foundation.
  * OpenAPI spec version: 1.0
  */
+import type { GetScene200NarrationTrackIds } from './getScene200NarrationTrackIds';
 import type { GetScene200PanoramaAssetStatus } from './getScene200PanoramaAssetStatus';
 import type { GetScene200Status } from './getScene200Status';
+import type { GetScene200TranscriptIds } from './getScene200TranscriptIds';
 
 export type GetScene200 = {
   /** @nullable */
   altitude: number | null;
+  /** @nullable */
+  ambientOverrideTrackId: string | null;
   destinationId: string;
   id: string;
   initialFov: number;
@@ -19,6 +23,7 @@ export type GetScene200 = {
   lat: number;
   lng: number;
   name: string;
+  narrationTrackIds: GetScene200NarrationTrackIds;
   /** @nullable */
   panoramaAssetId: string | null;
   /** @nullable */
@@ -29,4 +34,5 @@ export type GetScene200 = {
   panoramaPreviewUrl: string | null;
   sortOrder: number;
   status: GetScene200Status;
+  transcriptIds: GetScene200TranscriptIds;
 };

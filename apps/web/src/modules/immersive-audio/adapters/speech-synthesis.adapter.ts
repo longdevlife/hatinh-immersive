@@ -129,6 +129,7 @@ export function createSpeechSynthesisAudioAdapter(): AudioAdapter {
       if (
         track.type !== 'narration' ||
         track.rights !== 'demo-only' ||
+        (track.readiness !== undefined && track.readiness !== 'ready') ||
         track.src !== null ||
         typeof speechSynthesis === 'undefined' ||
         typeof SpeechSynthesisUtterance === 'undefined'

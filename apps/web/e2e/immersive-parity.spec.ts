@@ -8,6 +8,8 @@ const cameraPreset = (lat: number, lng: number, heading = 0) => ({
 });
 
 const manifest = (locale: string) => ({
+  ambientTrackId: null,
+  audioTracks: [],
   defaultSceneId: 'scene-01',
   destination: {
     categoryId: null,
@@ -27,6 +29,7 @@ const manifest = (locale: string) => ({
   nodes: [
     {
       altitude: 12,
+      ambientOverrideTrackId: null,
       destinationId: 'destination-01',
       id: 'scene-01',
       initialFov: 90,
@@ -35,15 +38,18 @@ const manifest = (locale: string) => ({
       lat: 18.3421,
       lng: 105.9032,
       name: locale === 'en' ? 'Entrance' : 'Cổng vào',
+      narrationTrackIds: { en: null, vi: null },
       panoramaAssetId: 'asset-01',
       panoramaAssetStatus: 'ready',
       panoramaManifestUrl: 'https://media.example.vn/scene-01/manifest.json',
       panoramaPreviewUrl: 'https://media.example.vn/scene-01/preview.webp',
       sortOrder: 0,
       status: 'published',
+      transcriptIds: { en: null, vi: null },
     },
     {
       altitude: 12,
+      ambientOverrideTrackId: null,
       destinationId: 'destination-01',
       id: 'scene-02',
       initialFov: 90,
@@ -52,12 +58,14 @@ const manifest = (locale: string) => ({
       lat: 18.3424,
       lng: 105.9034,
       name: locale === 'en' ? 'Central courtyard' : 'Sân trung tâm',
+      narrationTrackIds: { en: null, vi: null },
       panoramaAssetId: 'asset-02',
       panoramaAssetStatus: 'ready',
       panoramaManifestUrl: 'https://media.example.vn/scene-02/manifest.json',
       panoramaPreviewUrl: 'https://media.example.vn/scene-02/preview.webp',
       sortOrder: 1,
       status: 'published',
+      transcriptIds: { en: null, vi: null },
     },
   ],
   links: [
@@ -82,6 +90,7 @@ const manifest = (locale: string) => ({
       yaw: 32,
     },
   ],
+  transcripts: [],
 });
 
 test('wires unified scene, fullscreen, share, and hotspot controls', async ({ page }) => {

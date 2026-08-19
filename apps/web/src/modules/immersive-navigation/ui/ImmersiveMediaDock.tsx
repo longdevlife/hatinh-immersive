@@ -33,12 +33,17 @@ function getActiveTranscriptSegment(
     return null;
   }
 
+  if (content.timingMode !== 'timed') {
+    return null;
+  }
+
   const currentTimeMs = Math.max(0, currentTimeSeconds * 1000);
   return (
     content.segments.find(
       (segment) =>
+        segment.startMs !== null &&
         currentTimeMs >= segment.startMs &&
-        (segment.endMs === undefined || currentTimeMs < segment.endMs),
+        (segment.endMs === null || currentTimeMs < segment.endMs),
     ) ?? null
   );
 }
@@ -240,14 +245,16 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
 
           {vm.transcript.available ? (
             <div className="immersive-media-dock__transcript-actions">
-              <button
-                type="button"
-                onClick={actions.onToggleCaptions}
-                aria-pressed={vm.captionsEnabled}
-                aria-label={vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
-              >
-                {vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
-              </button>
+              {vm.transcript.capability === 'timed-captions' ? (
+                <button
+                  type="button"
+                  onClick={actions.onToggleCaptions}
+                  aria-pressed={vm.captionsEnabled}
+                  aria-label={vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
+                >
+                  {vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
+                </button>
+              ) : null}
               <button type="button" onClick={openTranscript} aria-label="Mở bản chép lời">
                 Bản chép lời
               </button>

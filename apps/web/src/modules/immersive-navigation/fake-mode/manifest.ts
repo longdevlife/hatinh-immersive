@@ -39,5 +39,7 @@ export function createFakeImmersiveManifest(): ImmersiveManifestVm {
     panoramaNodes,
     links,
     hotspots: hotspotsFixture,
+    audioTracks: [],
+    ambientTrackId: null,
   };
 }

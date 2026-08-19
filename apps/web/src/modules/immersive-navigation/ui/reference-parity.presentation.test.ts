@@ -55,8 +55,10 @@ const narrationTrack: ImmersiveAudioTrack = {
 };
 
 const transcript: ImmersiveTranscriptContent = {
+  id: 'transcript-major',
   locale: 'vi',
   title: 'Câu chuyện chính',
+  timingMode: 'timed',
   segments: [{ id: 'segment-1', startMs: 0, endMs: 1000, text: 'Một câu chuyện Hà Tĩnh.' }],
 };
 
@@ -134,6 +136,8 @@ describe('reference parity presentation contract', () => {
       isTransitioning: false,
       locale: 'vi',
       audioState,
+      canPlayTrack: () => true,
+      destinationAmbientTrackId: 'ambient-demo',
       audioTracks: [
         {
           id: 'ambient-demo',
@@ -169,6 +173,8 @@ describe('reference parity presentation contract', () => {
       status: 'unavailable',
       isTransitioning: false,
       locale: 'vi',
+      canPlayTrack: () => false,
+      destinationAmbientTrackId: null,
       autoTour: { isRunning: false, isPaused: false },
       hotspots: [],
     });
@@ -187,6 +193,8 @@ describe('reference parity presentation contract', () => {
       status: 'ready',
       isTransitioning: false,
       locale: 'vi',
+      canPlayTrack: () => false,
+      destinationAmbientTrackId: null,
       autoTour: { isRunning: false, isPaused: false },
     });
 
@@ -203,6 +211,8 @@ describe('reference parity presentation contract', () => {
       isTransitioning: false,
       locale: 'vi',
       audioState,
+      canPlayTrack: () => false,
+      destinationAmbientTrackId: null,
       autoTour: { isRunning: true, isPaused: false },
       hotspots: [
         {
@@ -252,7 +262,11 @@ describe('reference parity presentation contract', () => {
       durationSeconds: 0,
       canSeek: false,
     });
-    expect(vm.transcript).toMatchObject({ available: true, content: transcript });
+    expect(vm.transcript).toEqual({
+      available: true,
+      capability: 'timed-captions',
+      content: transcript,
+    });
     expect(vm.captionsEnabled).toBe(false);
     expect(vm.autoTour).toEqual({
       isActive: false,
@@ -359,6 +373,12 @@ describe('reference parity presentation contract', () => {
       ...transcript,
       locale: 'en',
       title: 'The main story',
+      timingMode: 'plain',
+      segments: transcript.segments.map((segment) => ({
+        ...segment,
+        startMs: null,
+        endMs: null,
+      })),
     };
     const vm = buildImmersiveMediaDockVm({
       mode: 'free-explore',
@@ -385,7 +405,34 @@ describe('reference parity presentation contract', () => {
       activeLocale: null,
       alternateLocales: ['vi'],
     });
-    expect(vm.transcript).toEqual({ available: true, content: englishTranscript });
+    expect(vm.transcript).toEqual({
+      available: true,
+      capability: 'plain-transcript',
+      content: englishTranscript,
+    });
+  });
+
+  it('exposes none when the current scene has no transcript', () => {
+    const vm = buildImmersiveMediaDockVm({
+      mode: 'free-explore',
+      scene: node('major'),
+      tourEligibleNodes: [node('major')],
+      currentSceneId: 'major',
+      destinationAmbientTrackId: null,
+      locale: 'vi',
+      audioTracks: [],
+      canPlayTrack: () => false,
+      audioState,
+      autoTour: freeExploreAutoTour,
+      captionsEnabled: false,
+      soundGateRequired: false,
+    });
+
+    expect(vm.transcript).toEqual({
+      available: false,
+      capability: 'none',
+      content: null,
+    });
   });
 
   it('keeps transcript usable and exposes the sound gate when audio is unavailable', () => {
@@ -407,7 +454,11 @@ describe('reference parity presentation contract', () => {
     expect(vm.sound.available).toBe(false);
     expect(vm.soundGateRequired).toBe(false);
     expect(vm.narration).toMatchObject({ available: false, status: 'unavailable' });
-    expect(vm.transcript).toEqual({ available: true, content: transcript });
+    expect(vm.transcript).toEqual({
+      available: true,
+      capability: 'timed-captions',
+      content: transcript,
+    });
   });
 
   it('treats a resolved source-capable narration with no file URL as available sound', () => {

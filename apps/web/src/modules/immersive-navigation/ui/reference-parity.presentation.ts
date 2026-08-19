@@ -1,5 +1,6 @@
 import type {
   HotspotVm,
+  ImmersiveCaptionCapability,
   ImmersiveAudioTrack,
   ImmersiveAudioTrackType,
   ImmersiveLocale,
@@ -103,6 +104,7 @@ export interface ImmersiveMediaDockVm {
   };
   transcript: {
     available: boolean;
+    capability: ImmersiveCaptionCapability;
     content: ImmersiveTranscriptContent | null;
   };
   autoTour: {
@@ -207,6 +209,7 @@ export function buildImmersiveMediaDockVm({
   const narrationMatchesCurrentTrack = audioState?.narrationTrackId === narrationTrackId;
   const narrationAvailable =
     resolved.narrationTrack !== null && canPlayTrack(resolved.narrationTrack);
+  const captionCapability = getCaptionCapability(resolved.transcript);
   const narrationStatus: ImmersiveMediaDockNarrationStatus = !narrationAvailable
     ? 'unavailable'
     : narrationLoading
@@ -253,6 +256,7 @@ export function buildImmersiveMediaDockVm({
     },
     transcript: {
       available: resolved.transcript !== null,
+      capability: captionCapability,
       content: resolved.transcript,
     },
     autoTour: {
@@ -276,6 +280,8 @@ export function buildReferenceParityPresentationVm({
   locale,
   audioState,
   audioTracks = [],
+  canPlayTrack,
+  destinationAmbientTrackId,
   autoTour,
   hotspots = [],
 }: {
@@ -288,6 +294,8 @@ export function buildReferenceParityPresentationVm({
   locale: ImmersiveLocale;
   audioState?: ImmersiveAudioState;
   audioTracks?: readonly ImmersiveAudioTrack[];
+  canPlayTrack: (track: ImmersiveAudioTrack) => boolean;
+  destinationAmbientTrackId: string | null;
   autoTour: Pick<ReferenceParityAutoTourVm, 'isRunning' | 'isPaused'>;
   hotspots?: readonly HotspotVm[];
 }): ReferenceParityPresentationVm {
@@ -310,9 +318,11 @@ export function buildReferenceParityPresentationVm({
   });
   const mediaUnavailable =
     status === 'unavailable' || scenes.length === 0 || scenes.every((scene) => !scene.canNavigate);
-  const ambientTrack = audioTracks.find((track) => track.type === 'ambient');
-  const narrationTrack = audioTracks.find((track) => track.type === 'narration');
-  const audio = toAudioVm(audioState, ambientTrack, narrationTrack);
+  const ambientTrack = findAudioTrack(audioTracks, 'ambient', destinationAmbientTrackId);
+  const narrationTrack = audioTracks.find(
+    (track) => track.type === 'narration' && (track.locale === locale || track.locale === null),
+  );
+  const audio = toAudioVm(audioState, ambientTrack, narrationTrack, canPlayTrack);
 
   return {
     destinationSlug: destination.slug,
@@ -334,18 +344,29 @@ export function buildReferenceParityPresentationVm({
 
 function toAudioVm(
   state: ImmersiveAudioState | undefined,
-  ambientTrack: ImmersiveAudioTrack | undefined,
-  narrationTrack: ImmersiveAudioTrack | undefined,
+  ambientTrack: ImmersiveAudioTrack | null | undefined,
+  narrationTrack: ImmersiveAudioTrack | null | undefined,
+  canPlayTrack: (track: ImmersiveAudioTrack) => boolean,
 ): ReferenceParityAudioVm {
   return {
-    ambientAvailable: Boolean(ambientTrack?.src),
-    narrationAvailable: Boolean(narrationTrack?.src),
+    ambientAvailable: ambientTrack ? canPlayTrack(ambientTrack) : false,
+    narrationAvailable: narrationTrack ? canPlayTrack(narrationTrack) : false,
     masterMuted: state?.masterMuted ?? false,
     ambientEnabled: state?.ambientEnabled ?? true,
     narrationEnabled: state?.narrationEnabled ?? true,
     narrationPlaying: state?.narrationPlaying ?? false,
     autoplayBlocked: state?.autoplayBlocked ?? false,
   };
+}
+
+function getCaptionCapability(
+  content: ImmersiveTranscriptContent | null,
+): ImmersiveCaptionCapability {
+  if (!content) {
+    return 'none';
+  }
+
+  return content.timingMode === 'timed' ? 'timed-captions' : 'plain-transcript';
 }
 
 export function findAudioTrack(

@@ -6,6 +6,45 @@ import { getSceneLinks, mapImmersiveManifest } from './immersive-manifest.mapper
 
 function createManifestDto(): GetImmersiveManifest200 {
   return {
+    ambientTrackId: 'ambient-destination',
+    audioTracks: [
+      {
+        id: 'ambient-destination',
+        type: 'ambient',
+        label: 'Không gian chung',
+        locale: null,
+        src: 'https://cdn.example.vn/audio/ambient.mp3',
+        durationMs: 120000,
+        rights: 'customer-owned',
+        readiness: 'ready',
+        voiceId: null,
+        version: 'ambient-v1',
+      },
+      {
+        id: 'ambient-override',
+        type: 'ambient',
+        label: 'Sân trung tâm',
+        locale: null,
+        src: 'https://cdn.example.vn/audio/courtyard.mp3',
+        durationMs: 90000,
+        rights: 'licensed',
+        readiness: 'ready',
+        voiceId: null,
+        version: 'courtyard-v2',
+      },
+      {
+        id: 'narration-vi',
+        type: 'narration',
+        label: 'Thuyết minh tiếng Việt',
+        locale: 'vi',
+        src: 'https://cdn.example.vn/audio/vi.mp3',
+        durationMs: 22000,
+        rights: 'customer-owned',
+        readiness: 'ready',
+        voiceId: 'voice-vi-01',
+        version: 'narration-vi-v3',
+      },
+    ],
     defaultSceneId: 'scene-01',
     destination: {
       categoryId: null,
@@ -36,6 +75,9 @@ function createManifestDto(): GetImmersiveManifest200 {
         panoramaAssetStatus: 'ready',
         panoramaManifestUrl: 'https://cdn.example.vn/scene-02/manifest.json',
         panoramaPreviewUrl: 'https://cdn.example.vn/scene-02/preview.webp',
+        ambientOverrideTrackId: null,
+        narrationTrackIds: { vi: null, en: null },
+        transcriptIds: { vi: null, en: null },
         sortOrder: 1,
         status: 'published',
       },
@@ -53,6 +95,9 @@ function createManifestDto(): GetImmersiveManifest200 {
         panoramaAssetStatus: 'ready',
         panoramaManifestUrl: 'https://cdn.example.vn/scene-01/manifest.json',
         panoramaPreviewUrl: null,
+        ambientOverrideTrackId: 'ambient-override',
+        narrationTrackIds: { vi: 'narration-vi', en: null },
+        transcriptIds: { vi: 'transcript-vi', en: 'transcript-en' },
         sortOrder: 0,
         status: 'published',
       },
@@ -70,6 +115,9 @@ function createManifestDto(): GetImmersiveManifest200 {
         panoramaAssetStatus: null,
         panoramaManifestUrl: null,
         panoramaPreviewUrl: null,
+        ambientOverrideTrackId: null,
+        narrationTrackIds: { vi: null, en: null },
+        transcriptIds: { vi: null, en: null },
         sortOrder: 2,
         status: 'published',
       },
@@ -87,6 +135,9 @@ function createManifestDto(): GetImmersiveManifest200 {
         panoramaAssetStatus: 'ready',
         panoramaManifestUrl: 'https://cdn.example.vn/scene-04/manifest.json',
         panoramaPreviewUrl: 'https://cdn.example.vn/scene-04/preview.webp',
+        ambientOverrideTrackId: null,
+        narrationTrackIds: { vi: null, en: null },
+        transcriptIds: { vi: null, en: null },
         sortOrder: 3,
         status: 'published',
       },
@@ -135,6 +186,24 @@ function createManifestDto(): GetImmersiveManifest200 {
         yaw: 32,
       },
     ],
+    transcripts: [
+      {
+        id: 'transcript-vi',
+        locale: 'vi',
+        title: 'Cổng vào',
+        timingMode: 'timed',
+        rights: 'customer-owned',
+        segments: [{ id: 'segment-vi-1', startMs: 0, endMs: 1200, text: 'Xin chào.' }],
+      },
+      {
+        id: 'transcript-en',
+        locale: 'en',
+        title: 'Entrance',
+        timingMode: 'plain',
+        rights: 'licensed',
+        segments: [{ id: 'segment-en-1', startMs: null, endMs: null, text: 'Welcome.' }],
+      },
+    ],
   };
 }
 
@@ -143,6 +212,17 @@ describe('mapImmersiveManifest', () => {
     const view = mapImmersiveManifest(createManifestDto());
 
     expect(view.destination.name).toBe('Sơn Trang Cổ Đạm');
+    expect(view.ambientTrackId).toBe('ambient-destination');
+    expect(view.audioTracks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'narration-vi',
+          voiceId: 'voice-vi-01',
+          version: 'narration-vi-v3',
+          readiness: 'ready',
+        }),
+      ]),
+    );
     expect(view.nodes.map((node) => node.id)).toEqual([
       'scene-01',
       'scene-02',
@@ -151,6 +231,22 @@ describe('mapImmersiveManifest', () => {
     ]);
     expect(view.panoramaNodes.map((node) => node.id)).toEqual(['scene-01', 'scene-02', 'scene-04']);
     expect(view.panoramaNodes[0]?.previewUrl).toBe('https://cdn.example.vn/scene-01/preview.webp');
+    expect(view.panoramaNodes[0]).toEqual(
+      expect.objectContaining({
+        ambientTrackId: 'ambient-override',
+        narrationTrackIds: { vi: 'narration-vi' },
+        transcripts: {
+          vi: expect.objectContaining({ timingMode: 'timed' }),
+          en: expect.objectContaining({ timingMode: 'plain' }),
+        },
+      }),
+    );
+    expect(view.panoramaNodes[0]?.transcripts?.en?.segments[0]).toEqual({
+      id: 'segment-en-1',
+      startMs: null,
+      endMs: null,
+      text: 'Welcome.',
+    });
     expect(view.panoramaNodes[1]?.links).toEqual([
       { targetNodeId: 'scene-01', yaw: 198, pitch: -2 },
       { targetNodeId: 'scene-04', yaw: 240, pitch: 4 },

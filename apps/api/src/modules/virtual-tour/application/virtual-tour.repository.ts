@@ -1,8 +1,25 @@
 import type { Hotspot } from '../domain/hotspot';
 import type { SceneLink } from '../domain/scene-link';
 import type { SceneNode, SceneStatus } from '../domain/scene-node';
+import type {
+  ImmersiveAudioTrackRow,
+  ImmersiveAudioTranscriptRow,
+  ImmersiveAudioTranscriptSegmentRow,
+  ImmersiveDestinationAmbientTrackRow,
+  ImmersiveSceneAmbientOverrideRow,
+  ImmersiveSceneNarrationRow,
+} from '../../../core/database/schema/immersive-audio';
 
 export const VIRTUAL_TOUR_REPOSITORY = Symbol('VIRTUAL_TOUR_REPOSITORY');
+
+export interface ImmersiveAudioReadRows {
+  destinationAmbient: ImmersiveDestinationAmbientTrackRow | null;
+  sceneAmbientOverrides: ImmersiveSceneAmbientOverrideRow[];
+  sceneNarrations: ImmersiveSceneNarrationRow[];
+  tracks: ImmersiveAudioTrackRow[];
+  transcripts: ImmersiveAudioTranscriptRow[];
+  transcriptSegments: ImmersiveAudioTranscriptSegmentRow[];
+}
 
 export interface VirtualTourRepository {
   saveScene(scene: SceneNode): Promise<void>;
@@ -19,4 +36,8 @@ export interface VirtualTourRepository {
     sceneIds: string[],
     status?: 'draft' | 'published' | 'archived',
   ): Promise<Hotspot[]>;
+  findImmersiveAudioReadRows(
+    destinationId: string,
+    sceneIds: string[],
+  ): Promise<ImmersiveAudioReadRows>;
 }

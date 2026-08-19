@@ -5,16 +5,22 @@
  * REST API for the Hà Tĩnh immersive tourism platform foundation.
  * OpenAPI spec version: 1.0
  */
+import type { GetImmersiveManifest200AudioTracksItem } from './getImmersiveManifest200AudioTracksItem';
 import type { GetImmersiveManifest200Destination } from './getImmersiveManifest200Destination';
 import type { GetImmersiveManifest200HotspotsItem } from './getImmersiveManifest200HotspotsItem';
 import type { GetImmersiveManifest200LinksItem } from './getImmersiveManifest200LinksItem';
 import type { GetImmersiveManifest200NodesItem } from './getImmersiveManifest200NodesItem';
+import type { GetImmersiveManifest200TranscriptsItem } from './getImmersiveManifest200TranscriptsItem';
 
 export type GetImmersiveManifest200 = {
+  /** @nullable */
+  ambientTrackId: string | null;
+  audioTracks: GetImmersiveManifest200AudioTracksItem[];
   /** @nullable */
   defaultSceneId: string | null;
   destination: GetImmersiveManifest200Destination;
   hotspots: GetImmersiveManifest200HotspotsItem[];
   links: GetImmersiveManifest200LinksItem[];
   nodes: GetImmersiveManifest200NodesItem[];
+  transcripts: GetImmersiveManifest200TranscriptsItem[];
 };

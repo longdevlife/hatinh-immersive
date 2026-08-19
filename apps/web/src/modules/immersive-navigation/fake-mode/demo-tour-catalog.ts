@@ -316,7 +316,7 @@ export function buildDemoManifest(
     links,
     hotspots: tour.hotspots.map((hotspot) => ({ ...hotspot })),
     audioTracks: [...tour.audioTracks],
-    ...(tour.ambientTrackId !== undefined ? { ambientTrackId: tour.ambientTrackId } : {}),
+    ambientTrackId: tour.ambientTrackId ?? null,
   };
 }
 

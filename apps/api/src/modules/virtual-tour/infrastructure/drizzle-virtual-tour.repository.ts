@@ -4,6 +4,14 @@ import { alias } from 'drizzle-orm/pg-core';
 
 import { DatabaseService } from '../../../core/database/database.module';
 import {
+  immersiveAudioTracks,
+  immersiveAudioTranscriptSegments,
+  immersiveAudioTranscripts,
+  immersiveDestinationAmbientTracks,
+  immersiveSceneAmbientOverrides,
+  immersiveSceneNarrations,
+} from '../../../core/database/schema/immersive-audio';
+import {
   virtualTourHotspots,
   virtualTourSceneLinks,
   virtualTourScenes,
@@ -14,7 +22,10 @@ import {
 import { Hotspot } from '../domain/hotspot';
 import { SceneLink } from '../domain/scene-link';
 import { SceneNode, type SceneStatus } from '../domain/scene-node';
-import type { VirtualTourRepository } from '../application/virtual-tour.repository';
+import type {
+  ImmersiveAudioReadRows,
+  VirtualTourRepository,
+} from '../application/virtual-tour.repository';
 
 @Injectable()
 export class DrizzleVirtualTourRepository implements VirtualTourRepository {
@@ -246,6 +257,75 @@ export class DrizzleVirtualTourRepository implements VirtualTourRepository {
       .where(and(...conditions))
       .orderBy(asc(virtualTourHotspots.createdAt));
     return rows.map(toHotspot);
+  }
+
+  async findImmersiveAudioReadRows(
+    destinationId: string,
+    sceneIds: string[],
+  ): Promise<ImmersiveAudioReadRows> {
+    const [destinationAmbientRows, sceneAmbientRows, sceneNarrationRows] = await Promise.all([
+      this.database.db
+        .select()
+        .from(immersiveDestinationAmbientTracks)
+        .where(eq(immersiveDestinationAmbientTracks.destinationId, destinationId)),
+      sceneIds.length === 0
+        ? Promise.resolve([])
+        : this.database.db
+            .select()
+            .from(immersiveSceneAmbientOverrides)
+            .where(inArray(immersiveSceneAmbientOverrides.sceneId, sceneIds)),
+      sceneIds.length === 0
+        ? Promise.resolve([])
+        : this.database.db
+            .select()
+            .from(immersiveSceneNarrations)
+            .where(inArray(immersiveSceneNarrations.sceneId, sceneIds)),
+    ]);
+
+    const trackIds = [
+      ...destinationAmbientRows.map((row) => row.trackId),
+      ...sceneAmbientRows.map((row) => row.trackId),
+      ...sceneNarrationRows.flatMap((row) => (row.trackId ? [row.trackId] : [])),
+    ];
+    const transcriptIds = sceneNarrationRows.flatMap((row) =>
+      row.transcriptId ? [row.transcriptId] : [],
+    );
+    const uniqueTrackIds = [...new Set(trackIds)];
+    const uniqueTranscriptIds = [...new Set(transcriptIds)];
+
+    const [tracks, transcripts, transcriptSegments] = await Promise.all([
+      uniqueTrackIds.length === 0
+        ? Promise.resolve([])
+        : this.database.db
+            .select()
+            .from(immersiveAudioTracks)
+            .where(inArray(immersiveAudioTracks.id, uniqueTrackIds)),
+      uniqueTranscriptIds.length === 0
+        ? Promise.resolve([])
+        : this.database.db
+            .select()
+            .from(immersiveAudioTranscripts)
+            .where(inArray(immersiveAudioTranscripts.id, uniqueTranscriptIds)),
+      uniqueTranscriptIds.length === 0
+        ? Promise.resolve([])
+        : this.database.db
+            .select()
+            .from(immersiveAudioTranscriptSegments)
+            .where(inArray(immersiveAudioTranscriptSegments.transcriptId, uniqueTranscriptIds))
+            .orderBy(
+              asc(immersiveAudioTranscriptSegments.transcriptId),
+              asc(immersiveAudioTranscriptSegments.sortOrder),
+            ),
+    ]);
+
+    return {
+      destinationAmbient: destinationAmbientRows[0] ?? null,
+      sceneAmbientOverrides: sceneAmbientRows,
+      sceneNarrations: sceneNarrationRows,
+      tracks,
+      transcripts,
+      transcriptSegments,
+    };
   }
 }
 
