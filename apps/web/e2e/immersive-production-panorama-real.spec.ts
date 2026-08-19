@@ -77,3 +77,151 @@ test('rejects a low-resolution public panorama before real PSV renders it', asyn
   await expect(page.locator('[data-renderer-status]')).toHaveCount(0);
   expect(manifestRequestCount).toBeGreaterThan(0);
 });
+
+const acceptedPanoramaPackageManifest = {
+  version: 1,
+  type: 'equirectangular-tiles',
+  preview: 'preview.webp',
+  tileUrlTemplate: 'tiles/{level}/{col}-{row}.webp',
+  levels: [
+    { width: 1024, cols: 2, rows: 1 },
+    { width: 2048, cols: 4, rows: 2 },
+    { width: 4096, cols: 8, rows: 4 },
+  ],
+};
+
+const acceptedPublicManifest = {
+  ...lowResolutionPublicManifest,
+  defaultSceneId: 'son-trang-accepted',
+  nodes: [
+    {
+      ...lowResolutionPublicManifest.nodes[0],
+      id: 'son-trang-accepted',
+      name: 'Cảnh quan 4096 Chuẩn',
+      panoramaAssetId: 'asset-son-trang-accepted',
+      panoramaAssetStatus: 'ready',
+      panoramaManifestUrl:
+        'https://media.example.test/processed/panorama/asset-accepted/manifest.json',
+      panoramaPreviewUrl:
+        'https://media.example.test/processed/panorama/asset-accepted/preview.webp',
+    },
+  ],
+};
+
+const dummyWebp1x1 = Buffer.from(
+  'UklGRiQAAABXRUJQVlA4IBgAAAAwAQCdASoBAAEAAwA0JaQAA3AA/vuUAAA=',
+  'base64',
+);
+
+test('renders accepted production-shaped panorama package through real PSV on desktop and mobile', async ({
+  page,
+}) => {
+  await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(acceptedPublicManifest),
+      status: 200,
+    });
+  });
+
+  await page.route(
+    'https://media.example.test/processed/panorama/asset-accepted/manifest.json',
+    async (route) => {
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify(acceptedPanoramaPackageManifest),
+        status: 200,
+      });
+    },
+  );
+
+  await page.route(
+    'https://media.example.test/processed/panorama/asset-accepted/preview.webp',
+    async (route) => {
+      await route.fulfill({
+        contentType: 'image/webp',
+        body: dummyWebp1x1,
+        status: 200,
+      });
+    },
+  );
+
+  await page.route(
+    'https://media.example.test/processed/panorama/asset-accepted/tiles/**',
+    async (route) => {
+      await route.fulfill({
+        contentType: 'image/webp',
+        body: dummyWebp1x1,
+        status: 200,
+      });
+    },
+  );
+
+  // 1. Desktop smoke test (1440x900)
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(
+    '/explore/son-trang-co-dam/immersive?mode=panorama&location=son-trang-co-dam&scene=son-trang-accepted&h=0&p=0&fov=88',
+  );
+
+  await expect(page.getByRole('heading', { name: 'Cảnh quan 4096 Chuẩn' })).toBeVisible();
+  await expect(
+    page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' }),
+  ).toBeVisible();
+  await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
+  const mediaDockDesktop = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+  await expect(mediaDockDesktop).toBeVisible();
+  await expect(page.getByText('360° đang được cập nhật')).toHaveCount(0);
+
+  // 2. Mobile smoke test (390x844)
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole('heading', { name: 'Cảnh quan 4096 Chuẩn' })).toBeVisible();
+  await expect(
+    page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' }),
+  ).toBeVisible();
+  await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
+  const mediaDockMobile = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+  await expect(mediaDockMobile).toBeVisible();
+});
+
+test('fails closed when panorama derivatives are missing or inconsistent', async ({ page }) => {
+  const brokenDerivativeManifest = {
+    ...acceptedPublicManifest,
+    defaultSceneId: 'son-trang-broken-derivatives',
+    nodes: [
+      {
+        ...acceptedPublicManifest.nodes[0],
+        id: 'son-trang-broken-derivatives',
+        name: 'Cảnh quan lỗi file phái sinh',
+        panoramaManifestUrl:
+          'https://media.example.test/processed/panorama/asset-broken/manifest.json',
+      },
+    ],
+  };
+
+  await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(brokenDerivativeManifest),
+      status: 200,
+    });
+  });
+
+  // Manifest request returns 404 or corrupted payload
+  await page.route(
+    'https://media.example.test/processed/panorama/asset-broken/manifest.json',
+    async (route) => {
+      await route.fulfill({
+        status: 404,
+        body: 'Not Found',
+      });
+    },
+  );
+
+  await page.goto(
+    '/explore/son-trang-co-dam/immersive?mode=panorama&location=son-trang-co-dam&scene=son-trang-broken-derivatives&h=0&p=0&fov=88',
+  );
+
+  // Must fail-closed gracefully (showing update/fallback state or error boundary, not crashing blank)
+  await expect(page.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toBeVisible();
+  await expect(page.locator('[data-renderer-status="ready"]')).toHaveCount(0);
+});
