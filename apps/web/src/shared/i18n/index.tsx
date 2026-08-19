@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { dictionaries } from './locales';
+import { loadDictionary, type Dictionary } from './locales';
 
 export const UI_LANGUAGES = [
   { code: 'vi', label: 'Vietnamese', nativeLabel: 'Tiếng Việt' },
@@ -34,12 +34,30 @@ const SKIP_SELECTOR =
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [language, setLanguageState] = useState<UiLanguageCode>(() => readStoredLanguage());
+  const [dictionary, setDictionary] = useState<Dictionary | null>(null);
   const textOriginals = useRef(new WeakMap<Text, string>());
   const attrOriginals = useRef(new WeakMap<Element, Map<string, string>>());
   const scanTimer = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     document.documentElement.lang = language;
+  }, [language]);
+
+  useEffect(() => {
+    let active = true;
+    setDictionary(null);
+
+    void loadDictionary(language)
+      .then((nextDictionary) => {
+        if (active) setDictionary(nextDictionary);
+      })
+      .catch(() => {
+        if (active) setDictionary({});
+      });
+
+    return () => {
+      active = false;
+    };
   }, [language]);
 
   const setLanguage = useCallback(
@@ -55,12 +73,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   );
 
   const t = useCallback<Translate>(
-    (key, values) => {
-      const activeDictionary = dictionaries[language] as Record<string, string>;
-      const fallbackDictionary = dictionaries.vi as Record<string, string>;
-      return interpolate(activeDictionary[key] ?? fallbackDictionary[key] ?? key, values);
-    },
-    [language],
+    (key, values) => interpolate(dictionary?.[key] ?? key, values),
+    [dictionary],
   );
 
   const value = useMemo(
@@ -69,16 +83,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   );
 
   const translateDom = useCallback(() => {
-    if (!document.body) return;
-    translateRenderedDom(
-      document.body,
-      dictionaries[language] as Record<string, string>,
-      textOriginals.current,
-      attrOriginals.current,
-    );
-  }, [language]);
+    if (!document.body || !dictionary) return;
+    translateRenderedDom(document.body, dictionary, textOriginals.current, attrOriginals.current);
+  }, [dictionary]);
 
   useEffect(() => {
+    if (!dictionary) return;
+
     translateDom();
 
     const observer = new MutationObserver(() => {
@@ -98,7 +109,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       observer.disconnect();
       window.clearTimeout(scanTimer.current);
     };
-  }, [translateDom]);
+  }, [dictionary, translateDom]);
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
@@ -213,15 +224,13 @@ export function LanguageSwitcher() {
                   textAlign: 'left',
                   transition: 'background-color 0.15s ease',
                 }}
-                onMouseOver={(e) => {
+                onMouseOver={(event) => {
                   if (item.code !== language) {
-                    e.currentTarget.style.background = 'var(--theme-bg-subtle, #f8fafc)';
+                    event.currentTarget.style.background = 'var(--theme-bg-subtle, #f8fafc)';
                   }
                 }}
-                onMouseOut={(e) => {
-                  if (item.code !== language) {
-                    e.currentTarget.style.background = 'transparent';
-                  }
+                onMouseOut={(event) => {
+                  if (item.code !== language) event.currentTarget.style.background = 'transparent';
                 }}
               >
                 <FlagIcon code={item.code} />
@@ -288,7 +297,6 @@ function renderFlagSvg(code: UiLanguageCode) {
   }
 }
 
-// Helpers
 function readStoredLanguage(): UiLanguageCode {
   const stored = window.localStorage.getItem(STORAGE_KEY);
   return UI_LANGUAGES.some((language) => language.code === stored)
@@ -303,7 +311,7 @@ function interpolate(template: string, values?: Record<string, string | number>)
 
 function translateRenderedDom(
   root: HTMLElement,
-  dictionary: Record<string, string>,
+  dictionary: Dictionary,
   textOriginals: WeakMap<Text, string>,
   attrOriginals: WeakMap<Element, Map<string, string>>,
 ) {
@@ -324,15 +332,13 @@ function translateRenderedDom(
     const previousTranslation = previousSource
       ? translateWithWhitespace(previousSource, dictionary)
       : undefined;
-    if (!previousSource || current !== previousTranslation) {
-      textOriginals.set(node, current);
-    }
+    if (!previousSource || current !== previousTranslation) textOriginals.set(node, current);
     const source = textOriginals.get(node) ?? current;
     node.nodeValue = translateWithWhitespace(source, dictionary);
   }
 
   const elements = root.querySelectorAll<HTMLElement>(
-    ATTRIBUTES.map((attr) => `[${attr}]`).join(','),
+    ATTRIBUTES.map((attribute) => `[${attribute}]`).join(','),
   );
   for (const element of elements) {
     if (element.closest(SKIP_SELECTOR)) continue;
@@ -342,18 +348,16 @@ function translateRenderedDom(
       attrOriginals.set(element, originals);
     }
 
-    for (const attr of ATTRIBUTES) {
-      const current = element.getAttribute(attr);
+    for (const attribute of ATTRIBUTES) {
+      const current = element.getAttribute(attribute);
       if (!current || !shouldTranslate(current)) continue;
-      const previousSource = originals.get(attr);
+      const previousSource = originals.get(attribute);
       const previousTranslation = previousSource
         ? translateWithWhitespace(previousSource, dictionary)
         : undefined;
-      if (!previousSource || current !== previousTranslation) {
-        originals.set(attr, current);
-      }
-      const source = originals.get(attr) ?? current;
-      element.setAttribute(attr, translateWithWhitespace(source, dictionary));
+      if (!previousSource || current !== previousTranslation) originals.set(attribute, current);
+      const source = originals.get(attribute) ?? current;
+      element.setAttribute(attribute, translateWithWhitespace(source, dictionary));
     }
   }
 }
@@ -366,15 +370,9 @@ function shouldTranslate(text: string) {
   return true;
 }
 
-function translateWithWhitespace(source: string, dictionary: Record<string, string>) {
+function translateWithWhitespace(source: string, dictionary: Dictionary) {
   const leading = source.match(/^\s*/)?.[0] ?? '';
   const trailing = source.match(/\s*$/)?.[0] ?? '';
   const trimmed = source.replace(/\s+/g, ' ').trim();
-  return `${leading}${translateText(trimmed, dictionary)}${trailing}`;
-}
-
-function translateText(text: string, dictionary: Record<string, string>) {
-  const exact = dictionary[text];
-  if (exact) return exact;
-  return text;
+  return `${leading}${dictionary[trimmed] ?? trimmed}${trailing}`;
 }
