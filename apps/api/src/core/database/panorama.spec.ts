@@ -146,6 +146,32 @@ describe('production panorama database contract', () => {
     );
   });
 
+  it('rejects ready to processing metadata-mutation bypass in one transaction', async () => {
+    const mediaAssetId = await insertMediaAsset('panorama', 'ready');
+    await insertMetadata({ mediaAssetId, widthPx: 4096, heightPx: 2048 });
+
+    await expectDatabaseErrorCode(
+      db.transaction(async (tx) => {
+        await tx.execute(sql`
+          update media_assets
+          set status = 'processing'::media_asset_status
+          where id = ${mediaAssetId}
+        `);
+        await tx.execute(sql`
+          update panorama_asset_metadata
+          set version = 'bypassed-v2'
+          where media_asset_id = ${mediaAssetId}
+        `);
+        await tx.execute(sql`
+          update media_assets
+          set status = 'ready'::media_asset_status
+          where id = ${mediaAssetId}
+        `);
+      }),
+      'PANORAMA_READY_ASSET_IMMUTABLE',
+    );
+  });
+
   async function insertMediaAsset(mediaKind: 'panorama' | 'image', status: 'processing' | 'ready') {
     const id = randomUUID();
     await db.execute(sql`
@@ -168,7 +194,6 @@ describe('production panorama database contract', () => {
   async function expectDatabaseErrorCode(promise: Promise<unknown>, code: string) {
     try {
       await promise;
-      throw new Error(`Expected database error ${code}`);
     } catch (error) {
       let current: unknown = error;
       while (current instanceof Error) {
@@ -177,6 +202,7 @@ describe('production panorama database contract', () => {
       }
       throw error;
     }
+    throw new Error(`Expected database error ${code}`);
   }
 
   async function insertMetadata(input: {

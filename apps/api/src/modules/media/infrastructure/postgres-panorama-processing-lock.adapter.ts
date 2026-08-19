@@ -8,10 +8,14 @@ export class PostgresPanoramaProcessingLockAdapter implements PanoramaProcessing
   constructor(private readonly database: DatabaseService) {}
 
   async withLock<T>(mediaAssetId: string, work: () => Promise<T>): Promise<T> {
-    const result = await this.database.client.begin(async (transaction) => {
-      await transaction`select pg_advisory_xact_lock(hashtextextended(${`panorama:${mediaAssetId}`}, 0))`;
-      return { value: await work() };
-    });
-    return result.value;
+    const lockClient = this.database.createDedicatedClient();
+    const lockKey = `panorama:${mediaAssetId}`;
+    try {
+      await lockClient`select pg_advisory_lock(hashtextextended(${lockKey}, 0))`;
+      return await work();
+    } finally {
+      await lockClient`select pg_advisory_unlock(hashtextextended(${lockKey}, 0))`;
+      await lockClient.end({ timeout: 5 });
+    }
   }
 }
