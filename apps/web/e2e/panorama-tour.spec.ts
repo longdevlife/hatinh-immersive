@@ -1,6 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const sonTrangManifest = {
+  ambientTrackId: null,
+  audioTracks: [],
   defaultSceneId: 'son-trang-gate',
   destination: {
     categoryId: null,
@@ -25,6 +27,7 @@ const sonTrangManifest = {
   nodes: [
     {
       altitude: 12,
+      ambientOverrideTrackId: null,
       destinationId: 'son-trang-co-dam',
       id: 'son-trang-gate',
       initialFov: 88,
@@ -33,16 +36,19 @@ const sonTrangManifest = {
       lat: 18.3421,
       lng: 105.9032,
       name: 'Cổng Sơn Trang',
+      narrationTrackIds: { en: null, vi: null },
       panoramaAssetId: 'asset-son-trang-gate',
       panoramaAssetStatus: 'ready',
       panoramaManifestUrl: '/demo/360/son-trang-gate/manifest.json',
       panoramaPreviewUrl: '/demo/360/son-trang-gate/preview.webp',
       sortOrder: 0,
       status: 'published',
+      transcriptIds: { en: null, vi: null },
     },
   ],
   links: [],
   hotspots: [],
+  transcripts: [],
 };
 
 const missingMediaManifest = {
