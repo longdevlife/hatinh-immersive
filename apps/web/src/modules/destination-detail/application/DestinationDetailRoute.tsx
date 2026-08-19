@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 import { useImmersiveDestinations } from '../../../shared/api/immersive';
@@ -100,6 +100,7 @@ export function DestinationDetailRoute({
     destinationSlug: destination.slug,
   };
   const exploreReturnHref = createExploreReturnHref(resolvedExploreReturnContext);
+  const [isNavigatingBack, setIsNavigatingBack] = useState(false);
   const cameFromExplore = (location.state as DestinationRouteState | null)?.origin === 'explore';
   const onBackToExplore = () => {
     if (cameFromExplore) {
@@ -129,29 +130,69 @@ export function DestinationDetailRoute({
         )
     : undefined;
 
-  if (sonTrangExperience) {
-    return (
-      <SonTrangExperience
-        experience={sonTrangExperience}
-        capabilities={capabilities}
-        mainRef={destinationMainRef}
-        onBackToExplore={onBackToExplore}
-        {...(onOpenMap ? { onOpenMap } : {})}
-        {...(onEnterPanorama ? { onEnterPanorama } : {})}
-        {...(onEnterSelected3D ? { onEnterSelected3D } : {})}
-      />
-    );
-  }
-
   return (
-    <DestinationExperience
-      destination={view}
-      mainRef={destinationMainRef}
-      onBackToExplore={onBackToExplore}
-      {...(onOpenMap ? { onOpenMap } : {})}
-      {...(onEnterPanorama ? { onEnterPanorama } : {})}
-      {...(onEnterSelected3D ? { onEnterSelected3D } : {})}
-    />
+    <>
+      {isNavigatingBack && (
+        <div
+          role="status"
+          aria-live="polite"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '1.25rem',
+            backgroundColor: 'var(--theme-bg-app, #0c1410)',
+            opacity: 0.96,
+            backdropFilter: 'blur(12px)',
+          }}
+        >
+          <div
+            style={{
+              width: '44px',
+              height: '44px',
+              border: '3.5px solid rgba(0, 168, 98, 0.2)',
+              borderTopColor: 'var(--theme-primary, #00a862)',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+            }}
+          />
+          <p
+            style={{
+              color: 'var(--theme-text-primary, #f2f7f4)',
+              fontSize: '1rem',
+              fontWeight: 600,
+              margin: 0,
+            }}
+          >
+            Đang mở bản đồ khám phá…
+          </p>
+        </div>
+      )}
+      {sonTrangExperience ? (
+        <SonTrangExperience
+          experience={sonTrangExperience}
+          capabilities={capabilities}
+          mainRef={destinationMainRef}
+          onBackToExplore={onBackToExplore}
+          {...(onOpenMap ? { onOpenMap } : {})}
+          {...(onEnterPanorama ? { onEnterPanorama } : {})}
+          {...(onEnterSelected3D ? { onEnterSelected3D } : {})}
+        />
+      ) : (
+        <DestinationExperience
+          destination={view}
+          mainRef={destinationMainRef}
+          onBackToExplore={onBackToExplore}
+          {...(onOpenMap ? { onOpenMap } : {})}
+          {...(onEnterPanorama ? { onEnterPanorama } : {})}
+          {...(onEnterSelected3D ? { onEnterSelected3D } : {})}
+        />
+      )}
+    </>
   );
 }
 
