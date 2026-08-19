@@ -565,3 +565,423 @@ test('keeps selected 3D scoped to its destination without a generic 360 handoff'
   await expect(page.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
 });
+
+const destinationAManifest = {
+  ambientTrackId: 'ambient-dest-a',
+  audioTracks: [
+    {
+      durationMs: 10_000,
+      id: 'ambient-dest-a',
+      label: 'Âm thanh Sơn Trang',
+      locale: null,
+      readiness: 'ready',
+      rights: 'customer-owned',
+      src: '/test-media/production-audio/ambient-son-trang.wav',
+      type: 'ambient',
+      version: 'test-v1',
+      voiceId: null,
+    },
+    {
+      durationMs: 10_000,
+      id: 'narration-dest-a-vi',
+      label: 'Thuyết minh Cổng Sơn Trang',
+      locale: 'vi',
+      readiness: 'ready',
+      rights: 'customer-owned',
+      src: '/test-media/production-audio/narration-son-trang-vi.wav',
+      type: 'narration',
+      version: 'test-v1',
+      voiceId: 'test-voice-a',
+    },
+  ],
+  defaultSceneId: 'scene-son-trang-01',
+  destination: {
+    categoryId: null,
+    categoryLabel: 'Di sản',
+    coverImageUrl: null,
+    coverMediaId: null,
+    defaultSceneId: 'scene-son-trang-01',
+    description: 'Một hành trình di sản Sơn Trang.',
+    geoPoint: { latitude: 18.3421, longitude: 105.9032 },
+    cameraPreset: cameraPreset(18.3421, 105.9032, 24),
+    id: 'destination-01',
+    name: 'Sơn Trang Cổ Đạm',
+    slug: 'son-trang-co-dam',
+    status: 'published',
+    summary: 'Hành trình di sản Sơn Trang Cổ Đạm.',
+  },
+  nodes: [
+    {
+      altitude: 12,
+      ambientOverrideTrackId: null,
+      destinationId: 'destination-01',
+      id: 'scene-son-trang-01',
+      initialFov: 90,
+      initialHeading: 0,
+      initialPitch: 0,
+      lat: 18.3421,
+      lng: 105.9032,
+      name: 'Cổng Sơn Trang',
+      narrationTrackIds: { en: null, vi: 'narration-dest-a-vi' },
+      panoramaAssetId: 'asset-son-trang-01',
+      panoramaAssetStatus: 'ready',
+      panoramaManifestUrl: 'https://media.example.vn/scene-son-trang-01/manifest.json',
+      panoramaPreviewUrl: 'https://media.example.vn/scene-son-trang-01/preview.webp',
+      sortOrder: 0,
+      status: 'published',
+      transcriptIds: { en: null, vi: 'transcript-dest-a-vi' },
+    },
+  ],
+  links: [],
+  hotspots: [],
+  transcripts: [
+    {
+      id: 'transcript-dest-a-vi',
+      locale: 'vi',
+      rights: 'customer-owned',
+      segments: [
+        {
+          endMs: 1_000,
+          id: 'transcript-dest-a-vi-1',
+          startMs: 0,
+          text: 'Cổng vào mở đầu hành trình Sơn Trang.',
+        },
+      ],
+      timingMode: 'timed',
+      title: 'Cổng Sơn Trang',
+    },
+  ],
+};
+
+const destinationBManifest = {
+  ambientTrackId: 'ambient-dest-b',
+  audioTracks: [
+    {
+      durationMs: 10_000,
+      id: 'ambient-dest-b',
+      label: 'Âm thanh Thiên Cầm',
+      locale: null,
+      readiness: 'ready',
+      rights: 'customer-owned',
+      src: '/test-media/production-audio/ambient-thien-cam.wav',
+      type: 'ambient',
+      version: 'test-v1',
+      voiceId: null,
+    },
+    {
+      durationMs: 10_000,
+      id: 'narration-dest-b-vi',
+      label: 'Thuyết minh Biển Thiên Cầm',
+      locale: 'vi',
+      readiness: 'ready',
+      rights: 'customer-owned',
+      src: '/test-media/production-audio/narration-thien-cam-vi.wav',
+      type: 'narration',
+      version: 'test-v1',
+      voiceId: 'test-voice-b',
+    },
+  ],
+  defaultSceneId: 'scene-thien-cam-01',
+  destination: {
+    categoryId: null,
+    categoryLabel: 'Biển & Đảo',
+    coverImageUrl: null,
+    coverMediaId: null,
+    defaultSceneId: 'scene-thien-cam-01',
+    description: 'Bờ biển Thiên Cầm tuyệt đẹp.',
+    geoPoint: { latitude: 18.2711, longitude: 106.0152 },
+    cameraPreset: cameraPreset(18.2711, 106.0152, 90),
+    id: 'destination-02',
+    name: 'Biển Thiên Cầm',
+    slug: 'bien-thien-cam',
+    status: 'published',
+    summary: 'Bãi biển Thiên Cầm Hà Tĩnh.',
+  },
+  nodes: [
+    {
+      altitude: 8,
+      ambientOverrideTrackId: null,
+      destinationId: 'destination-02',
+      id: 'scene-thien-cam-01',
+      initialFov: 90,
+      initialHeading: 0,
+      initialPitch: 0,
+      lat: 18.2711,
+      lng: 106.0152,
+      name: 'Bãi biển Thiên Cầm',
+      narrationTrackIds: { en: null, vi: 'narration-dest-b-vi' },
+      panoramaAssetId: 'asset-thien-cam-01',
+      panoramaAssetStatus: 'ready',
+      panoramaManifestUrl: 'https://media.example.vn/scene-thien-cam-01/manifest.json',
+      panoramaPreviewUrl: 'https://media.example.vn/scene-thien-cam-01/preview.webp',
+      sortOrder: 0,
+      status: 'published',
+      transcriptIds: { en: null, vi: 'transcript-dest-b-vi' },
+    },
+  ],
+  links: [],
+  hotspots: [],
+  transcripts: [
+    {
+      id: 'transcript-dest-b-vi',
+      locale: 'vi',
+      rights: 'customer-owned',
+      segments: [
+        {
+          endMs: 1_000,
+          id: 'transcript-dest-b-vi-1',
+          startMs: 0,
+          text: 'Biển Thiên Cầm trong xanh bờ cát mịn.',
+        },
+      ],
+      timingMode: 'timed',
+      title: 'Bãi biển Thiên Cầm',
+    },
+  ],
+};
+
+function assertReferentialClosure(manifest: typeof destinationAManifest) {
+  const audioTrackIds = new Set(manifest.audioTracks.map((track) => track.id));
+  const transcriptIds = new Set(manifest.transcripts.map((transcript) => transcript.id));
+  const sceneIds = new Set(manifest.nodes.map((node) => node.id));
+
+  if (manifest.ambientTrackId) {
+    expect(audioTrackIds.has(manifest.ambientTrackId)).toBe(true);
+  }
+  if (manifest.defaultSceneId) {
+    expect(sceneIds.has(manifest.defaultSceneId)).toBe(true);
+  }
+
+  for (const node of manifest.nodes) {
+    if (node.ambientOverrideTrackId) {
+      expect(audioTrackIds.has(node.ambientOverrideTrackId)).toBe(true);
+    }
+    if (node.narrationTrackIds.vi) {
+      expect(audioTrackIds.has(node.narrationTrackIds.vi)).toBe(true);
+    }
+    if (node.narrationTrackIds.en) {
+      expect(audioTrackIds.has(node.narrationTrackIds.en)).toBe(true);
+    }
+    if (node.transcriptIds.vi) {
+      expect(transcriptIds.has(node.transcriptIds.vi)).toBe(true);
+    }
+    if (node.transcriptIds.en) {
+      expect(transcriptIds.has(node.transcriptIds.en)).toBe(true);
+    }
+  }
+}
+
+test('isolates production audio across multiple distinct destinations', async ({ page }) => {
+  // 1. Explicitly assert referential closure for both manifests
+  assertReferentialClosure(destinationAManifest);
+  assertReferentialClosure(destinationBManifest);
+
+  const requestedAudios: string[] = [];
+  await routeProductionAudioFixture(page);
+  page.on('request', (request) => {
+    if (request.url().includes('/test-media/production-audio/')) {
+      requestedAudios.push(request.url());
+    }
+  });
+
+  // Install deterministic test-only Audio fake compatible with BrowserAudioAdapter
+  await page.addInitScript(() => {
+    const probes: Array<{
+      src: string;
+      element: any;
+      paused: boolean;
+      playCount: number;
+      pauseCount: number;
+      triggerEnded: () => void;
+      triggerError: () => void;
+    }> = [];
+    (window as any).__testAudioProbes = probes;
+
+    class DeterministicFakeAudio extends EventTarget {
+      src: string;
+      preload = 'auto';
+      loop = false;
+      volume = 1;
+      currentTime = 0;
+      duration = 10;
+      paused = true;
+      playCount = 0;
+      pauseCount = 0;
+
+      constructor(src?: string) {
+        super();
+        this.src = src || '';
+        const self = this;
+        const probe = {
+          src: this.src,
+          element: this,
+          get paused() {
+            return self.paused;
+          },
+          get playCount() {
+            return self.playCount;
+          },
+          get pauseCount() {
+            return self.pauseCount;
+          },
+          triggerEnded() {
+            self.dispatchEvent(new Event('ended'));
+          },
+          triggerError() {
+            self.dispatchEvent(new Event('error'));
+          },
+        };
+        probes.push(probe);
+
+        if (this.src) {
+          fetch(this.src).catch(() => {});
+        }
+      }
+
+      play() {
+        this.paused = false;
+        this.playCount++;
+        setTimeout(() => {
+          this.dispatchEvent(new Event('loadedmetadata'));
+          this.dispatchEvent(new Event('timeupdate'));
+        }, 0);
+        return Promise.resolve();
+      }
+
+      pause() {
+        this.paused = true;
+        this.pauseCount++;
+        this.dispatchEvent(new Event('timeupdate'));
+      }
+    }
+
+    (window as any).Audio = DeterministicFakeAudio;
+  });
+
+  await page.route(/\/api\/v1\/destinations(?:\?.*)?$/, async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify([destinationAManifest.destination, destinationBManifest.destination]),
+      status: 200,
+    });
+  });
+
+  await page.route('**/api/v1/destinations/son-trang-co-dam/immersive-manifest*', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(destinationAManifest),
+      status: 200,
+    });
+  });
+
+  await page.route('**/api/v1/destinations/bien-thien-cam/immersive-manifest*', async (route) => {
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify(destinationBManifest),
+      status: 200,
+    });
+  });
+
+  // 2. Initial entry via in-app Explore flow to Destination A (Son Trang)
+  await page.goto('/explore');
+  await page.getByRole('button', { name: 'Chọn điểm đến Sơn Trang Cổ Đạm' }).click();
+  await page.getByRole('button', { name: 'Xem chi tiết' }).click();
+  await expect(page).toHaveURL(/\/explore\/son-trang-co-dam/);
+  await page.getByRole('button', { name: 'Khám phá 360°' }).click();
+  await expect(page).toHaveURL(/\/explore\/son-trang-co-dam\/immersive/);
+
+  const mediaDockA = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+  await expect(mediaDockA).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Cổng Sơn Trang' })).toBeVisible();
+
+  // Play narration in Destination A
+  const playButtonA = mediaDockA.getByRole('button', { name: 'Nghe câu chuyện' });
+  await expect(playButtonA).toBeVisible();
+  await playButtonA.click();
+
+  await expect(mediaDockA.getByRole('button', { name: 'Tạm dừng câu chuyện' })).toBeVisible();
+  const captionsToggleA = mediaDockA.getByRole('button', { name: 'Bật phụ đề' });
+  await expect(captionsToggleA).toBeVisible();
+  await captionsToggleA.click();
+
+  // Prove Destination A uses narration A and transcript A
+  await expect(page.getByText('Cổng vào mở đầu hành trình Sơn Trang.')).toBeVisible();
+  expect(requestedAudios.some((url) => url.includes('narration-son-trang-vi.wav'))).toBe(true);
+  expect(requestedAudios.some((url) => url.includes('narration-thien-cam-vi.wav'))).toBe(false);
+
+  // Verify retained probe for Destination A exists and is playing in JS memory
+  const probeAStateBefore = await page.evaluate(() => {
+    const probe = (window as any).__testAudioProbes.find((p: any) =>
+      p.src.includes('narration-son-trang-vi.wav'),
+    );
+    return probe ? { src: probe.src, paused: probe.paused, playCount: probe.playCount } : null;
+  });
+  expect(probeAStateBefore).not.toBeNull();
+  expect(probeAStateBefore?.paused).toBe(false);
+
+  // 3. Move from Destination A to Destination B via real in-app navigation (same SPA/JS context)
+  await page.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' }).click();
+  await expect(page).toHaveURL(/\/explore\/son-trang-co-dam/);
+
+  await page.getByRole('button', { name: 'Xem trên bản đồ' }).click();
+  await expect(page).toHaveURL(/\/explore/);
+
+  await page.getByRole('button', { name: 'Chọn điểm đến Biển Thiên Cầm' }).click();
+  await page.getByRole('button', { name: 'Xem chi tiết' }).click();
+  await expect(page).toHaveURL(/\/explore\/bien-thien-cam/);
+
+  await page.getByRole('button', { name: 'Khám phá 360°' }).click();
+  await expect(page).toHaveURL(/\/explore\/bien-thien-cam\/immersive/);
+
+  const mediaDockB = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+  await expect(mediaDockB).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Bãi biển Thiên Cầm' })).toBeVisible();
+
+  // Prove Destination A audio was stopped/paused upon switching destinations in the same JS context
+  const probeAStateAfterSwitch = await page.evaluate(() => {
+    const probe = (window as any).__testAudioProbes.find((p: any) =>
+      p.src.includes('narration-son-trang-vi.wav'),
+    );
+    return probe ? { paused: probe.paused, pauseCount: probe.pauseCount } : null;
+  });
+  expect(probeAStateAfterSwitch?.paused).toBe(true);
+
+  // Prove Destination A's narration and captions are NOT active in Destination B
+  await expect(page.getByText('Cổng vào mở đầu hành trình Sơn Trang.')).toHaveCount(0);
+  const playButtonB = mediaDockB.getByRole('button', { name: 'Nghe câu chuyện' });
+  await expect(playButtonB).toBeVisible();
+
+  // Play narration in Destination B
+  await playButtonB.click();
+  await expect(mediaDockB.getByRole('button', { name: 'Tạm dừng câu chuyện' })).toBeVisible();
+  const captionsToggleB = mediaDockB.getByRole('button', { name: 'Bật phụ đề' });
+  await expect(captionsToggleB).toBeVisible();
+  await captionsToggleB.click();
+
+  // Prove Destination B uses narration B and transcript B
+  await expect(page.getByText('Biển Thiên Cầm trong xanh bờ cát mịn.')).toBeVisible();
+  expect(requestedAudios.some((url) => url.includes('narration-thien-cam-vi.wav'))).toBe(true);
+
+  // 4. Stale callback test: invoke actual retained A onended/onerror from the retained fake audio element
+  await page.evaluate(() => {
+    const probeA = (window as any).__testAudioProbes.find((p: any) =>
+      p.src.includes('narration-son-trang-vi.wav'),
+    );
+    if (!probeA) {
+      throw new Error('Retained Audio probe for Destination A was lost in SPA memory');
+    }
+    probeA.triggerEnded();
+    probeA.triggerError();
+  });
+
+  // Assert B narration remains playing/current, B captions remain unchanged, and no A capability becomes active
+  await expect(page.getByText('Biển Thiên Cầm trong xanh bờ cát mịn.')).toBeVisible();
+  await expect(page.getByText('Cổng vào mở đầu hành trình Sơn Trang.')).toHaveCount(0);
+  await expect(mediaDockB.getByRole('button', { name: 'Tạm dừng câu chuyện' })).toBeVisible();
+
+  // 5. Assert Media Dock remains destination-neutral (semantic controls, no hardcoded destination labels in dock)
+  await expect(mediaDockB).toHaveAttribute('data-mode', 'free-explore');
+  await expect(mediaDockB.locator('.immersive-media-dock__story')).toBeVisible();
+  await expect(mediaDockB.getByRole('slider', { name: 'Tiến độ câu chuyện' })).toBeVisible();
+  await expect(mediaDockB.getByRole('button', { name: 'Mở bản chép lời' })).toBeVisible();
+});
