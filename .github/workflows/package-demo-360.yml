@@ -1,0 +1,123 @@
+name: Package demo 360 candidates
+
+on:
+  push:
+    branches:
+      - content-readiness-audit
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Pillow
+        run: python -m pip install --disable-pip-version-check pillow
+
+      - name: Reconstruct equirectangular demo panoramas
+        shell: bash
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import hashlib
+          import json
+          from pathlib import Path
+          from PIL import Image
+
+          root = Path('apps/web/public/demo/360')
+          out = Path('artifact/hatinh-360-demo-candidates')
+          eq = out / 'equirectangular'
+          eq.mkdir(parents=True, exist_ok=True)
+
+          records = []
+          for manifest_path in sorted(root.rglob('manifest.json')):
+              manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+              levels = manifest.get('levels') or []
+              if not levels:
+                  continue
+              level_index = max(range(len(levels)), key=lambda i: int(levels[i]['width']))
+              level = levels[level_index]
+              width = int(level['width'])
+              cols = int(level['cols'])
+              rows = int(level['rows'])
+              height = width // 2
+              tile_w = width // cols
+              tile_h = height // rows
+
+              base = manifest_path.parent
+              canvas = Image.new('RGB', (width, height))
+              missing = []
+              for row in range(rows):
+                  for col in range(cols):
+                      tile_path = base / 'tiles' / str(level_index) / f'{col}-{row}.webp'
+                      if not tile_path.exists():
+                          missing.append(str(tile_path))
+                          continue
+                      with Image.open(tile_path) as tile:
+                          tile = tile.convert('RGB')
+                          if tile.size != (tile_w, tile_h):
+                              tile = tile.resize((tile_w, tile_h))
+                          canvas.paste(tile, (col * tile_w, row * tile_h))
+
+              if missing:
+                  records.append({
+                      'sourcePackage': str(base),
+                      'status': 'excluded-missing-tiles',
+                      'missingTiles': missing,
+                      'usageLane': 'existing-repo-demo'
+                  })
+                  continue
+
+              rel = base.relative_to(root)
+              safe_name = '--'.join(rel.parts) or 'panorama'
+              output_path = eq / f'{safe_name}.webp'
+              canvas.save(output_path, 'WEBP', quality=90, method=6)
+              data = output_path.read_bytes()
+              records.append({
+                  'sourcePackage': str(base),
+                  'outputFile': str(output_path.relative_to(out)),
+                  'width': width,
+                  'height': height,
+                  'aspectRatio': round(width / height, 6),
+                  'sha256': hashlib.sha256(data).hexdigest(),
+                  'bytes': len(data),
+                  'usageLane': 'existing-repo-demo',
+                  'productionReady': False,
+                  'status': 'packaged'
+              })
+
+          (out / 'manifest.json').write_text(
+              json.dumps({'generatedFrom': str(root), 'records': records}, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8'
+          )
+          (out / 'README.txt').write_text(
+              'HaTinhProject 360 demo candidate bundle\n\n'
+              'These panoramas were reconstructed from demo tile packages already present in the repository.\n'
+              'Usage lane: existing-repo-demo. They are NOT production-rights-approved and MUST NOT be marked licensed/customer-owned solely because they are in this ZIP.\n'
+              'Official Ha Tinh / Star Global public-download candidates will be audited separately.\n',
+              encoding='utf-8'
+          )
+          print(json.dumps(records, ensure_ascii=False, indent=2))
+          PY
+
+      - name: Verify package
+        run: |
+          test -s artifact/hatinh-360-demo-candidates/manifest.json
+          test -s artifact/hatinh-360-demo-candidates/README.txt
+          count="$(find artifact/hatinh-360-demo-candidates/equirectangular -type f -name '*.webp' | wc -l)"
+          echo "packaged panoramas: $count"
+          test "$count" -gt 0
+
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hatinh-360-demo-candidates
+          path: artifact/hatinh-360-demo-candidates
+          if-no-files-found: error
+          retention-days: 7
