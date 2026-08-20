@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const OUT = path.resolve(process.env.RECON_OUT ?? 'artifact/hatinh360-recon');
 const ORIGIN = 'https://dulichhatinh360.com';
+const TEXT_OUT = path.join(OUT, 'text-responses');
 const seedPaths = [
   '/',
   '/khu-du-lich-thien-cam',
@@ -15,31 +16,78 @@ const seedPaths = [
 ];
 
 await mkdir(OUT, { recursive: true });
+await mkdir(TEXT_OUT, { recursive: true });
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({
   locale: 'vi-VN',
   viewport: { width: 1440, height: 900 },
 });
-
 const page = await context.newPage();
+
 const responseRecords = new Map();
 const requestFailures = [];
+const capturedBodies = [];
+const bodyCaptureJobs = [];
 
-page.on('response', async (response) => {
-  const request = response.request();
-  const headers = await response.allHeaders().catch(() => ({}));
-  const url = response.url();
-  responseRecords.set(url, {
-    url,
-    status: response.status(),
-    resourceType: request.resourceType(),
-    method: request.method(),
-    contentType: headers['content-type'] ?? null,
-    contentLength: headers['content-length'] ?? null,
-    contentDisposition: headers['content-disposition'] ?? null,
-    cacheControl: headers['cache-control'] ?? null,
-  });
+function safeFileName(url, index) {
+  const parsed = new URL(url);
+  const base = `${parsed.hostname}${parsed.pathname}${parsed.search}`
+    .replace(/[^a-z0-9._-]+/gi, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 180);
+  return `${String(index).padStart(4, '0')}-${base || 'response'}.txt`;
+}
+
+function shouldCaptureBody(url, contentType, status) {
+  if (status !== 200) return false;
+  const parsed = new URL(url);
+  const hostAllowed = [
+    'platform.starglobal3d.com',
+    's3.hcm-1.cloud.cmctelecom.vn',
+    'sanpham.starglobal3d.vn',
+    'sanpham.starglobal3d.com',
+  ].includes(parsed.hostname);
+  if (!hostAllowed) return false;
+  const textType = /json|xml|javascript|text\/plain/i.test(contentType ?? '');
+  const usefulUrl = /full-path|group-scene|autotour|tour-view360|gs3d\.xml|tour-42-ha-tinh\.xml|\.xml(?:\?|$)|\.json(?:\?|$)/i.test(url);
+  return textType && usefulUrl;
+}
+
+page.on('response', (response) => {
+  const job = (async () => {
+    const request = response.request();
+    const headers = await response.allHeaders().catch(() => ({}));
+    const url = response.url();
+    const record = {
+      url,
+      status: response.status(),
+      resourceType: request.resourceType(),
+      method: request.method(),
+      contentType: headers['content-type'] ?? null,
+      contentLength: headers['content-length'] ?? null,
+      contentDisposition: headers['content-disposition'] ?? null,
+      cacheControl: headers['cache-control'] ?? null,
+    };
+    responseRecords.set(url, record);
+
+    if (!shouldCaptureBody(url, record.contentType, record.status)) return;
+    try {
+      const body = await response.body();
+      if (body.byteLength > 2 * 1024 * 1024) {
+        capturedBodies.push({ url, skipped: 'body-too-large', bytes: body.byteLength });
+        return;
+      }
+      const index = capturedBodies.length + 1;
+      const file = safeFileName(url, index);
+      await writeFile(path.join(TEXT_OUT, file), body);
+      capturedBodies.push({ url, file: `text-responses/${file}`, bytes: body.byteLength, contentType: record.contentType });
+    } catch (error) {
+      capturedBodies.push({ url, captureError: error instanceof Error ? error.message : String(error) });
+    }
+  })();
+  bodyCaptureJobs.push(job);
 });
 
 page.on('requestfailed', (request) => {
@@ -55,7 +103,6 @@ const discoveredInternal = new Set(seedPaths.map((value) => new URL(value, ORIGI
 
 async function inspectCurrentPage(label) {
   await page.waitForTimeout(7_500);
-
   const pageInfo = await page.evaluate(() => {
     const normalize = (value) => (typeof value === 'string' ? value.trim() : '');
     const anchors = [...document.querySelectorAll('a[href]')].map((anchor) => ({
@@ -116,12 +163,10 @@ for (const seedPath of seedPaths) {
   }
 }
 
-// Home may reveal canonical links whose slugs differ from our guesses.
 const priorityTerms = ['thien-cam', 'nguyen-du', 'dong-loc', 'nguyen', 'dongloc'];
 const extraUrls = [...discoveredInternal]
   .filter((url) => priorityTerms.some((term) => url.toLowerCase().includes(term)))
   .slice(0, 20);
-
 for (const url of extraUrls) {
   if (pages.some((entry) => entry.url === url)) continue;
   try {
@@ -133,6 +178,8 @@ for (const url of extraUrls) {
   }
 }
 
+await Promise.allSettled(bodyCaptureJobs);
+
 const network = [...responseRecords.values()].sort((a, b) => a.url.localeCompare(b.url));
 const candidatePattern = /(?:\.xml(?:\?|$)|\.json(?:\?|$)|\.jpe?g(?:\?|$)|\.webp(?:\?|$)|\.png(?:\?|$)|\.mp3(?:\?|$)|\.m4a(?:\?|$)|\.wav(?:\?|$)|\.m3u8(?:\?|$)|\.mp4(?:\?|$)|krpano|pano|tour|scene|tile|cube|sphere|360)/i;
 const candidates = network.filter((record) => candidatePattern.test(record.url) || candidatePattern.test(record.contentType ?? ''));
@@ -142,6 +189,7 @@ const controls = pages.flatMap((entry) => (entry.controls ?? []).filter((control
 await writeFile(path.join(OUT, 'pages.json'), `${JSON.stringify(pages, null, 2)}\n`, 'utf8');
 await writeFile(path.join(OUT, 'network.json'), `${JSON.stringify(network, null, 2)}\n`, 'utf8');
 await writeFile(path.join(OUT, 'candidates.json'), `${JSON.stringify(candidates, null, 2)}\n`, 'utf8');
+await writeFile(path.join(OUT, 'captured-bodies.json'), `${JSON.stringify(capturedBodies, null, 2)}\n`, 'utf8');
 await writeFile(path.join(OUT, 'download-links.json'), `${JSON.stringify(downloads, null, 2)}\n`, 'utf8');
 await writeFile(path.join(OUT, 'interesting-controls.json'), `${JSON.stringify(controls, null, 2)}\n`, 'utf8');
 await writeFile(path.join(OUT, 'request-failures.json'), `${JSON.stringify(requestFailures, null, 2)}\n`, 'utf8');
@@ -152,6 +200,7 @@ await writeFile(
     inspectedPages: pages.length,
     networkResponses: network.length,
     candidateResponses: candidates.length,
+    capturedTextBodies: capturedBodies.filter((entry) => entry.file).length,
     explicitDownloadLinks: downloads.length,
     interestingControls: controls.length,
     requestFailures: requestFailures.length,
@@ -163,6 +212,7 @@ console.log(JSON.stringify({
   inspectedPages: pages.length,
   networkResponses: network.length,
   candidateResponses: candidates.length,
+  capturedTextBodies: capturedBodies.filter((entry) => entry.file).length,
   explicitDownloadLinks: downloads.length,
   interestingControls: controls.length,
 }, null, 2));
