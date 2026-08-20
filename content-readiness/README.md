@@ -16,4 +16,14 @@ Rules:
 Key artifacts:
 - `scene-inventory.json` — canonical scene reconciliation.
 - `external-candidates.json` — external/public discovery sources and usage lanes.
-- forthcoming `panorama-inventory.json`, `audio-inventory.json`, `transcript-inventory.json`, and `acquisition-gaps.json`.
+- `panorama-inventory.json` — technical/recovery audit for all canonical scenes.
+- `audio-inventory.json` — production/demo inventory plus reference-only runtime observations.
+- `transcript-inventory.json` — production transcript readiness by canonical scene.
+- `rights-evidence.json` — explicit provenance and reuse evidence boundary.
+- `acquisition-gaps.json` — gate counts and next evidence needed.
+- `CONTENT-READINESS-AUDIT.md` — human-readable Phase 1D gate summary.
+
+The audit is evidence-only. A public viewer, browser-readable tile/audio URL, or
+existing demo derivative is not a production reuse grant. Production publication
+remains fail-closed until source, physical match, technical QC, rights, and content
+approval are all present.

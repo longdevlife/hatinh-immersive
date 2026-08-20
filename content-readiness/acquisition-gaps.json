@@ -93,9 +93,9 @@
     },
     "externalOfficialRecon": {
       "autotoursFound": 4,
-      "directAudioMediaUrlsObserved": 0,
+      "directAudioMediaUrlsObserved": 4,
       "thienCamAutotourTopLevelAudio": null,
-      "status": "no-production-audio-source-recovered-yet"
+      "status": "reference-only-audio-observed-rights-unverified"
     }
   },
   "transcripts": {
@@ -115,6 +115,7 @@
   "notes": [
     "BLOCKED_RIGHTS does not mean the external candidate is otherwise approved; physical mapping and source-format QC remain required.",
     "Existing 2048x1024 demo reconstructions are reference/demo only and cannot be upscaled into production.",
-    "No external provider is assumed to be preferred unless evidence proves coverage, quality, source availability and reuse rights."
+    "No external provider is assumed to be preferred unless evidence proves coverage, quality, source availability and reuse rights.",
+    "Interactive runtime audio evidence is reference-only; no audio files were copied or approved for production rehosting."
   ]
 }

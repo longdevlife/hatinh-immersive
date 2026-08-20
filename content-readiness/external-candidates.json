@@ -136,8 +136,21 @@
         "publicAutotourRecords": 4,
         "thienCamAutotourTitle": "Tham quan các điểm du lịch biển Thiên Cầm",
         "thienCamAutotourAudio": null,
-        "directAudioMediaUrlsObserved": 0,
-        "notes": "No direct mp3/m4a/wav/ogg URLs were found in the captured network inventory; this does not prove audio is absent."
+        "directAudioMediaUrlsObserved": 4,
+        "runtimeFollowUp": {
+          "auditedAt": "2026-08-20",
+          "method": "interactive browser runtime inspection after entering destination scenes",
+          "prerecordedNarrationObservedFor": [
+            "overview",
+            "bien-thien-cam",
+            "khu-luu-niem-nguyen-du"
+          ],
+          "transcriptOrCaptionObserved": false,
+          "usageLane": "reference-only",
+          "rightsStatus": "unverified",
+          "mediaCopied": false
+        },
+        "notes": "The initial passive network scan did not trigger audio. A later interactive runtime audit observed four direct audio URLs/files, but no reuse permission or production-ready assignment was established."
       },
       "usageLane": "discovery-only",
       "productionRightsStatus": "unverified",

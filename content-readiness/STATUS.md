@@ -18,12 +18,12 @@ See:
 
 ## Existing audit task status
 
-- Task 1 — Canonical scene inventory: **IN PROGRESS** (19 scene IDs enumerated; physical names/coordinates intentionally left null pending verification).
-- Task 2 — Existing panorama recovery audit: **IN PROGRESS** (legacy/demo packages discovered).
-- Task 3 — Official Hà Tĩnh / Star Global external candidate inventory: **IN PROGRESS** (provider/project routes and asset-host evidence recorded; explicit panorama download endpoint still needs verification).
-- Task 4 — Audio/transcript audit: **PENDING** in this status checklist until its evidence is reconciled into the final gate.
-- Task 5 — Acquisition gap/gate verdict: **PENDING** in this status checklist until final reconciliation.
-- Task 6 — Demo panorama ZIP handoff: **IN PROGRESS** (branch-only artifact packaging workflow added for existing repo demo panoramas).
+- Task 1 — Canonical scene inventory: **COMPLETE WITH OPEN PHYSICAL VERIFICATION** (19 unique canonical IDs are reconciled; unknown names/coordinates remain null and are not production truth).
+- Task 2 — Existing panorama recovery audit: **COMPLETE** (19 records classified; 5 reconstructed 2048×1024 demo assets are usable only in the demo lane; no production-ready repository source exists).
+- Task 3 — Official Hà Tĩnh / Star Global external candidate inventory: **COMPLETE WITH RIGHTS BLOCKER** (candidate scenes and runtime evidence recorded; no explicit full-panorama download/master or reuse grant was found).
+- Task 4 — Audio/transcript audit: **COMPLETE WITH CONTENT BLOCKER** (4 ambient, 19 VI narration, and 19 VI transcript production targets remain unverified; reference-only runtime audio was observed without reuse approval).
+- Task 5 — Acquisition gap/gate verdict: **COMPLETE — CONTENT READY BLOCKED** (see `CONTENT-READINESS-AUDIT.md`; no production assignment was mutated).
+- Task 6 — Demo panorama ZIP handoff: **COMPLETE — LOCAL ARTIFACT VERIFIED** (the existing-repo demo bundle contains five 2048×1024 candidates; ZIP manifest hashes and byte lengths match; it remains non-production and is not tracked in Git).
 
 ## Gates
 

@@ -20,6 +20,25 @@
       "licensed tracks require rights holder and rights reference"
     ]
   },
+  "externalReferenceEvidence": {
+    "source": "https://dulichhatinh360.com/",
+    "auditedAt": "2026-08-20",
+    "status": "reference-only-not-approved",
+    "method": "runtime inspection of the public viewer after scene interaction; no media files copied",
+    "audioEngineObserved": "Howler.js with Web Audio",
+    "sharedAmbientObserved": true,
+    "prerecordedNarrationObserved": {
+      "overview": true,
+      "bien-thien-cam": true,
+      "khu-luu-niem-nguyen-du": true,
+      "nga-ba-dong-loc": false,
+      "son-trang-co-dam": false
+    },
+    "transcriptOrCaptionObserved": false,
+    "mediaCopied": false,
+    "rightsApproved": false,
+    "evidenceReference": "local-only runtime audit; public source and provider terms require written reuse authorization"
+  },
   "destinations": [
     {
       "destinationSlug": "son-trang-co-dam",
