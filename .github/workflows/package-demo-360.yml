@@ -37,8 +37,10 @@ jobs:
           out = Path('artifact/hatinh-360-demo-candidates')
           eq = out / 'equirectangular'
           eq.mkdir(parents=True, exist_ok=True)
+          min_demo_width = 1024
 
           records = []
+          packaged_hashes = set()
           for manifest_path in sorted(root.rglob('manifest.json')):
               manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
               levels = manifest.get('levels') or []
@@ -50,10 +52,21 @@ jobs:
               cols = int(level['cols'])
               rows = int(level['rows'])
               height = width // 2
+              base = manifest_path.parent
+
+              if width < min_demo_width:
+                  records.append({
+                      'sourcePackage': str(base),
+                      'width': width,
+                      'height': height,
+                      'usageLane': 'existing-repo-demo',
+                      'productionReady': False,
+                      'status': 'excluded-low-resolution'
+                  })
+                  continue
+
               tile_w = width // cols
               tile_h = height // rows
-
-              base = manifest_path.parent
               canvas = Image.new('RGB', (width, height))
               missing = []
               for row in range(rows):
@@ -82,13 +95,27 @@ jobs:
               output_path = eq / f'{safe_name}.webp'
               canvas.save(output_path, 'WEBP', quality=90, method=6)
               data = output_path.read_bytes()
+              digest = hashlib.sha256(data).hexdigest()
+              if digest in packaged_hashes:
+                  output_path.unlink()
+                  records.append({
+                      'sourcePackage': str(base),
+                      'width': width,
+                      'height': height,
+                      'sha256': digest,
+                      'usageLane': 'existing-repo-demo',
+                      'productionReady': False,
+                      'status': 'excluded-duplicate'
+                  })
+                  continue
+              packaged_hashes.add(digest)
               records.append({
                   'sourcePackage': str(base),
                   'outputFile': str(output_path.relative_to(out)),
                   'width': width,
                   'height': height,
                   'aspectRatio': round(width / height, 6),
-                  'sha256': hashlib.sha256(data).hexdigest(),
+                  'sha256': digest,
                   'bytes': len(data),
                   'usageLane': 'existing-repo-demo',
                   'productionReady': False,
@@ -102,6 +129,7 @@ jobs:
           (out / 'README.txt').write_text(
               'HaTinhProject 360 demo candidate bundle\n\n'
               'These panoramas were reconstructed from demo tile packages already present in the repository.\n'
+              'Only reconstructed panoramas at least 1024 px wide are included; low-resolution placeholders and duplicate outputs are excluded.\n'
               'Usage lane: existing-repo-demo. They are NOT production-rights-approved and MUST NOT be marked licensed/customer-owned solely because they are in this ZIP.\n'
               'Official Ha Tinh / Star Global public-download candidates will be audited separately.\n',
               encoding='utf-8'
