@@ -1,0 +1,55 @@
+{
+  "status": "repository-audit-complete-runtime-unverified",
+  "baseline": "8aa64eeaefceb8fcbbf01cba13442c8dc593f8f3",
+  "required": {
+    "destinationAmbientTracks": 4,
+    "viNarrationTracks": 19
+  },
+  "repositoryEvidence": {
+    "productionAudioSeedFound": false,
+    "demoCatalog": {
+      "perDestinationAmbientTracks": 1,
+      "perDestinationIntroNarrationTracks": 1,
+      "src": "null",
+      "rights": "demo-only"
+    },
+    "contractCapabilities": [
+      "immersive_audio_tracks supports ambient/narration",
+      "customer-owned/licensed/demo-only rights",
+      "published ready media asset requires version",
+      "licensed tracks require rights holder and rights reference"
+    ]
+  },
+  "destinations": [
+    {"destinationSlug":"son-trang-co-dam","ambientRequired":true,"productionTrackFoundInRepository":false,"demoPlaceholderPresent":true,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"destinationSlug":"bien-thien-cam","ambientRequired":true,"productionTrackFoundInRepository":false,"demoPlaceholderPresent":true,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"destinationSlug":"khu-luu-niem-nguyen-du","ambientRequired":true,"productionTrackFoundInRepository":false,"demoPlaceholderPresent":true,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"destinationSlug":"nga-ba-dong-loc","ambientRequired":true,"productionTrackFoundInRepository":false,"demoPlaceholderPresent":true,"runtimeDatabaseVerified":false,"verdict":"REPLACE"}
+  ],
+  "sceneNarrations": [
+    {"sceneId":"son-trang-gate","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"son-trang-entrance-path","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"son-trang-courtyard","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"son-trang-culture","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"son-trang-ecology-path","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"son-trang-ecology","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"son-trang-spiritual-path","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"son-trang-spiritual","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"thien-cam-boardwalk","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"thien-cam-shore","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"thien-cam-lookout","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"nguyen-du-courtyard","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"nguyen-du-memorial-house","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"nguyen-du-statue","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"nguyen-du-garden-path","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"dong-loc-memorial","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"dong-loc-monument","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"dong-loc-remembrance","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"},
+    {"sceneId":"dong-loc-approach","locale":"vi","required":true,"productionTrackFoundInRepository":false,"demoPlaceholderModel":"destination intro narration with src=null","runtimeDatabaseVerified":false,"verdict":"REPLACE"}
+  ],
+  "notes": [
+    "This is a repository/content audit, not a deployed-database dump.",
+    "PR26 implemented production audio contracts and runtime support; it did not establish that the required production media files are present.",
+    "A runtime database could contain out-of-repo records, but no connected deployment/database is currently available to verify that possibility."
+  ]
+}
