@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - content-readiness-audit
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
