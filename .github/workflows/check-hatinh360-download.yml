@@ -28,10 +28,10 @@ jobs:
       - run: pnpm --filter @hatinh/web exec playwright install --with-deps chromium
       - name: Probe public viewer
         run: |
-          cp tooling/content-readiness/check-hatinh360-download.mjs apps/web/.check-hatinh360-download.mjs
+          cp tooling/content-readiness/check-hatinh360-download-force.mjs apps/web/.check-hatinh360-download-force.mjs
           cd apps/web
-          OUT='../../artifact/hatinh360-download-probe' node .check-hatinh360-download.mjs
-      - run: cat artifact/hatinh360-download-probe/summary.json
+          OUT='../../artifact/hatinh360-download-probe' node .check-hatinh360-download-force.mjs
+      - run: cat artifact/hatinh360-download-probe/force-summary.json
       - uses: actions/upload-artifact@v4
         with:
           name: hatinh360-download-probe
