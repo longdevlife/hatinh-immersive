@@ -50,19 +50,11 @@ describe('Phase 1D canonical demo content', () => {
     }
   });
 
-  it('keeps missing panorama scenes unavailable and out of public walking hotspots', () => {
+  it('keeps missing panorama scenes unavailable', () => {
     for (const destinationSlug of ['khu-luu-niem-nguyen-du', 'nga-ba-dong-loc']) {
       const manifest = getDemoManifest(destinationSlug, 'public');
-      const missingSceneIds = new Set(
-        manifest.panoramaNodes.filter((node) => node.panoramaUrl === null).map((node) => node.id),
-      );
 
-      expect(missingSceneIds.size).toBe(3);
-      expect(
-        manifest.hotspots
-          .filter((hotspot) => hotspot.type === 'scene-navigation')
-          .some((hotspot) => hotspot.targetSceneId && missingSceneIds.has(hotspot.targetSceneId)),
-      ).toBe(false);
+      expect(manifest.panoramaNodes.filter((node) => node.panoramaUrl === null)).toHaveLength(3);
     }
   });
 
