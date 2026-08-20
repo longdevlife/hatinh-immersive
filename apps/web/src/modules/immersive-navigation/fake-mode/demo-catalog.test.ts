@@ -38,7 +38,20 @@ describe('Hà Tĩnh demo catalog', () => {
 
   it('includes the Sơn Trang focus destination in the deterministic catalog', () => {
     expect(DEMO_DESTINATIONS.map(({ preview }) => preview.slug)).toContain('son-trang-co-dam');
-    expect(getDemoManifest('son-trang-co-dam').defaultSceneId).toBe('son-trang-gate');
+    expect(getDemoManifest('son-trang-co-dam').defaultSceneId).toBe('');
+  });
+
+  it('keeps public Sơn Trang as a showcase shell without unverified scene truth', () => {
+    const manifest = getDemoManifest('son-trang-co-dam', 'public');
+
+    expect(manifest.nodes).toEqual([]);
+    expect(manifest.panoramaNodes).toEqual([]);
+    expect(manifest.links).toEqual([]);
+    expect(manifest.hotspots).toEqual([]);
+    expect(manifest.defaultSceneId).toBe('');
+    expect(manifest.destination.defaultSceneId).toBeUndefined();
+    expect(JSON.stringify(manifest)).not.toContain('son-trang-gate');
+    expect(JSON.stringify(manifest)).not.toContain('/demo/360/son-trang-tour/');
   });
 
   it('maps every destination to an entry scene and a valid scene-link graph', () => {

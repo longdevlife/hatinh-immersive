@@ -11,10 +11,15 @@ type ProvenanceTrack = {
   itemName: string;
   originalFilename: string;
   sourceUrl: string;
+  catalogUrl: string;
+  itemPageUrl: string;
   downloadedAt: string;
   sha256: string;
   licenseUrl: string;
   license: string;
+  termsUrl: string;
+  termsCapturedAt: string;
+  licenseCapturedAt: string;
   rights: 'demo-only';
 };
 
@@ -52,7 +57,14 @@ describe('Phase 1D demo ambient provenance', () => {
         record.destinationSlug,
       ).toBe(record.sha256);
       expect(record.sourceUrl).toMatch(/^https:\/\/assets\.mixkit\.co\/.+\.mp3$/);
+      expect(record.catalogUrl).toMatch(/^https:\/\/mixkit\.co\/free-sound-effects\//);
+      expect(record.itemPageUrl).toMatch(
+        /^https:\/\/mixkit\.co\/free-sound-effects\/download\/\d+\//,
+      );
       expect(record.licenseUrl).toBe('https://mixkit.co/license/');
+      expect(record.termsUrl).toBe('https://mixkit.co/license/');
+      expect(record.termsCapturedAt).toBe('2026-08-20');
+      expect(record.licenseCapturedAt).toBe('2026-08-20');
       expect(record.rights).toBe('demo-only');
     }
   });
