@@ -1,0 +1,89 @@
+{
+  "status": "in-progress",
+  "baseline": "8aa64eeaefceb8fcbbf01cba13442c8dc593f8f3",
+  "records": [
+    {
+      "sceneId": "thien-cam-boardwalk",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/thien-cam-boardwalk",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": {"width": 2048, "height": 1024},
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "RECOVERABLE"
+    },
+    {
+      "sceneId": "thien-cam-shore",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/thien-cam-shore",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": null,
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "needs-inspection",
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "RECOVERABLE"
+    },
+    {
+      "sceneId": "thien-cam-lookout",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/thien-cam-lookout",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": null,
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "needs-inspection",
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "RECOVERABLE"
+    },
+    {
+      "sceneId": "nguyen-du-courtyard",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/nguyen-du-courtyard",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": null,
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "needs-inspection",
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "RECOVERABLE"
+    },
+    {
+      "sceneId": "dong-loc-memorial",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/dong-loc-memorial",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": null,
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "needs-inspection",
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "RECOVERABLE"
+    },
+    {
+      "sceneId": "son-trang-gate",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/son-trang-gate",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": null,
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "needs-inspection",
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "RECOVERABLE"
+    }
+  ],
+  "notes": [
+    "sourceAvailable=false means the audit has found derivatives/manifests but has not yet established that the original master equirectangular source is present.",
+    "RECOVERABLE does not mean production-ready; rights, physical match, and Phase 1C minimum dimensions still need evidence.",
+    "Additional nested Sơn Trang demo-tour packages remain to be enumerated."
+  ]
+}
