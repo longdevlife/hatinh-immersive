@@ -20,6 +20,7 @@
     "test:e2e:panorama-tour": "playwright test --config=playwright.panorama-tour.config.ts",
     "test:e2e:panorama-tour:public": "playwright test --config=playwright.panorama-tour.public.config.ts",
     "test:e2e:panorama-tour:real": "playwright test --config=playwright.panorama-tour.real.config.ts",
+    "test:e2e:public-demo-boundary": "playwright test --config=playwright.public-demo-boundary.config.ts",
     "test:e2e:production-panorama:real": "playwright test --config=playwright.production-panorama.real.config.ts",
     "test:e2e:reference-parity": "playwright test --config=playwright.reference-parity.config.ts",
     "test:e2e:reference-parity:real": "playwright test --config=playwright.reference-parity.real.config.ts"
