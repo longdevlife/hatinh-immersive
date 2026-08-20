@@ -59,6 +59,27 @@ describe('MediaAsset', () => {
       MediaAssetStateError,
     );
   });
+
+  it('begins processing from uploaded and resumes processing as a no-op', () => {
+    const asset = MediaAsset.create({ ...baseInput, id: 'asset-04' });
+    asset.markUploaded({ etag: 'etag-04', sizeBytes: baseInput.sizeBytes });
+
+    asset.beginOrResumeProcessing();
+    const firstUpdatedAt = asset.toPrimitives().updatedAt;
+    expect(asset.status).toBe('processing');
+
+    asset.beginOrResumeProcessing();
+    expect(asset.status).toBe('processing');
+    expect(asset.toPrimitives().updatedAt).toEqual(firstUpdatedAt);
+  });
+
+  it('rejects processing a ready asset because production output is immutable', () => {
+    const asset = MediaAsset.create({ ...baseInput, id: 'asset-05' });
+    asset.markUploaded({ etag: 'etag-05', sizeBytes: baseInput.sizeBytes });
+    asset.markReady();
+
+    expectErrorCode(() => asset.beginOrResumeProcessing(), 'MEDIA_NOT_PROCESSABLE');
+  });
 });
 
 function expectErrorCode(action: () => void, code: string) {

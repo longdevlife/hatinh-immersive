@@ -13,6 +13,12 @@ import {
   type PublicMediaUrlOptions,
 } from '../../media/application/public-media-url';
 import type { MediaAsset } from '../../media/domain/media-asset';
+import { hasCanonicalPanoramaDerivativeKeys } from '../../media/domain/panorama-derivative';
+import {
+  PANORAMA_METADATA_REPOSITORY,
+  type PanoramaAssetMetadata,
+  type PanoramaMetadataRepository,
+} from '../../media/application/panorama-metadata.repository';
 import {
   VIRTUAL_TOUR_REPOSITORY,
   type ImmersiveAudioReadRows,
@@ -122,6 +128,8 @@ export class VirtualTourQueryService {
     private readonly destinationQueryService: DestinationQueryService,
     @Inject(VIRTUAL_TOUR_REPOSITORY) private readonly repository: VirtualTourRepository,
     @Inject(MEDIA_ASSET_REPOSITORY) private readonly mediaAssetRepository: MediaAssetRepository,
+    @Inject(PANORAMA_METADATA_REPOSITORY)
+    private readonly panoramaMetadataRepository: PanoramaMetadataRepository,
     @Inject(PUBLIC_MEDIA_URL_OPTIONS)
     private readonly publicMediaUrlOptions: PublicMediaUrlOptions,
   ) {}
@@ -145,11 +153,12 @@ export class VirtualTourQueryService {
     const audioAssetIds = audioRows.tracks
       .map((track) => track.mediaAssetId)
       .filter((assetId): assetId is string => assetId !== null);
-    const mediaAssets = await this.mediaAssetRepository.findByIds([
-      ...scenes
-        .map((scene) => scene.toPrimitives().panoramaAssetId)
-        .filter((assetId): assetId is string => assetId !== null),
-      ...audioAssetIds,
+    const panoramaAssetIds = scenes
+      .map((scene) => scene.toPrimitives().panoramaAssetId)
+      .filter((assetId): assetId is string => assetId !== null);
+    const [mediaAssets, panoramaMetadata] = await Promise.all([
+      this.mediaAssetRepository.findByIds([...panoramaAssetIds, ...audioAssetIds]),
+      this.panoramaMetadataRepository.findByMediaAssetIds(panoramaAssetIds),
     ]);
     const publicAudio = toPublicAudioReadModel(audioRows, mediaAssets, this.publicMediaUrlOptions);
 
@@ -169,6 +178,7 @@ export class VirtualTourQueryService {
         return toSceneResponse(
           scene,
           getSceneMediaAsset(scene, mediaAssets),
+          getScenePanoramaMetadata(scene, panoramaMetadata),
           this.publicMediaUrlOptions,
           audio,
         );
@@ -185,8 +195,13 @@ export class VirtualTourQueryService {
     }
 
     const mediaAssetId = scene.toPrimitives().panoramaAssetId;
-    const mediaAsset = mediaAssetId ? await this.mediaAssetRepository.findById(mediaAssetId) : null;
-    return toSceneResponse(scene, mediaAsset, this.publicMediaUrlOptions);
+    const [mediaAsset, panoramaMetadata] = mediaAssetId
+      ? await Promise.all([
+          this.mediaAssetRepository.findById(mediaAssetId),
+          this.panoramaMetadataRepository.findByMediaAssetId(mediaAssetId),
+        ])
+      : [null, null];
+    return toSceneResponse(scene, mediaAsset, panoramaMetadata, this.publicMediaUrlOptions);
   }
 
   async findNeighbors(id: string): Promise<SceneNeighborResponse[] | null> {
@@ -207,17 +222,20 @@ export class VirtualTourQueryService {
     const resolvedNeighbors = neighbors.filter(
       (neighbor): neighbor is { link: SceneLink; scene: SceneNode } => neighbor !== null,
     );
-    const mediaAssets = await this.mediaAssetRepository.findByIds(
-      resolvedNeighbors
-        .map(({ scene }) => scene.toPrimitives().panoramaAssetId)
-        .filter((assetId): assetId is string => assetId !== null),
-    );
+    const panoramaAssetIds = resolvedNeighbors
+      .map(({ scene }) => scene.toPrimitives().panoramaAssetId)
+      .filter((assetId): assetId is string => assetId !== null);
+    const [mediaAssets, panoramaMetadata] = await Promise.all([
+      this.mediaAssetRepository.findByIds(panoramaAssetIds),
+      this.panoramaMetadataRepository.findByMediaAssetIds(panoramaAssetIds),
+    ]);
 
     return resolvedNeighbors.map(({ link, scene }) => ({
       link: toLinkResponse(link),
       scene: toSceneResponse(
         scene,
         getSceneMediaAsset(scene, mediaAssets),
+        getScenePanoramaMetadata(scene, panoramaMetadata),
         this.publicMediaUrlOptions,
       ),
     }));
@@ -227,6 +245,7 @@ export class VirtualTourQueryService {
 function toSceneResponse(
   scene: SceneNode,
   mediaAsset: MediaAsset | null,
+  panoramaMetadata: PanoramaAssetMetadata | null,
   publicMediaUrlOptions: PublicMediaUrlOptions,
   audio: {
     ambientOverrideTrackId: string | null;
@@ -239,13 +258,15 @@ function toSceneResponse(
   },
 ): SceneNodeResponse {
   const props = scene.toPrimitives();
-  const panoramaUrls =
-    mediaAsset?.status === 'ready'
-      ? resolvePanoramaMediaUrls(
-          { manifestKey: mediaAsset.toPrimitives().storageKey },
-          publicMediaUrlOptions,
-        )
-      : { manifestUrl: null, previewUrl: null };
+  const panoramaUrls = isPublicPanorama(mediaAsset, panoramaMetadata)
+    ? resolvePanoramaMediaUrls(
+        {
+          manifestKey: panoramaMetadata.manifestKey,
+          previewKey: panoramaMetadata.previewKey,
+        },
+        publicMediaUrlOptions,
+      )
+    : { manifestUrl: null, previewUrl: null };
 
   return {
     id: props.id,
@@ -265,6 +286,25 @@ function toSceneResponse(
     sortOrder: props.sortOrder,
     ...audio,
   };
+}
+
+function isPublicPanorama(
+  mediaAsset: MediaAsset | null,
+  metadata: PanoramaAssetMetadata | null,
+): metadata is PanoramaAssetMetadata {
+  const asset = mediaAsset?.toPrimitives();
+  return Boolean(
+    asset?.mediaKind === 'panorama' &&
+    asset.status === 'ready' &&
+    metadata?.qualityStatus === 'accepted' &&
+    metadata.manifestKey?.trim() &&
+    metadata.previewKey?.trim() &&
+    metadata.rightsHolder.trim() &&
+    metadata.rightsReference.trim() &&
+    metadata.sourceReference.trim() &&
+    metadata.version.trim() &&
+    hasCanonicalPanoramaDerivativeKeys(metadata),
+  );
 }
 
 function toPublicAudioReadModel(
@@ -402,6 +442,11 @@ function getSceneMediaAsset(
 ): MediaAsset | null {
   const mediaAssetId = scene.toPrimitives().panoramaAssetId;
   return mediaAssetId ? (mediaAssets.get(mediaAssetId) ?? null) : null;
+}
+
+function getScenePanoramaMetadata(scene: SceneNode, metadata: Map<string, PanoramaAssetMetadata>) {
+  const mediaAssetId = scene.toPrimitives().panoramaAssetId;
+  return mediaAssetId ? (metadata.get(mediaAssetId) ?? null) : null;
 }
 
 function toLinkResponse(link: SceneLink): SceneLinkResponse {

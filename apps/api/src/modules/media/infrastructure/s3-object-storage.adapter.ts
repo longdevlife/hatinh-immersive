@@ -1,5 +1,6 @@
 import {
   CreateBucketCommand,
+  GetObjectCommand,
   HeadBucketCommand,
   HeadObjectCommand,
   PutObjectCommand,
@@ -14,6 +15,7 @@ import type {
   ObjectStoragePort,
   PresignedUpload,
   StoredObjectMetadata,
+  PutStoredObjectInput,
 } from '../application/object-storage.port';
 
 export interface S3ObjectStorageOptions {
@@ -91,6 +93,41 @@ export class S3ObjectStorageAdapter implements ObjectStoragePort {
     }
   }
 
+  async openObjectReadStream(storageKey: string): Promise<NodeJS.ReadableStream | null> {
+    try {
+      const result = await this.client.send(
+        new GetObjectCommand({
+          Bucket: this.bucket,
+          Key: storageKey,
+        }),
+      );
+
+      if (!isNodeReadableStream(result.Body)) {
+        throw new Error('S3_OBJECT_BODY_UNAVAILABLE');
+      }
+
+      return result.Body;
+    } catch (error) {
+      if (isNotFound(error)) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async putObject(input: PutStoredObjectInput): Promise<void> {
+    await this.ensureBucket();
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: input.storageKey,
+        ContentType: input.contentType,
+        CacheControl: input.cacheControl,
+        Body: input.body,
+      }),
+    );
+  }
+
   private async ensureBucket(): Promise<void> {
     if (!this.bucketReady) {
       this.bucketReady = this.createBucketIfMissing();
@@ -115,6 +152,17 @@ export class S3ObjectStorageAdapter implements ObjectStoragePort {
       }
     }
   }
+}
+
+function isNodeReadableStream(value: unknown): value is NodeJS.ReadableStream {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'pipe' in value &&
+    typeof value.pipe === 'function' &&
+    'on' in value &&
+    typeof value.on === 'function'
+  );
 }
 
 function toDefaultOptions(): S3ObjectStorageOptions {

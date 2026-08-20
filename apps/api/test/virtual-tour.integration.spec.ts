@@ -9,6 +9,7 @@ import { configureHttpApplication } from '../src/app/app.bootstrap';
 import { AppModule } from '../src/app/app.module';
 import { createDatabase, migrateDatabase } from '../src/core/database/db';
 import { mediaAssets } from '../src/core/database/schema/media';
+import { panoramaAssetMetadata } from '../src/core/database/schema/panorama';
 import { adminInject, configureTestBootstrap, loginAsAdmin } from './auth-test.utils';
 
 const databaseUrl =
@@ -74,20 +75,10 @@ describe('Virtual tour HTTP API', () => {
     expect(destinationResponse.statusCode).toBe(201);
     const createdDestination = destinationResponse.json();
     const destinationId = createdDestination.id;
-    const firstPanoramaAssetId = randomUUID();
-    const uploadedAt = new Date();
-    await db.insert(mediaAssets).values({
-      id: firstPanoramaAssetId,
-      mediaKind: 'panorama',
-      originalFilename: 'manifest.json',
-      contentType: 'application/json',
-      sizeBytes: 1,
-      storageKey: `processed/immersive-demo/${firstSceneId}/manifest.json`,
-      status: 'ready',
-      etag: 'demo-etag',
-      uploadedAt,
-      readyAt: uploadedAt,
-    });
+    const panoramaAssetIds = new Map([
+      [firstSceneId, await insertReadyPanoramaAsset(firstSceneId)],
+      [secondSceneId, await insertReadyPanoramaAsset(secondSceneId)],
+    ]);
 
     const publishDestinationResponse = await adminInject(app, adminCookie, {
       method: 'POST',
@@ -107,7 +98,7 @@ describe('Virtual tour HTTP API', () => {
           destinationId,
           name,
           geoPoint: { latitude: 18.3421 + sortOrder / 1000, longitude: 105.9032 },
-          panoramaAssetId: sortOrder === 0 ? firstPanoramaAssetId : randomUUID(),
+          panoramaAssetId: panoramaAssetIds.get(id),
           panoramaAssetStatus: 'ready',
           initialHeading: -15,
           initialPitch: 8,
@@ -186,8 +177,8 @@ describe('Virtual tour HTTP API', () => {
           expect.objectContaining({
             id: firstSceneId,
             status: 'published',
-            panoramaManifestUrl: `https://media.example.vn/hatinh/processed/immersive-demo/${firstSceneId}/manifest.json`,
-            panoramaPreviewUrl: `https://media.example.vn/hatinh/processed/immersive-demo/${firstSceneId}/preview.webp`,
+            panoramaManifestUrl: `https://media.example.vn/hatinh/processed/panorama/${panoramaAssetIds.get(firstSceneId)}/manifest.json`,
+            panoramaPreviewUrl: `https://media.example.vn/hatinh/processed/panorama/${panoramaAssetIds.get(firstSceneId)}/preview.webp`,
           }),
           expect.objectContaining({ id: secondSceneId, status: 'published' }),
         ]),
@@ -229,4 +220,38 @@ describe('Virtual tour HTTP API', () => {
 
     expect(response.statusCode).toBe(404);
   });
+
+  async function insertReadyPanoramaAsset(sceneId: string) {
+    const mediaAssetId = randomUUID();
+    const uploadedAt = new Date();
+
+    await db.insert(mediaAssets).values({
+      id: mediaAssetId,
+      mediaKind: 'panorama',
+      originalFilename: `${sceneId}.jpg`,
+      contentType: 'image/jpeg',
+      sizeBytes: 1,
+      storageKey: `originals/panorama/${mediaAssetId}/${sceneId}.jpg`,
+      status: 'ready',
+      etag: 'integration-etag',
+      uploadedAt,
+      readyAt: uploadedAt,
+    });
+    await db.insert(panoramaAssetMetadata).values({
+      mediaAssetId,
+      sourceWidthPx: 4096,
+      sourceHeightPx: 2048,
+      qualityStatus: 'accepted',
+      manifestKey: `processed/panorama/${mediaAssetId}/manifest.json`,
+      previewKey: `processed/panorama/${mediaAssetId}/preview.webp`,
+      rights: 'customer-owned',
+      rightsHolder: 'Integration Test Owner',
+      rightsReference: 'approval:integration-test',
+      sourceReference: `scene:${sceneId}`,
+      version: 'integration-v1',
+      processedAt: uploadedAt,
+    });
+
+    return mediaAssetId;
+  }
 });

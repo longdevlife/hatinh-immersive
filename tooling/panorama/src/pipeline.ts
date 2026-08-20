@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import sharp from 'sharp';
+import sharp, { type Sharp } from 'sharp';
 import {
   PANORAMA_MANIFEST_TYPE,
   PANORAMA_MANIFEST_VERSION,
@@ -91,7 +91,7 @@ function createLevels(sourceWidth: number, tileSize: number): PanoramaTileLevel[
 }
 
 async function renderImage(
-  source: sharp.Sharp,
+  source: Sharp,
   outputDir: string,
   relativePath: string,
   width: number,
@@ -106,7 +106,7 @@ async function renderImage(
 }
 
 async function renderLevel(
-  source: sharp.Sharp,
+  source: Sharp,
   outputDir: string,
   level: PanoramaTileLevel,
   levelIndex: number,
