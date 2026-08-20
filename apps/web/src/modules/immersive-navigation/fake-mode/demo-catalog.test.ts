@@ -120,6 +120,15 @@ describe('Hà Tĩnh demo catalog', () => {
     }
   });
 
+  it('keeps all destination manifests scene-addressable for content projection', () => {
+    for (const { preview } of DEMO_DESTINATIONS) {
+      const manifest = getDemoManifest(preview.slug, 'synthetic');
+      expect(manifest.panoramaNodes.every((node) => node.destinationSlug === preview.slug)).toBe(
+        true,
+      );
+    }
+  });
+
   it('keeps a mode-specific demo manifest stable for persistent renderer consumers', () => {
     expect(getDemoManifest('son-trang-co-dam', 'synthetic')).toBe(
       getDemoManifest('son-trang-co-dam', 'synthetic'),
