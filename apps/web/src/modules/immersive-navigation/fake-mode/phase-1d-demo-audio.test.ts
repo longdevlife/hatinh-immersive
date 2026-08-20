@@ -40,7 +40,9 @@ describe('Phase 1D demo ambient provenance', () => {
 
     for (const record of records) {
       const relativePath = AUDIO_PATHS[record.destinationSlug];
-      expect(relativePath, record.destinationSlug).toBeDefined();
+      if (!relativePath) {
+        throw new Error(`Missing demo audio path for ${record.destinationSlug}`);
+      }
       const filePath = resolve(REPO_ROOT, relativePath);
 
       expect(existsSync(filePath), record.destinationSlug).toBe(true);
