@@ -7,15 +7,17 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format:
     if: github.head_ref == 'content-readiness-audit' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout audit branch
         uses: actions/checkout@v4
+        with:
+          ref: content-readiness-audit
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -38,13 +40,15 @@ jobs:
       - name: Verify formatting
         run: pnpm exec prettier --check 'content-readiness/**/*.{json,md}' 'tooling/content-readiness/**/*.mjs' '.github/workflows/package-demo-360.yml' '.github/workflows/recon-hatinh360.yml' '.github/workflows/format-content-audit.yml'
 
-      - name: Package formatted files
-        run: tar -czf formatted-content-audit.tgz content-readiness tooling/content-readiness .github/workflows/package-demo-360.yml .github/workflows/recon-hatinh360.yml .github/workflows/format-content-audit.yml
-
-      - name: Upload formatted workspace
-        uses: actions/upload-artifact@v4
-        with:
-          name: formatted-content-audit
-          path: formatted-content-audit.tgz
-          if-no-files-found: error
-          retention-days: 2
+      - name: Commit formatter output when needed
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo 'No formatting changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add content-readiness tooling/content-readiness .github/workflows/package-demo-360.yml .github/workflows/recon-hatinh360.yml .github/workflows/format-content-audit.yml
+          git commit -m 'chore: format content readiness audit'
+          git push origin HEAD:content-readiness-audit
