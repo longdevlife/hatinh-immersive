@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-08-20",
+  "usageLane": "phase-1d-demo-only",
+  "rights": "demo-only",
+  "license": "Mixkit Sound Effects Free License",
+  "licenseUrl": "https://mixkit.co/license/",
+  "tracks": [
+    {
+      "destinationSlug": "bien-thien-cam",
+      "trackId": "ambient:bien-thien-cam",
+      "itemName": "Sea waves ambience",
+      "originalFilename": "1189-preview.mp3",
+      "sourceUrl": "https://assets.mixkit.co/active_storage/sfx/1189/1189-preview.mp3",
+      "downloadedAt": "2026-08-20",
+      "sha256": "4dbe3e7e09db919b604e61d4895cdee7e0296ed0c5a72fa996b5729179f2700d",
+      "licenseUrl": "https://mixkit.co/license/",
+      "license": "Mixkit Sound Effects Free License",
+      "rights": "demo-only"
+    },
+    {
+      "destinationSlug": "khu-luu-niem-nguyen-du",
+      "trackId": "ambient:khu-luu-niem-nguyen-du",
+      "itemName": "Morning sound in a garden",
+      "originalFilename": "2464-preview.mp3",
+      "sourceUrl": "https://assets.mixkit.co/active_storage/sfx/2464/2464-preview.mp3",
+      "downloadedAt": "2026-08-20",
+      "sha256": "9fa5b35021f44acf9b5e0bc3e81f74b58ff9aa2811b422fcf89902b6bf5e0ec6",
+      "licenseUrl": "https://mixkit.co/license/",
+      "license": "Mixkit Sound Effects Free License",
+      "rights": "demo-only"
+    },
+    {
+      "destinationSlug": "nga-ba-dong-loc",
+      "trackId": "ambient:nga-ba-dong-loc",
+      "itemName": "Wind blowing ambience",
+      "originalFilename": "2658-preview.mp3",
+      "sourceUrl": "https://assets.mixkit.co/active_storage/sfx/2658/2658-preview.mp3",
+      "downloadedAt": "2026-08-20",
+      "sha256": "4597614ac1b824bf29334a5a23b93a00dd7a5cf2ddc4a655c54a1a81d2a82b13",
+      "licenseUrl": "https://mixkit.co/license/",
+      "license": "Mixkit Sound Effects Free License",
+      "rights": "demo-only"
+    },
+    {
+      "destinationSlug": "son-trang-co-dam",
+      "trackId": "ambient:son-trang-co-dam",
+      "itemName": "Forest birds ambience",
+      "originalFilename": "1210-preview.mp3",
+      "sourceUrl": "https://assets.mixkit.co/active_storage/sfx/1210/1210-preview.mp3",
+      "downloadedAt": "2026-08-20",
+      "sha256": "47ab079aac704576d45d252c416de1da31dd016b69b5b9a2eaaa720efb6c2411",
+      "licenseUrl": "https://mixkit.co/license/",
+      "license": "Mixkit Sound Effects Free License",
+      "rights": "demo-only"
+    }
+  ]
+}

@@ -241,16 +241,33 @@ export function createDemoThienCamAudioTracks(): readonly ImmersiveAudioTrack[] 
 }
 
 export function createDemoAmbientTrack(destinationSlug: string): ImmersiveAudioTrack {
+  const source = PHASE_1D_AMBIENT_SOURCES[destinationSlug];
+
   return {
     id: `ambient:${destinationSlug}`,
     type: 'ambient',
     label: `Âm thanh không gian ${destinationSlug}`,
-    src: null,
+    src: source?.src ?? null,
     rights: 'demo-only',
-    readiness: 'unavailable',
-    version: 'phase-1d-ambient-candidate-2026-08',
+    readiness: source ? 'ready' : 'unavailable',
+    version: source ? 'phase-1d-mixkit-preview-2026-08-20' : 'phase-1d-ambient-candidate-2026-08',
   };
 }
+
+const PHASE_1D_AMBIENT_SOURCES: Readonly<Record<string, { readonly src: string }>> = {
+  'bien-thien-cam': {
+    src: '/demo/audio/phase-1d/bien-thien-cam-sea-waves.mp3',
+  },
+  'khu-luu-niem-nguyen-du': {
+    src: '/demo/audio/phase-1d/nguyen-du-garden-ambience.mp3',
+  },
+  'nga-ba-dong-loc': {
+    src: '/demo/audio/phase-1d/dong-loc-wind-ambience.mp3',
+  },
+  'son-trang-co-dam': {
+    src: '/demo/audio/phase-1d/son-trang-forest-birds.mp3',
+  },
+};
 
 export function createDemoAudioTracksForDestination(
   destinationSlug: string,
