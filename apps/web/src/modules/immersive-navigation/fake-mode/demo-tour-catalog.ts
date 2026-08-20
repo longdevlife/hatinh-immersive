@@ -324,9 +324,8 @@ export function buildDemoManifest(
 }
 
 function withoutDefaultSceneId(destination: DestinationPreviewVm): DestinationPreviewVm {
-  const destinationWithoutScene = { ...destination };
-  delete destinationWithoutScene.defaultSceneId;
-  return destinationWithoutScene;
+  const { defaultSceneId: _defaultSceneId, ...destinationWithoutScene } = destination;
+  return { ...destinationWithoutScene, defaultSceneId: null };
 }
 
 function toTourScene(

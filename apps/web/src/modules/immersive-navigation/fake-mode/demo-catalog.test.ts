@@ -49,7 +49,7 @@ describe('Hà Tĩnh demo catalog', () => {
     expect(manifest.links).toEqual([]);
     expect(manifest.hotspots).toEqual([]);
     expect(manifest.defaultSceneId).toBe('');
-    expect(manifest.destination.defaultSceneId).toBeUndefined();
+    expect(manifest.destination.defaultSceneId).toBeNull();
     expect(JSON.stringify(manifest)).not.toContain('son-trang-gate');
     expect(JSON.stringify(manifest)).not.toContain('/demo/360/son-trang-tour/');
   });

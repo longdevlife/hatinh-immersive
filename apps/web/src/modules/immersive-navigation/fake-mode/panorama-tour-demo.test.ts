@@ -36,6 +36,6 @@ describe('explicit Sơn Trang panorama tour demo composition', () => {
     expect(manifest.links).toEqual([]);
     expect(manifest.hotspots).toEqual([]);
     expect(manifest.defaultSceneId).toBe('');
-    expect(manifest.destination.defaultSceneId).toBeUndefined();
+    expect(manifest.destination.defaultSceneId).toBeNull();
   });
 });

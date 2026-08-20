@@ -31,7 +31,6 @@ export function createDemoPanoramaTourManifest(
 }
 
 function withoutDefaultSceneId(destination: ImmersiveManifestVm['destination']) {
-  const destinationWithoutScene = { ...destination };
-  delete destinationWithoutScene.defaultSceneId;
-  return destinationWithoutScene;
+  const { defaultSceneId: _defaultSceneId, ...destinationWithoutScene } = destination;
+  return { ...destinationWithoutScene, defaultSceneId: null };
 }
