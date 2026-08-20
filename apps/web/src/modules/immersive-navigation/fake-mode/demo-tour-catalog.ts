@@ -12,6 +12,7 @@ import type {
   DestinationTourScene,
 } from '../../panorama-tour';
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
+import { createDemoThienCamAudioTracks, getDemoSceneContent } from './demo-content';
 
 export type DemoTourBuildMode = 'public' | 'synthetic';
 
@@ -221,22 +222,26 @@ export function buildDemoDestinationTour(
   const scenes = definitions.map((definition) => toTourScene(destination.slug, definition, mode));
   const links = createSequentialLinks(scenes);
   const hotspots = createDemoHotspots(destination.slug, scenes);
-  const audioTracks: readonly ImmersiveAudioTrack[] = [
-    {
-      id: `ambient:${destination.slug}`,
-      type: 'ambient',
-      label: 'Âm thanh không gian',
-      src: null,
-      rights: 'demo-only',
-    },
-    {
-      id: `narration:${destination.slug}:intro`,
-      type: 'narration',
-      label: `Thuyết minh ${destination.name}`,
-      src: null,
-      rights: 'demo-only',
-    },
-  ];
+  const audioTracks: readonly ImmersiveAudioTrack[] =
+    destination.slug === 'bien-thien-cam'
+      ? createDemoThienCamAudioTracks()
+      : [
+          {
+            id: `ambient:${destination.slug}`,
+            type: 'ambient',
+            label: 'Âm thanh không gian',
+            src: null,
+            rights: 'demo-only',
+            readiness: 'unavailable',
+          },
+          {
+            id: `narration:${destination.slug}:intro`,
+            type: 'narration',
+            label: `Thuyết minh ${destination.name}`,
+            src: null,
+            rights: 'demo-only',
+          },
+        ];
 
   return {
     destinationSlug: destination.slug,
@@ -295,6 +300,8 @@ export function buildDemoManifest(
       links: tour.links
         .filter((link) => link.sourceSceneId === scene.id)
         .map((link) => ({ targetNodeId: link.targetSceneId, yaw: link.yaw, pitch: link.pitch })),
+      ...(scene.narrationTrackIds ? { narrationTrackIds: scene.narrationTrackIds } : {}),
+      ...(scene.transcripts ? { transcripts: scene.transcripts } : {}),
     };
   });
 
@@ -327,6 +334,7 @@ function toTourScene(
 ): DestinationTourScene {
   const mediaPath = resolveMediaPath(destinationSlug, definition, mode);
   const isSynthetic = mode === 'synthetic';
+  const content = getDemoSceneContent(destinationSlug, definition.id);
   const mediaQuality: PanoramaMediaQuality = isSynthetic
     ? 'ready'
     : mediaPath
@@ -350,7 +358,15 @@ function toTourScene(
         : mediaPath.replace('/manifest.json', '/preview.webp'),
     mediaQuality,
     mediaRights,
-    narrationTrackId: `narration:${destinationSlug}:intro`,
+    ...(content
+      ? {
+          narrationTrackId: `narration:${destinationSlug}:${definition.id}:vi`,
+          narrationTrackIds: {
+            vi: `narration:${destinationSlug}:${definition.id}:vi`,
+          },
+          transcripts: { vi: content.transcript },
+        }
+      : { narrationTrackId: `narration:${destinationSlug}:intro` }),
   };
 }
 
@@ -408,31 +424,49 @@ function createDemoHotspots(
   scenes: readonly DestinationTourScene[],
 ): readonly DestinationTourHotspot[] {
   const first = scenes[0];
-  const second = scenes[1];
   if (!first) {
     return [];
   }
-  const hotspots: DestinationTourHotspot[] = [
-    {
-      id: `${destinationSlug}:story`,
-      sceneId: first.id,
-      type: 'information',
-      label: 'Điểm đáng chú ý',
-      content: 'Một điểm dừng trong hành trình khám phá Hà Tĩnh.',
-      yaw: first.initialView.heading,
-      pitch: 0,
-    },
-  ];
-  if (second) {
+  const hotspots: DestinationTourHotspot[] = [];
+
+  scenes.forEach((scene, index) => {
+    const content = getDemoSceneContent(destinationSlug, scene.id);
     hotspots.push({
-      id: `${destinationSlug}:next`,
-      sceneId: first.id,
-      type: 'scene-navigation',
-      targetSceneId: second.id,
-      label: `Mở ${second.name}`,
-      yaw: (first.initialView.heading + 24) % 360,
+      id: `${destinationSlug}:${scene.id}:story`,
+      sceneId: scene.id,
+      type: 'information',
+      label: content?.storyTitle ?? 'Điểm đáng chú ý',
+      content: content?.storyContent ?? 'Một điểm dừng trong hành trình khám phá Hà Tĩnh.',
+      yaw: scene.initialView.heading,
       pitch: 0,
     });
-  }
+
+    const next = scenes[index + 1];
+    if (next) {
+      hotspots.push({
+        id: `${destinationSlug}:${scene.id}:next`,
+        sceneId: scene.id,
+        type: 'scene-navigation',
+        targetSceneId: next.id,
+        label: `Mở ${next.name}`,
+        yaw: (scene.initialView.heading + 24) % 360,
+        pitch: 0,
+      });
+    }
+
+    const previous = scenes[index - 1];
+    if (previous) {
+      hotspots.push({
+        id: `${destinationSlug}:${scene.id}:previous`,
+        sceneId: scene.id,
+        type: 'scene-navigation',
+        targetSceneId: previous.id,
+        label: `Quay lại ${previous.name}`,
+        yaw: (scene.initialView.heading + 204) % 360,
+        pitch: 0,
+      });
+    }
+  });
+
   return hotspots;
 }

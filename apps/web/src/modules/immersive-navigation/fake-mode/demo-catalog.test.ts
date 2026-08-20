@@ -96,6 +96,30 @@ describe('Hà Tĩnh demo catalog', () => {
     }
   });
 
+  it('integrates Thiên Cầm demo story, VI transcript, and per-scene narration mapping', () => {
+    const manifest = getDemoManifest('bien-thien-cam', 'synthetic');
+    const sceneIds = ['thien-cam-boardwalk', 'thien-cam-shore', 'thien-cam-lookout'];
+
+    expect(manifest.audioTracks.filter((track) => track.type === 'narration')).toHaveLength(3);
+    expect(manifest.audioTracks.filter((track) => track.type === 'ambient')).toHaveLength(1);
+
+    for (const sceneId of sceneIds) {
+      const node = manifest.panoramaNodes.find((candidate) => candidate.id === sceneId);
+      expect(node).toBeDefined();
+      expect(node?.narrationTrackIds?.vi).toBe(`narration:bien-thien-cam:${sceneId}:vi`);
+      expect(node?.transcripts?.vi?.locale).toBe('vi');
+      expect(node?.transcripts?.vi?.timingMode).toBe('plain');
+      expect(node?.transcripts?.vi?.segments.length).toBeGreaterThan(0);
+
+      const storyHotspot = manifest.hotspots.find(
+        (hotspot) => hotspot.sceneId === sceneId && hotspot.type === 'information',
+      );
+      expect(storyHotspot?.content).toBeTruthy();
+      expect(Number.isFinite(storyHotspot?.yaw)).toBe(true);
+      expect(Number.isFinite(storyHotspot?.pitch)).toBe(true);
+    }
+  });
+
   it('keeps a mode-specific demo manifest stable for persistent renderer consumers', () => {
     expect(getDemoManifest('son-trang-co-dam', 'synthetic')).toBe(
       getDemoManifest('son-trang-co-dam', 'synthetic'),

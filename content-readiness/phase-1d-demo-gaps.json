@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "phase": "1D",
+  "lane": "demo-only",
+  "productionGateUnchanged": true,
+  "provenancePolicy": "No external asset is promoted without explicit rights and PRODUCT approval.",
+  "destinations": {
+    "bien-thien-cam": {
+      "mediaPolicy": "demo/reference-only",
+      "scenes": [
+        {
+          "sceneId": "thien-cam-boardwalk",
+          "panorama": {
+            "status": "demo-reference-only",
+            "requirement": "PRODUCT-owned/licensed 2:1 equirectangular master, minimum 4096x2048, processed through panorama-tooling"
+          },
+          "storyHotspot": "demo-integrated-candidate-copy",
+          "transcriptVi": {
+            "status": "candidate-not-approved",
+            "timingMode": "plain",
+            "requirement": "PRODUCT-approved Vietnamese transcript, with timed segments if captions are required"
+          },
+          "narrationVi": {
+            "status": "missing-file",
+            "requirement": "PRODUCT-approved/licensed browser-file audio, VI, scene-specific, with rights/version metadata"
+          },
+          "ambient": {
+            "status": "missing-file",
+            "requirement": "PRODUCT-approved/licensed destination ambient browser-file audio with rights/version metadata"
+          },
+          "minimapHotspot": "demo coordinates derived from current scene fixture; PRODUCT must verify physical positions"
+        },
+        {
+          "sceneId": "thien-cam-shore",
+          "panorama": {
+            "status": "demo-reference-only",
+            "requirement": "PRODUCT-owned/licensed 2:1 equirectangular master, minimum 4096x2048, processed through panorama-tooling"
+          },
+          "storyHotspot": "demo-integrated-candidate-copy",
+          "transcriptVi": {
+            "status": "candidate-not-approved",
+            "timingMode": "plain",
+            "requirement": "PRODUCT-approved Vietnamese transcript, with timed segments if captions are required"
+          },
+          "narrationVi": {
+            "status": "missing-file",
+            "requirement": "PRODUCT-approved/licensed browser-file audio, VI, scene-specific, with rights/version metadata"
+          },
+          "ambient": {
+            "status": "missing-file",
+            "requirement": "Uses the destination ambient track above once supplied; no external audio copied"
+          },
+          "minimapHotspot": "demo coordinates derived from current scene fixture; PRODUCT must verify physical positions"
+        },
+        {
+          "sceneId": "thien-cam-lookout",
+          "panorama": {
+            "status": "demo-reference-only",
+            "requirement": "PRODUCT-owned/licensed 2:1 equirectangular master, minimum 4096x2048, processed through panorama-tooling"
+          },
+          "storyHotspot": "demo-integrated-candidate-copy",
+          "transcriptVi": {
+            "status": "candidate-not-approved",
+            "timingMode": "plain",
+            "requirement": "PRODUCT-approved Vietnamese transcript, with timed segments if captions are required"
+          },
+          "narrationVi": {
+            "status": "missing-file",
+            "requirement": "PRODUCT-approved/licensed browser-file audio, VI, scene-specific, with rights/version metadata"
+          },
+          "ambient": {
+            "status": "missing-file",
+            "requirement": "Uses the destination ambient track above once supplied; no external audio copied"
+          },
+          "minimapHotspot": "demo coordinates derived from current scene fixture; PRODUCT must verify physical positions"
+        }
+      ]
+    },
+    "khu-luu-niem-nguyen-du": {
+      "mediaPolicy": "demo-lane-entry-scene-only",
+      "scenes": [
+        { "sceneId": "nguyen-du-courtyard", "panorama": "usable local demo/reference-only" },
+        { "sceneId": "nguyen-du-memorial-house", "panorama": "missing" },
+        { "sceneId": "nguyen-du-statue", "panorama": "missing" },
+        { "sceneId": "nguyen-du-garden-path", "panorama": "missing" }
+      ]
+    },
+    "nga-ba-dong-loc": {
+      "mediaPolicy": "demo-lane-entry-scene-only",
+      "scenes": [
+        { "sceneId": "dong-loc-memorial", "panorama": "usable local demo/reference-only" },
+        { "sceneId": "dong-loc-monument", "panorama": "missing" },
+        { "sceneId": "dong-loc-remembrance", "panorama": "missing" },
+        { "sceneId": "dong-loc-approach", "panorama": "missing" }
+      ]
+    },
+    "son-trang-co-dam": {
+      "mediaPolicy": "showcase-shell-only",
+      "scenes": [
+        {
+          "sceneId": "son-trang-gate",
+          "panorama": "blocked: current 256x128 asset is neither production nor demo-quality"
+        }
+      ]
+    }
+  }
+}
