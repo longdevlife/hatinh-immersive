@@ -12,7 +12,7 @@ import type {
   DestinationTourScene,
 } from '../../panorama-tour';
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
-import { createDemoThienCamAudioTracks, getDemoSceneContent } from './demo-content';
+import { createDemoAudioTracksForDestination, getDemoSceneContent } from './demo-content';
 
 export type DemoTourBuildMode = 'public' | 'synthetic';
 
@@ -221,27 +221,11 @@ export function buildDemoDestinationTour(
   const definitions = getDemoSceneDefinitions(destination.slug);
   const scenes = definitions.map((definition) => toTourScene(destination.slug, definition, mode));
   const links = createSequentialLinks(scenes);
-  const hotspots = createDemoHotspots(destination.slug, scenes);
-  const audioTracks: readonly ImmersiveAudioTrack[] =
-    destination.slug === 'bien-thien-cam'
-      ? createDemoThienCamAudioTracks()
-      : [
-          {
-            id: `ambient:${destination.slug}`,
-            type: 'ambient',
-            label: 'Âm thanh không gian',
-            src: null,
-            rights: 'demo-only',
-            readiness: 'unavailable',
-          },
-          {
-            id: `narration:${destination.slug}:intro`,
-            type: 'narration',
-            label: `Thuyết minh ${destination.name}`,
-            src: null,
-            rights: 'demo-only',
-          },
-        ];
+  const hotspots = createDemoHotspots(destination.slug, scenes, mode);
+  const audioTracks: readonly ImmersiveAudioTrack[] = createDemoAudioTracksForDestination(
+    destination.slug,
+    definitions.map(({ id }) => id),
+  );
 
   return {
     destinationSlug: destination.slug,
@@ -422,6 +406,7 @@ function createSequentialLinks(scenes: readonly DestinationTourScene[]) {
 function createDemoHotspots(
   destinationSlug: string,
   scenes: readonly DestinationTourScene[],
+  mode: DemoTourBuildMode,
 ): readonly DestinationTourHotspot[] {
   const first = scenes[0];
   if (!first) {
@@ -442,7 +427,7 @@ function createDemoHotspots(
     });
 
     const next = scenes[index + 1];
-    if (next) {
+    if (next && (mode === 'synthetic' || next.panoramaUrl !== null)) {
       hotspots.push({
         id: `${destinationSlug}:${scene.id}:next`,
         sceneId: scene.id,
@@ -455,7 +440,7 @@ function createDemoHotspots(
     }
 
     const previous = scenes[index - 1];
-    if (previous) {
+    if (previous && (mode === 'synthetic' || previous.panoramaUrl !== null)) {
       hotspots.push({
         id: `${destinationSlug}:${scene.id}:previous`,
         sceneId: scene.id,

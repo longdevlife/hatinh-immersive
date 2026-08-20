@@ -129,6 +129,39 @@ describe('Hà Tĩnh demo catalog', () => {
     }
   });
 
+  it('projects destination-specific VI narration and transcript for every demo scene', () => {
+    for (const { preview } of DEMO_DESTINATIONS) {
+      const manifest = getDemoManifest(preview.slug, 'synthetic');
+      const narrationIds = new Set(
+        manifest.audioTracks.filter((track) => track.type === 'narration').map((track) => track.id),
+      );
+
+      expect(narrationIds).toHaveLength(manifest.panoramaNodes.length);
+      for (const node of manifest.panoramaNodes) {
+        const narrationId = node.narrationTrackIds?.vi;
+        expect(narrationId).toBe(`narration:${preview.slug}:${node.id}:vi`);
+        expect(narrationIds.has(narrationId ?? '')).toBe(true);
+        expect(node.transcripts?.vi?.locale).toBe('vi');
+        expect(node.transcripts?.vi?.timingMode).toBe('plain');
+      }
+    }
+  });
+
+  it('does not expose public navigation hotspots for missing panorama targets', () => {
+    for (const destinationSlug of ['khu-luu-niem-nguyen-du', 'nga-ba-dong-loc']) {
+      const manifest = getDemoManifest(destinationSlug, 'public');
+      const missingSceneIds = new Set(
+        manifest.panoramaNodes.filter((node) => node.panoramaUrl === null).map((node) => node.id),
+      );
+
+      expect(
+        manifest.hotspots
+          .filter((hotspot) => hotspot.type === 'scene-navigation')
+          .some((hotspot) => hotspot.targetSceneId && missingSceneIds.has(hotspot.targetSceneId)),
+      ).toBe(false);
+    }
+  });
+
   it('keeps a mode-specific demo manifest stable for persistent renderer consumers', () => {
     expect(getDemoManifest('son-trang-co-dam', 'synthetic')).toBe(
       getDemoManifest('son-trang-co-dam', 'synthetic'),

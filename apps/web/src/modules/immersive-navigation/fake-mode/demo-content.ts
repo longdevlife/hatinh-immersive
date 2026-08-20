@@ -234,24 +234,33 @@ function createDemoNarrationTrack(
 }
 
 export function createDemoThienCamAudioTracks(): readonly ImmersiveAudioTrack[] {
-  const sceneIds = PHASE_1D_CANONICAL_SCENE_IDS['bien-thien-cam'];
-  const content = PHASE_1D_CONTENT['bien-thien-cam'];
+  return createDemoAudioTracksForDestination(
+    'bien-thien-cam',
+    PHASE_1D_CANONICAL_SCENE_IDS['bien-thien-cam'],
+  );
+}
 
+export function createDemoAmbientTrack(destinationSlug: string): ImmersiveAudioTrack {
+  return {
+    id: `ambient:${destinationSlug}`,
+    type: 'ambient',
+    label: `Âm thanh không gian ${destinationSlug}`,
+    src: null,
+    rights: 'demo-only',
+    readiness: 'unavailable',
+    version: 'phase-1d-ambient-candidate-2026-08',
+  };
+}
+
+export function createDemoAudioTracksForDestination(
+  destinationSlug: string,
+  sceneIds: readonly string[],
+): readonly ImmersiveAudioTrack[] {
   return [
-    {
-      id: 'ambient:bien-thien-cam',
-      type: 'ambient',
-      label: 'Âm thanh không gian Thiên Cầm',
-      src: null,
-      rights: 'demo-only',
-      readiness: 'unavailable',
-      version: 'phase-1d-ambient-candidate-2026-08',
-    },
+    createDemoAmbientTrack(destinationSlug),
     ...sceneIds.flatMap((sceneId) => {
-      const sceneContent = content?.[sceneId];
-      return sceneContent
-        ? [createDemoNarrationTrack('bien-thien-cam', sceneId, sceneContent)]
-        : [];
+      const content = getDemoSceneContent(destinationSlug, sceneId);
+      return content ? [createDemoNarrationTrack(destinationSlug, sceneId, content)] : [];
     }),
   ];
 }
