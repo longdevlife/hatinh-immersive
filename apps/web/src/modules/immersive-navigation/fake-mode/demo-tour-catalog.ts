@@ -18,6 +18,26 @@ export type DemoTourBuildMode = 'public' | 'synthetic';
 
 const SON_TRANG_SLUG = 'son-trang-co-dam';
 
+/**
+ * Public demo previews deliberately omit physical claims for Sơn Trang until
+ * customer-owned panorama mapping is verified. The internal catalog remains
+ * available to explicit synthetic/test mode only.
+ */
+export function getPublicDemoDestinationPreview(
+  destination: DestinationPreviewVm,
+): DestinationPreviewVm {
+  if (destination.slug !== SON_TRANG_SLUG) {
+    return destination;
+  }
+
+  const { cameraPreset: _cameraPreset, ...withoutCameraPreset } = destination;
+  return {
+    ...withoutCameraPreset,
+    defaultSceneId: null,
+    geoPoint: null,
+  };
+}
+
 export interface DemoSceneDefinition {
   id: string;
   name: string;
@@ -253,6 +273,8 @@ export function buildDemoManifest(
   mode: DemoTourBuildMode = 'synthetic',
 ): ImmersiveManifestVm {
   const tour = buildDemoDestinationTour(destination, mode);
+  const manifestSourceDestination =
+    mode === 'public' ? getPublicDemoDestinationPreview(destination) : destination;
   const nodes: SceneNodeVm[] = tour.scenes.map((scene, index) => ({
     id: scene.id,
     name: scene.name,
@@ -298,28 +320,39 @@ export function buildDemoManifest(
   });
 
   const manifestDestination = tour.defaultSceneId
-    ? { ...destination, defaultSceneId: tour.defaultSceneId }
-    : withoutDefaultSceneId(destination);
+    ? { ...manifestSourceDestination, defaultSceneId: tour.defaultSceneId }
+    : withoutDefaultSceneId(manifestSourceDestination);
 
   return {
     destination: manifestDestination,
     defaultSceneId: tour.defaultSceneId,
-    overviewTarget: {
-      ...(destination.cameraPreset?.center ?? {
-        lat: destination.geoPoint?.latitude ?? 18.3421,
-        lng: destination.geoPoint?.longitude ?? 105.9032,
-        altitude: 120,
-      }),
-      heading: destination.cameraPreset?.heading ?? 0,
-      tilt: destination.cameraPreset?.tilt ?? 55,
-      range: destination.cameraPreset?.range ?? 900,
-    },
+    overviewTarget: getDemoOverviewTarget(manifestSourceDestination),
     nodes,
     panoramaNodes,
     links,
     hotspots: tour.hotspots.map((hotspot) => ({ ...hotspot })),
     audioTracks: [...tour.audioTracks],
     ambientTrackId: tour.ambientTrackId ?? null,
+  };
+}
+
+function getDemoOverviewTarget(destination: DestinationPreviewVm) {
+  if (destination.slug === SON_TRANG_SLUG && destination.defaultSceneId === null) {
+    // This sentinel is never used by the public App route; it prevents an
+    // unverified Sơn Trang coordinate from leaking through a direct manifest
+    // inspection while keeping the shared manifest shape total.
+    return { lat: 0, lng: 0, altitude: 0, heading: 0, tilt: 0, range: 0 };
+  }
+
+  return {
+    ...(destination.cameraPreset?.center ?? {
+      lat: destination.geoPoint?.latitude ?? 18.3421,
+      lng: destination.geoPoint?.longitude ?? 105.9032,
+      altitude: 120,
+    }),
+    heading: destination.cameraPreset?.heading ?? 0,
+    tilt: destination.cameraPreset?.tilt ?? 55,
+    range: destination.cameraPreset?.range ?? 900,
   };
 }
 

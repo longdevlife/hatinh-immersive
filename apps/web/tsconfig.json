@@ -11,6 +11,7 @@
     "playwright.navigation.config.ts",
     "playwright.explore-map.worker.config.ts",
     "playwright.panorama-tour.config.ts",
+    "playwright.public-demo-boundary.config.ts",
     "playwright.reference-parity.config.ts",
     "playwright.production.config.ts",
     "vite.config.ts",

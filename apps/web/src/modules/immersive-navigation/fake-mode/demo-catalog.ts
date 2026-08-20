@@ -4,6 +4,7 @@ import { getDemoDestinationMedia } from './demo-media';
 import {
   buildDemoManifest,
   getDemoSceneDefinitions,
+  getPublicDemoDestinationPreview,
   type DemoSceneDefinition,
   type DemoTourBuildMode,
 } from './demo-tour-catalog';
@@ -118,6 +119,14 @@ export const DEMO_DESTINATIONS = [
     scenes: getDemoSceneDefinitions('nga-ba-dong-loc'),
   }),
 ] as const satisfies readonly DemoDestinationDefinition[];
+
+export function getDemoDestinationPreviews(
+  mode: DemoTourBuildMode = 'public',
+): DestinationPreviewVm[] {
+  return DEMO_DESTINATIONS.map(({ preview }) =>
+    mode === 'synthetic' ? preview : getPublicDemoDestinationPreview(preview),
+  );
+}
 
 export function getDemoManifest(
   slug: string,

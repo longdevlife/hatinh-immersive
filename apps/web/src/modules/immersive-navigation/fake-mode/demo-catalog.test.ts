@@ -50,6 +50,16 @@ describe('Hà Tĩnh demo catalog', () => {
     expect(manifest.hotspots).toEqual([]);
     expect(manifest.defaultSceneId).toBe('');
     expect(manifest.destination.defaultSceneId).toBeNull();
+    expect(manifest.destination.geoPoint).toBeNull();
+    expect(manifest.destination.cameraPreset).toBeUndefined();
+    expect(manifest.overviewTarget).toEqual({
+      lat: 0,
+      lng: 0,
+      altitude: 0,
+      heading: 0,
+      tilt: 0,
+      range: 0,
+    });
     expect(JSON.stringify(manifest)).not.toContain('son-trang-gate');
     expect(JSON.stringify(manifest)).not.toContain('/demo/360/son-trang-tour/');
   });

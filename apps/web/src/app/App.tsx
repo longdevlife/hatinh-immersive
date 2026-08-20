@@ -23,7 +23,7 @@ import {
   resolveDestinationCapabilityConfig,
 } from '../modules/destination-detail/model/destination-capabilities';
 import {
-  DEMO_DESTINATIONS,
+  getDemoDestinationPreviews,
   getDemoManifest,
 } from '../modules/immersive-navigation/fake-mode/demo-catalog';
 import { getDemoSelected3DAnchors } from '../modules/immersive-navigation/fake-mode/selected-3d-demo-anchors';
@@ -85,19 +85,22 @@ const destinationCapabilityConfig = resolveDestinationCapabilityConfig(import.me
 const selected3DAnchorSource = resolveSelected3DAnchorSource(import.meta.env);
 const panoramaTourSource = resolvePanoramaTourSource(import.meta.env);
 const panoramaTourMediaMode = resolvePanoramaTourMediaMode(import.meta.env);
+const fakeDemoMode = panoramaTourSource === 'demo' ? panoramaTourMediaMode : 'public';
 const audioSourcePolicy: ImmersiveAudioSourcePolicy =
   panoramaTourSource === 'demo' ? 'demo-speech-synthesis' : 'browser-file';
-const HOME_DESTINATIONS = createHomeDestinationVms(DEMO_DESTINATIONS.map(({ preview }) => preview));
+const HOME_DESTINATIONS = createHomeDestinationVms(getDemoDestinationPreviews('public'));
 
 function FakeImmersiveExperience() {
   const { destinationSlug = DEFAULT_PUBLIC_DESTINATION_SLUG } = useParams();
-  const demoDestination = DEMO_DESTINATIONS.find(({ preview }) => preview.slug === destinationSlug);
+  const demoDestination = getDemoDestinationPreviews(fakeDemoMode).find(
+    (destination) => destination.slug === destinationSlug,
+  );
   const manifest = demoDestination
-    ? getDemoManifest(destinationSlug, 'synthetic')
+    ? getDemoManifest(destinationSlug, fakeDemoMode)
     : createFakeImmersiveManifest();
   const destinations = demoDestination
-    ? DEMO_DESTINATIONS.map(({ preview }) => preview)
-    : [manifest.destination, ...DEMO_DESTINATIONS.map(({ preview }) => preview)];
+    ? getDemoDestinationPreviews(fakeDemoMode)
+    : [manifest.destination, ...getDemoDestinationPreviews(fakeDemoMode)];
 
   return (
     <Suspense fallback={<ImmersiveRouteLoading />}>
@@ -106,7 +109,7 @@ function FakeImmersiveExperience() {
         manifest={manifest}
         selected3DAnchors={getDemoSelected3DAnchors(destinationSlug)}
         panoramaTourSource={panoramaTourSource}
-        panoramaTourMediaMode={panoramaTourMediaMode}
+        panoramaTourMediaMode={fakeDemoMode}
         audioSourcePolicy={audioSourcePolicy}
       />
     </Suspense>
@@ -139,7 +142,12 @@ function ImmersiveRoute() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const requestedMode = searchParams.get('mode');
-  const canEnterPanorama = requestedMode === 'panorama';
+  const isUnverifiedPublicFakePanorama =
+    useFakeData &&
+    requestedMode === 'panorama' &&
+    destinationSlug === 'son-trang-co-dam' &&
+    fakeDemoMode !== 'synthetic';
+  const canEnterPanorama = requestedMode === 'panorama' && !isUnverifiedPublicFakePanorama;
   const canEnterSelected3D = canEnterSelected3DForSlug(destinationSlug, requestedMode);
 
   if (!canEnterPanorama && !canEnterSelected3D) {
@@ -168,7 +176,7 @@ function canEnterSelected3DForSlug(destinationSlug: string, requestedMode: strin
 function PublicExplore() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
+  const destinations = useFakeData ? getDemoDestinationPreviews(fakeDemoMode) : undefined;
   const initialDestinationSlug = searchParams.get('destination') ?? undefined;
   const initialQuery = searchParams.get('q') ?? undefined;
   const initialCategory = searchParams.get('category') ?? undefined;
@@ -222,7 +230,7 @@ function PublicPageLayout({ children }: { children: ReactNode }) {
 }
 
 function PublicDestinationDetail() {
-  const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
+  const destinations = useFakeData ? getDemoDestinationPreviews(fakeDemoMode) : undefined;
   const sonTrangMedia = useFakeData
     ? {
         hero: getDemoDestinationMedia('son-trang-co-dam')?.hero ?? null,

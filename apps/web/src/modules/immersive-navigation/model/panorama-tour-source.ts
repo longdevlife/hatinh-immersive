@@ -3,7 +3,10 @@ import {
   createDemoPanoramaTourManifest,
   type DemoPanoramaMediaMode,
 } from '../fake-mode/panorama-tour-demo';
-import { getDemoSceneDefinitions } from '../fake-mode/demo-tour-catalog';
+import {
+  getDemoSceneDefinitions,
+  getPublicDemoDestinationPreview,
+} from '../fake-mode/demo-tour-catalog';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
 
 export type PanoramaTourSource = 'demo' | 'none';
@@ -62,7 +65,7 @@ export function composePanoramaTourDestination(
   }
 
   if (destination.slug === 'son-trang-co-dam' && mediaMode === 'public') {
-    return destination;
+    return getPublicDemoDestinationPreview(destination);
   }
 
   return {

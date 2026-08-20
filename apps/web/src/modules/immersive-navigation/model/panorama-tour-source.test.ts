@@ -109,7 +109,8 @@ describe('panorama tour source boundary', () => {
 
     expect(composePanoramaTourDestination(destinationWithApiScene, 'demo')).toMatchObject({
       id: 'api-destination-uuid',
-      defaultSceneId: 'api-scene-uuid',
+      defaultSceneId: null,
+      geoPoint: null,
     });
     expect(
       composePanoramaTourDestination(destinationWithApiScene, 'demo', 'synthetic'),
