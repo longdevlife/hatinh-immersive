@@ -258,7 +258,7 @@ export function buildDemoDestinationTour(
   return {
     destinationSlug: destination.slug,
     title: destination.name,
-    defaultSceneId: scenes[0]?.id ?? '',
+    defaultSceneId: scenes[0]?.id ?? null,
     mediaMode: mode === 'synthetic' ? 'synthetic' : 'demo-only',
     scenes,
     links,

@@ -38,7 +38,7 @@ describe('Hà Tĩnh demo catalog', () => {
 
   it('includes the Sơn Trang focus destination in the deterministic catalog', () => {
     expect(DEMO_DESTINATIONS.map(({ preview }) => preview.slug)).toContain('son-trang-co-dam');
-    expect(getDemoManifest('son-trang-co-dam').defaultSceneId).toBe('');
+    expect(getDemoManifest('son-trang-co-dam').defaultSceneId).toBeNull();
   });
 
   it('keeps public Sơn Trang as a showcase shell without unverified scene truth', () => {
@@ -48,7 +48,7 @@ describe('Hà Tĩnh demo catalog', () => {
     expect(manifest.panoramaNodes).toEqual([]);
     expect(manifest.links).toEqual([]);
     expect(manifest.hotspots).toEqual([]);
-    expect(manifest.defaultSceneId).toBe('');
+    expect(manifest.defaultSceneId).toBeNull();
     expect(manifest.destination.defaultSceneId).toBeNull();
     expect(manifest.destination.geoPoint).toBeNull();
     expect(manifest.destination.cameraPreset).toBeUndefined();
