@@ -16,6 +16,8 @@ import { createDemoAudioTracksForDestination, getDemoSceneContent } from './demo
 
 export type DemoTourBuildMode = 'public' | 'synthetic';
 
+const SON_TRANG_SLUG = 'son-trang-co-dam';
+
 export interface DemoSceneDefinition {
   id: string;
   name: string;
@@ -218,25 +220,31 @@ export function buildDemoDestinationTour(
   destination: DestinationPreviewVm,
   mode: DemoTourBuildMode = 'public',
 ): DestinationTour {
-  const definitions = getDemoSceneDefinitions(destination.slug);
+  const definitions =
+    mode === 'public' && destination.slug === SON_TRANG_SLUG
+      ? []
+      : getDemoSceneDefinitions(destination.slug);
   const scenes = definitions.map((definition) => toTourScene(destination.slug, definition, mode));
   const links = createSequentialLinks(scenes);
   const hotspots = createDemoHotspots(destination.slug, scenes, mode);
-  const audioTracks: readonly ImmersiveAudioTrack[] = createDemoAudioTracksForDestination(
-    destination.slug,
-    definitions.map(({ id }) => id),
-  );
+  const audioTracks: readonly ImmersiveAudioTrack[] =
+    definitions.length > 0
+      ? createDemoAudioTracksForDestination(
+          destination.slug,
+          definitions.map(({ id }) => id),
+        )
+      : [];
 
   return {
     destinationSlug: destination.slug,
     title: destination.name,
-    defaultSceneId: scenes[0]?.id ?? destination.defaultSceneId ?? '',
+    defaultSceneId: scenes[0]?.id ?? '',
     mediaMode: mode === 'synthetic' ? 'synthetic' : 'demo-only',
     scenes,
     links,
     hotspots,
     audioTracks,
-    ambientTrackId: `ambient:${destination.slug}`,
+    ...(definitions.length > 0 ? { ambientTrackId: `ambient:${destination.slug}` } : {}),
   };
 }
 
@@ -289,8 +297,12 @@ export function buildDemoManifest(
     };
   });
 
+  const manifestDestination = tour.defaultSceneId
+    ? { ...destination, defaultSceneId: tour.defaultSceneId }
+    : withoutDefaultSceneId(destination);
+
   return {
-    destination: { ...destination, defaultSceneId: tour.defaultSceneId },
+    destination: manifestDestination,
     defaultSceneId: tour.defaultSceneId,
     overviewTarget: {
       ...(destination.cameraPreset?.center ?? {
@@ -309,6 +321,12 @@ export function buildDemoManifest(
     audioTracks: [...tour.audioTracks],
     ambientTrackId: tour.ambientTrackId ?? null,
   };
+}
+
+function withoutDefaultSceneId(destination: DestinationPreviewVm): DestinationPreviewVm {
+  const destinationWithoutScene = { ...destination };
+  delete destinationWithoutScene.defaultSceneId;
+  return destinationWithoutScene;
 }
 
 function toTourScene(

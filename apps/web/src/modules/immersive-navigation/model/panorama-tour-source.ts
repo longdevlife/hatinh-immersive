@@ -55,8 +55,13 @@ export function composePanoramaTourManifest(
 export function composePanoramaTourDestination(
   destination: DestinationPreviewVm,
   source: PanoramaTourSource,
+  mediaMode: PanoramaTourMediaMode = 'public',
 ): DestinationPreviewVm {
   if (source !== 'demo' || !isDemoTourDestination(destination.slug)) {
+    return destination;
+  }
+
+  if (destination.slug === 'son-trang-co-dam' && mediaMode === 'public') {
     return destination;
   }
 

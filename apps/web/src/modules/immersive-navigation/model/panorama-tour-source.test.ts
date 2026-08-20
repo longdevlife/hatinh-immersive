@@ -33,12 +33,10 @@ describe('panorama tour source boundary', () => {
       sonTrang.panoramaNodes,
     );
     expect(composePanoramaTourManifest(thienCam, 'demo').panoramaNodes).toHaveLength(3);
-    expect(composePanoramaTourManifest(sonTrang, 'demo').panoramaNodes).toHaveLength(8);
-    expect(
-      composePanoramaTourManifest(sonTrang, 'demo').panoramaNodes.every(
-        (node) => node.mediaQuality === 'low-resolution' && node.mediaRights === 'demo-only',
-      ),
-    ).toBe(true);
+    expect(composePanoramaTourManifest(sonTrang, 'demo').panoramaNodes).toHaveLength(0);
+    expect(composePanoramaTourManifest(sonTrang, 'demo', 'synthetic').panoramaNodes).toHaveLength(
+      8,
+    );
   });
 
   it('keeps synthetic test media explicit without making public demo media ready', () => {
@@ -67,7 +65,11 @@ describe('panorama tour source boundary', () => {
         'synthetic',
       );
 
-      expect(publicManifest.nodes.length).toBeGreaterThan(1);
+      if (slug === 'son-trang-co-dam') {
+        expect(publicManifest.nodes).toEqual([]);
+      } else {
+        expect(publicManifest.nodes.length).toBeGreaterThan(1);
+      }
       expect(syntheticManifest.panoramaNodes.length).toBeGreaterThan(1);
       expect(syntheticManifest.panoramaNodes.every((node) => node.mediaQuality === 'ready')).toBe(
         true,
@@ -90,7 +92,7 @@ describe('panorama tour source boundary', () => {
       defaultSceneId: 'api-scene-uuid',
     };
 
-    const composed = composePanoramaTourManifest(manifestWithApiIdentity, 'demo');
+    const composed = composePanoramaTourManifest(manifestWithApiIdentity, 'demo', 'synthetic');
 
     expect(composed.destination.id).toBe('api-destination-uuid');
     expect(composed.destination.defaultSceneId).toBe('son-trang-gate');
@@ -106,6 +108,12 @@ describe('panorama tour source boundary', () => {
     };
 
     expect(composePanoramaTourDestination(destinationWithApiScene, 'demo')).toMatchObject({
+      id: 'api-destination-uuid',
+      defaultSceneId: 'api-scene-uuid',
+    });
+    expect(
+      composePanoramaTourDestination(destinationWithApiScene, 'demo', 'synthetic'),
+    ).toMatchObject({
       id: 'api-destination-uuid',
       defaultSceneId: 'son-trang-gate',
     });

@@ -56,7 +56,10 @@ describe('Hà Tĩnh demo catalog', () => {
 
   it('maps every destination to an entry scene and a valid scene-link graph', () => {
     for (const { preview } of DEMO_DESTINATIONS) {
-      const manifest = getDemoManifest(preview.slug);
+      const manifest = getDemoManifest(
+        preview.slug,
+        preview.slug === 'son-trang-co-dam' ? 'synthetic' : 'public',
+      );
       const nodeIds = new Set(manifest.nodes.map(({ id }) => id));
 
       expect(manifest.destination.slug).toBe(preview.slug);

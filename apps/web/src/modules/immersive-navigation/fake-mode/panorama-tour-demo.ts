@@ -20,12 +20,18 @@ export function createDemoPanoramaTourManifest(
 ): ImmersiveManifestVm {
   const tour = buildDemoDestinationTour(manifest.destination, mediaMode);
   const composed = buildDemoManifest(manifest.destination, mediaMode);
+  const destination = tour.defaultSceneId
+    ? { ...manifest.destination, defaultSceneId: tour.defaultSceneId }
+    : withoutDefaultSceneId(manifest.destination);
 
   return {
     ...composed,
-    destination: {
-      ...manifest.destination,
-      defaultSceneId: tour.defaultSceneId,
-    },
+    destination,
   };
+}
+
+function withoutDefaultSceneId(destination: ImmersiveManifestVm['destination']) {
+  const destinationWithoutScene = { ...destination };
+  delete destinationWithoutScene.defaultSceneId;
+  return destinationWithoutScene;
 }

@@ -61,8 +61,9 @@ describe('Phase 1D canonical demo content', () => {
   it('keeps every Sơn Trang scene outside the usable public media class', () => {
     const manifest = getDemoManifest('son-trang-co-dam', 'public');
 
-    expect(manifest.panoramaNodes).toHaveLength(8);
-    expect(manifest.panoramaNodes.every((node) => node.mediaRights === 'demo-only')).toBe(true);
-    expect(manifest.panoramaNodes.every((node) => node.mediaQuality !== 'ready')).toBe(true);
+    expect(manifest.panoramaNodes).toEqual([]);
+    expect(manifest.nodes).toEqual([]);
+    expect(manifest.links).toEqual([]);
+    expect(manifest.hotspots).toEqual([]);
   });
 });
