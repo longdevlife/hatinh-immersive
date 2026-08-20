@@ -51,7 +51,10 @@ function shouldCaptureBody(url, contentType, status) {
   ].includes(parsed.hostname);
   if (!hostAllowed) return false;
   const textType = /json|xml|javascript|text\/plain/i.test(contentType ?? '');
-  const usefulUrl = /full-path|group-scene|autotour|tour-view360|gs3d\.xml|tour-42-ha-tinh\.xml|\.xml(?:\?|$)|\.json(?:\?|$)/i.test(url);
+  const usefulUrl =
+    /full-path|group-scene|autotour|tour-view360|gs3d\.xml|tour-42-ha-tinh\.xml|\.xml(?:\?|$)|\.json(?:\?|$)/i.test(
+      url,
+    );
   return textType && usefulUrl;
 }
 
@@ -82,9 +85,17 @@ page.on('response', (response) => {
       const index = capturedBodies.length + 1;
       const file = safeFileName(url, index);
       await writeFile(path.join(TEXT_OUT, file), body);
-      capturedBodies.push({ url, file: `text-responses/${file}`, bytes: body.byteLength, contentType: record.contentType });
+      capturedBodies.push({
+        url,
+        file: `text-responses/${file}`,
+        bytes: body.byteLength,
+        contentType: record.contentType,
+      });
     } catch (error) {
-      capturedBodies.push({ url, captureError: error instanceof Error ? error.message : String(error) });
+      capturedBodies.push({
+        url,
+        captureError: error instanceof Error ? error.message : String(error),
+      });
     }
   })();
   bodyCaptureJobs.push(job);
@@ -111,21 +122,30 @@ async function inspectCurrentPage(label) {
       download: anchor.hasAttribute('download'),
       target: anchor.getAttribute('target'),
     }));
-    const controls = [...document.querySelectorAll('button, [role="button"], input[type="button"], input[type="submit"]')]
+    const controls = [
+      ...document.querySelectorAll(
+        'button, [role="button"], input[type="button"], input[type="submit"]',
+      ),
+    ]
       .map((element) => ({
         tag: element.tagName.toLowerCase(),
-        text: normalize(element.textContent) || normalize(element.getAttribute('aria-label')) || normalize(element.getAttribute('title')),
+        text:
+          normalize(element.textContent) ||
+          normalize(element.getAttribute('aria-label')) ||
+          normalize(element.getAttribute('title')),
         ariaLabel: element.getAttribute('aria-label'),
         title: element.getAttribute('title'),
       }))
       .filter((item) => item.text || item.ariaLabel || item.title);
-    const media = [...document.querySelectorAll('img, audio, video, source, iframe')].map((element) => ({
-      tag: element.tagName.toLowerCase(),
-      src: element.getAttribute('src'),
-      currentSrc: 'currentSrc' in element ? element.currentSrc : null,
-      title: element.getAttribute('title'),
-      alt: element.getAttribute('alt'),
-    }));
+    const media = [...document.querySelectorAll('img, audio, video, source, iframe')].map(
+      (element) => ({
+        tag: element.tagName.toLowerCase(),
+        src: element.getAttribute('src'),
+        currentSrc: 'currentSrc' in element ? element.currentSrc : null,
+        title: element.getAttribute('title'),
+        alt: element.getAttribute('alt'),
+      }),
+    );
     return {
       title: document.title,
       url: location.href,
@@ -146,7 +166,11 @@ async function inspectCurrentPage(label) {
   }
 
   const frames = page.frames().map((frame) => ({ name: frame.name(), url: frame.url() }));
-  const safe = label.replace(/[^a-z0-9-]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'page';
+  const safe =
+    label
+      .replace(/[^a-z0-9-]+/gi, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase() || 'page';
   await page.screenshot({ path: path.join(OUT, `${safe}.png`), fullPage: false }).catch(() => {});
   await writeFile(path.join(OUT, `${safe}.html`), await page.content(), 'utf8').catch(() => {});
   pages.push({ ...pageInfo, frames, screenshot: `${safe}.png`, html: `${safe}.html` });
@@ -181,40 +205,85 @@ for (const url of extraUrls) {
 await Promise.allSettled(bodyCaptureJobs);
 
 const network = [...responseRecords.values()].sort((a, b) => a.url.localeCompare(b.url));
-const candidatePattern = /(?:\.xml(?:\?|$)|\.json(?:\?|$)|\.jpe?g(?:\?|$)|\.webp(?:\?|$)|\.png(?:\?|$)|\.mp3(?:\?|$)|\.m4a(?:\?|$)|\.wav(?:\?|$)|\.m3u8(?:\?|$)|\.mp4(?:\?|$)|krpano|pano|tour|scene|tile|cube|sphere|360)/i;
-const candidates = network.filter((record) => candidatePattern.test(record.url) || candidatePattern.test(record.contentType ?? ''));
-const downloads = pages.flatMap((entry) => (entry.anchors ?? []).filter((anchor) => anchor.download || /tải|download/i.test(`${anchor.text} ${anchor.href}`)).map((anchor) => ({ page: entry.url, ...anchor })));
-const controls = pages.flatMap((entry) => (entry.controls ?? []).filter((control) => /tải|download|360|toàn cảnh|tham quan/i.test(`${control.text} ${control.ariaLabel ?? ''} ${control.title ?? ''}`)).map((control) => ({ page: entry.url, ...control })));
+const candidatePattern =
+  /(?:\.xml(?:\?|$)|\.json(?:\?|$)|\.jpe?g(?:\?|$)|\.webp(?:\?|$)|\.png(?:\?|$)|\.mp3(?:\?|$)|\.m4a(?:\?|$)|\.wav(?:\?|$)|\.m3u8(?:\?|$)|\.mp4(?:\?|$)|krpano|pano|tour|scene|tile|cube|sphere|360)/i;
+const candidates = network.filter(
+  (record) => candidatePattern.test(record.url) || candidatePattern.test(record.contentType ?? ''),
+);
+const downloads = pages.flatMap((entry) =>
+  (entry.anchors ?? [])
+    .filter((anchor) => anchor.download || /tải|download/i.test(`${anchor.text} ${anchor.href}`))
+    .map((anchor) => ({ page: entry.url, ...anchor })),
+);
+const controls = pages.flatMap((entry) =>
+  (entry.controls ?? [])
+    .filter((control) =>
+      /tải|download|360|toàn cảnh|tham quan/i.test(
+        `${control.text} ${control.ariaLabel ?? ''} ${control.title ?? ''}`,
+      ),
+    )
+    .map((control) => ({ page: entry.url, ...control })),
+);
 
 await writeFile(path.join(OUT, 'pages.json'), `${JSON.stringify(pages, null, 2)}\n`, 'utf8');
 await writeFile(path.join(OUT, 'network.json'), `${JSON.stringify(network, null, 2)}\n`, 'utf8');
-await writeFile(path.join(OUT, 'candidates.json'), `${JSON.stringify(candidates, null, 2)}\n`, 'utf8');
-await writeFile(path.join(OUT, 'captured-bodies.json'), `${JSON.stringify(capturedBodies, null, 2)}\n`, 'utf8');
-await writeFile(path.join(OUT, 'download-links.json'), `${JSON.stringify(downloads, null, 2)}\n`, 'utf8');
-await writeFile(path.join(OUT, 'interesting-controls.json'), `${JSON.stringify(controls, null, 2)}\n`, 'utf8');
-await writeFile(path.join(OUT, 'request-failures.json'), `${JSON.stringify(requestFailures, null, 2)}\n`, 'utf8');
+await writeFile(
+  path.join(OUT, 'candidates.json'),
+  `${JSON.stringify(candidates, null, 2)}\n`,
+  'utf8',
+);
+await writeFile(
+  path.join(OUT, 'captured-bodies.json'),
+  `${JSON.stringify(capturedBodies, null, 2)}\n`,
+  'utf8',
+);
+await writeFile(
+  path.join(OUT, 'download-links.json'),
+  `${JSON.stringify(downloads, null, 2)}\n`,
+  'utf8',
+);
+await writeFile(
+  path.join(OUT, 'interesting-controls.json'),
+  `${JSON.stringify(controls, null, 2)}\n`,
+  'utf8',
+);
+await writeFile(
+  path.join(OUT, 'request-failures.json'),
+  `${JSON.stringify(requestFailures, null, 2)}\n`,
+  'utf8',
+);
 await writeFile(
   path.join(OUT, 'summary.json'),
-  `${JSON.stringify({
-    origin: ORIGIN,
-    inspectedPages: pages.length,
-    networkResponses: network.length,
-    candidateResponses: candidates.length,
-    capturedTextBodies: capturedBodies.filter((entry) => entry.file).length,
-    explicitDownloadLinks: downloads.length,
-    interestingControls: controls.length,
-    requestFailures: requestFailures.length,
-  }, null, 2)}\n`,
+  `${JSON.stringify(
+    {
+      origin: ORIGIN,
+      inspectedPages: pages.length,
+      networkResponses: network.length,
+      candidateResponses: candidates.length,
+      capturedTextBodies: capturedBodies.filter((entry) => entry.file).length,
+      explicitDownloadLinks: downloads.length,
+      interestingControls: controls.length,
+      requestFailures: requestFailures.length,
+    },
+    null,
+    2,
+  )}\n`,
   'utf8',
 );
 
-console.log(JSON.stringify({
-  inspectedPages: pages.length,
-  networkResponses: network.length,
-  candidateResponses: candidates.length,
-  capturedTextBodies: capturedBodies.filter((entry) => entry.file).length,
-  explicitDownloadLinks: downloads.length,
-  interestingControls: controls.length,
-}, null, 2));
+console.log(
+  JSON.stringify(
+    {
+      inspectedPages: pages.length,
+      networkResponses: network.length,
+      candidateResponses: candidates.length,
+      capturedTextBodies: capturedBodies.filter((entry) => entry.file).length,
+      explicitDownloadLinks: downloads.length,
+      interestingControls: controls.length,
+    },
+    null,
+    2,
+  ),
+);
 
 await browser.close();

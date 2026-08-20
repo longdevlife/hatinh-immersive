@@ -7,10 +7,7 @@
     "canonicalScenes": 19,
     "panoramaProductionReady": 0,
     "panoramaExternalOfficialCandidateDestinations": 2,
-    "panoramaExternalCurrentGaps": [
-      "son-trang-co-dam",
-      "nga-ba-dong-loc"
-    ],
+    "panoramaExternalCurrentGaps": ["son-trang-co-dam", "nga-ba-dong-loc"],
     "ambientProductionReadyVerified": 0,
     "viNarrationProductionReadyVerified": 0,
     "viTranscriptProductionReadyVerified": 0

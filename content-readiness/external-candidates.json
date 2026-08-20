@@ -27,10 +27,7 @@
       "publicProjectEvidence": {
         "caseStudyPublished360Views": 146,
         "caseStudyPublished2dImages": "170+",
-        "captureTypes": [
-          "ground-360",
-          "aerial-360"
-        ],
+        "captureTypes": ["ground-360", "aerial-360"],
         "currentGeneralTourSceneCount": 150,
         "currentLegacy42HaTinhSceneCount": 26
       },
@@ -110,9 +107,7 @@
               "scene_ha_tinh_02_khu_luu_niem_nguyen_du_(03)",
               "scene_ha_tinh_02_khu_luu_niem_nguyen_du_(04)"
             ],
-            "aerialScenes": [
-              "scene_ha_tinh_02_khu_luu_niem_nguyen_du_tren_cao_(01)"
-            ],
+            "aerialScenes": ["scene_ha_tinh_02_khu_luu_niem_nguyen_du_tren_cao_(01)"],
             "groundMultires": "512,640,1152,2304,4736",
             "aerialMultires": "512,768,1664,3200,6400"
           },

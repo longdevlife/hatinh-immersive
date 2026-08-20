@@ -6,43 +6,233 @@
       "destinationSlug": "son-trang-co-dam",
       "expectedSceneCount": 8,
       "scenes": [
-        {"sceneId":"son-trang-gate","sceneName":null,"sortOrder":0,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"son-trang-entrance-path","sceneName":null,"sortOrder":1,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"son-trang-courtyard","sceneName":null,"sortOrder":2,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"son-trang-culture","sceneName":null,"sortOrder":3,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"son-trang-ecology-path","sceneName":null,"sortOrder":4,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"son-trang-ecology","sceneName":null,"sortOrder":5,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"son-trang-spiritual-path","sceneName":null,"sortOrder":6,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"son-trang-spiritual","sceneName":null,"sortOrder":7,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"}
+        {
+          "sceneId": "son-trang-gate",
+          "sceneName": null,
+          "sortOrder": 0,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "son-trang-entrance-path",
+          "sceneName": null,
+          "sortOrder": 1,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "son-trang-courtyard",
+          "sceneName": null,
+          "sortOrder": 2,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "son-trang-culture",
+          "sceneName": null,
+          "sortOrder": 3,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "son-trang-ecology-path",
+          "sceneName": null,
+          "sortOrder": 4,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "son-trang-ecology",
+          "sceneName": null,
+          "sortOrder": 5,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "son-trang-spiritual-path",
+          "sceneName": null,
+          "sortOrder": 6,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "son-trang-spiritual",
+          "sceneName": null,
+          "sortOrder": 7,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        }
       ]
     },
     {
       "destinationSlug": "bien-thien-cam",
       "expectedSceneCount": 3,
       "scenes": [
-        {"sceneId":"thien-cam-boardwalk","sceneName":null,"sortOrder":0,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":["apps/web/public/demo/360/thien-cam-boardwalk"],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"thien-cam-shore","sceneName":null,"sortOrder":1,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":["apps/web/public/demo/360/thien-cam-shore"],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"thien-cam-lookout","sceneName":null,"sortOrder":2,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":["apps/web/public/demo/360/thien-cam-lookout"],"needsPhysicalVerification":true,"auditStatus":"pending"}
+        {
+          "sceneId": "thien-cam-boardwalk",
+          "sceneName": null,
+          "sortOrder": 0,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": ["apps/web/public/demo/360/thien-cam-boardwalk"],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "thien-cam-shore",
+          "sceneName": null,
+          "sortOrder": 1,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": ["apps/web/public/demo/360/thien-cam-shore"],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "thien-cam-lookout",
+          "sceneName": null,
+          "sortOrder": 2,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": ["apps/web/public/demo/360/thien-cam-lookout"],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        }
       ]
     },
     {
       "destinationSlug": "khu-luu-niem-nguyen-du",
       "expectedSceneCount": 4,
       "scenes": [
-        {"sceneId":"nguyen-du-courtyard","sceneName":null,"sortOrder":0,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":["apps/web/public/demo/360/nguyen-du-courtyard"],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"nguyen-du-memorial-house","sceneName":null,"sortOrder":1,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"nguyen-du-statue","sceneName":null,"sortOrder":2,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"nguyen-du-garden-path","sceneName":null,"sortOrder":3,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"}
+        {
+          "sceneId": "nguyen-du-courtyard",
+          "sceneName": null,
+          "sortOrder": 0,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": ["apps/web/public/demo/360/nguyen-du-courtyard"],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "nguyen-du-memorial-house",
+          "sceneName": null,
+          "sortOrder": 1,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "nguyen-du-statue",
+          "sceneName": null,
+          "sortOrder": 2,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "nguyen-du-garden-path",
+          "sceneName": null,
+          "sortOrder": 3,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        }
       ]
     },
     {
       "destinationSlug": "nga-ba-dong-loc",
       "expectedSceneCount": 4,
       "scenes": [
-        {"sceneId":"dong-loc-memorial","sceneName":null,"sortOrder":0,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":["apps/web/public/demo/360/dong-loc-memorial"],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"dong-loc-monument","sceneName":null,"sortOrder":1,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"dong-loc-remembrance","sceneName":null,"sortOrder":2,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"},
-        {"sceneId":"dong-loc-approach","sceneName":null,"sortOrder":3,"lat":null,"lng":null,"panoramaRequired":true,"legacyRefs":[],"needsPhysicalVerification":true,"auditStatus":"pending"}
+        {
+          "sceneId": "dong-loc-memorial",
+          "sceneName": null,
+          "sortOrder": 0,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": ["apps/web/public/demo/360/dong-loc-memorial"],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "dong-loc-monument",
+          "sceneName": null,
+          "sortOrder": 1,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "dong-loc-remembrance",
+          "sceneName": null,
+          "sortOrder": 2,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        },
+        {
+          "sceneId": "dong-loc-approach",
+          "sceneName": null,
+          "sortOrder": 3,
+          "lat": null,
+          "lng": null,
+          "panoramaRequired": true,
+          "legacyRefs": [],
+          "needsPhysicalVerification": true,
+          "auditStatus": "pending"
+        }
       ]
     }
   ],

@@ -16,25 +16,158 @@
     "testFixturesAreProductionEvidence": false
   },
   "sceneTranscripts": [
-    {"sceneId":"son-trang-gate","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"son-trang-entrance-path","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"son-trang-courtyard","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"son-trang-culture","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"son-trang-ecology-path","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"son-trang-ecology","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"son-trang-spiritual-path","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"son-trang-spiritual","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"thien-cam-boardwalk","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"thien-cam-shore","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"thien-cam-lookout","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"nguyen-du-courtyard","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"nguyen-du-memorial-house","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"nguyen-du-statue","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"nguyen-du-garden-path","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"dong-loc-memorial","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"dong-loc-monument","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"dong-loc-remembrance","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"},
-    {"sceneId":"dong-loc-approach","locale":"vi","required":true,"productionTranscriptFoundInRepository":false,"runtimeDatabaseVerified":false,"verdict":"REPLACE"}
+    {
+      "sceneId": "son-trang-gate",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "son-trang-entrance-path",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "son-trang-courtyard",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "son-trang-culture",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "son-trang-ecology-path",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "son-trang-ecology",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "son-trang-spiritual-path",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "son-trang-spiritual",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "thien-cam-boardwalk",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "thien-cam-shore",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "thien-cam-lookout",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "nguyen-du-courtyard",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "nguyen-du-memorial-house",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "nguyen-du-statue",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "nguyen-du-garden-path",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "dong-loc-memorial",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "dong-loc-monument",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "dong-loc-remembrance",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    },
+    {
+      "sceneId": "dong-loc-approach",
+      "locale": "vi",
+      "required": true,
+      "productionTranscriptFoundInRepository": false,
+      "runtimeDatabaseVerified": false,
+      "verdict": "REPLACE"
+    }
   ],
   "notes": [
     "E2E/test transcript fixtures prove capability only and are not production content.",
