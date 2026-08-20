@@ -1,0 +1,46 @@
+{
+  "generatedAt": "2026-08-20",
+  "providers": [
+    {
+      "provider": "hatinh360-star-global",
+      "priority": 1,
+      "platformUrl": "https://dulichhatinh360.com",
+      "projectViewerUrl": "https://platform.starglobal3d.com/smart-tourism-360/du-lich-ha-tinh/",
+      "viewerEngineEvidence": "krpano 1.23.1 reported by public viewer crawl",
+      "publicProjectEvidence": {
+        "published360Views": 146,
+        "published2dImages": "170+",
+        "captureTypes": ["ground-360", "aerial-360"],
+        "knownPrimaryDestinations": ["khu-du-lich-thien-cam", "khu-du-lich-thach-hai", "khu-du-lich-loc-ha", "diem-du-lich-da-bac-eco"],
+        "knownIntegratedDestinations": ["khu-luu-niem-nguyen-du", "nga-ba-dong-loc", "chua-huong-tich", "hai-thuong-lan-ong"]
+      },
+      "knownPublicRoutes": [
+        "https://dulichhatinh360.com/khu-du-lich-thien-cam",
+        "https://dulichhatinh360.com/khu-du-lich-thach-hai",
+        "https://dulichhatinh360.com/khu-du-lich-loc-ha",
+        "https://dulichhatinh360.com/diem-du-lich-da-bac-eco"
+      ],
+      "assetHostEvidence": "https://s3.hcm-1.cloud.cmctelecom.vn/starglobal-3d/smart-tourism-360/du-lich-ha-tinh/ (observed for public viewer resources)",
+      "downloadMechanism": null,
+      "downloadMechanismStatus": "needs-interactive-verification",
+      "usageLane": "discovery-only-until-download-mechanism-is-verified",
+      "productionRightsStatus": "unverified",
+      "notes": "If an explicit public download control yields a panorama source, record it as demo-only-official-download until production reuse rights are separately evidenced. Do not infer permission from browser-readable tiles alone."
+    },
+    {
+      "provider": "existing-repo-demo",
+      "priority": 2,
+      "usageLane": "demo-only",
+      "knownPackages": [
+        "apps/web/public/demo/360/thien-cam-boardwalk",
+        "apps/web/public/demo/360/thien-cam-shore",
+        "apps/web/public/demo/360/thien-cam-lookout",
+        "apps/web/public/demo/360/nguyen-du-courtyard",
+        "apps/web/public/demo/360/dong-loc-memorial",
+        "apps/web/public/demo/360/son-trang-gate",
+        "apps/web/public/demo/360/son-trang-tour"
+      ],
+      "productionRightsStatus": "not-established-by-demo-package"
+    }
+  ]
+}
