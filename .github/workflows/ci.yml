@@ -112,6 +112,9 @@ jobs:
       - name: Critical-path end-to-end tests
         run: pnpm test:e2e
 
+      - name: Deterministic panorama lifecycle performance end-to-end test
+        run: pnpm --filter @hatinh/web test:e2e:panorama-lifecycle
+
       - name: Deterministic MapLibre minimap end-to-end test
         run: pnpm --filter @hatinh/web test:e2e:minimap
 

@@ -2,14 +2,14 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  testIgnore:
-    /(?:explore-map-real|explore-map-hybrid-controls|explore-map-worker|immersive-(minimap|production|parity)|immersive-production-panorama-real|panorama-lifecycle|selected-3d(?:-(?:local-anchors|public-runtime))?|navigation-return-context|panorama-tour|public-demo-boundary|reference-parity-(?:immersive|real-psv))\.spec\.ts/,
-  fullyParallel: true,
+  testMatch: /panorama-lifecycle\.spec\.ts/,
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: 'http://127.0.0.1:4179',
     trace: 'retain-on-failure',
   },
   projects: [
@@ -19,7 +19,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm --filter @hatinh/web exec vite --host 127.0.0.1 --port 4173',
+    command: 'pnpm --filter @hatinh/web exec vite --host 127.0.0.1 --port 4179',
     env: {
       ...process.env,
       VITE_EXPLORE_MAP_MODE: 'fake',
@@ -34,6 +34,6 @@ export default defineConfig({
     },
     reuseExistingServer: false,
     timeout: 120_000,
-    url: 'http://127.0.0.1:4173',
+    url: 'http://127.0.0.1:4179',
   },
 });
