@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ImmersiveAudioState, ImmersiveAudioTrack } from '../../immersive-audio';
-import type { ImmersiveCaptionCapability, PanoramaNode } from '../../../shared/contracts';
+import type { ImmersiveAudioState } from '../../immersive-audio';
+import type {
+  ImmersiveAudioTrack,
+  ImmersiveCaptionCapability,
+  PanoramaNode,
+} from '../../../shared/contracts';
 import {
   buildImmersiveMediaDockVm,
   type ImmersiveMediaDockVmInput,
