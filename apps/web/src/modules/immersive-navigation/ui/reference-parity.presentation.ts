@@ -1,7 +1,6 @@
 import type {
   HotspotVm,
   ImmersiveAudioTrack,
-  ImmersiveCaptionCapability,
   ImmersiveAudioTrackType,
   ImmersiveLocale,
   ImmersiveTranscriptContent,
@@ -18,6 +17,7 @@ import type {
   ImmersiveMediaDockContract,
   ImmersiveMediaDockMode,
   ImmersiveMediaDockNarrationStatus,
+  ImmersiveCaptionCapabilityContract,
   ReferenceParityAudioContract,
   ReferenceParityAutoTourContract,
   ReferenceParityPresentationContract,
@@ -263,7 +263,7 @@ function toAudioVm(
 
 function getCaptionCapability(
   content: ImmersiveTranscriptContent | null,
-): ImmersiveCaptionCapability {
+): ImmersiveCaptionCapabilityContract {
   if (!content) {
     return 'none';
   }

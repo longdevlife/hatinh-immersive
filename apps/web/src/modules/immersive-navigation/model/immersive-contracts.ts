@@ -1,11 +1,28 @@
 import type {
   HotspotVm,
-  ImmersiveCaptionCapability,
   ImmersiveLocale,
   ImmersiveTranscriptContent,
-  PanoramaNode,
   RendererStatus,
 } from '../../../shared/contracts';
+
+/** Closed product vocabulary owned by the Phase 2 presentation contract. */
+export type ReferenceParitySceneRole = 'major-stop' | 'connector';
+
+/**
+ * Deliberately independent from shared panorama/media model unions.
+ * Adding an engine/provider media quality must not silently change this UI contract.
+ */
+export type ImmersiveMediaQualityContract = 'ready' | 'low-resolution' | 'missing' | 'invalid';
+
+export type ImmersiveCaptionCapabilityContract = 'none' | 'plain-transcript' | 'timed-captions';
+
+export type ImmersiveMediaDockModeContract = 'free-explore' | 'auto-tour';
+
+export type ImmersiveMediaDockNarrationStatusContract =
+  'idle' | 'loading' | 'playing' | 'paused' | 'unavailable';
+
+export type ImmersiveSceneTransactionStatusContract =
+  'idle' | 'entering-panorama' | 'navigating-scene';
 
 /**
  * Stable scene facts consumed by the unified panorama presentation.
@@ -15,11 +32,11 @@ export interface ReferenceParitySceneContract {
   id: string;
   label: string;
   shortLabel: string;
-  role: 'major-stop' | 'connector';
+  role: ReferenceParitySceneRole;
   isMajorStop: boolean;
   isCurrent: boolean;
   isVisited: boolean;
-  mediaQuality: NonNullable<PanoramaNode['mediaQuality']>;
+  mediaQuality: ImmersiveMediaQualityContract;
   thumbnailUrl: string | null;
   canNavigate: boolean;
 }
@@ -54,10 +71,9 @@ export interface ReferenceParityPresentationContract {
   autoTour: ReferenceParityAutoTourContract;
 }
 
-export type ImmersiveMediaDockMode = 'free-explore' | 'auto-tour';
+export type ImmersiveMediaDockMode = ImmersiveMediaDockModeContract;
 
-export type ImmersiveMediaDockNarrationStatus =
-  'idle' | 'loading' | 'playing' | 'paused' | 'unavailable';
+export type ImmersiveMediaDockNarrationStatus = ImmersiveMediaDockNarrationStatusContract;
 
 export interface ImmersiveMediaDockAutoTourCapabilitiesContract {
   canStart: boolean;
@@ -97,7 +113,7 @@ export interface ImmersiveMediaDockContract {
   };
   transcript: {
     available: boolean;
-    capability: ImmersiveCaptionCapability;
+    capability: ImmersiveCaptionCapabilityContract;
     content: ImmersiveTranscriptContent | null;
   };
   autoTour: {
@@ -136,7 +152,7 @@ export interface ImmersiveMediaDockActionsContract {
   onListenInLocale(locale: ImmersiveLocale): void;
 }
 
-export type ImmersiveSceneTransactionStatus = 'idle' | 'entering-panorama' | 'navigating-scene';
+export type ImmersiveSceneTransactionStatus = ImmersiveSceneTransactionStatusContract;
 
 export interface ImmersiveSceneTransactionContract {
   committedSceneId: string | null;

@@ -1,17 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ImmersiveAudioState } from '../../immersive-audio';
-import type {
-  ImmersiveAudioTrack,
-  ImmersiveCaptionCapability,
-  PanoramaNode,
-} from '../../../shared/contracts';
+import type { ImmersiveAudioTrack, PanoramaNode } from '../../../shared/contracts';
 import {
   buildImmersiveMediaDockVm,
   type ImmersiveMediaDockVmInput,
 } from '../ui/reference-parity.presentation';
 import {
   toImmersiveSceneTransactionContract,
+  type ImmersiveCaptionCapabilityContract,
   type ImmersiveMediaDockContract,
 } from './immersive-contracts';
 
@@ -90,7 +87,7 @@ function buildDockContract(): ImmersiveMediaDockContract {
 
 describe('Phase 2 frozen immersive contracts', () => {
   it('keeps caption capability as the exact closed product union', () => {
-    const capabilities: ImmersiveCaptionCapability[] = [
+    const capabilities: ImmersiveCaptionCapabilityContract[] = [
       'none',
       'plain-transcript',
       'timed-captions',
