@@ -20,6 +20,7 @@ import {
 
 import {
   canEnterSelected3D,
+  DEFAULT_DESTINATION_CAPABILITY_CONFIG,
   resolveDestinationCapabilityConfig,
 } from '../modules/destination-detail/model/destination-capabilities';
 import {
@@ -81,8 +82,17 @@ if (import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake' && e2eFailure) {
 }
 
 const useFakeData = import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake';
-const destinationCapabilityConfig = resolveDestinationCapabilityConfig(import.meta.env);
 const selected3DAnchorSource = resolveSelected3DAnchorSource(import.meta.env);
+const isExplicitSelected3DTestMode =
+  selected3DAnchorSource === 'demo' &&
+  import.meta.env.VITE_IMMERSIVE_PANORAMA_TOUR_MEDIA === 'synthetic' &&
+  import.meta.env.VITE_IMMERSIVE_PANORAMA_TOUR_TEST_MODE === 'true';
+const effectiveSelected3DAnchorSource = isExplicitSelected3DTestMode
+  ? selected3DAnchorSource
+  : 'none';
+const destinationCapabilityConfig = isExplicitSelected3DTestMode
+  ? resolveDestinationCapabilityConfig(import.meta.env)
+  : DEFAULT_DESTINATION_CAPABILITY_CONFIG;
 const panoramaTourSource = resolvePanoramaTourSource(import.meta.env);
 const panoramaTourMediaMode = resolvePanoramaTourMediaMode(import.meta.env);
 const fakeDemoMode = panoramaTourSource === 'demo' ? panoramaTourMediaMode : 'public';
@@ -107,7 +117,10 @@ function FakeImmersiveExperience() {
       <LazyImmersiveExperience
         destinations={destinations}
         manifest={manifest}
-        selected3DAnchors={getDemoSelected3DAnchors(destinationSlug)}
+        {...(isExplicitSelected3DTestMode
+          ? { selected3DAnchors: getDemoSelected3DAnchors(destinationSlug) }
+          : {})}
+        selected3DAnchorSource={effectiveSelected3DAnchorSource}
         panoramaTourSource={panoramaTourSource}
         panoramaTourMediaMode={fakeDemoMode}
         audioSourcePolicy={audioSourcePolicy}
@@ -131,7 +144,7 @@ function PublicImmersiveExperience() {
         panoramaTourSource={panoramaTourSource}
         panoramaTourMediaMode={panoramaTourMediaMode}
         audioSourcePolicy={audioSourcePolicy}
-        selected3DAnchorSource={selected3DAnchorSource}
+        selected3DAnchorSource={effectiveSelected3DAnchorSource}
       />
     </Suspense>
   );

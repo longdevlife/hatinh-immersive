@@ -29,6 +29,7 @@ export default defineConfig({
       VITE_IMMERSIVE_PANORAMA_TOUR_SOURCE: 'demo',
       VITE_IMMERSIVE_PANORAMA_TOUR_MEDIA: 'public',
       VITE_IMMERSIVE_PANORAMA_TOUR_TEST_MODE: 'false',
+      VITE_IMMERSIVE_SELECTED_3D_CAPABILITIES: 'son-trang-co-dam=available',
     },
     reuseExistingServer: false,
     timeout: 120_000,

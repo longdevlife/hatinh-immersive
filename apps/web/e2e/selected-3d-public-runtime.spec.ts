@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('public API destination runtime receives explicit demo local anchors', async ({ page }) => {
+test('test-only API runtime receives explicit demo local anchors', async ({ page }) => {
   const manifest = {
     ambientTrackId: null,
     audioTracks: [],

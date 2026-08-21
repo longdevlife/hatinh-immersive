@@ -34,3 +34,14 @@ test('public fake direct Sơn Trang panorama links fall back without synthetic s
     0,
   );
 });
+
+test('public fake Sơn Trang selected 3D stays closed without an explicit test anchor source', async ({
+  page,
+}) => {
+  await page.goto('/explore/son-trang-co-dam/immersive?mode=overview3d');
+
+  await expect(page).toHaveURL('/explore/son-trang-co-dam');
+  await expect(page.getByRole('heading', { name: 'Sơn Trang Cổ Đạm' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Xem 3D' })).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Các góc nhìn 3D' })).toHaveCount(0);
+});

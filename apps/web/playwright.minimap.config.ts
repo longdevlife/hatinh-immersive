@@ -30,6 +30,7 @@ export default defineConfig({
       VITE_IMMERSIVE_PANORAMA_TOUR_TEST_MODE: 'true',
       VITE_IMMERSIVE_SELECTED_3D_CAPABILITIES:
         'son-trang-co-dam=available,bien-thien-cam=available',
+      VITE_IMMERSIVE_SELECTED_3D_ANCHOR_SOURCE: 'demo',
       VITE_MINIMAP_STYLE_URL: '/test/minimap-style.json',
     },
     reuseExistingServer: false,
