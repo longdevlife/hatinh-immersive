@@ -48,25 +48,6 @@ function getActiveTranscriptSegment(
   );
 }
 
-function getAutoTourStatusLabel(phase: ImmersiveMediaDockVm['autoTour']['phase']): string {
-  switch (phase) {
-    case 'narrating':
-      return 'Đang kể chuyện';
-    case 'transitioning':
-      return 'Đang chuyển cảnh';
-    case 'settling':
-      return 'Đang chuẩn bị cảnh';
-    case 'holding':
-      return 'Đang chờ cảnh tiếp theo';
-    case 'fallback':
-      return 'Tiếp tục không có thuyết minh';
-    case 'paused':
-      return 'Đang tạm dừng';
-    case 'idle':
-      return 'Sẵn sàng';
-  }
-}
-
 export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions }) => {
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
   const [soundGateDismissed, setSoundGateDismissed] = useState(false);
@@ -296,7 +277,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
               </span>
             </strong>
             <span data-testid="immersive-media-dock-status">
-              {vm.autoTour.isPaused ? 'Đang tạm dừng' : getAutoTourStatusLabel(vm.autoTour.phase)}
+              {vm.autoTour.isPaused ? 'Đang tạm dừng' : 'Đang tham quan'}
             </span>
             {vm.autoTour.isPaused ? (
               <button type="button" onClick={actions.onResumeAutoTour}>

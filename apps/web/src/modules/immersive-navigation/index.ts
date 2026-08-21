@@ -15,3 +15,23 @@ export type {
   NavigationView,
   RendererName,
 } from './model/navigation.types';
+export type {
+  ImmersiveMediaDockActionsContract,
+  ImmersiveMediaDockAutoTourCapabilitiesContract,
+  ImmersiveMediaDockContract,
+  ImmersiveMediaDockModeContract,
+  ImmersiveMediaDockMode,
+  ImmersiveMediaDockNarrationStatusContract,
+  ImmersiveMediaDockNarrationStatus,
+  ImmersiveCaptionCapabilityContract,
+  ImmersiveMediaQualityContract,
+  ImmersiveSceneTransactionStatusContract,
+  ImmersiveSceneTransactionContract,
+  ImmersiveSceneTransactionStatus,
+  ReferenceParityAudioContract,
+  ReferenceParityAutoTourContract,
+  ReferenceParityPresentationContract,
+  ReferenceParitySceneContract,
+  ReferenceParitySceneRole,
+} from './model/immersive-contracts';
+export { toImmersiveSceneTransactionContract } from './model/immersive-contracts';

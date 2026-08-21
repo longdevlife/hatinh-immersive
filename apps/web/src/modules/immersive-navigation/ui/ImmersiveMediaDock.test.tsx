@@ -43,7 +43,6 @@ function createVm(overrides: Partial<ImmersiveMediaDockVm> = {}): ImmersiveMedia
     autoTour: {
       isActive: false,
       isPaused: false,
-      phase: 'idle',
       currentIndex: 0,
       total: 4,
       canStart: true,
@@ -283,7 +282,6 @@ describe('ImmersiveMediaDock semantic contract', () => {
       autoTour: {
         isActive: true,
         isPaused: false,
-        phase: 'narrating',
         currentIndex: 2,
         total: 4,
         canStart: false,

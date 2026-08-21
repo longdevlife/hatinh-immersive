@@ -1,6 +1,5 @@
 import type {
   HotspotVm,
-  ImmersiveCaptionCapability,
   ImmersiveAudioTrack,
   ImmersiveAudioTrackType,
   ImmersiveLocale,
@@ -11,51 +10,31 @@ import type {
 import type { ImmersiveAudioState } from '../../immersive-audio';
 import { resolveSceneAudio } from '../../immersive-audio';
 import { getPanoramaTourSceneRole, isPanoramaSceneUsable } from '../../panorama-tour';
-import type { ImmersiveShareResult } from '../model/reference-parity.actions';
 import type { AutoTourPhase } from '../model/auto-tour.controller';
+import type {
+  ImmersiveMediaDockActionsContract,
+  ImmersiveMediaDockAutoTourCapabilitiesContract,
+  ImmersiveMediaDockContract,
+  ImmersiveMediaDockMode,
+  ImmersiveMediaDockNarrationStatus,
+  ImmersiveCaptionCapabilityContract,
+  ReferenceParityAudioContract,
+  ReferenceParityAutoTourContract,
+  ReferenceParityPresentationContract,
+  ReferenceParitySceneContract,
+} from '../model/immersive-contracts';
 
-export interface ReferenceParitySceneVm {
-  id: string;
-  label: string;
-  shortLabel: string;
-  role: 'major-stop' | 'connector';
-  isMajorStop: boolean;
-  isCurrent: boolean;
-  isVisited: boolean;
-  mediaQuality: NonNullable<PanoramaNode['mediaQuality']>;
-  thumbnailUrl: string | null;
-  canNavigate: boolean;
-}
-
-export interface ReferenceParityAudioVm {
-  ambientAvailable: boolean;
-  narrationAvailable: boolean;
-  masterMuted: boolean;
-  ambientEnabled: boolean;
-  narrationEnabled: boolean;
-  narrationPlaying: boolean;
-  autoplayBlocked: boolean;
-}
-
-export interface ReferenceParityAutoTourVm {
-  isRunning: boolean;
-  isPaused: boolean;
-  canStart: boolean;
-}
-
-export interface ReferenceParityPresentationVm {
-  destinationSlug: string;
-  destinationName: string;
-  locale: ImmersiveLocale;
-  currentSceneId: string | null;
-  status: RendererStatus;
-  isTransitioning: boolean;
-  mediaUnavailable: boolean;
-  scenes: ReferenceParitySceneVm[];
-  hotspots: HotspotVm[];
-  audio: ReferenceParityAudioVm;
-  autoTour: ReferenceParityAutoTourVm;
-}
+export type ReferenceParitySceneVm = ReferenceParitySceneContract;
+export type ReferenceParityAudioVm = ReferenceParityAudioContract;
+export type ReferenceParityAutoTourVm = ReferenceParityAutoTourContract;
+export type ReferenceParityPresentationVm = ReferenceParityPresentationContract;
+export type ImmersiveMediaDockVm = ImmersiveMediaDockContract;
+export type ImmersiveMediaDockAutoTourCapabilities = ImmersiveMediaDockAutoTourCapabilitiesContract;
+export type ImmersiveMediaDockActions = ImmersiveMediaDockActionsContract;
+export type {
+  ImmersiveMediaDockMode,
+  ImmersiveMediaDockNarrationStatus,
+} from '../model/immersive-contracts';
 
 export interface ReferenceParityPresentationActions {
   onBack(): void;
@@ -69,89 +48,13 @@ export interface ReferenceParityPresentationActions {
   onToggleNarration(): void;
   onToggleAutoTour(): void;
   onRetry(): void;
-  onShare(): Promise<ImmersiveShareResult>;
+  onShare(): Promise<import('../model/reference-parity.actions').ImmersiveShareResult>;
   onFullscreen(): void;
 }
 
 export interface ReferenceParityAudioInput {
   state?: ImmersiveAudioState;
   tracks?: readonly ImmersiveAudioTrack[];
-}
-
-export type ImmersiveMediaDockMode = 'free-explore' | 'auto-tour';
-
-export type ImmersiveMediaDockNarrationStatus =
-  'idle' | 'loading' | 'playing' | 'paused' | 'unavailable';
-
-export interface ImmersiveMediaDockVm {
-  mode: ImmersiveMediaDockMode;
-  sceneId: string | null;
-  sceneLabel: string;
-  soundGateRequired: boolean;
-  sound: {
-    available: boolean;
-    masterMuted: boolean;
-  };
-  captionsEnabled: boolean;
-  narration: {
-    available: boolean;
-    status: ImmersiveMediaDockNarrationStatus;
-    currentTimeSeconds: number;
-    durationSeconds: number;
-    canSeek: boolean;
-    activeLocale: ImmersiveLocale | null;
-    alternateLocales: readonly ImmersiveLocale[];
-  };
-  transcript: {
-    available: boolean;
-    capability: ImmersiveCaptionCapability;
-    content: ImmersiveTranscriptContent | null;
-  };
-  autoTour: {
-    isActive: boolean;
-    isPaused: boolean;
-    phase: AutoTourPhase;
-    currentIndex: number;
-    total: number;
-    canStart: boolean;
-    canPause: boolean;
-    canResume: boolean;
-    canSkipStory: boolean;
-    canPrevious: boolean;
-    canNext: boolean;
-    canExit: boolean;
-  };
-}
-
-export interface ImmersiveMediaDockAutoTourCapabilities {
-  canStart: boolean;
-  canPause: boolean;
-  canResume: boolean;
-  canSkipStory: boolean;
-  canPrevious: boolean;
-  canNext: boolean;
-  canExit: boolean;
-}
-
-export interface ImmersiveMediaDockActions {
-  onEnableSound(): Promise<boolean>;
-  onContinueMuted(): void;
-  onPlayNarration(): void;
-  onResumeNarration(): void;
-  onPauseNarration(): void;
-  onToggleMasterMute(): void;
-  onSeekNarration(seconds: number): void;
-  onToggleCaptions(): void;
-  onOpenTranscript(): void;
-  onCloseTranscript(): void;
-  onStartAutoTour(): void;
-  onPauseAutoTour(): void;
-  onResumeAutoTour(): void;
-  onSkipStory(): void;
-  onPreviousScene(): void;
-  onNextScene(): void;
-  onExitAutoTour(): void;
-  onListenInLocale(locale: ImmersiveLocale): void;
 }
 
 export interface ImmersiveMediaDockVmInput {
@@ -262,7 +165,6 @@ export function buildImmersiveMediaDockVm({
     autoTour: {
       isActive: autoTour.isActive,
       isPaused: autoTour.isPaused,
-      phase: autoTour.phase,
       currentIndex,
       total: tourEligibleNodes.length,
       ...autoTour.capabilities,
@@ -361,7 +263,7 @@ function toAudioVm(
 
 function getCaptionCapability(
   content: ImmersiveTranscriptContent | null,
-): ImmersiveCaptionCapability {
+): ImmersiveCaptionCapabilityContract {
   if (!content) {
     return 'none';
   }
