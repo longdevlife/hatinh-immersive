@@ -1,0 +1,26 @@
+.editorial-system {
+  --editorial-forest: #10221d;
+  --editorial-forest-soft: #245b48;
+  --editorial-paper: #f4f0e8;
+  --editorial-paper-quiet: #fffdf8;
+  --editorial-terracotta: #d9803c;
+  --editorial-ink: #17261f;
+  --editorial-muted: #6c7d72;
+  --editorial-radius-card: 1rem;
+  --editorial-radius-control: 999px;
+  --editorial-shadow-image: 0 1.5rem 3.5rem rgb(8 19 15 / 0.18);
+  --editorial-motion-enter: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.editorial-system :where(.editorial-focusable):focus-visible {
+  outline: 3px solid var(--editorial-terracotta);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editorial-system :where(.editorial-motion) {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}

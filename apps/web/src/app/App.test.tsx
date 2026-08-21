@@ -16,6 +16,7 @@ describe('public application shell', () => {
     render(<App />);
 
     expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByTestId('public-site-shell')).toHaveClass('editorial-system');
   });
 
   it('renders the production public header without foundation preview copy', () => {
