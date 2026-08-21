@@ -1085,9 +1085,7 @@ body:has(.home-cinematic) .site-shell-header button[data-no-i18n] {
   }
 }
 
-/* ========================================================================== 
-   Editorial Field Guide refinement
-   ========================================================================== */
+/* Editorial Field Guide refinement */
 
 .home-cinematic {
   background: var(--editorial-forest, #10221d);
