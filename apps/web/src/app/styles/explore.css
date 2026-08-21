@@ -686,3 +686,138 @@ html::-webkit-scrollbar {
 [data-theme='dark'] .destination-panel__selected-preview {
   background-color: rgba(255, 255, 255, 0.05);
 }
+
+/* ============================================================================
+   Editorial Field Guide refinement
+   ============================================================================ */
+
+.explore-experience {
+  background: var(--editorial-paper, #f4f0e8);
+  color: var(--editorial-ink, #17261f);
+}
+
+.explore-experience__layout {
+  gap: 0.75rem;
+  border: 0;
+  border-radius: 1.5rem;
+  background: var(--editorial-paper-quiet, #fffdf8);
+  box-shadow: var(--editorial-shadow-image, 0 1.5rem 3.5rem rgb(8 19 15 / 0.18));
+}
+
+.explore-experience__destinations {
+  border-right: 1px solid rgb(23 38 31 / 0.1);
+  background: var(--editorial-paper-quiet, #fffdf8);
+}
+
+.explore-experience__header {
+  padding: clamp(1.5rem, 3vw, 2.25rem) clamp(1.25rem, 2.5vw, 2rem) 0.75rem;
+}
+
+.explore-experience__header .eyebrow {
+  color: var(--editorial-terracotta, #d9803c);
+  letter-spacing: 0.14em;
+}
+
+.explore-experience__header h1 {
+  font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+  font-size: clamp(2rem, 3.3vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+
+.explore-experience__map {
+  border-radius: 1.25rem;
+  background: var(--editorial-forest, #10221d);
+}
+
+.destination-panel {
+  background: var(--editorial-paper-quiet, #fffdf8);
+}
+
+.destination-panel__header {
+  border-bottom: 1px solid rgb(23 38 31 / 0.1);
+  padding: 0.75rem clamp(1rem, 2vw, 1.5rem) 1rem;
+}
+
+.destination-panel__search-input {
+  border-color: rgb(23 38 31 / 0.16);
+  border-radius: 0.8rem;
+  background: var(--editorial-paper, #f4f0e8);
+}
+
+.destination-panel__filter-chip {
+  border-color: rgb(23 38 31 / 0.14);
+  border-radius: 0.7rem;
+  color: var(--editorial-forest, #10221d);
+}
+
+.destination-panel__filter-chip--active {
+  border-color: var(--editorial-forest, #10221d);
+  background: var(--editorial-forest, #10221d);
+  color: var(--editorial-paper-quiet, #fffdf8);
+}
+
+.destination-card {
+  border-radius: 0.95rem;
+  padding: 0.6rem;
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms var(--editorial-motion-enter, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.destination-card:hover {
+  background: rgb(16 34 29 / 0.045);
+}
+
+.destination-card--selected {
+  background: rgb(16 34 29 / 0.075);
+  box-shadow: inset 3px 0 0 var(--editorial-terracotta, #d9803c);
+}
+
+.destination-card__media {
+  width: 7.25rem;
+  height: 5.75rem;
+  border-radius: 0.75rem;
+}
+
+.destination-card__category {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--editorial-terracotta, #d9803c);
+  letter-spacing: 0.08em;
+}
+
+.destination-card__title {
+  color: var(--editorial-forest, #10221d);
+  font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+  font-size: 1.18rem;
+  letter-spacing: -0.025em;
+}
+
+.destination-card__summary {
+  color: var(--editorial-muted, #6c7d72);
+}
+
+@media (max-width: 768px) {
+  .explore-experience__layout {
+    gap: 0;
+    border-radius: 1.25rem 1.25rem 0 0;
+  }
+
+  .explore-experience__map {
+    border-radius: 0;
+  }
+
+  .destination-card__media {
+    width: 6.5rem;
+    height: 5.25rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .destination-card {
+    transition: none;
+  }
+}

@@ -88,6 +88,20 @@ describe('ExploreExperience', () => {
     );
   });
 
+  it('marks the Explore composition as map-first editorial discovery', () => {
+    renderExplore();
+
+    expect(screen.getByRole('main', { name: 'Khám phá Hà Tĩnh' })).toHaveAttribute(
+      'data-editorial-surface',
+      'explore',
+    );
+    expect(screen.getByRole('region', { name: 'Danh sách điểm đến' })).toHaveAttribute(
+      'data-editorial-panel',
+      'field-notes',
+    );
+    expect(screen.getByTestId('explore-map')).toHaveAttribute('data-map-priority', 'primary');
+  });
+
   it('uses one selection state for destination cards and the selected preview', () => {
     renderExplore();
 
