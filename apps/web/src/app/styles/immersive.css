@@ -518,6 +518,52 @@
   outline-offset: 3px;
 }
 
+/* ============================================================================
+   Editorial Field Guide refinement
+   ============================================================================ */
+
+.explore-shell {
+  background: var(--editorial-forest, #10221d);
+}
+
+.explore-shell__viewport {
+  background: var(--editorial-forest, #10221d);
+}
+
+.immersive-button--back {
+  border: 0;
+  border-radius: 0.8rem;
+  background: rgb(16 34 29 / 0.62);
+  box-shadow: 0 0.5rem 1.5rem rgb(8 19 15 / 0.2);
+}
+
+.immersive-button--back:hover,
+.immersive-button--back:focus-visible {
+  background: rgb(16 34 29 / 0.82);
+  border-color: transparent;
+}
+
+.minimap-viewport:not(.minimap-viewport--collapsed) {
+  border: 0;
+  border-radius: 0.85rem;
+  background: rgb(16 34 29 / 0.7);
+  box-shadow: 0 1rem 2.5rem rgb(8 19 15 / 0.28);
+}
+
+.minimap-viewport__header {
+  margin-bottom: 0.65rem;
+}
+
+.info-panel {
+  background: var(--editorial-paper-quiet, #fffdf8);
+  color: var(--editorial-ink, #17261f);
+}
+
+.info-panel h2 {
+  color: var(--editorial-forest, #10221d);
+  font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .immersive-button--back:hover,
   .immersive-button--back:focus-visible {
