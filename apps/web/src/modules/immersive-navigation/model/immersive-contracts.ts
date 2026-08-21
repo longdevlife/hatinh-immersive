@@ -6,7 +6,6 @@ import type {
   PanoramaNode,
   RendererStatus,
 } from '../../../shared/contracts';
-import type { ImmersiveShareResult } from './reference-parity.actions';
 
 /**
  * Stable scene facts consumed by the unified panorama presentation.
