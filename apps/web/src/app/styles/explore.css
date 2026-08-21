@@ -705,7 +705,7 @@ html::-webkit-scrollbar {
 }
 
 .explore-experience__destinations {
-  border-right: 1px solid rgb(23 38 31 / 0.1);
+  border-right: 1px solid var(--editorial-border);
   background: var(--editorial-paper-quiet, #fffdf8);
 }
 
@@ -735,26 +735,26 @@ html::-webkit-scrollbar {
 }
 
 .destination-panel__header {
-  border-bottom: 1px solid rgb(23 38 31 / 0.1);
+  border-bottom: 1px solid var(--editorial-border);
   padding: 0.75rem clamp(1rem, 2vw, 1.5rem) 1rem;
 }
 
 .destination-panel__search-input {
-  border-color: rgb(23 38 31 / 0.16);
+  border-color: var(--editorial-border);
   border-radius: 0.8rem;
   background: var(--editorial-paper, #f4f0e8);
 }
 
 .destination-panel__filter-chip {
-  border-color: rgb(23 38 31 / 0.14);
+  border-color: var(--editorial-border);
   border-radius: 0.7rem;
-  color: var(--editorial-forest, #10221d);
+  color: var(--editorial-heading, #10221d);
 }
 
 .destination-panel__filter-chip--active {
   border-color: var(--editorial-forest, #10221d);
   background: var(--editorial-forest, #10221d);
-  color: var(--editorial-paper-quiet, #fffdf8);
+  color: var(--editorial-on-forest, #fffdf8);
 }
 
 .destination-card {
@@ -767,11 +767,11 @@ html::-webkit-scrollbar {
 }
 
 .destination-card:hover {
-  background: rgb(16 34 29 / 0.045);
+  background: var(--editorial-card-hover);
 }
 
 .destination-card--selected {
-  background: rgb(16 34 29 / 0.075);
+  background: var(--editorial-card-selected);
   box-shadow: inset 3px 0 0 var(--editorial-terracotta, #d9803c);
 }
 
@@ -790,7 +790,7 @@ html::-webkit-scrollbar {
 }
 
 .destination-card__title {
-  color: var(--editorial-forest, #10221d);
+  color: var(--editorial-heading, #10221d);
   font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
   font-size: 1.18rem;
   letter-spacing: -0.025em;

@@ -733,7 +733,7 @@
 }
 
 .panorama-tour-unavailable__title {
-  color: var(--editorial-forest, #10221d);
+  color: var(--editorial-heading, #10221d);
   font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
 }
 

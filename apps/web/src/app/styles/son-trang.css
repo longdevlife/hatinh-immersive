@@ -812,6 +812,7 @@ body:has(.son-trang-experience) .site-shell-header button[data-no-i18n] {
 }
 
 .son-trang-experience__section-title {
+  color: var(--editorial-heading, #10221d);
   font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
   letter-spacing: -0.04em;
 }

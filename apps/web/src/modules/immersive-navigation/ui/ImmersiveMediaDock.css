@@ -720,14 +720,14 @@
 
 .immersive-transcript-panel__header h2,
 .immersive-transcript-panel__segments li p {
-  color: var(--editorial-forest, #10221d);
+  color: var(--editorial-heading, #10221d);
 }
 
 .immersive-transcript-panel__header button {
   border: 0;
   border-radius: 0.6rem;
   background: var(--editorial-paper, #f4f0e8);
-  color: var(--editorial-forest, #10221d);
+  color: var(--editorial-heading, #10221d);
 }
 
 .immersive-transcript-panel__segments li {

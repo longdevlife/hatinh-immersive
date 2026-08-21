@@ -829,14 +829,14 @@
 }
 
 .destination-detail__btn-back {
-  border-color: rgb(16 34 29 / 0.12);
+  border-color: var(--editorial-border);
   background: var(--editorial-paper-quiet, #fffdf8);
-  color: var(--editorial-forest, #10221d);
+  color: var(--editorial-heading, #10221d);
   box-shadow: 0 0.75rem 2rem rgb(8 19 15 / 0.12);
 }
 
 .destination-detail__btn-back:hover {
-  background: #ffffff;
+  background: var(--editorial-paper-quiet, #fffdf8);
   box-shadow: 0 1rem 2.25rem rgb(8 19 15 / 0.16);
 }
 
@@ -871,7 +871,7 @@
 }
 
 .destination-detail__title {
-  color: var(--editorial-forest, #10221d);
+  color: var(--editorial-heading, #10221d);
   font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
   letter-spacing: -0.045em;
 }
@@ -897,12 +897,12 @@
 }
 
 .destination-detail__cta--outline {
-  border-color: rgb(16 34 29 / 0.22);
-  color: var(--editorial-forest, #10221d);
+  border-color: var(--editorial-border);
+  color: var(--editorial-heading, #10221d);
 }
 
 .destination-detail__section-title {
-  color: var(--editorial-forest, #10221d);
+  color: var(--editorial-heading, #10221d);
   font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
 }
 

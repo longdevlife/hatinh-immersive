@@ -1,15 +1,29 @@
 .editorial-system {
   --editorial-forest: #10221d;
   --editorial-forest-soft: #245b48;
-  --editorial-paper: #f4f0e8;
-  --editorial-paper-quiet: #fffdf8;
+  --editorial-paper: var(--theme-bg-app, #f4f0e8);
+  --editorial-paper-quiet: var(--theme-bg-surface, #fffdf8);
   --editorial-terracotta: #d9803c;
-  --editorial-ink: #17261f;
-  --editorial-muted: #6c7d72;
+  --editorial-ink: var(--theme-text-primary, #17261f);
+  --editorial-muted: var(--theme-text-secondary, #6c7d72);
+  --editorial-heading: var(--editorial-forest);
+  --editorial-on-forest: var(--editorial-paper-quiet);
+  --editorial-border: var(--theme-border, rgb(23 38 31 / 0.1));
+  --editorial-card-hover: rgb(16 34 29 / 0.045);
+  --editorial-card-selected: rgb(16 34 29 / 0.075);
   --editorial-radius-card: 1rem;
   --editorial-radius-control: 999px;
   --editorial-shadow-image: 0 1.5rem 3.5rem rgb(8 19 15 / 0.18);
   --editorial-motion-enter: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme='dark'] .editorial-system {
+  --editorial-heading: var(--theme-text-primary, #f2f7f4);
+  --editorial-on-forest: var(--theme-text-primary, #f2f7f4);
+  --editorial-border: var(--theme-border, rgb(255 255 255 / 0.12));
+  --editorial-card-hover: rgb(255 255 255 / 0.05);
+  --editorial-card-selected: rgb(0 168 98 / 0.15);
+  --editorial-shadow-image: 0 1.5rem 3.5rem rgb(0 0 0 / 0.35);
 }
 
 .editorial-system :where(.editorial-focusable):focus-visible {
