@@ -101,6 +101,14 @@ describe('CinematicHome', () => {
       'data-active-slug',
       'son-trang-co-dam',
     );
+    expect(screen.getByTestId('home-cinematic-hero')).toHaveAttribute(
+      'data-editorial-surface',
+      'home-hero',
+    );
+    expect(screen.getByRole('list', { name: 'Các điểm đến' })).toHaveAttribute(
+      'data-carousel-navigation',
+      'passive',
+    );
     expect(screen.getByRole('button', { name: 'Chọn Sơn Trang Cổ Đạm' })).toHaveAttribute(
       'aria-pressed',
       'true',
