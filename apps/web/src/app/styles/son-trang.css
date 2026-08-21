@@ -757,6 +757,92 @@ body:has(.son-trang-experience) .site-shell-header button[data-no-i18n] {
   }
 }
 
+/* ============================================================================
+   Editorial Field Guide refinement
+   ============================================================================ */
+
+.son-trang-experience {
+  background: var(--editorial-paper, #f4f0e8);
+}
+
+.son-trang-experience__hero::after {
+  background: linear-gradient(
+    180deg,
+    rgb(7 14 11 / 0.18) 0%,
+    transparent 34%,
+    rgb(7 14 11 / 0.82) 100%
+  );
+}
+
+.son-trang-experience__category,
+.son-trang-experience__gallery-kicker {
+  color: var(--editorial-terracotta, #d9803c);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  letter-spacing: 0.12em;
+}
+
+.son-trang-experience__hero-content h1 {
+  font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+  letter-spacing: -0.045em;
+}
+
+.son-trang-experience__button--primary {
+  background: var(--editorial-terracotta, #d9803c);
+  color: #1d211b;
+  box-shadow: 0 0.8rem 2rem rgb(8 19 15 / 0.22);
+}
+
+.son-trang-experience__button--primary:hover {
+  background: #e69a5b;
+  box-shadow: 0 1rem 2.4rem rgb(8 19 15 / 0.28);
+}
+
+.son-trang-experience__button--secondary {
+  border-color: rgb(255 255 255 / 0.42);
+  background: rgb(16 34 29 / 0.3);
+}
+
+.son-trang-experience__quick-facts {
+  border-radius: 1rem;
+  background: var(--editorial-paper-quiet, #fffdf8);
+  box-shadow: var(--editorial-shadow-image, 0 1.5rem 3.5rem rgb(8 19 15 / 0.18));
+}
+
+.son-trang-experience__section-title {
+  font-family: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+  letter-spacing: -0.04em;
+}
+
+.son-trang-experience__pillar {
+  border: 0;
+  border-left: 0.2rem solid var(--editorial-terracotta, #d9803c);
+  border-radius: 0.95rem;
+  background: var(--editorial-paper-quiet, #fffdf8);
+  box-shadow: none;
+}
+
+.son-trang-experience__zone-card {
+  border-radius: 1rem;
+}
+
+.son-trang-experience__gallery-kicker {
+  display: block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .son-trang-experience__hero,
+  .son-trang-experience__button,
+  .son-trang-experience__back-button,
+  .son-trang-experience__zone-card,
+  .son-trang-experience__zone-media {
+    animation: none;
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .son-trang-experience__hero,
   .son-trang-experience__quick-facts,

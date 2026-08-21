@@ -44,6 +44,7 @@ describe('DestinationExperience', () => {
     const main = screen.getByRole('main', { name: 'Thông tin điểm đến' });
     expect(main).toBeInTheDocument();
     expect(main).toHaveAttribute('tabindex', '-1');
+    expect(main).toHaveAttribute('data-editorial-surface', 'destination-detail');
     expect(screen.getByRole('heading', { name: 'Sơn Trang Cổ Đạm' })).toBeInTheDocument();
     expect(screen.getByText('Di sản & văn hóa')).toBeInTheDocument();
     expect(screen.getByText(baseDestination.summary)).toBeInTheDocument();

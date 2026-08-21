@@ -75,6 +75,11 @@ describe('SonTrangExperience', () => {
   it('renders required sections (hero, pillars, zones)', () => {
     render(<SonTrangExperience {...defaultProps} />);
 
+    expect(screen.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toHaveAttribute(
+      'data-editorial-surface',
+      'destination-detail-showcase',
+    );
+
     // Main aria-label
     const main = screen.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' });
     expect(main).toBeInTheDocument();
