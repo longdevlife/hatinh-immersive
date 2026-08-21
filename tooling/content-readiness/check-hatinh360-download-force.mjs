@@ -3,15 +3,21 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const OUT = path.resolve(process.env.OUT ?? 'artifact/hatinh360-download-probe');
-const URL = 'https://platform.starglobal3d.com/smart-tourism-360/du-lich-ha-tinh/khu-du-lich-thien-cam';
+const URL =
+  'https://platform.starglobal3d.com/smart-tourism-360/du-lich-ha-tinh/khu-du-lich-thien-cam';
 await mkdir(OUT, { recursive: true });
 const browser = await chromium.launch({ headless: true });
-const context = await browser.newContext({ locale: 'vi-VN', viewport: { width: 1920, height: 1080 } });
+const context = await browser.newContext({
+  locale: 'vi-VN',
+  viewport: { width: 1920, height: 1080 },
+});
 const page = await context.newPage();
 
 const inspect = async (label) => {
   const data = await page.evaluate(() => {
-    const rows = [...document.querySelectorAll('button,a,[role="button"],input,label,[onclick],div,span')]
+    const rows = [
+      ...document.querySelectorAll('button,a,[role="button"],input,label,[onclick],div,span'),
+    ]
       .map((el) => {
         const rect = el.getBoundingClientRect();
         const style = getComputedStyle(el);
@@ -21,19 +27,38 @@ const inspect = async (label) => {
           aria: el.getAttribute('aria-label'),
           title: el.getAttribute('title'),
           className: typeof el.className === 'string' ? el.className : '',
-          visible: rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden',
-          box: { x: Math.round(rect.x), y: Math.round(rect.y), width: Math.round(rect.width), height: Math.round(rect.height) },
+          visible:
+            rect.width > 0 &&
+            rect.height > 0 &&
+            style.display !== 'none' &&
+            style.visibility !== 'hidden',
+          box: {
+            x: Math.round(rect.x),
+            y: Math.round(rect.y),
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+          },
           html: el.outerHTML.slice(0, 1200),
         };
       })
-      .filter((row) => row.visible && (/download|tải|camera|snap|check[- ]?in|chụp|lưu ảnh|save|xuất ảnh/i.test(`${row.text} ${row.aria ?? ''} ${row.title ?? ''} ${row.className}`) || (row.box.x < 150 && row.box.y < 150)));
+      .filter(
+        (row) =>
+          row.visible &&
+          (/download|tải|camera|snap|check[- ]?in|chụp|lưu ảnh|save|xuất ảnh/i.test(
+            `${row.text} ${row.aria ?? ''} ${row.title ?? ''} ${row.className}`,
+          ) ||
+            (row.box.x < 150 && row.box.y < 150)),
+      );
     return {
       bodyText: (document.body?.innerText || '').slice(0, 50000),
       rows,
       localStorageKeys: Object.keys(localStorage),
       hasKrpano: !!window.krpano,
       hasHandleKrpanoScreenshot: typeof window.handleKrpanoScreenshot === 'function',
-      handleKrpanoScreenshot: typeof window.handleKrpanoScreenshot === 'function' ? window.handleKrpanoScreenshot.toString().slice(0, 16000) : null,
+      handleKrpanoScreenshot:
+        typeof window.handleKrpanoScreenshot === 'function'
+          ? window.handleKrpanoScreenshot.toString().slice(0, 16000)
+          : null,
       scene: window.krpano?.get?.('xml.scene') ?? null,
     };
   });
