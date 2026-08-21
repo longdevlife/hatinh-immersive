@@ -11,7 +11,7 @@ export type PublicLayoutProps = {
 
 export function PublicLayout({ activePath, items, children }: PublicLayoutProps) {
   return (
-    <div className="site-shell-layout editorial-system" data-testid="public-site-shell">
+    <div className="site-shell-layout">
       <PublicHeader activePath={activePath} items={items} />
       <div className="site-shell-layout__content">{children}</div>
     </div>

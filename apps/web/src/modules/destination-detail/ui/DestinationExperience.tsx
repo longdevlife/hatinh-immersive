@@ -103,7 +103,6 @@ export function DestinationExperience({
       ref={mainRef}
       className="destination-detail"
       aria-label="Thông tin điểm đến"
-      data-editorial-surface="destination-detail"
       tabIndex={-1}
     >
       <header className="destination-detail__navbar">

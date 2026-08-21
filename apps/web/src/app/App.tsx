@@ -331,7 +331,7 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <div className="public-app editorial-system">
+        <div className="public-app">
           <Routes>
             <Route
               path="/"

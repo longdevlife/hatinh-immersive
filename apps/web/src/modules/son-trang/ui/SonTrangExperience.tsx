@@ -49,7 +49,6 @@ export function SonTrangExperience({
       ref={mainRef}
       className="son-trang-experience"
       aria-label="Trải nghiệm Sơn Trang Cổ Đạm"
-      data-editorial-surface="destination-detail-showcase"
       tabIndex={-1}
     >
       <header className="son-trang-experience__header">

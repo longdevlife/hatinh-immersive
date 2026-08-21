@@ -94,7 +94,6 @@ export function CinematicHome({ destinations, exploreHref = '/explore' }: Cinema
         aria-label="Điểm đến nổi bật Hà Tĩnh"
         data-testid="home-cinematic-hero"
         data-active-slug={activeDestination.slug}
-        data-editorial-surface="home-hero"
       >
         {/* Full-bleed photography background layers */}
         <div className="home-cinematic__backdrop" aria-hidden="true">
@@ -103,7 +102,7 @@ export function CinematicHome({ destinations, exploreHref = '/explore' }: Cinema
             const shouldPreload = isVisible || index === nextIndex;
             return (
               <div
-                className={`home-cinematic__backdrop-layer editorial-motion${isVisible ? ' is-active' : ''}`}
+                className={`home-cinematic__backdrop-layer${isVisible ? ' is-active' : ''}`}
                 key={destination.id}
                 data-visible={isVisible ? 'true' : 'false'}
               >
@@ -118,14 +117,38 @@ export function CinematicHome({ destinations, exploreHref = '/explore' }: Cinema
           <div className="home-cinematic__backdrop-scrim" />
         </div>
 
+        {/* Vertical Stepper on far left */}
+        <div className="home-cinematic__vertical-stepper" aria-hidden="true">
+          <div className="home-cinematic__vertical-line" />
+          {destinations.map((destination, index) => {
+            const isActive = index === carousel.activeIndex;
+            return (
+              <button
+                key={destination.id}
+                type="button"
+                tabIndex={-1}
+                className={`home-cinematic__vertical-dot${isActive ? ' is-active' : ''}`}
+                onClick={() => carousel.select(index)}
+              >
+                {isActive ? (
+                  <span className="home-cinematic__vertical-badge">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                ) : (
+                  <span className="home-cinematic__vertical-bullet" />
+                )}
+              </button>
+            );
+          })}
+          <div className="home-cinematic__vertical-line" />
+        </div>
+
         {/* Hero content grid (Left copy with fade-in-up + Right layered card rail) */}
         <div className="home-cinematic__hero-inner">
           <div className="home-cinematic__hero-copy" aria-live="polite">
-            <div
-              className="home-cinematic__hero-copy-content editorial-motion"
-              key={activeDestination.id}
-            >
+            <div className="home-cinematic__hero-copy-content" key={activeDestination.id}>
               <p className="home-cinematic__eyebrow">Hà Tĩnh / {activeDestination.categoryLabel}</p>
+              <p className="home-cinematic__kicker">Điểm đến đang được chọn</p>
               <h1>{activeDestination.name}</h1>
               <p className="home-cinematic__summary">{activeDestination.summary}</p>
               <div className="home-cinematic__hero-actions">
@@ -151,12 +174,12 @@ export function CinematicHome({ destinations, exploreHref = '/explore' }: Cinema
           >
             <div className="home-cinematic__rail-header">
               <span>Hành trình Hà Tĩnh</span>
+              <span className="home-cinematic__rail-count">
+                {String(carousel.activeIndex + 1).padStart(2, '0')} /{' '}
+                {String(destinations.length).padStart(2, '0')}
+              </span>
             </div>
-            <ul
-              className="home-cinematic__rail"
-              aria-label="Các điểm đến"
-              data-carousel-navigation="passive"
-            >
+            <ul className="home-cinematic__rail" aria-label="Các điểm đến">
               {railOrder.map((originalIndex) => {
                 const destination = destinations[originalIndex];
                 if (!destination) {
@@ -212,8 +235,14 @@ export function CinematicHome({ destinations, exploreHref = '/explore' }: Cinema
           </div>
         </div>
 
-        {/* One passive progress treatment. The active card and heading carry the primary state. */}
+        {/* Bottom bar with passive index indicator and progress track */}
         <div className="home-cinematic__bottom-bar">
+          <div className="home-cinematic__bottom-index" aria-hidden="true">
+            <span>{String(carousel.activeIndex + 1).padStart(2, '0')}</span>
+            <span className="home-cinematic__bottom-divider">/</span>
+            <span>{String(destinations.length).padStart(2, '0')}</span>
+          </div>
+
           <div
             className="home-cinematic__progress"
             role="group"

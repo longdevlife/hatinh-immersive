@@ -65,18 +65,6 @@ describe('ExploreShell', () => {
     expect(actions.onNavigateScene).toHaveBeenCalledWith('scene-02');
   });
 
-  it('marks immersive presentation as a panorama-first low-chrome surface', () => {
-    const actions = createActions();
-
-    render(<ExploreShell view={readyImmersiveViewFixture} actions={actions} />);
-
-    const immersiveSurface = screen.getByRole('main', {
-      name: 'Khám phá Sơn Trang Cổ Đạm',
-    });
-    expect(immersiveSurface).toHaveAttribute('data-editorial-surface', 'immersive');
-    expect(immersiveSurface).toHaveAttribute('data-chrome-density', 'low');
-  });
-
   it('remembers minimap collapse and expansion within the browser session', async () => {
     const actions = createActions();
     const firstEngine = new FakeMinimapEngine();

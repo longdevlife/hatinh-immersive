@@ -353,17 +353,9 @@ export function ExploreExperience({
   }
 
   return (
-    <main
-      className="explore-experience editorial-motion"
-      aria-label="Khám phá Hà Tĩnh"
-      data-editorial-surface="explore"
-    >
+    <main className="explore-experience" aria-label="Khám phá Hà Tĩnh">
       <div className="explore-experience__layout" data-explore-mode={exploreMode}>
-        <section
-          className="explore-experience__destinations"
-          aria-label="Danh sách điểm đến"
-          data-editorial-panel="field-notes"
-        >
+        <section className="explore-experience__destinations" aria-label="Danh sách điểm đến">
           <header className="explore-experience__header">
             <p className="eyebrow">Hà Tĩnh / Explore</p>
             <h1 id="explore-title">Khám phá Hà Tĩnh</h1>
@@ -397,7 +389,6 @@ export function ExploreExperience({
           className="explore-experience__map"
           data-explore-mode={exploreMode}
           data-map-open={isMobileMapOpen}
-          data-map-priority="primary"
           data-testid="explore-map"
         >
           {isMobileViewport && isMobileMapOpen ? (

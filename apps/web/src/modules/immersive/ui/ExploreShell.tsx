@@ -252,8 +252,6 @@ export function ExploreShell({
     <main
       className={`explore-shell explore-shell--${view.mode}`}
       aria-label={`Khám phá ${view.destination.name}`}
-      data-editorial-surface="immersive"
-      data-chrome-density="low"
     >
       <section
         className="explore-shell__viewport"
