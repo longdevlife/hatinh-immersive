@@ -700,6 +700,14 @@
   box-sizing: border-box;
 }
 
+.panorama-demo-badge {
+  color: var(--color-accent-primary, #e5a95f);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+}
+
 .reference-parity__utilities {
   position: absolute;
   top: var(--safe-area-spacing, clamp(1rem, 2.5vw, 2rem));

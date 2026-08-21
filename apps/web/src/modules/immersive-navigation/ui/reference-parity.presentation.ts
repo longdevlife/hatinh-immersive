@@ -10,6 +10,7 @@ import type {
 import type { ImmersiveAudioState } from '../../immersive-audio';
 import { resolveSceneAudio } from '../../immersive-audio';
 import { getPanoramaTourSceneRole, isPanoramaSceneUsable } from '../../panorama-tour';
+import type { PanoramaRuntimeMediaPolicy } from '../../panorama';
 import type { AutoTourPhase } from '../model/auto-tour.controller';
 import type {
   ImmersiveMediaDockActionsContract,
@@ -186,6 +187,7 @@ export function buildReferenceParityPresentationVm({
   destinationAmbientTrackId,
   autoTour,
   hotspots = [],
+  panoramaRuntimeMediaPolicy = 'public',
 }: {
   destination: { slug: string; name: string };
   nodes: readonly PanoramaNode[];
@@ -200,6 +202,7 @@ export function buildReferenceParityPresentationVm({
   destinationAmbientTrackId: string | null;
   autoTour: Pick<ReferenceParityAutoTourVm, 'isRunning' | 'isPaused'>;
   hotspots?: readonly HotspotVm[];
+  panoramaRuntimeMediaPolicy?: PanoramaRuntimeMediaPolicy;
 }): ReferenceParityPresentationVm {
   const visited = new Set(visitedSceneIds);
   const scenes = nodes.map((node) => {
@@ -215,7 +218,7 @@ export function buildReferenceParityPresentationVm({
       isVisited: visited.has(node.id),
       mediaQuality: node.mediaQuality ?? 'ready',
       thumbnailUrl: node.thumbnailUrl !== undefined ? node.thumbnailUrl : node.previewUrl,
-      canNavigate: isPanoramaSceneUsable(node),
+      canNavigate: isPanoramaSceneUsable(node, panoramaRuntimeMediaPolicy),
     } satisfies ReferenceParitySceneVm;
   });
   const mediaUnavailable =

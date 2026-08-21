@@ -145,6 +145,9 @@ jobs:
       - name: Production-like real PSV public-media rejection E2E
         run: pnpm --filter @hatinh/web test:e2e:production-panorama:real
 
+      - name: Customer Demo 360 media-policy end-to-end test
+        run: pnpm --filter @hatinh/web test:e2e:customer-demo-360
+
       - name: Production-build Photo Sphere Viewer panorama smoke test
         run: pnpm --filter @hatinh/web test:e2e:panorama-tour:real
 

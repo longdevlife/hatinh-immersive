@@ -4,6 +4,7 @@ import type {
   RendererStatus,
   SceneLinkVm,
 } from '../../../shared/contracts';
+import type { PanoramaRuntimeMediaPolicy } from '../../panorama';
 
 export interface PanoramaTourSceneItemVm {
   id: string;
@@ -56,7 +57,18 @@ export function getPanoramaTourSceneRole(sceneId: string): PanoramaTourSceneRole
   return MAJOR_STOP_SCENE_IDS.has(sceneId) ? 'major-stop' : 'connector';
 }
 
-export function isPanoramaSceneUsable(node: PanoramaNode): boolean {
+export function isPanoramaSceneUsable(
+  node: PanoramaNode,
+  policy: PanoramaRuntimeMediaPolicy = 'public',
+): boolean {
+  if (policy === 'demo') {
+    return (
+      node.panoramaUrl !== null &&
+      node.mediaQuality !== 'missing' &&
+      node.mediaQuality !== 'invalid'
+    );
+  }
+
   return (node.mediaQuality ?? DEFAULT_MEDIA_QUALITY) === 'ready';
 }
 
@@ -68,8 +80,11 @@ export function isPanoramaSceneUsable(node: PanoramaNode): boolean {
 export function getPanoramaTourLinks(
   nodes: readonly PanoramaNode[],
   links: readonly SceneLinkVm[],
+  policy: PanoramaRuntimeMediaPolicy = 'public',
 ): SceneLinkVm[] {
-  const nodeIds = new Set(nodes.filter(isPanoramaSceneUsable).map((node) => node.id));
+  const nodeIds = new Set(
+    nodes.filter((node) => isPanoramaSceneUsable(node, policy)).map((node) => node.id),
+  );
   return links.filter(
     (link) =>
       Boolean(link.sourceSceneId) &&
@@ -78,15 +93,22 @@ export function getPanoramaTourLinks(
   );
 }
 
-export function getPanoramaRenderableNodes(nodes: readonly PanoramaNode[]): PanoramaNode[] {
-  const usableNodeIds = new Set(nodes.filter(isPanoramaSceneUsable).map((node) => node.id));
+export function getPanoramaRenderableNodes(
+  nodes: readonly PanoramaNode[],
+  policy: PanoramaRuntimeMediaPolicy = 'public',
+): PanoramaNode[] {
+  const usableNodeIds = new Set(
+    nodes.filter((node) => isPanoramaSceneUsable(node, policy)).map((node) => node.id),
+  );
 
-  return nodes.filter(isPanoramaSceneUsable).map((node) => ({
-    ...node,
-    ...(node.links
-      ? { links: node.links.filter((link) => usableNodeIds.has(link.targetNodeId)) }
-      : {}),
-  }));
+  return nodes
+    .filter((node) => isPanoramaSceneUsable(node, policy))
+    .map((node) => ({
+      ...node,
+      ...(node.links
+        ? { links: node.links.filter((link) => usableNodeIds.has(link.targetNodeId)) }
+        : {}),
+    }));
 }
 
 export function validatePanoramaTourGraph(
@@ -125,32 +147,34 @@ export function resolveTourSceneId(
   nodes: readonly PanoramaNode[],
   initialSceneId: string | null,
   requestedSceneId: string | null,
+  policy: PanoramaRuntimeMediaPolicy = 'public',
 ): string | null {
   if (
     requestedSceneId &&
-    nodes.some((node) => node.id === requestedSceneId && isPanoramaSceneUsable(node))
+    nodes.some((node) => node.id === requestedSceneId && isPanoramaSceneUsable(node, policy))
   ) {
     return requestedSceneId;
   }
   if (
     initialSceneId &&
-    nodes.some((node) => node.id === initialSceneId && isPanoramaSceneUsable(node))
+    nodes.some((node) => node.id === initialSceneId && isPanoramaSceneUsable(node, policy))
   ) {
     return initialSceneId;
   }
-  return nodes.find(isPanoramaSceneUsable)?.id ?? null;
+  return nodes.find((node) => isPanoramaSceneUsable(node, policy))?.id ?? null;
 }
 
 export function resolvePanoramaSceneForAnchor(
   anchor: PanoramaAnchorLike,
   nodes: readonly PanoramaNode[],
+  policy: PanoramaRuntimeMediaPolicy = 'public',
 ): PanoramaNode | null {
   if (!anchor.panoramaSceneId) {
     return null;
   }
 
   const node = nodes.find((candidate) => candidate.id === anchor.panoramaSceneId);
-  return node && isPanoramaSceneUsable(node) ? node : null;
+  return node && isPanoramaSceneUsable(node, policy) ? node : null;
 }
 
 export function resolveTourNavigationTarget(
@@ -158,9 +182,10 @@ export function resolveTourNavigationTarget(
   links: readonly SceneLinkVm[],
   currentSceneId: string | null,
   targetSceneId: string,
+  policy: PanoramaRuntimeMediaPolicy = 'public',
 ): PanoramaNode | null {
   const target = nodes.find((node) => node.id === targetSceneId);
-  if (!target || !isPanoramaSceneUsable(target)) {
+  if (!target || !isPanoramaSceneUsable(target, policy)) {
     return null;
   }
 
@@ -181,12 +206,14 @@ export function buildPanoramaTourPresentationVm({
   visitedSceneIds,
   status,
   isTransitioning,
+  policy = 'public',
 }: {
   nodes: readonly PanoramaNode[];
   currentSceneId: string | null;
   visitedSceneIds: readonly string[];
   status: RendererStatus;
   isTransitioning: boolean;
+  policy?: PanoramaRuntimeMediaPolicy;
 }): PanoramaTourPresentationVm {
   const visited = new Set(visitedSceneIds);
   const scenes = nodes.map((node) => ({
@@ -196,7 +223,7 @@ export function buildPanoramaTourPresentationVm({
     isCurrent: node.id === currentSceneId,
     isVisited: visited.has(node.id),
     mediaQuality: node.mediaQuality ?? DEFAULT_MEDIA_QUALITY,
-    canNavigate: isPanoramaSceneUsable(node),
+    canNavigate: isPanoramaSceneUsable(node, policy),
   }));
   return { currentSceneId, status, isTransitioning, scenes };
 }

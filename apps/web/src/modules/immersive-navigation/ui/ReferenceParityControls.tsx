@@ -11,12 +11,14 @@ export interface ReferenceParityControlsProps {
   vm: ReferenceParityPresentationVm;
   actions: ReferenceParityPresentationActions;
   minimapOpen?: boolean;
+  isCustomerDemo?: boolean;
 }
 
 export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
   vm,
   actions,
   minimapOpen = false,
+  isCustomerDemo = false,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -55,6 +57,11 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
         aria-label="Thông báo 360°"
       >
         <div className="panorama-tour-unavailable" role="status" aria-live="polite">
+          {isCustomerDemo ? (
+            <span className="panorama-demo-badge" data-testid="panorama-demo-badge">
+              Bản demo 360° · Ảnh tham khảo
+            </span>
+          ) : null}
           <div className="panorama-tour-unavailable__card">
             <h2 className="panorama-tour-unavailable__title">360° đang được cập nhật</h2>
             <p className="panorama-tour-unavailable__body">
@@ -111,6 +118,11 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
           <div className="panorama-tour-context reference-parity__context" aria-live="polite">
             <span className="panorama-tour-context__badge">{vm.destinationName}</span>
             <span className="panorama-tour-context__title">{currentScene.label}</span>
+            {isCustomerDemo ? (
+              <span className="panorama-demo-badge" data-testid="panorama-demo-badge">
+                Bản demo 360° · Ảnh tham khảo
+              </span>
+            ) : null}
           </div>
         ) : null}
       </div>

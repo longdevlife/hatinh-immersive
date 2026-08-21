@@ -195,6 +195,36 @@ describe('ReferenceParityControls', () => {
     expect(actions.onSelectScene).toHaveBeenCalledWith('shore');
   });
 
+  it('keeps the customer demo badge visible as the active scene changes', () => {
+    const actions = createMockActions();
+    const vm = createMockVm();
+
+    const { rerender } = render(
+      <ReferenceParityControls vm={vm} actions={actions} isCustomerDemo />,
+    );
+
+    expect(screen.getByTestId('panorama-demo-badge')).toHaveTextContent(
+      'Bản demo 360° · Ảnh tham khảo',
+    );
+
+    rerender(
+      <ReferenceParityControls
+        vm={{
+          ...vm,
+          currentSceneId: 'shore',
+          scenes: vm.scenes.map((scene) => ({
+            ...scene,
+            isCurrent: scene.id === 'shore',
+          })),
+        }}
+        actions={actions}
+        isCustomerDemo
+      />,
+    );
+
+    expect(screen.getByTestId('panorama-demo-badge')).toBeInTheDocument();
+  });
+
   it('renders one intentional unavailable composition when mediaUnavailable is true', () => {
     const actions = createMockActions();
     const vm = createMockVm({

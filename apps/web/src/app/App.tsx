@@ -42,6 +42,7 @@ import { createHomeDestinationVms } from '../modules/home/model/home-destination
 import { PUBLIC_NAV_ITEMS, PublicLayout } from '../modules/site-shell';
 import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
 import './styles/index.css';
+import { isCustomerDemoRoute } from './customer-demo';
 
 const LazyImmersiveExperience = lazy(() =>
   import('../modules/immersive-navigation').then(({ ImmersiveExperience }) => ({
@@ -150,17 +151,41 @@ function PublicImmersiveExperience() {
   );
 }
 
+function CustomerDemoImmersiveExperience() {
+  const manifest = getDemoManifest('bien-thien-cam', 'public');
+
+  return (
+    <Suspense fallback={<ImmersiveRouteLoading />}>
+      <LazyImmersiveExperience
+        destinations={getDemoDestinationPreviews('public')}
+        manifest={manifest}
+        panoramaTourSource="demo"
+        panoramaTourMediaMode="public"
+        panoramaRuntimeMediaPolicy="demo"
+        isCustomerDemo
+        selected3DAnchorSource="none"
+        audioSourcePolicy="demo-speech-synthesis"
+      />
+    </Suspense>
+  );
+}
+
 function ImmersiveRoute() {
   const { destinationSlug = '' } = useParams();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const requestedMode = searchParams.get('mode');
+  const isCustomerDemo = isCustomerDemoRoute(location.search, destinationSlug);
+  const isCustomerDemoOptIn = searchParams.get('demo') === 'customer';
   const isUnverifiedPublicFakePanorama =
     useFakeData &&
     requestedMode === 'panorama' &&
     destinationSlug === 'son-trang-co-dam' &&
     fakeDemoMode !== 'synthetic';
-  const canEnterPanorama = requestedMode === 'panorama' && !isUnverifiedPublicFakePanorama;
+  const canEnterPanorama =
+    requestedMode === 'panorama' &&
+    !isUnverifiedPublicFakePanorama &&
+    (!isCustomerDemoOptIn || isCustomerDemo);
   const canEnterSelected3D = canEnterSelected3DForSlug(destinationSlug, requestedMode);
 
   if (!canEnterPanorama && !canEnterSelected3D) {
@@ -170,6 +195,10 @@ function ImmersiveRoute() {
         to={createDestinationDetailHref(destinationSlug, searchParams.get('returnTo') ?? undefined)}
       />
     );
+  }
+
+  if (isCustomerDemo) {
+    return <CustomerDemoImmersiveExperience />;
   }
 
   return useFakeData && e2eFailure !== 'manifest' ? (
