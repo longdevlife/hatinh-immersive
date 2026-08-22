@@ -1,8 +1,43 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 const publicSceneUrl = '/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-boardwalk';
 const customerDemoSceneUrl =
   '/explore/bien-thien-cam/immersive?mode=panorama&demo=customer&scene=thien-cam-boardwalk';
+
+async function capturePanoramaEvidence(
+  page: Page,
+  testInfo: TestInfo,
+  input: {
+    name: string;
+    url: string;
+    viewport: { width: number; height: number };
+    state: 'ready' | 'public-unavailable' | 'showcase-shell';
+  },
+) {
+  await page.setViewportSize(input.viewport);
+  await page.goto(input.url);
+
+  if (input.state === 'ready') {
+    await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
+    await expect(page.getByTestId('panorama-demo-badge')).toBeVisible();
+  } else if (input.state === 'public-unavailable') {
+    await expect(page.getByRole('heading', { name: '360° đang được cập nhật' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: /Hành trình 360/ })).toHaveCount(0);
+  } else {
+    await expect(page).toHaveURL(/\/explore\/son-trang-co-dam(?:\?|$)/);
+    await expect(page.getByRole('main', { name: 'Trải nghiệm Sơn Trang Cổ Đạm' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sơn Trang Cổ Đạm' })).toBeVisible();
+    await expect(
+      page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' }),
+    ).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
+  }
+
+  await page.screenshot({
+    path: testInfo.outputPath(`${input.name}-${input.viewport.width}x${input.viewport.height}.png`),
+    fullPage: false,
+  });
+}
 
 test('the same 2048x1024 Thiên Cầm asset is rejected publicly and opens in explicit customer demo mode', async ({
   page,
@@ -56,4 +91,45 @@ test('Sơn Trang remains unavailable when customer demo is explicitly requested'
     0,
   );
   await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
+});
+
+test('captures Product-reviewable panorama evidence for desktop and mobile states', async ({
+  page,
+}, testInfo) => {
+  await capturePanoramaEvidence(page, testInfo, {
+    name: 'customer-demo-boardwalk',
+    url: customerDemoSceneUrl,
+    viewport: { width: 1440, height: 900 },
+    state: 'ready',
+  });
+  await capturePanoramaEvidence(page, testInfo, {
+    name: 'customer-demo-boardwalk',
+    url: customerDemoSceneUrl,
+    viewport: { width: 1920, height: 1080 },
+    state: 'ready',
+  });
+  await capturePanoramaEvidence(page, testInfo, {
+    name: 'customer-demo-boardwalk',
+    url: customerDemoSceneUrl,
+    viewport: { width: 390, height: 844 },
+    state: 'ready',
+  });
+  await capturePanoramaEvidence(page, testInfo, {
+    name: 'customer-demo-boardwalk',
+    url: customerDemoSceneUrl,
+    viewport: { width: 430, height: 932 },
+    state: 'ready',
+  });
+  await capturePanoramaEvidence(page, testInfo, {
+    name: 'public-unavailable',
+    url: publicSceneUrl,
+    viewport: { width: 1440, height: 900 },
+    state: 'public-unavailable',
+  });
+  await capturePanoramaEvidence(page, testInfo, {
+    name: 'son-trang-unavailable',
+    url: '/explore/son-trang-co-dam/immersive?mode=panorama&demo=customer&scene=scene-01',
+    viewport: { width: 1440, height: 900 },
+    state: 'showcase-shell',
+  });
 });
