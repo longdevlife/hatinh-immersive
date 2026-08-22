@@ -23,6 +23,10 @@ describe('immersive navigation state machine', () => {
     });
   });
 
+  it('starts immersive panorama with the minimap collapsed', () => {
+    expect(useImmersiveNavigation.getState().minimapOpen).toBe(false);
+  });
+
   it('enters the 3D overview with an exclusive map renderer', () => {
     useImmersiveNavigation.getState().enterOverview('destination-1');
 
@@ -418,7 +422,7 @@ describe('immersive navigation state machine', () => {
 
     expect(state.selectedHotspotId).toBe('hotspot-1');
     expect(selectMinimap(state)).toEqual({
-      open: true,
+      open: false,
       currentSceneId: 'scene-a',
       heading: 45,
       visitedSceneIds: ['scene-a'],
@@ -429,7 +433,7 @@ describe('immersive navigation state machine', () => {
     state = useImmersiveNavigation.getState();
 
     expect(state.selectedHotspotId).toBeNull();
-    expect(selectMinimap(state).open).toBe(false);
+    expect(selectMinimap(state).open).toBe(true);
   });
 
   it('derives panorama and minimap selections from committed state', () => {

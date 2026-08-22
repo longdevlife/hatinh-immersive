@@ -27,7 +27,7 @@ export function createInitialNavigationState(): ImmersiveNavigationState {
     selectedHotspotId: null,
     visitedSceneIds: [],
     view: { ...DEFAULT_NAVIGATION_VIEW },
-    minimapOpen: true,
+    minimapOpen: false,
     map3dStatus: 'idle',
     panoramaStatus: 'idle',
     networkQuality: 'good',
