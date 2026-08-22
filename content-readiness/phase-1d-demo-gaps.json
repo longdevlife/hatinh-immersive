@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "phase": "1D",
+  "lane": "demo-only",
+  "productionGateUnchanged": true,
+  "provenancePolicy": "No external asset is promoted without explicit rights and PRODUCT approval.",
+  "approvedDemoContent": {
+    "sceneCount": 19,
+    "storyCount": 19,
+    "viNarrationCopyCount": 19,
+    "viTranscriptCount": 19,
+    "locale": "vi",
+    "timingMode": "plain",
+    "status": "approved-demo-copy",
+    "playback": "demo-only SpeechSynthesis; no production file-backed narration",
+    "source": "HaTinh_Phase1D_Content_Handoff_Final_2026-08-20/phase-1d-content-pack.json"
+  },
+  "audioReadiness": {
+    "destinationAmbientTargets": 4,
+    "verifiedDemoAmbientFiles": 4,
+    "approvedProductionAmbientFiles": 0,
+    "approvedProductionNarrationFiles": 0,
+    "productionStatus": "external-content-blocker",
+    "provenance": "content-readiness/phase-1d-demo-audio-provenance.json"
+  },
+  "panoramaReadiness": {
+    "productionReadyCount": 0,
+    "missingP1SceneIds": [
+      "nguyen-du-memorial-house",
+      "nguyen-du-statue",
+      "nguyen-du-garden-path",
+      "dong-loc-monument",
+      "dong-loc-remembrance",
+      "dong-loc-approach"
+    ],
+    "sonTrangPolicy": "The current 256x128 derivative is forbidden as production or demo-quality media; physical mapping for the eight conceptual scenes remains pending owner confirmation."
+  },
+  "licensedImageEvidence": {
+    "source": "HaTinh_Phase1D_Content_Handoff_Final_2026-08-20/image-rights-manifest.json",
+    "candidateCount": 4,
+    "panoramaEligibleCount": 0,
+    "attributionRequired": true,
+    "usage": "Home/Detail/reference only; never panorama",
+    "entries": [
+      {
+        "destinationSlug": "bien-thien-cam",
+        "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Morning_of_Thiencam.jpg",
+        "author": "Khoitran1957",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Morning of Thiencam — Khoitran1957 — CC BY-SA 4.0",
+        "panoramaEligible": false
+      },
+      {
+        "destinationSlug": "khu-luu-niem-nguyen-du",
+        "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Tượng_Đại_thi_hào_Nguyễn_Du.jpg",
+        "author": "Long Phan ZZZ",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Tượng Đại thi hào Nguyễn Du — Long Phan ZZZ — CC BY-SA 4.0",
+        "panoramaEligible": false
+      },
+      {
+        "destinationSlug": "nga-ba-dong-loc",
+        "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Tượng_đài.jpg",
+        "author": "Khoitran1957",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Tượng đài — Khoitran1957 — CC BY-SA 4.0",
+        "panoramaEligible": false
+      },
+      {
+        "destinationSlug": "son-trang-co-dam",
+        "sourcePageUrl": "https://commons.wikimedia.org/wiki/File:Chợ_Tết_cổ_Đạm.jpg",
+        "author": "Hoatjohn31b",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Chợ Tết Cổ Đạm — Hoatjohn31b — CC BY-SA 4.0",
+        "panoramaEligible": false
+      }
+    ]
+  },
+  "destinations": {
+    "bien-thien-cam": {
+      "mediaPolicy": "demo/reference-only",
+      "scenes": [
+        {
+          "sceneId": "thien-cam-boardwalk",
+          "panorama": {
+            "status": "demo-reference-only",
+            "requirement": "PRODUCT-owned/licensed 2:1 equirectangular master, minimum 4096x2048, processed through panorama-tooling"
+          },
+          "storyHotspot": "demo-integrated-candidate-copy",
+          "transcriptVi": {
+            "status": "approved-demo-copy",
+            "timingMode": "plain",
+            "requirement": "Use the handoff plain Vietnamese demo transcript; timed captions require a separate approved timing pass"
+          },
+          "narrationVi": {
+            "status": "demo-speech-only",
+            "requirement": "Production remains blocked until a PRODUCT-approved/licensed browser-file narration is supplied"
+          },
+          "ambient": {
+            "status": "verified-demo-file",
+            "requirement": "Mixkit demo-only candidate is wired; production still requires approved rights/version metadata"
+          },
+          "minimapHotspot": "demo coordinates derived from current scene fixture; PRODUCT must verify physical positions"
+        },
+        {
+          "sceneId": "thien-cam-shore",
+          "panorama": {
+            "status": "demo-reference-only",
+            "requirement": "PRODUCT-owned/licensed 2:1 equirectangular master, minimum 4096x2048, processed through panorama-tooling"
+          },
+          "storyHotspot": "demo-integrated-candidate-copy",
+          "transcriptVi": {
+            "status": "approved-demo-copy",
+            "timingMode": "plain",
+            "requirement": "Use the handoff plain Vietnamese demo transcript; timed captions require a separate approved timing pass"
+          },
+          "narrationVi": {
+            "status": "demo-speech-only",
+            "requirement": "Production remains blocked until a PRODUCT-approved/licensed browser-file narration is supplied"
+          },
+          "ambient": {
+            "status": "verified-demo-file",
+            "requirement": "Uses the verified destination demo ambient; production still requires approved rights/version metadata"
+          },
+          "minimapHotspot": "demo coordinates derived from current scene fixture; PRODUCT must verify physical positions"
+        },
+        {
+          "sceneId": "thien-cam-lookout",
+          "panorama": {
+            "status": "demo-reference-only",
+            "requirement": "PRODUCT-owned/licensed 2:1 equirectangular master, minimum 4096x2048, processed through panorama-tooling"
+          },
+          "storyHotspot": "demo-integrated-candidate-copy",
+          "transcriptVi": {
+            "status": "approved-demo-copy",
+            "timingMode": "plain",
+            "requirement": "Use the handoff plain Vietnamese demo transcript; timed captions require a separate approved timing pass"
+          },
+          "narrationVi": {
+            "status": "demo-speech-only",
+            "requirement": "Production remains blocked until a PRODUCT-approved/licensed browser-file narration is supplied"
+          },
+          "ambient": {
+            "status": "verified-demo-file",
+            "requirement": "Uses the verified destination demo ambient; production still requires approved rights/version metadata"
+          },
+          "minimapHotspot": "demo coordinates derived from current scene fixture; PRODUCT must verify physical positions"
+        }
+      ]
+    },
+    "khu-luu-niem-nguyen-du": {
+      "mediaPolicy": "demo-lane-entry-scene-only",
+      "scenes": [
+        { "sceneId": "nguyen-du-courtyard", "panorama": "usable local demo/reference-only" },
+        { "sceneId": "nguyen-du-memorial-house", "panorama": "missing" },
+        { "sceneId": "nguyen-du-statue", "panorama": "missing" },
+        { "sceneId": "nguyen-du-garden-path", "panorama": "missing" }
+      ]
+    },
+    "nga-ba-dong-loc": {
+      "mediaPolicy": "demo-lane-entry-scene-only",
+      "scenes": [
+        { "sceneId": "dong-loc-memorial", "panorama": "usable local demo/reference-only" },
+        { "sceneId": "dong-loc-monument", "panorama": "missing" },
+        { "sceneId": "dong-loc-remembrance", "panorama": "missing" },
+        { "sceneId": "dong-loc-approach", "panorama": "missing" }
+      ]
+    },
+    "son-trang-co-dam": {
+      "mediaPolicy": "showcase-shell-only",
+      "scenes": [
+        {
+          "sceneId": "son-trang-gate",
+          "panorama": "blocked: current 256x128 asset is neither production nor demo-quality"
+        }
+      ]
+    }
+  }
+}

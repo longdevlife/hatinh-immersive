@@ -1,0 +1,476 @@
+{
+  "status": "repository-recovery-audit-complete",
+  "baseline": "8aa64eeaefceb8fcbbf01cba13442c8dc593f8f3",
+  "canonicalSceneCount": 19,
+  "productionMinimum": {
+    "width": 4096,
+    "height": 2048,
+    "ratioMin": 1.95,
+    "ratioMax": 2.05,
+    "noUpscale": true
+  },
+  "summary": {
+    "scenesWithExistingDerivatives": 13,
+    "demoUsableReconstructed2048x1024": 5,
+    "lowResolutionSonTrangPlaceholders": 8,
+    "scenesWithNoExistingRepoPanorama": 6,
+    "productionReadyFromExistingRepo": 0,
+    "productionVerdictReplace": 19
+  },
+  "records": [
+    {
+      "destinationSlug": "son-trang-co-dam",
+      "sceneId": "son-trang-gate",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/son-trang-tour/son-trang-gate",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 256, "height": 128 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": false,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/son-trang-tour/son-trang-gate",
+          "highestReconstructedWidth": 256,
+          "highestReconstructedHeight": 128,
+          "artifactStatus": "excluded-low-resolution",
+          "sha256": null
+        },
+        {
+          "kind": "duplicate-legacy-package",
+          "paths": [
+            "apps/web/public/demo/360/son-trang-gate",
+            "apps/web/public/demo/360/son-trang-tour/son-trang-gate"
+          ]
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "son-trang-co-dam",
+      "sceneId": "son-trang-entrance-path",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/son-trang-tour/son-trang-entrance-path",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 256, "height": 128 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": false,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/son-trang-tour/son-trang-entrance-path",
+          "highestReconstructedWidth": 256,
+          "highestReconstructedHeight": 128,
+          "artifactStatus": "excluded-low-resolution",
+          "sha256": null
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "son-trang-co-dam",
+      "sceneId": "son-trang-courtyard",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/son-trang-tour/son-trang-courtyard",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 256, "height": 128 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": false,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/son-trang-tour/son-trang-courtyard",
+          "highestReconstructedWidth": 256,
+          "highestReconstructedHeight": 128,
+          "artifactStatus": "excluded-low-resolution",
+          "sha256": null
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "son-trang-co-dam",
+      "sceneId": "son-trang-culture",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/son-trang-tour/son-trang-culture",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 256, "height": 128 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": false,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/son-trang-tour/son-trang-culture",
+          "highestReconstructedWidth": 256,
+          "highestReconstructedHeight": 128,
+          "artifactStatus": "excluded-low-resolution",
+          "sha256": null
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "son-trang-co-dam",
+      "sceneId": "son-trang-ecology-path",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/son-trang-tour/son-trang-ecology-path",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 256, "height": 128 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": false,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/son-trang-tour/son-trang-ecology-path",
+          "highestReconstructedWidth": 256,
+          "highestReconstructedHeight": 128,
+          "artifactStatus": "excluded-low-resolution",
+          "sha256": null
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "son-trang-co-dam",
+      "sceneId": "son-trang-ecology",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/son-trang-tour/son-trang-ecology",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 256, "height": 128 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": false,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/son-trang-tour/son-trang-ecology",
+          "highestReconstructedWidth": 256,
+          "highestReconstructedHeight": 128,
+          "artifactStatus": "excluded-low-resolution",
+          "sha256": null
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "son-trang-co-dam",
+      "sceneId": "son-trang-spiritual-path",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/son-trang-tour/son-trang-spiritual-path",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 256, "height": 128 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": false,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/son-trang-tour/son-trang-spiritual-path",
+          "highestReconstructedWidth": 256,
+          "highestReconstructedHeight": 128,
+          "artifactStatus": "excluded-low-resolution",
+          "sha256": null
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "son-trang-co-dam",
+      "sceneId": "son-trang-spiritual",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/son-trang-tour/son-trang-spiritual",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 256, "height": 128 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": false,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/son-trang-tour/son-trang-spiritual",
+          "highestReconstructedWidth": 256,
+          "highestReconstructedHeight": 128,
+          "artifactStatus": "excluded-low-resolution",
+          "sha256": null
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "bien-thien-cam",
+      "sceneId": "thien-cam-boardwalk",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/thien-cam-boardwalk",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 2048, "height": 1024 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": true,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/thien-cam-boardwalk",
+          "highestReconstructedWidth": 2048,
+          "highestReconstructedHeight": 1024,
+          "artifactStatus": "packaged",
+          "sha256": "200fef979f4ff3c0ab07ab623b46c80766669ff25252a8ec776895a23684b903"
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "bien-thien-cam",
+      "sceneId": "thien-cam-shore",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/thien-cam-shore",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 2048, "height": 1024 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": true,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/thien-cam-shore",
+          "highestReconstructedWidth": 2048,
+          "highestReconstructedHeight": 1024,
+          "artifactStatus": "packaged",
+          "sha256": "dae5c0bcde20be253d0b7d5ff41dd002a6eb63dd45236a3bcde50d830e06e5d1"
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "bien-thien-cam",
+      "sceneId": "thien-cam-lookout",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/thien-cam-lookout",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 2048, "height": 1024 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": true,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/thien-cam-lookout",
+          "highestReconstructedWidth": 2048,
+          "highestReconstructedHeight": 1024,
+          "artifactStatus": "packaged",
+          "sha256": "6676e52706c826f95a0d7873035641ce3ea9e20adf0d482e197007b4b8a9a5ee"
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "khu-luu-niem-nguyen-du",
+      "sceneId": "nguyen-du-courtyard",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/nguyen-du-courtyard",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 2048, "height": 1024 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": true,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/nguyen-du-courtyard",
+          "highestReconstructedWidth": 2048,
+          "highestReconstructedHeight": 1024,
+          "artifactStatus": "packaged",
+          "sha256": "63e2dc5b255fa3c54b4ee9c70a94c7d24e7440387905576b89c8e8ce47f31eb9"
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "khu-luu-niem-nguyen-du",
+      "sceneId": "nguyen-du-memorial-house",
+      "provider": "none-found-in-repo",
+      "sourcePackage": null,
+      "sourceAvailable": false,
+      "derivativesAvailable": false,
+      "highestKnownDerivative": null,
+      "projection": null,
+      "technicalStatus": "no-existing-repo-panorama-found",
+      "demoUsable": false,
+      "rightsStatus": "not-applicable",
+      "physicalMatch": "unknown",
+      "verdict": "REPLACE",
+      "evidence": [],
+      "notes": "No existing repository panorama package was found for this canonical scene."
+    },
+    {
+      "destinationSlug": "khu-luu-niem-nguyen-du",
+      "sceneId": "nguyen-du-statue",
+      "provider": "none-found-in-repo",
+      "sourcePackage": null,
+      "sourceAvailable": false,
+      "derivativesAvailable": false,
+      "highestKnownDerivative": null,
+      "projection": null,
+      "technicalStatus": "no-existing-repo-panorama-found",
+      "demoUsable": false,
+      "rightsStatus": "not-applicable",
+      "physicalMatch": "unknown",
+      "verdict": "REPLACE",
+      "evidence": [],
+      "notes": "No existing repository panorama package was found for this canonical scene."
+    },
+    {
+      "destinationSlug": "khu-luu-niem-nguyen-du",
+      "sceneId": "nguyen-du-garden-path",
+      "provider": "none-found-in-repo",
+      "sourcePackage": null,
+      "sourceAvailable": false,
+      "derivativesAvailable": false,
+      "highestKnownDerivative": null,
+      "projection": null,
+      "technicalStatus": "no-existing-repo-panorama-found",
+      "demoUsable": false,
+      "rightsStatus": "not-applicable",
+      "physicalMatch": "unknown",
+      "verdict": "REPLACE",
+      "evidence": [],
+      "notes": "No existing repository panorama package was found for this canonical scene."
+    },
+    {
+      "destinationSlug": "nga-ba-dong-loc",
+      "sceneId": "dong-loc-memorial",
+      "provider": "existing-repo-demo",
+      "sourcePackage": "apps/web/public/demo/360/dong-loc-memorial",
+      "sourceAvailable": false,
+      "derivativesAvailable": true,
+      "highestKnownDerivative": { "width": 2048, "height": 1024 },
+      "projection": "equirectangular-tiles",
+      "technicalStatus": "demo-below-production-minimum",
+      "demoUsable": true,
+      "rightsStatus": "unverified",
+      "physicalMatch": "needs-review",
+      "verdict": "REPLACE",
+      "evidence": [
+        {
+          "kind": "repository-demo-derivative-package",
+          "path": "apps/web/public/demo/360/dong-loc-memorial",
+          "highestReconstructedWidth": 2048,
+          "highestReconstructedHeight": 1024,
+          "artifactStatus": "packaged",
+          "sha256": "47a9efa03946d7d9c682b0bdbf1b30fe48de800b17a46f9968e223dfd4ba5b6d"
+        }
+      ],
+      "notes": "Existing repository material is below the Phase 1C production minimum and no original master source has been established."
+    },
+    {
+      "destinationSlug": "nga-ba-dong-loc",
+      "sceneId": "dong-loc-monument",
+      "provider": "none-found-in-repo",
+      "sourcePackage": null,
+      "sourceAvailable": false,
+      "derivativesAvailable": false,
+      "highestKnownDerivative": null,
+      "projection": null,
+      "technicalStatus": "no-existing-repo-panorama-found",
+      "demoUsable": false,
+      "rightsStatus": "not-applicable",
+      "physicalMatch": "unknown",
+      "verdict": "REPLACE",
+      "evidence": [],
+      "notes": "No existing repository panorama package was found for this canonical scene."
+    },
+    {
+      "destinationSlug": "nga-ba-dong-loc",
+      "sceneId": "dong-loc-remembrance",
+      "provider": "none-found-in-repo",
+      "sourcePackage": null,
+      "sourceAvailable": false,
+      "derivativesAvailable": false,
+      "highestKnownDerivative": null,
+      "projection": null,
+      "technicalStatus": "no-existing-repo-panorama-found",
+      "demoUsable": false,
+      "rightsStatus": "not-applicable",
+      "physicalMatch": "unknown",
+      "verdict": "REPLACE",
+      "evidence": [],
+      "notes": "No existing repository panorama package was found for this canonical scene."
+    },
+    {
+      "destinationSlug": "nga-ba-dong-loc",
+      "sceneId": "dong-loc-approach",
+      "provider": "none-found-in-repo",
+      "sourcePackage": null,
+      "sourceAvailable": false,
+      "derivativesAvailable": false,
+      "highestKnownDerivative": null,
+      "projection": null,
+      "technicalStatus": "no-existing-repo-panorama-found",
+      "demoUsable": false,
+      "rightsStatus": "not-applicable",
+      "physicalMatch": "unknown",
+      "verdict": "REPLACE",
+      "evidence": [],
+      "notes": "No existing repository panorama package was found for this canonical scene."
+    }
+  ],
+  "notes": [
+    "This inventory evaluates existing repository panorama material only; external official/open candidates are tracked separately.",
+    "A reconstructed 2048×1024 equirectangular image is useful for demo/reference but cannot be upscaled to satisfy Phase 1C.",
+    "The eight canonical Sơn Trang tour packages are only 256×128 derivatives in the repository and are not useful as production sources.",
+    "The direct legacy son-trang-gate package duplicates the canonical gate scene and is retained only as evidence.",
+    "A later external candidate may change a scene from REPLACE to RECOVERABLE or READY_TO_INGEST once source, rights, physical match, and technical evidence exist."
+  ]
+}

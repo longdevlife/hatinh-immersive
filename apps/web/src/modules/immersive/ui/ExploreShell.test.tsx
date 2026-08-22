@@ -35,7 +35,7 @@ describe('ExploreShell', () => {
     window.sessionStorage.clear();
   });
 
-  it('opens the minimap on first session entry and forwards map node selection', async () => {
+  it('keeps the minimap collapsed on first session entry and forwards map node selection', async () => {
     const actions = createActions();
     const minimapEngine = new FakeMinimapEngine();
 
@@ -47,6 +47,10 @@ describe('ExploreShell', () => {
       />,
     );
 
+    expect(screen.getByRole('button', { name: 'Mở rộng bản đồ' })).toBeInTheDocument();
+    expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
     await waitFor(() =>
       expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(true),
     );
@@ -76,9 +80,10 @@ describe('ExploreShell', () => {
       />,
     );
 
+    expect(screen.getByRole('button', { name: 'Mở rộng bản đồ' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
     await waitFor(() => expect(firstEngine.calls.some((call) => call.type === 'mount')).toBe(true));
-    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
-    expect(window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY)).toBe('collapsed');
+    expect(window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY)).toBe('expanded');
     firstRender.unmount();
 
     const secondEngine = new FakeMinimapEngine();
@@ -90,14 +95,13 @@ describe('ExploreShell', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: 'Mở rộng bản đồ' })).toBeInTheDocument();
-    expect(secondEngine.calls.some((call) => call.type === 'mount')).toBe(false);
-
-    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
     await waitFor(() =>
       expect(secondEngine.calls.some((call) => call.type === 'mount')).toBe(true),
     );
-    expect(window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY)).toBe('expanded');
+    expect(screen.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
+    expect(window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY)).toBe('collapsed');
     secondRender.unmount();
 
     const thirdEngine = new FakeMinimapEngine();
@@ -109,8 +113,55 @@ describe('ExploreShell', () => {
       />,
     );
 
-    await waitFor(() => expect(thirdEngine.calls.some((call) => call.type === 'mount')).toBe(true));
-    expect(screen.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeInTheDocument();
+    expect(thirdEngine.calls.some((call) => call.type === 'mount')).toBe(false);
+    expect(screen.getByRole('button', { name: 'Mở rộng bản đồ' })).toBeInTheDocument();
+  });
+
+  it('follows the unified panorama minimap state without rendering a duplicate toggle', async () => {
+    const actions = createActions();
+    const minimapEngine = new FakeMinimapEngine();
+    const { rerender } = render(
+      <ExploreShell
+        view={readyImmersiveViewFixture}
+        actions={actions}
+        hasPanoramaTourControls
+        minimapEngine={minimapEngine}
+        minimapOpen={false}
+      />,
+    );
+
+    const minimap = screen.getByRole('application', { name: 'Bản đồ tuyến tham quan' });
+    expect(minimap).toHaveClass('minimap-viewport--collapsed');
+    expect(screen.queryByRole('button', { name: 'Mở rộng bản đồ' })).not.toBeInTheDocument();
+    expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(false);
+
+    rerender(
+      <ExploreShell
+        view={readyImmersiveViewFixture}
+        actions={actions}
+        hasPanoramaTourControls
+        minimapEngine={minimapEngine}
+        minimapOpen
+      />,
+    );
+
+    await waitFor(() =>
+      expect(minimapEngine.calls.some((call) => call.type === 'mount')).toBe(true),
+    );
+    expect(minimap).not.toHaveClass('minimap-viewport--collapsed');
+    expect(screen.queryByRole('button', { name: 'Thu gọn bản đồ' })).not.toBeInTheDocument();
+
+    rerender(
+      <ExploreShell
+        view={readyImmersiveViewFixture}
+        actions={actions}
+        hasPanoramaTourControls
+        minimapEngine={minimapEngine}
+        minimapOpen={false}
+      />,
+    );
+
+    await waitFor(() => expect(minimap).toHaveClass('minimap-viewport--collapsed'));
   });
 
   it('leaves panorama hotspot spatial rendering to the renderer', () => {
@@ -393,9 +444,10 @@ describe('ExploreShell', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Đang tải không gian 360°');
     expect(screen.getByRole('button', { name: 'Quay lại Sơn Trang Cổ Đạm' })).toBeInTheDocument();
-    expect(screen.getByText('Bản đồ hành trình')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn bản đồ' }));
+    expect(screen.getByRole('button', { name: 'Mở rộng bản đồ' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mở rộng bản đồ' }));
+    expect(screen.getByText('Bản đồ hành trình')).toBeInTheDocument();
     expect(actions.onToggleMinimap).toHaveBeenCalledTimes(1);
   });
 

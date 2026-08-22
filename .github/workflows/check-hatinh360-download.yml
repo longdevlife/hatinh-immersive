@@ -1,0 +1,40 @@
+name: Probe Hà Tĩnh 360 download surface
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    if: github.head_ref == 'content-readiness-audit' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.3.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @hatinh/web exec playwright install --with-deps chromium
+      - name: Probe public viewer
+        run: |
+          cp tooling/content-readiness/check-hatinh360-download-force.mjs apps/web/.check-hatinh360-download-force.mjs
+          cd apps/web
+          OUT='../../artifact/hatinh360-download-probe' node .check-hatinh360-download-force.mjs
+      - run: cat artifact/hatinh360-download-probe/force-summary.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hatinh360-download-probe
+          path: artifact/hatinh360-download-probe
+          if-no-files-found: error
+          retention-days: 3

@@ -12,8 +12,31 @@ import type {
   DestinationTourScene,
 } from '../../panorama-tour';
 import type { ImmersiveManifestVm } from '../api/immersive-manifest.mapper';
+import { createDemoAudioTracksForDestination, getDemoSceneContent } from './demo-content';
 
 export type DemoTourBuildMode = 'public' | 'synthetic';
+
+const SON_TRANG_SLUG = 'son-trang-co-dam';
+
+/**
+ * Public demo previews deliberately omit physical claims for Sơn Trang until
+ * customer-owned panorama mapping is verified. The internal catalog remains
+ * available to explicit synthetic/test mode only.
+ */
+export function getPublicDemoDestinationPreview(
+  destination: DestinationPreviewVm,
+): DestinationPreviewVm {
+  if (destination.slug !== SON_TRANG_SLUG) {
+    return destination;
+  }
+
+  const { cameraPreset: _cameraPreset, ...withoutCameraPreset } = destination;
+  return {
+    ...withoutCameraPreset,
+    defaultSceneId: null,
+    geoPoint: null,
+  };
+}
 
 export interface DemoSceneDefinition {
   id: string;
@@ -217,37 +240,31 @@ export function buildDemoDestinationTour(
   destination: DestinationPreviewVm,
   mode: DemoTourBuildMode = 'public',
 ): DestinationTour {
-  const definitions = getDemoSceneDefinitions(destination.slug);
+  const definitions =
+    mode === 'public' && destination.slug === SON_TRANG_SLUG
+      ? []
+      : getDemoSceneDefinitions(destination.slug);
   const scenes = definitions.map((definition) => toTourScene(destination.slug, definition, mode));
   const links = createSequentialLinks(scenes);
-  const hotspots = createDemoHotspots(destination.slug, scenes);
-  const audioTracks: readonly ImmersiveAudioTrack[] = [
-    {
-      id: `ambient:${destination.slug}`,
-      type: 'ambient',
-      label: 'Âm thanh không gian',
-      src: null,
-      rights: 'demo-only',
-    },
-    {
-      id: `narration:${destination.slug}:intro`,
-      type: 'narration',
-      label: `Thuyết minh ${destination.name}`,
-      src: null,
-      rights: 'demo-only',
-    },
-  ];
+  const hotspots = createDemoHotspots(destination.slug, scenes, mode);
+  const audioTracks: readonly ImmersiveAudioTrack[] =
+    definitions.length > 0
+      ? createDemoAudioTracksForDestination(
+          destination.slug,
+          definitions.map(({ id }) => id),
+        )
+      : [];
 
   return {
     destinationSlug: destination.slug,
     title: destination.name,
-    defaultSceneId: scenes[0]?.id ?? destination.defaultSceneId ?? '',
+    defaultSceneId: scenes[0]?.id ?? null,
     mediaMode: mode === 'synthetic' ? 'synthetic' : 'demo-only',
     scenes,
     links,
     hotspots,
     audioTracks,
-    ambientTrackId: `ambient:${destination.slug}`,
+    ...(definitions.length > 0 ? { ambientTrackId: `ambient:${destination.slug}` } : {}),
   };
 }
 
@@ -256,6 +273,8 @@ export function buildDemoManifest(
   mode: DemoTourBuildMode = 'synthetic',
 ): ImmersiveManifestVm {
   const tour = buildDemoDestinationTour(destination, mode);
+  const manifestSourceDestination =
+    mode === 'public' ? getPublicDemoDestinationPreview(destination) : destination;
   const nodes: SceneNodeVm[] = tour.scenes.map((scene, index) => ({
     id: scene.id,
     name: scene.name,
@@ -295,22 +314,19 @@ export function buildDemoManifest(
       links: tour.links
         .filter((link) => link.sourceSceneId === scene.id)
         .map((link) => ({ targetNodeId: link.targetSceneId, yaw: link.yaw, pitch: link.pitch })),
+      ...(scene.narrationTrackIds ? { narrationTrackIds: scene.narrationTrackIds } : {}),
+      ...(scene.transcripts ? { transcripts: scene.transcripts } : {}),
     };
   });
 
+  const manifestDestination = tour.defaultSceneId
+    ? { ...manifestSourceDestination, defaultSceneId: tour.defaultSceneId }
+    : withoutDefaultSceneId(manifestSourceDestination);
+
   return {
-    destination: { ...destination, defaultSceneId: tour.defaultSceneId },
+    destination: manifestDestination,
     defaultSceneId: tour.defaultSceneId,
-    overviewTarget: {
-      ...(destination.cameraPreset?.center ?? {
-        lat: destination.geoPoint?.latitude ?? 18.3421,
-        lng: destination.geoPoint?.longitude ?? 105.9032,
-        altitude: 120,
-      }),
-      heading: destination.cameraPreset?.heading ?? 0,
-      tilt: destination.cameraPreset?.tilt ?? 55,
-      range: destination.cameraPreset?.range ?? 900,
-    },
+    overviewTarget: getDemoOverviewTarget(manifestSourceDestination),
     nodes,
     panoramaNodes,
     links,
@@ -320,6 +336,31 @@ export function buildDemoManifest(
   };
 }
 
+function getDemoOverviewTarget(destination: DestinationPreviewVm) {
+  if (destination.slug === SON_TRANG_SLUG && destination.defaultSceneId === null) {
+    // This sentinel is never used by the public App route; it prevents an
+    // unverified Sơn Trang coordinate from leaking through a direct manifest
+    // inspection while keeping the shared manifest shape total.
+    return { lat: 0, lng: 0, altitude: 0, heading: 0, tilt: 0, range: 0 };
+  }
+
+  return {
+    ...(destination.cameraPreset?.center ?? {
+      lat: destination.geoPoint?.latitude ?? 18.3421,
+      lng: destination.geoPoint?.longitude ?? 105.9032,
+      altitude: 120,
+    }),
+    heading: destination.cameraPreset?.heading ?? 0,
+    tilt: destination.cameraPreset?.tilt ?? 55,
+    range: destination.cameraPreset?.range ?? 900,
+  };
+}
+
+function withoutDefaultSceneId(destination: DestinationPreviewVm): DestinationPreviewVm {
+  const { defaultSceneId: _defaultSceneId, ...destinationWithoutScene } = destination;
+  return { ...destinationWithoutScene, defaultSceneId: null };
+}
+
 function toTourScene(
   destinationSlug: string,
   definition: DemoSceneDefinition,
@@ -327,6 +368,7 @@ function toTourScene(
 ): DestinationTourScene {
   const mediaPath = resolveMediaPath(destinationSlug, definition, mode);
   const isSynthetic = mode === 'synthetic';
+  const content = getDemoSceneContent(destinationSlug, definition.id);
   const mediaQuality: PanoramaMediaQuality = isSynthetic
     ? 'ready'
     : mediaPath
@@ -350,7 +392,15 @@ function toTourScene(
         : mediaPath.replace('/manifest.json', '/preview.webp'),
     mediaQuality,
     mediaRights,
-    narrationTrackId: `narration:${destinationSlug}:intro`,
+    ...(content
+      ? {
+          narrationTrackId: `narration:${destinationSlug}:${definition.id}:vi`,
+          narrationTrackIds: {
+            vi: `narration:${destinationSlug}:${definition.id}:vi`,
+          },
+          transcripts: { vi: content.transcript },
+        }
+      : { narrationTrackId: `narration:${destinationSlug}:intro` }),
   };
 }
 
@@ -406,33 +456,52 @@ function createSequentialLinks(scenes: readonly DestinationTourScene[]) {
 function createDemoHotspots(
   destinationSlug: string,
   scenes: readonly DestinationTourScene[],
+  mode: DemoTourBuildMode,
 ): readonly DestinationTourHotspot[] {
   const first = scenes[0];
-  const second = scenes[1];
   if (!first) {
     return [];
   }
-  const hotspots: DestinationTourHotspot[] = [
-    {
-      id: `${destinationSlug}:story`,
-      sceneId: first.id,
-      type: 'information',
-      label: 'Điểm đáng chú ý',
-      content: 'Một điểm dừng trong hành trình khám phá Hà Tĩnh.',
-      yaw: first.initialView.heading,
-      pitch: 0,
-    },
-  ];
-  if (second) {
+  const hotspots: DestinationTourHotspot[] = [];
+
+  scenes.forEach((scene, index) => {
+    const content = getDemoSceneContent(destinationSlug, scene.id);
     hotspots.push({
-      id: `${destinationSlug}:next`,
-      sceneId: first.id,
-      type: 'scene-navigation',
-      targetSceneId: second.id,
-      label: `Mở ${second.name}`,
-      yaw: (first.initialView.heading + 24) % 360,
+      id: `${destinationSlug}:${scene.id}:story`,
+      sceneId: scene.id,
+      type: 'information',
+      label: content?.storyTitle ?? 'Điểm đáng chú ý',
+      content: content?.storyContent ?? 'Một điểm dừng trong hành trình khám phá Hà Tĩnh.',
+      yaw: scene.initialView.heading,
       pitch: 0,
     });
-  }
+
+    const next = scenes[index + 1];
+    if (next && (mode === 'synthetic' || next.panoramaUrl !== null)) {
+      hotspots.push({
+        id: `${destinationSlug}:${scene.id}:next`,
+        sceneId: scene.id,
+        type: 'scene-navigation',
+        targetSceneId: next.id,
+        label: `Mở ${next.name}`,
+        yaw: (scene.initialView.heading + 24) % 360,
+        pitch: 0,
+      });
+    }
+
+    const previous = scenes[index - 1];
+    if (previous && (mode === 'synthetic' || previous.panoramaUrl !== null)) {
+      hotspots.push({
+        id: `${destinationSlug}:${scene.id}:previous`,
+        sceneId: scene.id,
+        type: 'scene-navigation',
+        targetSceneId: previous.id,
+        label: `Quay lại ${previous.name}`,
+        yaw: (scene.initialView.heading + 204) % 360,
+        pitch: 0,
+      });
+    }
+  });
+
   return hotspots;
 }

@@ -113,6 +113,18 @@ describe('ReferenceParityControls', () => {
     expect(screen.getAllByText('Lối dạo Thiên Cầm').length).toBeGreaterThan(0);
   });
 
+  it('keeps Back reachable while a scene transition is in flight', () => {
+    const actions = createMockActions();
+    const vm = createMockVm({ isTransitioning: true });
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
+    const backButton = screen.getByRole('button', { name: 'Quay lại Biển Thiên Cầm' });
+    expect(backButton).not.toBeDisabled();
+    fireEvent.click(backButton);
+    expect(actions.onBack).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves audio presentation to the unified media dock', () => {
     const actions = createMockActions();
     const vm = createMockVm();
@@ -193,6 +205,85 @@ describe('ReferenceParityControls', () => {
     const nextMajorButton = screen.getByRole('button', { name: 'Bờ biển Thiên Cầm' });
     fireEvent.click(nextMajorButton);
     expect(actions.onSelectScene).toHaveBeenCalledWith('shore');
+  });
+
+  it('treats a customer-demo low-resolution scene as usable when canNavigate is true', () => {
+    const actions = createMockActions();
+    const vm = createMockVm({
+      scenes: createMockVm().scenes.map((scene, index) =>
+        index === 0 ? { ...scene, mediaQuality: 'low-resolution', canNavigate: true } : scene,
+      ),
+    });
+
+    render(<ReferenceParityControls vm={vm} actions={actions} isCustomerDemo />);
+
+    const currentButton = screen.getByRole('button', {
+      name: /^Lối dạo Thiên Cầm$/,
+    });
+    expect(currentButton).toBeEnabled();
+    expect(currentButton).not.toHaveClass('is-unavailable');
+    expect(currentButton).toHaveAttribute('aria-label', 'Lối dạo Thiên Cầm');
+  });
+
+  it('keeps a scene with canNavigate false visibly and semantically unavailable', () => {
+    const actions = createMockActions();
+    const baseVm = createMockVm();
+    const vm = createMockVm({
+      scenes: [
+        ...baseVm.scenes,
+        {
+          ...baseVm.scenes[0],
+          id: 'unavailable-scene',
+          label: 'Không gian chưa có',
+          shortLabel: 'Chưa có',
+          role: 'major-stop',
+          isMajorStop: true,
+          isCurrent: false,
+          isVisited: false,
+          mediaQuality: 'low-resolution',
+          thumbnailUrl: null,
+          canNavigate: false,
+        },
+      ],
+    });
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
+    const unavailableButton = screen.getByRole('button', {
+      name: 'Không gian chưa có (Chưa có dữ liệu)',
+    });
+    expect(unavailableButton).toBeDisabled();
+    expect(unavailableButton).toHaveClass('is-unavailable');
+  });
+
+  it('keeps the customer demo badge visible as the active scene changes', () => {
+    const actions = createMockActions();
+    const vm = createMockVm();
+
+    const { rerender } = render(
+      <ReferenceParityControls vm={vm} actions={actions} isCustomerDemo />,
+    );
+
+    expect(screen.getByTestId('panorama-demo-badge')).toHaveTextContent(
+      'Bản demo 360° · Ảnh tham khảo',
+    );
+
+    rerender(
+      <ReferenceParityControls
+        vm={{
+          ...vm,
+          currentSceneId: 'shore',
+          scenes: vm.scenes.map((scene) => ({
+            ...scene,
+            isCurrent: scene.id === 'shore',
+          })),
+        }}
+        actions={actions}
+        isCustomerDemo
+      />,
+    );
+
+    expect(screen.getByTestId('panorama-demo-badge')).toBeInTheDocument();
   });
 
   it('renders one intentional unavailable composition when mediaUnavailable is true', () => {

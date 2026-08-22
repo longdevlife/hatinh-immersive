@@ -1,7 +1,13 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "exclude": ["exports", "types", "duplicates"],
-  "ignore": ["tooling/scripts/architecture-fixture.test.mjs", ".husky/pre-commit"],
+  "ignore": [
+    "tooling/scripts/architecture-fixture.test.mjs",
+    ".husky/pre-commit",
+    "tooling/content-readiness/check-hatinh360-download-force.mjs",
+    "tooling/content-readiness/check-hatinh360-download.mjs",
+    "tooling/content-readiness/recon-hatinh360.mjs"
+  ],
   "ignoreDependencies": ["lint-staged"],
   "workspaces": {
     "apps/web": {

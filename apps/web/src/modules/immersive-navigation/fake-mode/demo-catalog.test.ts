@@ -38,12 +38,38 @@ describe('Hà Tĩnh demo catalog', () => {
 
   it('includes the Sơn Trang focus destination in the deterministic catalog', () => {
     expect(DEMO_DESTINATIONS.map(({ preview }) => preview.slug)).toContain('son-trang-co-dam');
-    expect(getDemoManifest('son-trang-co-dam').defaultSceneId).toBe('son-trang-gate');
+    expect(getDemoManifest('son-trang-co-dam').defaultSceneId).toBeNull();
+  });
+
+  it('keeps public Sơn Trang as a showcase shell without unverified scene truth', () => {
+    const manifest = getDemoManifest('son-trang-co-dam', 'public');
+
+    expect(manifest.nodes).toEqual([]);
+    expect(manifest.panoramaNodes).toEqual([]);
+    expect(manifest.links).toEqual([]);
+    expect(manifest.hotspots).toEqual([]);
+    expect(manifest.defaultSceneId).toBeNull();
+    expect(manifest.destination.defaultSceneId).toBeNull();
+    expect(manifest.destination.geoPoint).toBeNull();
+    expect(manifest.destination.cameraPreset).toBeUndefined();
+    expect(manifest.overviewTarget).toEqual({
+      lat: 0,
+      lng: 0,
+      altitude: 0,
+      heading: 0,
+      tilt: 0,
+      range: 0,
+    });
+    expect(JSON.stringify(manifest)).not.toContain('son-trang-gate');
+    expect(JSON.stringify(manifest)).not.toContain('/demo/360/son-trang-tour/');
   });
 
   it('maps every destination to an entry scene and a valid scene-link graph', () => {
     for (const { preview } of DEMO_DESTINATIONS) {
-      const manifest = getDemoManifest(preview.slug);
+      const manifest = getDemoManifest(
+        preview.slug,
+        preview.slug === 'son-trang-co-dam' ? 'synthetic' : 'public',
+      );
       const nodeIds = new Set(manifest.nodes.map(({ id }) => id));
 
       expect(manifest.destination.slug).toBe(preview.slug);
@@ -93,6 +119,72 @@ describe('Hà Tĩnh demo catalog', () => {
           .filter((node) => node.panoramaUrl === null)
           .every((node) => node.mediaQuality === 'missing'),
       ).toBe(true);
+    }
+  });
+
+  it('integrates Thiên Cầm demo story, VI transcript, and per-scene narration mapping', () => {
+    const manifest = getDemoManifest('bien-thien-cam', 'synthetic');
+    const sceneIds = ['thien-cam-boardwalk', 'thien-cam-shore', 'thien-cam-lookout'];
+
+    expect(manifest.audioTracks.filter((track) => track.type === 'narration')).toHaveLength(3);
+    expect(manifest.audioTracks.filter((track) => track.type === 'ambient')).toHaveLength(1);
+
+    for (const sceneId of sceneIds) {
+      const node = manifest.panoramaNodes.find((candidate) => candidate.id === sceneId);
+      expect(node).toBeDefined();
+      expect(node?.narrationTrackIds?.vi).toBe(`narration:bien-thien-cam:${sceneId}:vi`);
+      expect(node?.transcripts?.vi?.locale).toBe('vi');
+      expect(node?.transcripts?.vi?.timingMode).toBe('plain');
+      expect(node?.transcripts?.vi?.segments.length).toBeGreaterThan(0);
+
+      const storyHotspot = manifest.hotspots.find(
+        (hotspot) => hotspot.sceneId === sceneId && hotspot.type === 'information',
+      );
+      expect(storyHotspot?.content).toBeTruthy();
+      expect(Number.isFinite(storyHotspot?.yaw)).toBe(true);
+      expect(Number.isFinite(storyHotspot?.pitch)).toBe(true);
+    }
+  });
+
+  it('keeps all destination manifests scene-addressable for content projection', () => {
+    for (const { preview } of DEMO_DESTINATIONS) {
+      const manifest = getDemoManifest(preview.slug, 'synthetic');
+      expect(manifest.panoramaNodes.every((node) => node.destinationSlug === preview.slug)).toBe(
+        true,
+      );
+    }
+  });
+
+  it('projects destination-specific VI narration and transcript for every demo scene', () => {
+    for (const { preview } of DEMO_DESTINATIONS) {
+      const manifest = getDemoManifest(preview.slug, 'synthetic');
+      const narrationIds = new Set(
+        manifest.audioTracks.filter((track) => track.type === 'narration').map((track) => track.id),
+      );
+
+      expect(narrationIds).toHaveLength(manifest.panoramaNodes.length);
+      for (const node of manifest.panoramaNodes) {
+        const narrationId = node.narrationTrackIds?.vi;
+        expect(narrationId).toBe(`narration:${preview.slug}:${node.id}:vi`);
+        expect(narrationIds.has(narrationId ?? '')).toBe(true);
+        expect(node.transcripts?.vi?.locale).toBe('vi');
+        expect(node.transcripts?.vi?.timingMode).toBe('plain');
+      }
+    }
+  });
+
+  it('does not expose public navigation hotspots for missing panorama targets', () => {
+    for (const destinationSlug of ['khu-luu-niem-nguyen-du', 'nga-ba-dong-loc']) {
+      const manifest = getDemoManifest(destinationSlug, 'public');
+      const missingSceneIds = new Set(
+        manifest.panoramaNodes.filter((node) => node.panoramaUrl === null).map((node) => node.id),
+      );
+
+      expect(
+        manifest.hotspots
+          .filter((hotspot) => hotspot.type === 'scene-navigation')
+          .some((hotspot) => hotspot.targetSceneId && missingSceneIds.has(hotspot.targetSceneId)),
+      ).toBe(false);
     }
   });
 

@@ -1,0 +1,184 @@
+{
+  "generatedAt": "2026-08-20",
+  "reconnaissance": {
+    "method": "read-only Playwright network and public DOM inspection on GitHub Actions",
+    "inspectedPages": 8,
+    "networkResponses": 581,
+    "candidateResponses": 314,
+    "capturedTextBodies": 124,
+    "explicitDownloadLinks": 0,
+    "interestingDownloadControls": 0,
+    "requestFailures": 6,
+    "artifactDigest": "sha256:4a9798830f2d739f1d0228ad457dc8da2d7554536ad300fa84e0c03335f1f798"
+  },
+  "providers": [
+    {
+      "provider": "hatinh360-star-global",
+      "priority": 1,
+      "platformUrl": "https://dulichhatinh360.com",
+      "projectViewerUrl": "https://platform.starglobal3d.com/smart-tourism-360/du-lich-ha-tinh/",
+      "viewerEngineEvidence": "krpano 1.23.x observed in public viewer resources",
+      "assetHosts": [
+        "platform.starglobal3d.com",
+        "s3.hcm-1.cloud.cmctelecom.vn",
+        "sanpham.starglobal3d.vn",
+        "sanpham.starglobal3d.com"
+      ],
+      "publicProjectEvidence": {
+        "caseStudyPublished360Views": 146,
+        "caseStudyPublished2dImages": "170+",
+        "captureTypes": ["ground-360", "aerial-360"],
+        "currentGeneralTourSceneCount": 150,
+        "currentLegacy42HaTinhSceneCount": 26
+      },
+      "currentRouteChecks": [
+        {
+          "path": "/khu-du-lich-thien-cam/",
+          "status": 200
+        },
+        {
+          "path": "/khu-du-lich-thach-hai/",
+          "status": 200
+        },
+        {
+          "path": "/khu-du-lich-loc-ha/",
+          "status": 200
+        },
+        {
+          "path": "/diem-du-lich-da-bac-eco/",
+          "status": 200
+        },
+        {
+          "path": "/khu-luu-niem-nguyen-du",
+          "status": 404
+        },
+        {
+          "path": "/nga-ba-dong-loc",
+          "status": 404
+        }
+      ],
+      "publicManifests": [
+        {
+          "url": "https://s3.hcm-1.cloud.cmctelecom.vn/starglobal-3d/smart-tourism-360/du-lich-ha-tinh/tour-view360.xml",
+          "sceneCount": 150,
+          "projection": "cube-multires",
+          "notes": "Current general viewer manifest."
+        },
+        {
+          "url": "https://sanpham.starglobal3d.vn/smart-tourism-3d/viet-nam-34-tinh/tour_xml/gd5/tour-42-ha-tinh.xml",
+          "sceneCount": 26,
+          "projection": "cube-multires",
+          "notes": "Broader 42-Hà-Tĩnh manifest containing Nguyễn Du and Thiên Cầm scenes."
+        }
+      ],
+      "destinationEvidence": [
+        {
+          "destinationSlug": "bien-thien-cam",
+          "currentGeneralManifest": {
+            "matchingSceneCountAtLeast": 10,
+            "examples": [
+              "scene_viewhome_thiencam_tren_cao",
+              "scene_13_bien_thien_cam_(01)",
+              "scene_13_bien_thien_cam_(02)",
+              "scene_13_bien_thien_cam_(03)",
+              "scene_13_bien_thien_cam_(04)",
+              "scene_13_bien_thien_cam_(05)",
+              "scene_13_bien_thien_cam_tren_cao_(01)",
+              "scene_13_bien_thien_cam_tren_cao_(02)",
+              "scene_13_bien_thien_cam_tren_cao_(03)",
+              "scene_13_quang_truong_bien_thien_cam_tren_cao"
+            ]
+          },
+          "legacy42Manifest": {
+            "groundSceneCount": 4,
+            "aerialSceneCount": 1,
+            "groundMultires": "512,640,1152,2304,4736",
+            "aerialMultires": "512,768,1664,3200,6400"
+          },
+          "candidateSceneMappingStatus": "needs-visual-physical-match"
+        },
+        {
+          "destinationSlug": "khu-luu-niem-nguyen-du",
+          "currentDirectRouteStatus": 404,
+          "legacy42Manifest": {
+            "groundScenes": [
+              "scene_ha_tinh_02_khu_luu_niem_nguyen_du_(01)",
+              "scene_ha_tinh_02_khu_luu_niem_nguyen_du_(02)",
+              "scene_ha_tinh_02_khu_luu_niem_nguyen_du_(03)",
+              "scene_ha_tinh_02_khu_luu_niem_nguyen_du_(04)"
+            ],
+            "aerialScenes": ["scene_ha_tinh_02_khu_luu_niem_nguyen_du_tren_cao_(01)"],
+            "groundMultires": "512,640,1152,2304,4736",
+            "aerialMultires": "512,768,1664,3200,6400"
+          },
+          "candidateSceneMappingStatus": "needs-visual-physical-match"
+        },
+        {
+          "destinationSlug": "nga-ba-dong-loc",
+          "currentDirectRouteStatus": 404,
+          "capturedBodySearchMatchCount": 0,
+          "candidateSceneMappingStatus": "not-found-in-current-public-recon"
+        },
+        {
+          "destinationSlug": "son-trang-co-dam",
+          "candidateSceneMappingStatus": "not-found-in-current-public-recon"
+        }
+      ],
+      "downloadMechanism": null,
+      "downloadMechanismStatus": "no-explicit-public-download-found",
+      "sourceExposure": {
+        "equirectangularMasterExposed": false,
+        "cubeTilePyramidsExposed": true,
+        "vrCubeFacesExposed": true,
+        "notes": "Public manifests reference cube tiles and VR cube faces. No downloadable 2:1 master source was observed."
+      },
+      "audioEvidence": {
+        "publicAutotourRecords": 4,
+        "thienCamAutotourTitle": "Tham quan các điểm du lịch biển Thiên Cầm",
+        "thienCamAutotourAudio": null,
+        "directAudioMediaUrlsObserved": 4,
+        "runtimeFollowUp": {
+          "auditedAt": "2026-08-20",
+          "method": "interactive browser runtime inspection after entering destination scenes",
+          "prerecordedNarrationObservedFor": [
+            "overview",
+            "bien-thien-cam",
+            "khu-luu-niem-nguyen-du"
+          ],
+          "transcriptOrCaptionObserved": false,
+          "usageLane": "reference-only",
+          "rightsStatus": "unverified",
+          "mediaCopied": false
+        },
+        "notes": "The initial passive network scan did not trigger audio. A later interactive runtime audit observed four direct audio URLs/files, but no reuse permission or production-ready assignment was established."
+      },
+      "usageLane": "discovery-only",
+      "productionRightsStatus": "unverified",
+      "notes": [
+        "Public browser-readable cube tiles are discovery evidence, not an explicit download/reuse grant.",
+        "Do not reconstruct or rehost Star Global cube tiles unless a permitted download/reuse basis is established.",
+        "A public candidate can only become READY_TO_INGEST after source, physical match, technical QC, and rights evidence are all accepted."
+      ]
+    },
+    {
+      "provider": "existing-repo-demo",
+      "priority": 2,
+      "usageLane": "demo-only",
+      "knownPackages": [
+        "apps/web/public/demo/360/thien-cam-boardwalk",
+        "apps/web/public/demo/360/thien-cam-shore",
+        "apps/web/public/demo/360/thien-cam-lookout",
+        "apps/web/public/demo/360/nguyen-du-courtyard",
+        "apps/web/public/demo/360/dong-loc-memorial",
+        "apps/web/public/demo/360/son-trang-gate",
+        "apps/web/public/demo/360/son-trang-tour"
+      ],
+      "recoverySummary": {
+        "demoUsable2048x1024": 5,
+        "sonTrangLowResolution256x128": 8,
+        "productionReady": 0
+      },
+      "productionRightsStatus": "not-established-by-demo-package"
+    }
+  ]
+}
