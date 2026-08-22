@@ -32,6 +32,12 @@ test('the same 2048x1024 Thiên Cầm asset is rejected publicly and opens in ex
   await expect.poll(() => new URL(page.url()).searchParams.get('demo')).toBe('customer');
   await expect.poll(() => new URL(page.url()).searchParams.get('scene')).toBe('thien-cam-shore');
   await expect(page.getByTestId('panorama-demo-badge')).toBeVisible();
+
+  await rail.getByRole('button', { name: 'Điểm ngắm Thiên Cầm' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Điểm ngắm Thiên Cầm' })).toBeVisible();
+  await expect.poll(() => new URL(page.url()).searchParams.get('scene')).toBe('thien-cam-lookout');
+  await expect(page.getByTestId('panorama-demo-badge')).toBeVisible();
 });
 
 test('Sơn Trang remains unavailable when customer demo is explicitly requested', async ({
