@@ -126,6 +126,10 @@ describe('ReferenceParityControls', () => {
     expect(
       screen.getByRole('navigation', { name: 'Hành trình 360 Biển Thiên Cầm' }),
     ).toHaveAttribute('data-journey', 'scene-strip');
+    expect(screen.getByTestId('panorama-utility-cluster')).toHaveAttribute(
+      'data-utility-readability',
+      'scrim',
+    );
     expect(screen.getByRole('button', { name: 'Lối dạo Thiên Cầm' })).toHaveAttribute(
       'data-scene-role',
       'major-stop',

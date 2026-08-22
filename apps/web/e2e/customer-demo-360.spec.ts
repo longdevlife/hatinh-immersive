@@ -39,6 +39,51 @@ async function capturePanoramaEvidence(
   });
 }
 
+async function installDeterministicDemoNarrationHarness(page: Page) {
+  await page.addInitScript(() => {
+    class StableDemoUtterance {
+      text: string;
+      lang = '';
+      onend: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+
+      constructor(text: string) {
+        this.text = text;
+      }
+    }
+
+    const stableSpeechSynthesis = {
+      paused: false,
+      pending: false,
+      speaking: false,
+      speak(utterance: StableDemoUtterance) {
+        this.speaking = true;
+        this.paused = false;
+        void utterance;
+      },
+      pause() {
+        this.paused = true;
+      },
+      resume() {
+        this.paused = false;
+      },
+      cancel() {
+        this.speaking = false;
+        this.paused = false;
+      },
+    };
+
+    Object.defineProperty(globalThis, 'speechSynthesis', {
+      configurable: true,
+      value: stableSpeechSynthesis,
+    });
+    Object.defineProperty(globalThis, 'SpeechSynthesisUtterance', {
+      configurable: true,
+      value: StableDemoUtterance,
+    });
+  });
+}
+
 test('the same 2048x1024 Thiên Cầm asset is rejected publicly and opens in explicit customer demo mode', async ({
   page,
 }) => {
@@ -142,6 +187,7 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
     });
   };
 
+  await installDeterministicDemoNarrationHarness(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto(customerDemoSceneUrl);
   await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
@@ -149,15 +195,20 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
 
   const desktopDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
   await expect(desktopDock.getByRole('button', { name: 'Nghe câu chuyện' })).toBeVisible();
+  await expect(page.getByTestId('panorama-utility-cluster')).toBeVisible();
   await screenshot('panorama-ux-desktop-idle-1440x900');
 
   await desktopDock.getByRole('button', { name: 'Nghe câu chuyện' }).click();
   await expect(desktopDock.getByRole('button', { name: 'Tạm dừng câu chuyện' })).toBeVisible();
+  await expect(desktopDock).toHaveAttribute('data-story-state', 'playing');
   await screenshot('panorama-ux-desktop-story-playing-1440x900');
+  await screenshot('panorama-ux-desktop-utilities-bright-sky-1440x900');
 
   await page.goto(customerDemoSceneUrl);
   await page.getByRole('button', { name: 'Mở bản đồ thu nhỏ' }).click();
-  await expect(page.getByRole('application', { name: 'Bản đồ tuyến tham quan' })).toBeVisible();
+  const minimap = page.getByRole('application', { name: 'Bản đồ tuyến tham quan' });
+  await expect(minimap).toBeVisible();
+  await expect(minimap.locator('.minimap-viewport__header > div')).toBeHidden();
   await screenshot('panorama-ux-desktop-minimap-expanded-1440x900');
 
   await page.goto(customerDemoSceneUrl);
