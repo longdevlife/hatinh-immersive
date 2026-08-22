@@ -86,10 +86,45 @@ describe('ImmersiveMediaDock semantic contract', () => {
 
     render(<ImmersiveMediaDock vm={createVm()} actions={actions} />);
 
-    expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toBeInTheDocument();
+    const dock = screen.getByRole('region', { name: 'Media dock trải nghiệm' });
+    expect(dock).toBeInTheDocument();
+    expect(dock).toHaveAttribute('data-presentation', 'cinematic-wayfinding');
+    expect(dock).toHaveAttribute('data-story-state', 'idle');
     expect(screen.getByRole('button', { name: 'Nghe câu chuyện' })).toBeInTheDocument();
     expect(actions.onPlayNarration).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Bỏ qua câu chuyện' })).not.toBeInTheDocument();
+  });
+
+  it('keeps playing and Auto Tour states legible to presentation QA', () => {
+    const actions = createActions();
+
+    const { rerender } = render(
+      <ImmersiveMediaDock
+        vm={createVm({ narration: { ...createVm().narration, status: 'playing' } })}
+        actions={actions}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toHaveAttribute(
+      'data-story-state',
+      'playing',
+    );
+
+    rerender(
+      <ImmersiveMediaDock
+        vm={createVm({
+          mode: 'auto-tour',
+          autoTour: {
+            ...createVm().autoTour,
+            isActive: true,
+          },
+        })}
+        actions={actions}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toHaveAttribute(
+      'data-story-state',
+      'auto-tour',
+    );
   });
 
   it('does not show narration progress before duration metadata is meaningful', () => {
