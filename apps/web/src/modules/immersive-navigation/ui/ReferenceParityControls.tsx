@@ -83,9 +83,10 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
 
   return (
     <div
-      className="panorama-controls reference-parity-controls"
+      className="panorama-controls reference-parity-controls reference-parity-controls--cinematic"
       role="region"
       aria-label="Các công cụ tiện ích"
+      data-visual-priority="panorama"
     >
       {/* Top-Left Back + Destination/Scene Context */}
       <div className="panorama-tour-top-bar reference-parity__top-left">
@@ -251,6 +252,7 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
             <nav
               className="panorama-tour-rail reference-parity__rail"
               aria-label={`Hành trình 360 ${vm.destinationName}`}
+              data-journey="scene-strip"
             >
               <ul role="list">
                 {vm.scenes.map((scene) => {
@@ -271,6 +273,7 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
                         } ${isUnavailable ? 'is-unavailable' : ''}`}
                         aria-current={scene.isCurrent ? 'step' : undefined}
                         aria-label={`${scene.label}${isUnavailable ? ' (Chưa có dữ liệu)' : ''}`}
+                        data-scene-role={isMajor ? 'major-stop' : 'connector'}
                         disabled={isDisabled}
                         onClick={() => {
                           if (!isDisabled) {
