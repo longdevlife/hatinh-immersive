@@ -148,6 +148,18 @@ jobs:
       - name: Customer Demo 360 media-policy end-to-end test
         run: pnpm --filter @hatinh/web test:e2e:customer-demo-360
 
+      - name: Preserve Panorama visual evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p .ci-artifacts/panorama
+          find apps/web/test-results -type f \( \
+            -name 'customer-demo-boardwalk-*.png' -o \
+            -name 'public-unavailable-*.png' -o \
+            -name 'son-trang-unavailable-*.png' \
+          \) -print -exec cp --parents {} .ci-artifacts/panorama \;
+          test -n "$(find .ci-artifacts/panorama -type f -name '*.png' -print -quit)"
+
       - name: Production-build Photo Sphere Viewer panorama smoke test
         run: pnpm --filter @hatinh/web test:e2e:panorama-tour:real
 
@@ -177,10 +189,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: panorama-visual-evidence
-          path: |
-            **/customer-demo-boardwalk-*.png
-            **/public-unavailable-*.png
-            **/son-trang-unavailable-*.png
+          path: .ci-artifacts/panorama
           if-no-files-found: error
 
       - name: Stop MinIO
