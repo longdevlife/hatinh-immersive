@@ -398,4 +398,21 @@ describe('ImmersiveMediaDock semantic contract', () => {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth });
     }
   });
+
+  it('keeps the primary story affordance visible in the collapsed mobile dock', () => {
+    const actions = createActions();
+    const previousWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+
+    try {
+      render(<ImmersiveMediaDock vm={createVm()} actions={actions} />);
+
+      const playButton = screen.getByRole('button', { name: 'Nghe câu chuyện' });
+      expect(playButton).toBeVisible();
+      fireEvent.click(playButton);
+      expect(actions.onPlayNarration).toHaveBeenCalledTimes(1);
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth });
+    }
+  });
 });

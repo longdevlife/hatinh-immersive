@@ -707,3 +707,312 @@
     transition: none;
   }
 }
+
+/* ==========================================================================
+   PHASE 3.1 CINEMATIC WAYFINDING
+   The dock is a quiet story cue, not a second control panel.
+   ========================================================================== */
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding'] {
+  width: min(50rem, calc(100vw - 2rem));
+  max-width: min(50rem, calc(100vw - 2rem));
+  gap: 0;
+  filter: drop-shadow(0 0.8rem 1.5rem rgb(0 0 0 / 0.28));
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding'] .immersive-media-dock__content {
+  gap: 0;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding'] .immersive-media-dock__utility-row {
+  position: absolute;
+  right: -3.15rem;
+  bottom: 0.4rem;
+  width: auto;
+  z-index: 2;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__sound-toggle {
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: rgb(255 255 255 / 0.8);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: none;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__sound-toggle:hover,
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__sound-toggle:focus-visible {
+  color: #ffffff;
+  background: rgb(5 18 14 / 0.24);
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding'] .immersive-media-dock__story {
+  width: 100%;
+  min-height: 3.8rem;
+  padding: 0.7rem 1rem 0.75rem;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(4 14 11 / 0.24) 34%,
+    rgb(4 14 11 / 0.78) 100%
+  );
+  border: 0;
+  border-bottom: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__story
+  > strong {
+  color: rgb(255 255 255 / 0.7);
+  font-size: 0.68rem;
+  font-weight: 720;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__story
+  > button:first-of-type {
+  color: #fff0c9;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent-primary, #e5a95f) 72%, transparent);
+  border-radius: 0;
+  font-size: 0.86rem;
+  font-weight: 720;
+  letter-spacing: 0.01em;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__story
+  > button:first-of-type::before {
+  margin-right: 0.45rem;
+  color: var(--color-accent-primary, #e5a95f);
+  content: '▶';
+  font-size: 0.62rem;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding'][data-story-state='playing']
+  .immersive-media-dock__story
+  > button:first-of-type::before {
+  content: 'Ⅱ';
+  font-size: 0.7rem;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__story
+  button:hover:not(:disabled),
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__story
+  button:focus-visible {
+  color: #ffffff;
+  background: rgb(255 255 255 / 0.08);
+  border-color: var(--color-accent-primary, #e5a95f);
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__transcript-actions,
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__story
+  > button:not(:first-of-type),
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__start-autotour-btn {
+  color: rgb(255 255 255 / 0.68);
+  background: transparent !important;
+  border-color: transparent !important;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 0.72rem;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__transcript-actions
+  button:hover,
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__transcript-actions
+  button:focus-visible,
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__start-autotour-btn:hover,
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__start-autotour-btn:focus-visible {
+  color: #ffffff;
+  border-bottom-color: var(--color-accent-primary, #e5a95f) !important;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding'] .immersive-media-dock__auto-tour {
+  width: 100%;
+  padding: 0.7rem 1rem 0.75rem;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgb(4 14 11 / 0.32) 32%,
+    rgb(4 14 11 / 0.82) 100%
+  );
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-accent-primary, #e5a95f) 74%, transparent);
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__auto-tour
+  > strong {
+  color: #fff0c9;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__auto-tour
+  > span[data-testid='immersive-media-dock-status'] {
+  padding: 0;
+  color: rgb(255 255 255 / 0.68);
+  background: transparent;
+  border-radius: 0;
+  font-size: 0.7rem;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding']
+  .immersive-media-dock__auto-tour
+  button {
+  color: rgb(255 255 255 / 0.76);
+  background: transparent;
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 0.72rem;
+}
+
+.immersive-media-dock[data-presentation='cinematic-wayfinding'] .immersive-media-dock__captions {
+  max-width: min(36rem, 88vw);
+  padding: 0.45rem 0.8rem;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(4 14 11 / 0.8) 18%,
+    rgb(4 14 11 / 0.8) 82%,
+    transparent
+  );
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@media (max-width: 767px) {
+  .immersive-media-dock[data-presentation='cinematic-wayfinding'] {
+    bottom: calc(max(0.75rem, env(safe-area-inset-bottom)) + 4.25rem);
+    width: calc(100vw - 1.5rem);
+    max-width: calc(100vw - 1.5rem);
+  }
+
+  .immersive-media-dock[data-presentation='cinematic-wayfinding']
+    .immersive-media-dock__utility-row {
+    position: static;
+    width: 100%;
+    gap: 0.25rem;
+    padding: 0.2rem 0.15rem;
+    background: linear-gradient(180deg, transparent, rgb(4 14 11 / 0.58));
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .immersive-media-dock[data-presentation='cinematic-wayfinding']
+    .immersive-media-dock__mobile-scene-label {
+    max-width: 27vw;
+    padding-left: 0.1rem;
+    color: rgb(255 255 255 / 0.72);
+    font-size: 0.66rem;
+    font-weight: 720;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .immersive-media-dock[data-presentation='cinematic-wayfinding']
+    .immersive-media-dock__mobile-primary-action {
+    min-width: 0;
+    min-height: 44px;
+    flex: 1 1 auto;
+    overflow: hidden;
+    padding: 0 0.35rem;
+    color: #fff0c9;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--color-accent-primary, #e5a95f) 72%, transparent);
+    border-radius: 0;
+    font-size: 0.72rem;
+    font-weight: 720;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .immersive-media-dock[data-presentation='cinematic-wayfinding']
+    .immersive-media-dock__mobile-primary-action--tour {
+    color: rgb(255 255 255 / 0.86);
+    border-bottom-color: rgb(255 255 255 / 0.36);
+  }
+
+  .immersive-media-dock[data-presentation='cinematic-wayfinding']
+    .immersive-media-dock__utility-row
+    .immersive-media-dock__mobile-toggle {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 0.45rem;
+    color: rgb(255 255 255 / 0.82);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid rgb(255 255 255 / 0.3);
+    border-radius: 0;
+    font-size: 0.68rem;
+    font-weight: 720;
+  }
+
+  .immersive-media-dock[data-presentation='cinematic-wayfinding'] .immersive-media-dock__content {
+    max-height: min(40dvh, 22rem);
+    padding-top: 0.3rem;
+    overflow-y: auto;
+    background: linear-gradient(180deg, rgb(4 14 11 / 0.74), rgb(4 14 11 / 0.92));
+    border-top: 1px solid rgb(255 255 255 / 0.16);
+    scrollbar-color: rgb(255 255 255 / 0.24) transparent;
+  }
+
+  .immersive-media-dock[data-presentation='cinematic-wayfinding'] .immersive-media-dock__story,
+  .immersive-media-dock[data-presentation='cinematic-wayfinding'] .immersive-media-dock__auto-tour {
+    border-radius: 0;
+    padding: 0.55rem 0.55rem 0.7rem;
+  }
+
+  .immersive-media-dock[data-presentation='cinematic-wayfinding']
+    .immersive-media-dock__sound-toggle {
+    flex: 0 0 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .immersive-media-dock[data-presentation='cinematic-wayfinding']
+    .immersive-media-dock__story
+    > button:first-of-type::before,
+  .immersive-media-dock[data-presentation='cinematic-wayfinding']
+    .immersive-media-dock__mobile-primary-action {
+    transition: none;
+  }
+}
