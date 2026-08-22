@@ -187,8 +187,19 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
   await screenshot('panorama-ux-mobile-expanded-390x844');
 
   await mobileDock.getByRole('button', { name: 'Mở bản chép lời' }).click();
-  await expect(page.getByRole('dialog', { name: 'Bản chép lời' })).toBeVisible();
+  const transcriptPanel = page.getByRole('dialog', { name: 'Bản chép lời' });
+  await expect(transcriptPanel).toBeVisible();
+  await transcriptPanel.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
   await screenshot('panorama-ux-mobile-transcript-390x844');
+
+  await transcriptPanel.getByRole('button', { name: 'Mở rộng toàn bộ bản chép lời' }).click();
+  await expect(transcriptPanel).toHaveAttribute('data-sheet-state', 'expanded');
+  await transcriptPanel.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
+  await screenshot('panorama-ux-mobile-transcript-expanded-390x844');
 
   await page.setViewportSize({ width: 430, height: 932 });
   await page.goto(customerDemoSceneUrl);
