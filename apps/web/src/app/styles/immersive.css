@@ -945,6 +945,78 @@
   }
 }
 
+/* Phase 3.1: keep orientation secondary to the panorama. */
+.explore-shell__minimap .minimap-viewport:not(.minimap-viewport--collapsed) {
+  padding: 0.6rem;
+  background: rgb(4 14 11 / 0.64);
+  border: 0;
+  border-left: 2px solid color-mix(in srgb, var(--color-accent-primary) 68%, transparent);
+  border-radius: 0.45rem;
+  box-shadow: 0 0.9rem 2.5rem rgb(0 0 0 / 0.34);
+  backdrop-filter: blur(0.75rem);
+  -webkit-backdrop-filter: blur(0.75rem);
+}
+
+.explore-shell__minimap
+  .minimap-viewport:not(.minimap-viewport--collapsed)
+  .minimap-viewport__header {
+  margin-bottom: 0.5rem;
+  padding: 0 0.15rem;
+}
+
+.explore-shell__minimap
+  .minimap-viewport:not(.minimap-viewport--collapsed)
+  .minimap-viewport__header
+  strong {
+  color: rgb(255 255 255 / 0.72);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.explore-shell__minimap .minimap-viewport:not(.minimap-viewport--collapsed) .minimap-viewport__map {
+  border-radius: 0.3rem;
+}
+
+.explore-shell .hotspot-marker {
+  width: 2.75rem;
+  height: 2.75rem;
+  color: #ffffff;
+  background: rgb(5 20 15 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.52);
+  box-shadow: 0 0.55rem 1.5rem rgb(0 0 0 / 0.34);
+  backdrop-filter: blur(0.45rem);
+  -webkit-backdrop-filter: blur(0.45rem);
+  transition:
+    transform var(--motion-duration-fast) var(--motion-easing-enter),
+    background-color var(--motion-duration-fast) var(--motion-easing-enter),
+    border-color var(--motion-duration-fast) var(--motion-easing-enter);
+}
+
+.explore-shell .hotspot-marker:hover,
+.explore-shell .hotspot-marker:focus-visible {
+  background: rgb(5 20 15 / 0.9);
+  border-color: var(--color-accent-primary);
+  transform: scale(1.06);
+}
+
+.explore-shell .hotspot-marker__label {
+  padding: 0.42rem 0.62rem;
+  color: #ffffff;
+  background: rgb(5 20 15 / 0.88);
+  border: 0;
+  border-left: 2px solid var(--color-accent-primary);
+  border-radius: 0 0.3rem 0.3rem 0;
+  box-shadow: 0 0.45rem 1.2rem rgb(0 0 0 / 0.24);
+  font-size: 0.7rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explore-shell .hotspot-marker {
+    transition: none;
+  }
+}
+
 /* Custom Photo Sphere Viewer Tooltip Overrides */
 .psv-tooltip {
   backdrop-filter: blur(var(--blur-overlay, 12px)) !important;
