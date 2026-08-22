@@ -86,10 +86,45 @@ describe('ImmersiveMediaDock semantic contract', () => {
 
     render(<ImmersiveMediaDock vm={createVm()} actions={actions} />);
 
-    expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toBeInTheDocument();
+    const dock = screen.getByRole('region', { name: 'Media dock trải nghiệm' });
+    expect(dock).toBeInTheDocument();
+    expect(dock).toHaveAttribute('data-presentation', 'cinematic-wayfinding');
+    expect(dock).toHaveAttribute('data-story-state', 'idle');
     expect(screen.getByRole('button', { name: 'Nghe câu chuyện' })).toBeInTheDocument();
     expect(actions.onPlayNarration).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Bỏ qua câu chuyện' })).not.toBeInTheDocument();
+  });
+
+  it('keeps playing and Auto Tour states legible to presentation QA', () => {
+    const actions = createActions();
+
+    const { rerender } = render(
+      <ImmersiveMediaDock
+        vm={createVm({ narration: { ...createVm().narration, status: 'playing' } })}
+        actions={actions}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toHaveAttribute(
+      'data-story-state',
+      'playing',
+    );
+
+    rerender(
+      <ImmersiveMediaDock
+        vm={createVm({
+          mode: 'auto-tour',
+          autoTour: {
+            ...createVm().autoTour,
+            isActive: true,
+          },
+        })}
+        actions={actions}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toHaveAttribute(
+      'data-story-state',
+      'auto-tour',
+    );
   });
 
   it('does not show narration progress before duration metadata is meaningful', () => {
@@ -359,6 +394,23 @@ describe('ImmersiveMediaDock semantic contract', () => {
         'aria-expanded',
         'false',
       );
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth });
+    }
+  });
+
+  it('keeps the primary story affordance visible in the collapsed mobile dock', () => {
+    const actions = createActions();
+    const previousWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+
+    try {
+      render(<ImmersiveMediaDock vm={createVm()} actions={actions} />);
+
+      const playButton = screen.getByRole('button', { name: 'Nghe câu chuyện' });
+      expect(playButton).toBeVisible();
+      fireEvent.click(playButton);
+      expect(actions.onPlayNarration).toHaveBeenCalledTimes(1);
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth });
     }

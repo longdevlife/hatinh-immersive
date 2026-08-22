@@ -113,6 +113,29 @@ describe('ReferenceParityControls', () => {
     expect(screen.getAllByText('Lối dạo Thiên Cầm').length).toBeGreaterThan(0);
   });
 
+  it('exposes a panorama-first visual layer and a typed scene journey for QA', () => {
+    const actions = createMockActions();
+    const vm = createMockVm();
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
+    expect(screen.getByRole('region', { name: 'Các công cụ tiện ích' })).toHaveAttribute(
+      'data-visual-priority',
+      'panorama',
+    );
+    expect(
+      screen.getByRole('navigation', { name: 'Hành trình 360 Biển Thiên Cầm' }),
+    ).toHaveAttribute('data-journey', 'scene-strip');
+    expect(screen.getByRole('button', { name: 'Lối dạo Thiên Cầm' })).toHaveAttribute(
+      'data-scene-role',
+      'major-stop',
+    );
+    expect(screen.getByRole('button', { name: 'Lối chuyển 1' })).toHaveAttribute(
+      'data-scene-role',
+      'connector',
+    );
+  });
+
   it('keeps Back reachable while a scene transition is in flight', () => {
     const actions = createMockActions();
     const vm = createMockVm({ isTransitioning: true });

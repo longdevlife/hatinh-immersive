@@ -120,6 +120,18 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
   const isNarrationPlayable = vm.narration.available && vm.narration.status !== 'loading';
   const hasMeaningfulNarrationProgress = vm.narration.durationSeconds > 0;
   const hasAudioControls = vm.sound.available || vm.narration.available;
+  const hasAutoTourControls = vm.mode === 'auto-tour' && vm.autoTour.isActive;
+  const storyState = hasAutoTourControls ? 'auto-tour' : vm.narration.status;
+
+  const handleNarrationAction = () => {
+    if (vm.narration.status === 'playing') {
+      actions.onPauseNarration();
+    } else if (vm.narration.status === 'paused') {
+      actions.onResumeNarration();
+    } else {
+      actions.onPlayNarration();
+    }
+  };
 
   return (
     <section
@@ -129,9 +141,33 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
       data-mode={vm.mode}
       data-scene-id={vm.sceneId ?? undefined}
       data-mobile-expanded={isMobileDockExpanded}
+      data-presentation="cinematic-wayfinding"
+      data-story-state={storyState}
     >
       <div className="immersive-media-dock__utility-row">
         <span className="immersive-media-dock__mobile-scene-label">{vm.sceneLabel}</span>
+        {!isMobileDockExpanded && vm.mode === 'free-explore' && isNarrationPlayable ? (
+          <button
+            type="button"
+            className="immersive-media-dock__mobile-primary-action"
+            onClick={handleNarrationAction}
+            aria-label={narrationActionLabel}
+          >
+            {narrationActionLabel}
+          </button>
+        ) : null}
+        {!isMobileDockExpanded && hasAutoTourControls ? (
+          <button
+            type="button"
+            className="immersive-media-dock__mobile-primary-action immersive-media-dock__mobile-primary-action--tour"
+            onClick={vm.autoTour.isPaused ? actions.onResumeAutoTour : actions.onPauseAutoTour}
+            aria-label={
+              vm.autoTour.isPaused ? 'Tiếp tục tự động tham quan' : 'Tạm dừng tự động tham quan'
+            }
+          >
+            {vm.autoTour.isPaused ? 'Tiếp tục tour' : 'Đang tham quan'}
+          </button>
+        ) : null}
         {vm.sound.available && (!vm.soundGateRequired || soundGateDismissed) ? (
           <button
             type="button"
@@ -164,7 +200,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
             </span>
           </button>
         ) : null}
-        {hasAudioControls ? (
+        {hasAudioControls || hasAutoTourControls ? (
           <button
             type="button"
             className="immersive-media-dock__mobile-toggle"
@@ -213,13 +249,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
             isNarrationPlayable ? (
               <button
                 type="button"
-                onClick={
-                  vm.narration.status === 'playing'
-                    ? actions.onPauseNarration
-                    : vm.narration.status === 'paused'
-                      ? actions.onResumeNarration
-                      : actions.onPlayNarration
-                }
+                onClick={handleNarrationAction}
                 disabled={vm.narration.status === 'loading'}
               >
                 {narrationActionLabel}
