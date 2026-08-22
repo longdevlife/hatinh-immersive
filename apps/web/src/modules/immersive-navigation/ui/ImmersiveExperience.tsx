@@ -1520,7 +1520,7 @@ export function ImmersiveExperience({
         locale={locale}
         map3dLocations={mapLocations}
         minimapEngine={navigation.mode === 'panorama' ? activeMinimapEngine : null}
-        minimapOpen={navigation.mode === 'panorama' ? navigation.minimapOpen : undefined}
+        {...(navigation.mode === 'panorama' ? { minimapOpen: navigation.minimapOpen } : {})}
         onLanguageToggle={() => onLocaleChange(locale === 'vi' ? 'en' : 'vi')}
         onLocationSelected={selectLocation}
         showLocationBrowser={!isDestinationScopedSelected3D}
