@@ -46,9 +46,12 @@ test('runs the real MapLibre minimap against only locally fulfilled Ha Tinh tile
 
   const minimap = page.getByRole('application', { name: 'Bản đồ tuyến tham quan' });
   const map = minimap.getByRole('group', { name: 'Các điểm của tuyến tham quan' });
+  await expect(minimap).toHaveClass(/minimap-viewport--collapsed/);
+  await expect(minimap).toHaveAttribute('data-minimap-status', 'idle');
+  await page.getByRole('button', { name: 'Mở bản đồ thu nhỏ' }).click();
   await expect(minimap).toBeVisible();
   await expect(minimap).toHaveAttribute('data-minimap-status', 'ready');
-  await expect(page.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Đóng bản đồ thu nhỏ' })).toBeVisible();
   await expect(map).toHaveAttribute(
     'data-minimap-route-branches',
     'thien-cam-boardwalk->thien-cam-shore',
@@ -59,12 +62,12 @@ test('runs the real MapLibre minimap against only locally fulfilled Ha Tinh tile
     expect.arrayContaining([expect.stringMatching(/\/test\/tiles\/\d+\/\d+\/\d+\.png/)]),
   );
 
-  await page.getByRole('button', { name: 'Thu gọn bản đồ' }).click();
+  await page.getByRole('button', { name: 'Đóng bản đồ thu nhỏ' }).click();
   await expect(minimap).toHaveAttribute('data-minimap-status', 'idle');
-  await expect(page.getByRole('button', { name: 'Mở rộng bản đồ' })).toBeVisible();
-  await page.getByRole('button', { name: 'Mở rộng bản đồ' }).click();
+  await expect(page.getByRole('button', { name: 'Mở bản đồ thu nhỏ' })).toBeVisible();
+  await page.getByRole('button', { name: 'Mở bản đồ thu nhỏ' }).click();
   await expect(minimap).toHaveAttribute('data-minimap-status', 'ready');
-  await expect(page.getByRole('button', { name: 'Thu gọn bản đồ' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Đóng bản đồ thu nhỏ' })).toBeVisible();
 
   await expect(map).toHaveAttribute('data-minimap-interaction-ready', 'true');
   const nodePoints = await map.getAttribute('data-minimap-node-points');

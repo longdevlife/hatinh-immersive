@@ -7,6 +7,7 @@ import { useImmersiveNavigation } from './navigation.store';
 
 describe('immersive navigation state machine', () => {
   beforeEach(() => {
+    window.sessionStorage.clear();
     useImmersiveNavigation.getState().reset();
   });
 
@@ -21,6 +22,17 @@ describe('immersive navigation state machine', () => {
       selectedLocationPreset: null,
       visitedSceneIds: [],
     });
+  });
+
+  it('starts immersive panorama with the minimap collapsed', () => {
+    expect(useImmersiveNavigation.getState().minimapOpen).toBe(false);
+  });
+
+  it('hydrates an expanded minimap preference from the browser session', () => {
+    window.sessionStorage.setItem('hatinh:immersive:minimap:collapsed', 'expanded');
+    useImmersiveNavigation.getState().reset();
+
+    expect(useImmersiveNavigation.getState().minimapOpen).toBe(true);
   });
 
   it('enters the 3D overview with an exclusive map renderer', () => {
@@ -418,7 +430,7 @@ describe('immersive navigation state machine', () => {
 
     expect(state.selectedHotspotId).toBe('hotspot-1');
     expect(selectMinimap(state)).toEqual({
-      open: true,
+      open: false,
       currentSceneId: 'scene-a',
       heading: 45,
       visitedSceneIds: ['scene-a'],
@@ -429,7 +441,7 @@ describe('immersive navigation state machine', () => {
     state = useImmersiveNavigation.getState();
 
     expect(state.selectedHotspotId).toBeNull();
-    expect(selectMinimap(state).open).toBe(false);
+    expect(selectMinimap(state).open).toBe(true);
   });
 
   it('derives panorama and minimap selections from committed state', () => {

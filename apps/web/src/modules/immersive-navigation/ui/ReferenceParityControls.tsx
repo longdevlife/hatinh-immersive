@@ -11,12 +11,14 @@ export interface ReferenceParityControlsProps {
   vm: ReferenceParityPresentationVm;
   actions: ReferenceParityPresentationActions;
   minimapOpen?: boolean;
+  isCustomerDemo?: boolean;
 }
 
 export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
   vm,
   actions,
   minimapOpen = false,
+  isCustomerDemo = false,
 }) => {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -56,6 +58,11 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
       >
         <div className="panorama-tour-unavailable" role="status" aria-live="polite">
           <div className="panorama-tour-unavailable__card">
+            {isCustomerDemo ? (
+              <span className="panorama-demo-badge" data-testid="panorama-demo-badge">
+                Bản demo 360° · Ảnh tham khảo
+              </span>
+            ) : null}
             <h2 className="panorama-tour-unavailable__title">360° đang được cập nhật</h2>
             <p className="panorama-tour-unavailable__body">
               Hình ảnh độ phân giải cao đang được chuẩn bị.
@@ -87,7 +94,6 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
           className="panorama-control panorama-tour-back-btn"
           onClick={actions.onBack}
           aria-label={`Quay lại ${vm.destinationName}`}
-          disabled={vm.isTransitioning}
         >
           <svg
             viewBox="0 0 24 24"
@@ -111,6 +117,11 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
           <div className="panorama-tour-context reference-parity__context" aria-live="polite">
             <span className="panorama-tour-context__badge">{vm.destinationName}</span>
             <span className="panorama-tour-context__title">{currentScene.label}</span>
+            {isCustomerDemo ? (
+              <span className="panorama-demo-badge" data-testid="panorama-demo-badge">
+                Bản demo 360° · Ảnh tham khảo
+              </span>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -243,7 +254,7 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
             >
               <ul role="list">
                 {vm.scenes.map((scene) => {
-                  const isUnavailable = scene.mediaQuality !== 'ready';
+                  const isUnavailable = !scene.canNavigate;
                   const isDisabled = !scene.canNavigate || vm.isTransitioning;
                   const isMajor = scene.isMajorStop;
 

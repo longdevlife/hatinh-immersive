@@ -14,7 +14,7 @@
   align-items: center;
   gap: 0.5rem;
   width: max-content;
-  max-width: min(92vw, 54rem);
+  max-width: min(92vw, 50rem);
   pointer-events: auto;
   z-index: 25;
   font-family: inherit;
@@ -31,6 +31,7 @@
   align-items: center;
   gap: 0.5rem;
   width: 100%;
+  max-width: 100%;
 }
 
 .immersive-media-dock__utility-row {
@@ -131,7 +132,7 @@
   justify-content: center;
   gap: 0.55rem;
   padding: 0.35rem 0.85rem;
-  background: var(--panorama-surface, rgb(8 22 18 / 0.88));
+  background: color-mix(in srgb, var(--panorama-surface, rgb(8 22 18 / 0.88)) 92%, transparent);
   border: 1px solid var(--panorama-border, rgb(255 255 255 / 0.18));
   border-radius: var(--radius-control, 999px);
   backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
@@ -343,7 +344,7 @@
   justify-content: center;
   gap: 0.45rem;
   padding: 0.35rem 0.85rem;
-  background: rgb(8 22 18 / 0.94);
+  background: color-mix(in srgb, var(--panorama-surface, rgb(8 22 18 / 0.94)) 94%, transparent);
   border: 1px solid
     color-mix(in srgb, var(--color-accent-primary, #e5a95f) 50%, rgb(255 255 255 / 0.2));
   border-radius: var(--radius-control, 999px);
@@ -587,6 +588,40 @@
 
   .immersive-media-dock__utility-row .immersive-media-dock__mobile-toggle {
     display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    padding-inline: 0.8rem;
+    background: rgb(255 255 255 / 0.12);
+  }
+
+  .immersive-media-dock__sound-toggle {
+    flex: 0 0 44px;
+    width: 44px;
+    padding: 0;
+  }
+
+  .immersive-media-dock__sound-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .immersive-media-dock__sound-icon {
+    flex: 0 0 auto;
+  }
+
+  .immersive-media-dock[data-mobile-expanded='false'] .immersive-media-dock__utility-row {
+    border-color: color-mix(
+      in srgb,
+      var(--color-accent-primary, #e5a95f) 42%,
+      var(--panorama-border, rgb(255 255 255 / 0.18))
+    );
   }
 
   .immersive-media-dock[data-mobile-expanded='false'] .immersive-media-dock__content {
@@ -599,6 +634,13 @@
     border-radius: 16px;
     padding: 0.5rem 0.65rem;
     gap: 0.45rem;
+  }
+
+  .immersive-media-dock[data-mobile-expanded='true'] .immersive-media-dock__content {
+    max-height: min(40dvh, 22rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.24) transparent;
   }
 
   .immersive-media-dock__narration input[type='range'] {
@@ -620,6 +662,7 @@
     bottom: 0;
     width: 100vw;
     max-width: 100vw;
+    background: #081612;
     border-radius: 20px 20px 0 0;
     border-bottom: none;
     border-left: none;
