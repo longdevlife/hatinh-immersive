@@ -172,6 +172,17 @@ jobs:
             apps/admin/test-results
           if-no-files-found: ignore
 
+      - name: Upload Panorama visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: panorama-visual-evidence
+          path: |
+            **/customer-demo-boardwalk-*.png
+            **/public-unavailable-*.png
+            **/son-trang-unavailable-*.png
+          if-no-files-found: error
+
       - name: Stop MinIO
         if: always()
         run: docker rm --force ci-minio
