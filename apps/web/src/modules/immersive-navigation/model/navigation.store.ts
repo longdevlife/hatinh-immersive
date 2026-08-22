@@ -10,6 +10,20 @@ import type {
   RendererName,
 } from './navigation.types';
 
+const MINIMAP_SESSION_STATE_KEY = 'hatinh:immersive:minimap:collapsed';
+
+function readMinimapOpenPreference(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    return window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY) === 'expanded';
+  } catch {
+    return false;
+  }
+}
+
 export function createInitialNavigationState(): ImmersiveNavigationState {
   return {
     destinationId: null,
@@ -27,7 +41,7 @@ export function createInitialNavigationState(): ImmersiveNavigationState {
     selectedHotspotId: null,
     visitedSceneIds: [],
     view: { ...DEFAULT_NAVIGATION_VIEW },
-    minimapOpen: false,
+    minimapOpen: readMinimapOpenPreference(),
     map3dStatus: 'idle',
     panoramaStatus: 'idle',
     networkQuality: 'good',

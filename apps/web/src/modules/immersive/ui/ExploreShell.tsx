@@ -182,6 +182,7 @@ export function ExploreShell({
   useEffect(() => {
     if (minimapOpen !== undefined) {
       setIsMinimapCollapsed(!minimapOpen);
+      persistMinimapCollapsedPreference(!minimapOpen);
     }
   }, [minimapOpen]);
 

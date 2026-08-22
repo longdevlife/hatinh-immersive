@@ -7,6 +7,7 @@ import { useImmersiveNavigation } from './navigation.store';
 
 describe('immersive navigation state machine', () => {
   beforeEach(() => {
+    window.sessionStorage.clear();
     useImmersiveNavigation.getState().reset();
   });
 
@@ -25,6 +26,13 @@ describe('immersive navigation state machine', () => {
 
   it('starts immersive panorama with the minimap collapsed', () => {
     expect(useImmersiveNavigation.getState().minimapOpen).toBe(false);
+  });
+
+  it('hydrates an expanded minimap preference from the browser session', () => {
+    window.sessionStorage.setItem('hatinh:immersive:minimap:collapsed', 'expanded');
+    useImmersiveNavigation.getState().reset();
+
+    expect(useImmersiveNavigation.getState().minimapOpen).toBe(true);
   });
 
   it('enters the 3D overview with an exclusive map renderer', () => {
