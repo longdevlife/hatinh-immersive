@@ -14,13 +14,14 @@ const MINIMAP_SESSION_STATE_KEY = 'hatinh:immersive:minimap:collapsed';
 
 function readMinimapCollapsedPreference(): boolean {
   if (typeof window === 'undefined') {
-    return false;
+    return true;
   }
 
   try {
-    return window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY) === 'collapsed';
+    const preference = window.sessionStorage.getItem(MINIMAP_SESSION_STATE_KEY);
+    return preference === null || preference === 'collapsed';
   } catch {
-    return false;
+    return true;
   }
 }
 
@@ -45,6 +46,7 @@ export interface ExploreShellProps {
   map3dLocations?: Map3DChromeLocation[];
   showLocationBrowser?: boolean;
   minimapEngine?: MinimapEnginePort | null;
+  minimapOpen?: boolean;
   onLanguageToggle?: () => void;
   onLocationSelected?: (locationId: string) => void;
   rendererContent?: ReactNode;
@@ -90,7 +92,15 @@ function CloseIcon() {
   );
 }
 
-function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; onToggle(): void }) {
+function MinimapLoadingBoundary({
+  collapsed,
+  onToggle,
+  showToggle = true,
+}: {
+  collapsed: boolean;
+  onToggle(): void;
+  showToggle?: boolean;
+}) {
   return (
     <section
       aria-label="Bản đồ tuyến tham quan"
@@ -99,30 +109,34 @@ function MinimapLoadingBoundary({ collapsed, onToggle }: { collapsed: boolean; o
       role="application"
     >
       {collapsed ? (
-        <button
-          aria-expanded={false}
-          aria-label="Mở rộng bản đồ"
-          className="minimap-viewport__toggle--standalone immersive-icon-button"
-          type="button"
-          onClick={onToggle}
-        >
-          <MapLauncherIcon />
-        </button>
+        showToggle ? (
+          <button
+            aria-expanded={false}
+            aria-label="Mở rộng bản đồ"
+            className="minimap-viewport__toggle--standalone immersive-icon-button"
+            type="button"
+            onClick={onToggle}
+          >
+            <MapLauncherIcon />
+          </button>
+        ) : null
       ) : (
         <header className="minimap-viewport__header">
           <div>
             <p className="immersive-kicker">Bản đồ hành trình</p>
             <strong>Đang tải bản đồ…</strong>
           </div>
-          <button
-            aria-expanded={true}
-            aria-label="Thu gọn bản đồ"
-            className="immersive-icon-button"
-            type="button"
-            onClick={onToggle}
-          >
-            <CloseIcon />
-          </button>
+          {showToggle ? (
+            <button
+              aria-expanded={true}
+              aria-label="Thu gọn bản đồ"
+              className="immersive-icon-button"
+              type="button"
+              onClick={onToggle}
+            >
+              <CloseIcon />
+            </button>
+          ) : null}
         </header>
       )}
     </section>
@@ -138,6 +152,7 @@ export function ExploreShell({
   map3dLocations,
   showLocationBrowser = true,
   minimapEngine = null,
+  minimapOpen,
   rendererContent,
   onLanguageToggle,
   onLocationSelected,
@@ -151,7 +166,9 @@ export function ExploreShell({
     isPanorama && hasPanoramaTourControls && view.rendererStatus === 'unavailable';
   const hasScopedSelected3D = selected3DViewpointRail !== undefined;
   const [isInfoOpen, setIsInfoOpen] = useState(view.mode === 'overview3d' && !hasMap3DChrome);
-  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(readMinimapCollapsedPreference);
+  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(() =>
+    minimapOpen === undefined ? readMinimapCollapsedPreference() : !minimapOpen,
+  );
   const [isFullscreen, setIsFullscreen] = useState(false);
   const infoPanelRef = useRef<HTMLElement>(null);
   const topInfoTriggerRef = useRef<HTMLButtonElement>(null);
@@ -161,6 +178,12 @@ export function ExploreShell({
   useEffect(() => {
     setIsInfoOpen(view.mode === 'overview3d' && !hasMap3DChrome);
   }, [hasMap3DChrome, view.mode]);
+
+  useEffect(() => {
+    if (minimapOpen !== undefined) {
+      setIsMinimapCollapsed(!minimapOpen);
+    }
+  }, [minimapOpen]);
 
   useEffect(() => {
     if (!isInfoOpen) {
@@ -373,11 +396,16 @@ export function ExploreShell({
               links={view.links}
               collapsed={isMinimapCollapsed}
               engine={minimapEngine}
+              showToggle={!hasPanoramaTourControls}
               onToggle={toggleMinimap}
               onNodeSelect={actions.onNavigateScene}
             />
           ) : (
-            <MinimapLoadingBoundary collapsed={isMinimapCollapsed} onToggle={toggleMinimap} />
+            <MinimapLoadingBoundary
+              collapsed={isMinimapCollapsed}
+              onToggle={toggleMinimap}
+              showToggle={!hasPanoramaTourControls}
+            />
           )}
         </div>
       ) : null}
