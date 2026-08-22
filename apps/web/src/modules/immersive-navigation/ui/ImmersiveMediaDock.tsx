@@ -118,6 +118,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
         ? 'Tiếp tục câu chuyện'
         : 'Nghe câu chuyện';
   const isNarrationPlayable = vm.narration.available && vm.narration.status !== 'loading';
+  const hasMeaningfulNarrationProgress = vm.narration.durationSeconds > 0;
   const hasAudioControls = vm.sound.available || vm.narration.available;
 
   return (
@@ -139,7 +140,28 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
             aria-pressed={!vm.sound.masterMuted}
             aria-label={vm.sound.masterMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
           >
-            {vm.sound.masterMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+            <svg
+              className="immersive-media-dock__sound-icon"
+              viewBox="0 0 24 24"
+              width="18"
+              height="18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+              {vm.sound.masterMuted ? (
+                <path d="m17 9 4 6m0-6-4 6" />
+              ) : (
+                <path d="M15 9.5a4 4 0 0 1 0 5" />
+              )}
+            </svg>
+            <span className="immersive-media-dock__sound-label">
+              {vm.sound.masterMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+            </span>
           </button>
         ) : null}
         {hasAudioControls ? (
@@ -207,7 +229,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
             ) : null
           ) : null}
 
-          {vm.narration.available ? (
+          {vm.narration.available && hasMeaningfulNarrationProgress ? (
             <div className="immersive-media-dock__narration" aria-label="Điều khiển câu chuyện">
               <label>
                 <span>Tiến độ câu chuyện</span>

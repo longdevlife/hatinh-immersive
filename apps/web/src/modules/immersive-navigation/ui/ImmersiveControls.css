@@ -825,3 +825,43 @@
     padding-inline: 0.4rem;
   }
 }
+
+/* Keep mobile scene identity readable without competing with the utility cluster. */
+@media (max-width: 767px) {
+  .reference-parity__top-left {
+    position: static;
+    display: contents;
+    max-width: none;
+  }
+
+  .reference-parity__top-left .panorama-tour-back-btn {
+    position: absolute;
+    top: max(0.75rem, env(safe-area-inset-top));
+    left: max(0.75rem, env(safe-area-inset-left));
+    z-index: 3;
+    padding-inline: 0.7rem;
+  }
+
+  .reference-parity__top-left .reference-parity__context {
+    position: absolute;
+    top: calc(max(0.75rem, env(safe-area-inset-top)) + 3.45rem);
+    right: max(0.75rem, env(safe-area-inset-right));
+    left: max(0.75rem, env(safe-area-inset-left));
+    align-items: flex-start;
+    max-width: none;
+    min-height: 0;
+    padding: 0.45rem 0.75rem;
+    border-radius: 0.85rem;
+  }
+
+  .reference-parity__top-left .panorama-tour-context__title {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .reference-parity__utilities {
+    z-index: 3;
+  }
+}

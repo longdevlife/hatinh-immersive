@@ -156,7 +156,8 @@ jobs:
           find apps/web/test-results -type f \( \
             -name 'customer-demo-boardwalk-*.png' -o \
             -name 'public-unavailable-*.png' -o \
-            -name 'son-trang-unavailable-*.png' \
+            -name 'son-trang-unavailable-*.png' -o \
+            -name 'panorama-ux-*.png' \
           \) -print -exec cp --parents {} .ci-artifacts/panorama \;
           test -n "$(find .ci-artifacts/panorama -type f -name '*.png' -print -quit)"
 

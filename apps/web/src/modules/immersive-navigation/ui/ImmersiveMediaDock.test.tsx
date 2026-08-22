@@ -92,6 +92,25 @@ describe('ImmersiveMediaDock semantic contract', () => {
     expect(screen.queryByRole('button', { name: 'Bỏ qua câu chuyện' })).not.toBeInTheDocument();
   });
 
+  it('does not show narration progress before duration metadata is meaningful', () => {
+    const actions = createActions();
+    const vm = createVm({
+      narration: {
+        ...createVm().narration,
+        durationSeconds: 0,
+        currentTimeSeconds: 0,
+        status: 'idle',
+      },
+    });
+
+    render(<ImmersiveMediaDock vm={vm} actions={actions} />);
+
+    expect(screen.getByRole('button', { name: 'Nghe câu chuyện' })).toBeInTheDocument();
+    expect(screen.queryByRole('slider', { name: 'Tiến độ câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Thời lượng câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.queryByText('0:00 / 0:00')).not.toBeInTheDocument();
+  });
+
   it('wires narration play, pause, seek, captions, and transcript actions', () => {
     const actions = createActions();
     const vm = createVm({

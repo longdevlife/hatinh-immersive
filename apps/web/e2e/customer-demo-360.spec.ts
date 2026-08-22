@@ -133,3 +133,73 @@ test('captures Product-reviewable panorama evidence for desktop and mobile state
     state: 'showcase-shell',
   });
 });
+
+test('captures the final Panorama-only UX acceptance matrix', async ({ page }, testInfo) => {
+  const screenshot = async (name: string) => {
+    await page.screenshot({
+      path: testInfo.outputPath(`${name}.png`),
+      fullPage: false,
+    });
+  };
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(customerDemoSceneUrl);
+  await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
+  await expect(page.getByTestId('panorama-demo-badge')).toBeVisible();
+
+  const desktopDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+  await expect(desktopDock.getByRole('button', { name: 'Nghe câu chuyện' })).toBeVisible();
+  await screenshot('panorama-ux-desktop-idle-1440x900');
+
+  await desktopDock.getByRole('button', { name: 'Nghe câu chuyện' }).click();
+  await expect(desktopDock.getByRole('button', { name: 'Tạm dừng câu chuyện' })).toBeVisible();
+  await screenshot('panorama-ux-desktop-story-playing-1440x900');
+
+  await page.goto(customerDemoSceneUrl);
+  await page.getByRole('button', { name: 'Mở bản đồ thu nhỏ' }).click();
+  await expect(page.getByRole('application', { name: 'Bản đồ tuyến tham quan' })).toBeVisible();
+  await screenshot('panorama-ux-desktop-minimap-expanded-1440x900');
+
+  await page.goto(customerDemoSceneUrl);
+  const autoTourDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+  await autoTourDock.getByRole('button', { name: 'Bắt đầu tự động tham quan' }).click();
+  await expect(
+    autoTourDock.getByRole('group', { name: 'Điều khiển tự động tham quan' }),
+  ).toBeVisible();
+  await screenshot('panorama-ux-desktop-auto-tour-1440x900');
+
+  // Keep the mobile evidence focused on the Media Dock; the minimap preference
+  // is intentionally session-persistent, so close it before changing viewport.
+  await page.getByRole('button', { name: 'Đóng bản đồ thu nhỏ' }).click();
+  await expect(page.getByRole('button', { name: 'Mở bản đồ thu nhỏ' })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(customerDemoSceneUrl);
+  const mobileDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+  const expandButton = mobileDock.getByRole('button', { name: 'Mở điều khiển trải nghiệm' });
+  await expect(expandButton).toHaveAttribute('aria-expanded', 'false');
+  await screenshot('panorama-ux-mobile-collapsed-390x844');
+
+  await expandButton.click();
+  await expect(
+    mobileDock.getByRole('button', { name: 'Thu gọn điều khiển trải nghiệm' }),
+  ).toHaveAttribute('aria-expanded', 'true');
+  await screenshot('panorama-ux-mobile-expanded-390x844');
+
+  await mobileDock.getByRole('button', { name: 'Mở bản chép lời' }).click();
+  await expect(page.getByRole('dialog', { name: 'Bản chép lời' })).toBeVisible();
+  await screenshot('panorama-ux-mobile-transcript-390x844');
+
+  await page.setViewportSize({ width: 430, height: 932 });
+  await page.goto(customerDemoSceneUrl);
+  await expect(page.getByRole('button', { name: 'Mở điều khiển trải nghiệm' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
+  await screenshot('panorama-ux-mobile-collapsed-430x932');
+
+  await page.goto(publicSceneUrl);
+  await expect(page.getByRole('heading', { name: '360° đang được cập nhật' })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: /Hành trình 360/ })).toHaveCount(0);
+  await screenshot('panorama-ux-public-unavailable-430x932');
+});
