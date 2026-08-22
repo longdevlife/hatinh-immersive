@@ -128,7 +128,11 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
       </div>
 
       {/* Top-Right restrained utilities (minimap, share, fullscreen). Media actions live in the dock. */}
-      <div className="panorama-controls__utilities reference-parity__utilities">
+      <div
+        className="panorama-controls__utilities reference-parity__utilities"
+        data-testid="panorama-utility-cluster"
+        data-utility-readability="scrim"
+      >
         {/* Minimap Toggle */}
         <button
           type="button"

@@ -724,7 +724,28 @@
 }
 
 .reference-parity-controls--cinematic .reference-parity__utilities {
+  isolation: isolate;
   gap: 0.05rem;
+  margin: -0.2rem;
+  padding: 0.2rem;
+}
+
+.reference-parity-controls--cinematic .reference-parity__utilities::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: 1.35rem;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(4 18 13 / 0.28) 18%,
+    rgb(4 18 13 / 0.48) 52%,
+    rgb(4 18 13 / 0.22) 88%,
+    transparent 100%
+  );
+  box-shadow: 0 0.55rem 1.3rem rgb(0 0 0 / 0.16);
+  content: '';
+  pointer-events: none;
 }
 
 .reference-parity-controls--cinematic .reference-parity__utilities .panorama-control {
@@ -913,12 +934,15 @@
 
   .reference-parity-controls--cinematic .reference-parity__top-left .reference-parity__context {
     top: calc(max(0.75rem, env(safe-area-inset-top)) + 3.7rem);
-    right: max(0.75rem, env(safe-area-inset-right));
+    right: auto;
     left: max(0.75rem, env(safe-area-inset-left));
+    width: min(70vw, 18rem);
+    max-width: calc(100vw - 1.5rem);
     min-height: 0;
     padding: 0.25rem 0 0.25rem 0.65rem;
-    background: linear-gradient(90deg, rgb(4 14 11 / 0.48), transparent 84%);
+    background: transparent;
     border-left-width: 2px;
+    box-shadow: none;
   }
 
   .reference-parity-controls--cinematic .panorama-tour-context__title {
@@ -928,6 +952,8 @@
 
   .reference-parity-controls--cinematic .reference-parity__utilities {
     gap: 0;
+    margin: -0.2rem;
+    padding: 0.2rem;
   }
 
   .reference-parity-controls--cinematic .reference-parity__scenes {
