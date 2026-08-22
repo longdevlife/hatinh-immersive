@@ -113,6 +113,18 @@ describe('ReferenceParityControls', () => {
     expect(screen.getAllByText('Lối dạo Thiên Cầm').length).toBeGreaterThan(0);
   });
 
+  it('keeps Back reachable while a scene transition is in flight', () => {
+    const actions = createMockActions();
+    const vm = createMockVm({ isTransitioning: true });
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
+    const backButton = screen.getByRole('button', { name: 'Quay lại Biển Thiên Cầm' });
+    expect(backButton).not.toBeDisabled();
+    fireEvent.click(backButton);
+    expect(actions.onBack).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves audio presentation to the unified media dock', () => {
     const actions = createMockActions();
     const vm = createMockVm();

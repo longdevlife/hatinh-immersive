@@ -416,7 +416,7 @@
 
 .panorama-tour-rail {
   max-width: 100%;
-  background: var(--panorama-surface);
+  background: color-mix(in srgb, var(--panorama-surface) 86%, transparent);
   border: 1px solid var(--panorama-border);
   border-radius: var(--radius-control, 999px);
   box-shadow: var(--elevation-1, 0 0.75rem 2rem rgb(3 12 9 / 0.22));
@@ -431,6 +431,7 @@
   margin: 0;
   padding: 0.25rem 0.35rem;
   overflow-x: auto;
+  scroll-padding-inline: 0.45rem;
   list-style: none;
   scrollbar-width: none;
 }
@@ -481,7 +482,8 @@
 .panorama-tour-rail__btn.is-current {
   font-weight: 740;
   color: var(--color-text-inverse, #fff);
-  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 34%, var(--panorama-surface));
+  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 38%, var(--panorama-surface));
+  box-shadow: inset 0 -2px 0 var(--color-accent-primary, #e5a95f);
   opacity: 1;
 }
 
@@ -799,9 +801,9 @@
   }
 
   .reference-parity__utilities .panorama-control {
-    min-width: 40px;
-    width: 40px;
-    height: 40px;
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
     padding: 0;
   }
 
@@ -813,6 +815,15 @@
   }
 
   .reference-parity__scenes {
-    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    bottom: max(0.85rem, env(safe-area-inset-bottom));
+    max-width: calc(100vw - 1rem);
+  }
+
+  .reference-parity__rail {
+    border-radius: 16px;
+  }
+
+  .reference-parity__rail ul {
+    padding-inline: 0.4rem;
   }
 }

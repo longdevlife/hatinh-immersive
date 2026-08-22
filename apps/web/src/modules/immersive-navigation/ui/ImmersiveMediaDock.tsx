@@ -51,7 +51,9 @@ function getActiveTranscriptSegment(
 export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions }) => {
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
   const [soundGateDismissed, setSoundGateDismissed] = useState(false);
-  const [isMobileDockExpanded, setIsMobileDockExpanded] = useState(true);
+  const [isMobileDockExpanded, setIsMobileDockExpanded] = useState(() =>
+    typeof window !== 'undefined' && window.innerWidth < 768 ? false : true,
+  );
 
   useEffect(() => {
     if (!vm.soundGateRequired) {
@@ -146,9 +148,12 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
             className="immersive-media-dock__mobile-toggle"
             aria-expanded={isMobileDockExpanded}
             aria-controls="immersive-media-dock-content"
+            aria-label={
+              isMobileDockExpanded ? 'Thu gọn điều khiển trải nghiệm' : 'Mở điều khiển trải nghiệm'
+            }
             onClick={() => setIsMobileDockExpanded((expanded) => !expanded)}
           >
-            {isMobileDockExpanded ? 'Thu gọn điều khiển âm thanh' : 'Mở điều khiển âm thanh'}
+            {isMobileDockExpanded ? 'Thu gọn' : 'Mở điều khiển'}
           </button>
         ) : null}
       </div>

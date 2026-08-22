@@ -201,7 +201,9 @@ describe('ImmersiveMediaDock semantic contract', () => {
 
     render(<ImmersiveMediaDock vm={vm} actions={actions} />);
 
-    expect(screen.queryByRole('button', { name: /điều khiển âm thanh/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /điều khiển trải nghiệm/i }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /âm thanh/i })).not.toBeInTheDocument();
   });
 
@@ -319,12 +321,27 @@ describe('ImmersiveMediaDock semantic contract', () => {
   it('supports a mobile collapsed and expanded dock state', () => {
     const actions = createActions();
 
-    render(<ImmersiveMediaDock vm={createVm()} actions={actions} />);
+    const previousWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Thu gọn điều khiển âm thanh' }));
-    expect(screen.getByRole('button', { name: 'Mở điều khiển âm thanh' })).toBeInTheDocument();
+    try {
+      render(<ImmersiveMediaDock vm={createVm()} actions={actions} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mở điều khiển âm thanh' }));
-    expect(screen.getByRole('button', { name: 'Thu gọn điều khiển âm thanh' })).toBeInTheDocument();
+      const expandButton = screen.getByRole('button', { name: 'Mở điều khiển trải nghiệm' });
+      expect(expandButton).toHaveAttribute('aria-expanded', 'false');
+
+      fireEvent.click(expandButton);
+      expect(
+        screen.getByRole('button', { name: 'Thu gọn điều khiển trải nghiệm' }),
+      ).toHaveAttribute('aria-expanded', 'true');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Thu gọn điều khiển trải nghiệm' }));
+      expect(screen.getByRole('button', { name: 'Mở điều khiển trải nghiệm' })).toHaveAttribute(
+        'aria-expanded',
+        'false',
+      );
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth });
+    }
   });
 });
