@@ -504,7 +504,7 @@ export function ImmersiveControlsGroup({
               <nav className="panorama-tour-rail" aria-label="Hành trình 360 Sơn Trang">
                 <ul role="list">
                   {tour.scenes.map((scene) => {
-                    const isUnavailable = scene.mediaQuality !== 'ready';
+                    const isUnavailable = !scene.canNavigate;
                     const isDisabled = !scene.canNavigate || tour.isTransitioning;
                     const isMajor = scene.role === 'major-stop';
 

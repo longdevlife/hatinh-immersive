@@ -26,6 +26,12 @@ test('the same 2048x1024 Thiên Cầm asset is rejected publicly and opens in ex
 
   const rail = page.getByRole('navigation', { name: 'Hành trình 360 Biển Thiên Cầm' });
   await expect(rail).toBeVisible();
+  for (const sceneLabel of ['Lối dạo Thiên Cầm', 'Bờ biển Thiên Cầm', 'Điểm ngắm Thiên Cầm']) {
+    const sceneButton = rail.getByRole('button', { name: sceneLabel, exact: true });
+    await expect(sceneButton).toBeEnabled();
+    await expect(sceneButton).not.toHaveClass(/is-unavailable/);
+    await expect(sceneButton).toHaveAttribute('aria-label', sceneLabel);
+  }
   await rail.getByRole('button', { name: 'Bờ biển Thiên Cầm' }).click();
 
   await expect(page.getByRole('heading', { name: 'Bờ biển Thiên Cầm' })).toBeVisible();

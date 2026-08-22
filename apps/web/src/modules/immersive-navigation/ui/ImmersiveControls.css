@@ -494,8 +494,6 @@
 .panorama-tour-rail__btn.is-unavailable {
   opacity: 0.4;
   cursor: not-allowed;
-  text-decoration: line-through;
-  text-decoration-color: rgb(255 255 255 / 0.5);
 }
 
 .panorama-tour-rail__indicator {

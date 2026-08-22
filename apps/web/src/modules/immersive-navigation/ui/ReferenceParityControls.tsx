@@ -254,7 +254,7 @@ export const ReferenceParityControls: FC<ReferenceParityControlsProps> = ({
             >
               <ul role="list">
                 {vm.scenes.map((scene) => {
-                  const isUnavailable = scene.mediaQuality !== 'ready';
+                  const isUnavailable = !scene.canNavigate;
                   const isDisabled = !scene.canNavigate || vm.isTransitioning;
                   const isMajor = scene.isMajorStop;
 
