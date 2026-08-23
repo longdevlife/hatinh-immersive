@@ -190,6 +190,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
             onClick={toggleSound}
             aria-pressed={!vm.sound.masterMuted}
             aria-label={vm.sound.masterMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
+            title={vm.sound.masterMuted ? 'Bật âm thanh' : 'Tắt âm thanh'}
           >
             <svg
               className="immersive-media-dock__sound-icon"
