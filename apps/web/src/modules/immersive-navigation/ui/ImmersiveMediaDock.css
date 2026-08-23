@@ -159,6 +159,17 @@
   padding: 0 0.35rem;
 }
 
+.immersive-media-dock__story--unavailable > p {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding-inline: 0.55rem;
+  color: rgb(255 246 220 / 0.78);
+  font-style: normal;
+  font-size: 0.74rem;
+  letter-spacing: 0.01em;
+}
+
 .immersive-media-dock__story button,
 .immersive-media-dock__auto-tour button,
 .immersive-media-dock__utility-row button {
@@ -968,6 +979,12 @@
     .immersive-media-dock__mobile-primary-action--tour {
     color: rgb(255 255 255 / 0.86);
     border-bottom-color: rgb(255 255 255 / 0.36);
+  }
+
+  .immersive-media-dock[data-presentation='cinematic-wayfinding']
+    .immersive-media-dock__mobile-primary-action--transcript {
+    color: rgb(255 246 220 / 0.84);
+    border-bottom-color: rgb(229 169 95 / 0.48);
   }
 
   .immersive-media-dock[data-presentation='cinematic-wayfinding']

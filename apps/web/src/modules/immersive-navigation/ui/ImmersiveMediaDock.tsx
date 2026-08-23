@@ -117,10 +117,12 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
       : vm.narration.status === 'paused'
         ? 'Tiếp tục câu chuyện'
         : 'Nghe câu chuyện';
-  const isNarrationPlayable = vm.narration.available && vm.narration.status !== 'loading';
+  const isNarrationUnavailable = !vm.narration.available || vm.narration.status === 'unavailable';
+  const isNarrationPlayable = !isNarrationUnavailable && vm.narration.status !== 'loading';
   const hasMeaningfulNarrationProgress = vm.narration.durationSeconds > 0;
-  const hasAudioControls = vm.sound.available || vm.narration.available;
   const hasAutoTourControls = vm.mode === 'auto-tour' && vm.autoTour.isActive;
+  const hasAudioControls = vm.sound.available || !isNarrationUnavailable;
+  const hasContentControls = hasAudioControls || vm.transcript.available || hasAutoTourControls;
   const storyState = hasAutoTourControls ? 'auto-tour' : vm.narration.status;
 
   const handleNarrationAction = () => {
@@ -154,6 +156,19 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
             aria-label={narrationActionLabel}
           >
             {narrationActionLabel}
+          </button>
+        ) : null}
+        {!isMobileDockExpanded &&
+        vm.mode === 'free-explore' &&
+        isNarrationUnavailable &&
+        vm.transcript.available ? (
+          <button
+            type="button"
+            className="immersive-media-dock__mobile-primary-action immersive-media-dock__mobile-primary-action--transcript"
+            onClick={openTranscript}
+            aria-label="Mở bản chép lời"
+          >
+            Đọc bản chép lời
           </button>
         ) : null}
         {!isMobileDockExpanded && hasAutoTourControls ? (
@@ -200,7 +215,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
             </span>
           </button>
         ) : null}
-        {hasAudioControls || hasAutoTourControls ? (
+        {hasContentControls ? (
           <button
             type="button"
             className="immersive-media-dock__mobile-toggle"
@@ -243,7 +258,12 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({ vm, actions })
           </div>
         ) : null}
 
-        <div className="immersive-media-dock__story" aria-label="Câu chuyện hiện tại">
+        <div
+          className={`immersive-media-dock__story${
+            isNarrationUnavailable ? ' immersive-media-dock__story--unavailable' : ''
+          }`}
+          aria-label="Câu chuyện hiện tại"
+        >
           <strong>{vm.sceneLabel}</strong>
           {vm.mode === 'free-explore' ? (
             isNarrationPlayable ? (

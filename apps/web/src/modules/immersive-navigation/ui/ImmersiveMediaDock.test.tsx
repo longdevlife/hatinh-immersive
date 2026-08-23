@@ -219,6 +219,41 @@ describe('ImmersiveMediaDock semantic contract', () => {
     expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
   });
 
+  it('does not present a play action when narration status is unavailable', () => {
+    const actions = createActions();
+    const vm = createVm({
+      narration: { ...createVm().narration, status: 'unavailable' },
+    });
+
+    render(<ImmersiveMediaDock vm={vm} actions={actions} />);
+
+    expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.getByText('Âm thanh thuyết minh chưa có')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mở bản chép lời' })).toBeInTheDocument();
+  });
+
+  it('keeps transcript disclosure reachable on mobile when audio is unavailable', () => {
+    const previousWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+
+    try {
+      const actions = createActions();
+      const vm = createVm({
+        sound: { available: false, masterMuted: false },
+        narration: { ...createVm().narration, available: false, status: 'unavailable' },
+      });
+
+      render(<ImmersiveMediaDock vm={vm} actions={actions} />);
+
+      expect(screen.getByRole('button', { name: 'Mở điều khiển trải nghiệm' })).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: previousWidth,
+      });
+    }
+  });
+
   it('hides captions toggle when capability is plain-transcript but keeps transcript drawer accessible', () => {
     const actions = createActions();
     const vm = createVm({
