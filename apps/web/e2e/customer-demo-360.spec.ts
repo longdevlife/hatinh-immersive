@@ -250,7 +250,7 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
   await mobileDock.getByRole('button', { name: 'Mở câu chuyện' }).click();
   const mobileStorySheet = page.getByRole('dialog', { name: 'Câu chuyện' });
   await expect(mobileStorySheet).toBeVisible();
-  await expect(mobileStorySheet.getByRole('button', { name: /nhạc nền/i })).toBeVisible();
+  await expect(mobileStorySheet.getByRole('button', { name: /nhạc nền/i })).toHaveCount(0);
   await screenshot('panorama-ux-mobile-story-sheet-390x844');
 
   await mobileStorySheet.getByRole('button', { name: 'Mở bản chép lời' }).click();
