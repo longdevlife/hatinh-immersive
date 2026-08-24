@@ -142,6 +142,7 @@ test('wires unified scene, fullscreen, share, and hotspot controls', async ({ pa
   await page.goto('/explore/son-trang-co-dam?mode=panorama&scene=scene-01&h=0&p=0&fov=90');
   await expect(page.getByRole('region', { name: 'Các công cụ tiện ích' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Mở tìm kiếm' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Mở tiện ích khác' }).click();
   await expect(page.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' })).toHaveText('VI');
 
   await page.getByRole('button', { name: 'Câu chuyện địa danh' }).click();
@@ -160,5 +161,6 @@ test('wires unified scene, fullscreen, share, and hotspot controls', async ({ pa
     'aria-pressed',
     'true',
   );
+  await page.getByRole('button', { name: 'Mở tiện ích khác' }).click();
   await page.getByRole('button', { name: 'Chia sẻ cảnh này' }).click();
 });

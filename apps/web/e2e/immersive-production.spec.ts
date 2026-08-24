@@ -310,7 +310,7 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
   await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
 
   const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
-  await expect(mediaDock).toBeVisible();
+  await expect(mediaDock).toBeHidden();
   await expect(mediaDock.locator('.immersive-media-dock__mobile-toggle')).toBeHidden();
   await expect(page.getByRole('button', { name: 'Bắt đầu hành trình' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Tự động tham quan', exact: true })).toHaveCount(0);
@@ -377,6 +377,7 @@ test('switches locale in the unified API panorama presentation', async ({ page }
   );
 
   await expect(page.getByRole('heading', { name: 'Cổng vào' })).toBeVisible();
+  await page.getByRole('button', { name: 'Mở tiện ích khác' }).click();
   const localeButton = page.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' });
   await expect(localeButton).toHaveText('VI');
 
@@ -389,6 +390,7 @@ test('switches locale in the unified API panorama presentation', async ({ page }
   await englishManifestRequest;
 
   await expect(page.getByRole('heading', { name: 'Entrance' })).toBeVisible();
+  await page.getByRole('button', { name: 'Mở tiện ích khác' }).click();
   const vietnameseLocaleButton = page.getByRole('button', {
     name: 'Đổi ngôn ngữ sang Tiếng Việt',
   });
@@ -491,11 +493,15 @@ test('does not fall back to Vietnamese narration when English has transcript onl
 
   const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
   await expect(mediaDock.getByRole('button', { name: 'Nghe câu chuyện' })).toBeVisible();
+  await page.getByRole('button', { name: 'Mở tiện ích khác' }).click();
   await page.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' }).click();
 
   await expect(page.getByRole('heading', { name: 'Entrance' })).toBeVisible();
   await expect(mediaDock.getByRole('button', { name: 'Nghe câu chuyện' })).toHaveCount(0);
-  await expect(mediaDock.getByRole('button', { name: 'Mở bản chép lời' })).toBeVisible();
+  const readStoryButton = mediaDock.getByRole('button', { name: 'Đọc câu chuyện' });
+  await expect(readStoryButton).toBeVisible();
+  await readStoryButton.click();
+  await expect(page.getByRole('dialog', { name: 'Bản chép lời' })).toBeVisible();
   expect(narrationRequests).toEqual([]);
 });
 
@@ -981,7 +987,7 @@ test('isolates production audio across multiple distinct destinations', async ({
 
   // 5. Assert Media Dock remains destination-neutral (semantic controls, no hardcoded destination labels in dock)
   await expect(mediaDockB).toHaveAttribute('data-mode', 'free-explore');
-  await expect(mediaDockB.locator('.immersive-media-dock__story')).toBeVisible();
+  await expect(mediaDockB.getByRole('button', { name: 'Tạm dừng câu chuyện' })).toBeVisible();
   await expect(mediaDockB.getByRole('slider', { name: 'Tiến độ câu chuyện' })).toBeVisible();
   await expect(mediaDockB.getByRole('button', { name: 'Mở bản chép lời' })).toBeVisible();
 });
