@@ -858,12 +858,12 @@
   }
 
   .explore-shell__minimap {
-    top: calc(1rem + var(--control-height-base) + var(--space-2));
-    right: 1rem;
+    top: calc(max(0.75rem, env(safe-area-inset-top)) + 7.85rem);
+    right: max(0.75rem, env(safe-area-inset-right));
   }
 
   .minimap-viewport:not(.minimap-viewport--collapsed) {
-    width: min(15rem, calc(100vw - 2rem));
+    width: min(13.5rem, calc(100vw - 1.5rem));
   }
 
   .minimap-frame {

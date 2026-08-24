@@ -286,3 +286,66 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
   await expect(page.getByRole('navigation', { name: /Hành trình 360/ })).toHaveCount(0);
   await screenshot('panorama-ux-public-unavailable-430x932');
 });
+
+test('mobile 390x844 expanded minimap does not overlap Back, utilities, scene identity, media dock, or scene rail', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(customerDemoSceneUrl);
+  await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
+
+  // Open minimap
+  await page.getByRole('button', { name: 'Mở bản đồ thu nhỏ' }).click();
+  const minimap = page.getByRole('application', { name: 'Bản đồ tuyến tham quan' });
+  await expect(minimap).toBeVisible();
+
+  const checkOverlap = (
+    rectA: { x: number; y: number; width: number; height: number },
+    rectB: { x: number; y: number; width: number; height: number },
+  ) => {
+    return !(
+      rectA.x + rectA.width <= rectB.x ||
+      rectB.x + rectB.width <= rectA.x ||
+      rectA.y + rectA.height <= rectB.y ||
+      rectB.y + rectB.height <= rectA.y
+    );
+  };
+
+  const minimapBBox = await minimap.boundingBox();
+  expect(minimapBBox).not.toBeNull();
+
+  // 1. Back button
+  const backBtn = page.getByRole('button', { name: 'Quay lại' });
+  await expect(backBtn).toBeVisible();
+  const backBBox = await backBtn.boundingBox();
+  expect(backBBox).not.toBeNull();
+  expect(checkOverlap(minimapBBox!, backBBox!)).toBe(false);
+
+  // 2. Utilities cluster
+  const utilities = page.getByTestId('panorama-utility-cluster');
+  await expect(utilities).toBeVisible();
+  const utilitiesBBox = await utilities.boundingBox();
+  expect(utilitiesBBox).not.toBeNull();
+  expect(checkOverlap(minimapBBox!, utilitiesBBox!)).toBe(false);
+
+  // 3. Scene identity (context title & badge)
+  const sceneIdentity = page.locator('.reference-parity__context, .scene-identity').first();
+  await expect(sceneIdentity).toBeVisible();
+  const identityBBox = await sceneIdentity.boundingBox();
+  expect(identityBBox).not.toBeNull();
+  expect(checkOverlap(minimapBBox!, identityBBox!)).toBe(false);
+
+  // 4. Media dock
+  const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+  await expect(mediaDock).toBeVisible();
+  const dockBBox = await mediaDock.boundingBox();
+  expect(dockBBox).not.toBeNull();
+  expect(checkOverlap(minimapBBox!, dockBBox!)).toBe(false);
+
+  // 5. Scene thumbnail rail
+  const rail = page.getByRole('navigation', { name: 'Hành trình 360 Biển Thiên Cầm' });
+  await expect(rail).toBeVisible();
+  const railBBox = await rail.boundingBox();
+  expect(railBBox).not.toBeNull();
+  expect(checkOverlap(minimapBBox!, railBBox!)).toBe(false);
+});
