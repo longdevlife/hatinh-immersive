@@ -989,5 +989,8 @@ test('isolates production audio across multiple distinct destinations', async ({
   await expect(mediaDockB).toHaveAttribute('data-mode', 'free-explore');
   await expect(mediaDockB.getByRole('button', { name: 'Tạm dừng câu chuyện' })).toBeVisible();
   await expect(mediaDockB.getByRole('slider', { name: 'Tiến độ câu chuyện' })).toBeVisible();
-  await expect(mediaDockB.getByRole('button', { name: 'Mở bản chép lời' })).toBeVisible();
+  await mediaDockB.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }).click();
+  const storySheetB = page.getByRole('dialog', { name: 'Câu chuyện' });
+  await expect(storySheetB).toBeVisible();
+  await expect(storySheetB.getByRole('button', { name: 'Mở bản chép lời' })).toBeVisible();
 });
