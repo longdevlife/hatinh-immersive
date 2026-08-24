@@ -208,7 +208,10 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
   await desktopDock.getByRole('button', { name: 'Mở câu chuyện' }).click();
   const desktopStorySheet = page.getByRole('dialog', { name: 'Câu chuyện' });
   await expect(desktopStorySheet).toBeVisible();
-  await expect(desktopStorySheet.getByRole('button', { name: /nhạc nền/i })).toBeVisible();
+  // The explicit demo SpeechSynthesis policy can narrate this scene but cannot
+  // play its file-backed ambient track. Keep the sheet capability-truthful:
+  // no ambient transport is rendered until the active source can play it.
+  await expect(desktopStorySheet.getByRole('button', { name: /nhạc nền/i })).toHaveCount(0);
   await screenshot('panorama-ux-desktop-story-sheet-1440x900');
   await desktopStorySheet.getByRole('button', { name: 'Đóng câu chuyện' }).click();
 
