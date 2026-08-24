@@ -169,7 +169,7 @@ test('renders accepted production-shaped panorama package through real PSV on de
   ).toBeVisible();
   await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
   const mediaDockDesktop = page.getByRole('region', { name: 'Media dock trải nghiệm' });
-  await expect(mediaDockDesktop).toBeVisible();
+  await expect(mediaDockDesktop).toBeHidden();
   await expect(page.getByText('360° đang được cập nhật')).toHaveCount(0);
 
   // 2. Mobile smoke test (390x844)
@@ -180,7 +180,7 @@ test('renders accepted production-shaped panorama package through real PSV on de
   ).toBeVisible();
   await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
   const mediaDockMobile = page.getByRole('region', { name: 'Media dock trải nghiệm' });
-  await expect(mediaDockMobile).toBeVisible();
+  await expect(mediaDockMobile).toBeHidden();
 });
 
 test('fails closed when panorama derivatives are missing or inconsistent', async ({ page }) => {
