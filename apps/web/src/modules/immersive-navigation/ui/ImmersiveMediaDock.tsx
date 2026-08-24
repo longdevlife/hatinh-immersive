@@ -142,7 +142,6 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
           {/* Auto Tour owns narration transport; this surface remains informational. */}
           {hasAutoTourActive ? (
             <div className="immersive-media-dock__tour-story-bar">
-              <span className="immersive-media-dock__scene-label">{vm.sceneLabel}</span>
               <span className="immersive-media-dock__tour-story-status">
                 {vm.autoTour.isPaused
                   ? 'Hành trình đang tạm dừng'
@@ -154,27 +153,39 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
                 type="button"
                 className="immersive-media-dock__sheet-trigger"
                 onClick={() => setIsStorySheetOpen(true)}
-                aria-label="Mở câu chuyện"
-                title="Mở câu chuyện"
+                aria-label="Mở tùy chọn câu chuyện"
+                title="Mở tùy chọn câu chuyện"
               >
-                Mở câu chuyện
+                <span className="immersive-media-dock__sheet-trigger-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+                    <circle cx="5" cy="10" r="1.5" />
+                    <circle cx="10" cy="10" r="1.5" />
+                    <circle cx="15" cy="10" r="1.5" />
+                  </svg>
+                </span>
+                <span className="immersive-media-dock__sheet-trigger-label">Tùy chọn</span>
               </button>
             </div>
           ) : vm.narration.status === 'playing' ? (
             /* Case 1: Free Explore narration is playing */
             <div className="immersive-media-dock__now-playing">
-              <span className="immersive-media-dock__scene-label">{vm.sceneLabel}</span>
               <button
                 type="button"
-                className="immersive-media-dock__action-btn"
+                className="immersive-media-dock__action-btn immersive-media-dock__action-btn--primary"
                 onClick={actions.onPauseNarration}
                 aria-label="Tạm dừng câu chuyện"
               >
-                Tạm dừng câu chuyện
+                <span className="immersive-media-dock__btn-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor">
+                    <rect x="5" y="4" width="3" height="12" rx="1" />
+                    <rect x="12" y="4" width="3" height="12" rx="1" />
+                  </svg>
+                </span>
+                <span>Tạm dừng câu chuyện</span>
               </button>
               {hasMeaningfulNarrationProgress ? (
                 <div
-                  className="immersive-media-dock__narration-progress"
+                  className="immersive-media-dock__narration-progress immersive-media-dock__narration-progress--desktop-only"
                   aria-label="Điều khiển câu chuyện"
                 >
                   <label>
@@ -202,7 +213,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
               {vm.transcript.available && vm.transcript.capability === 'timed-captions' ? (
                 <button
                   type="button"
-                  className="immersive-media-dock__captions-toggle"
+                  className="immersive-media-dock__captions-toggle immersive-media-dock__captions-toggle--desktop-only"
                   onClick={actions.onToggleCaptions}
                   aria-pressed={vm.captionsEnabled}
                   aria-label={vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
@@ -210,41 +221,42 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
                   {vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
                 </button>
               ) : null}
-              {vm.transcript.available ? (
-                <button
-                  type="button"
-                  className="immersive-media-dock__transcript-btn"
-                  onClick={openTranscript}
-                  aria-label="Mở bản chép lời"
-                >
-                  Bản chép lời
-                </button>
-              ) : null}
               <button
                 type="button"
                 className="immersive-media-dock__sheet-trigger"
                 onClick={() => setIsStorySheetOpen(true)}
-                aria-label="Mở câu chuyện"
-                title="Mở câu chuyện"
+                aria-label="Mở tùy chọn câu chuyện"
+                title="Mở tùy chọn câu chuyện"
               >
-                Mở câu chuyện
+                <span className="immersive-media-dock__sheet-trigger-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+                    <circle cx="5" cy="10" r="1.5" />
+                    <circle cx="10" cy="10" r="1.5" />
+                    <circle cx="15" cy="10" r="1.5" />
+                  </svg>
+                </span>
+                <span className="immersive-media-dock__sheet-trigger-label">Tùy chọn</span>
               </button>
             </div>
           ) : vm.narration.status === 'paused' ? (
             /* Case 2: Narration is Paused */
             <div className="immersive-media-dock__paused-bar">
-              <span className="immersive-media-dock__scene-label">{vm.sceneLabel}</span>
               <button
                 type="button"
-                className="immersive-media-dock__action-btn"
+                className="immersive-media-dock__action-btn immersive-media-dock__action-btn--primary"
                 onClick={actions.onResumeNarration}
                 aria-label="Tiếp tục câu chuyện"
               >
-                Tiếp tục câu chuyện
+                <span className="immersive-media-dock__btn-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor">
+                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                  </svg>
+                </span>
+                <span>Tiếp tục câu chuyện</span>
               </button>
               {hasMeaningfulNarrationProgress ? (
                 <div
-                  className="immersive-media-dock__narration-progress"
+                  className="immersive-media-dock__narration-progress immersive-media-dock__narration-progress--desktop-only"
                   aria-label="Điều khiển câu chuyện"
                 >
                   <label>
@@ -273,10 +285,17 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
                 type="button"
                 className="immersive-media-dock__sheet-trigger"
                 onClick={() => setIsStorySheetOpen(true)}
-                aria-label="Mở câu chuyện"
-                title="Mở câu chuyện"
+                aria-label="Mở tùy chọn câu chuyện"
+                title="Mở tùy chọn câu chuyện"
               >
-                Mở câu chuyện
+                <span className="immersive-media-dock__sheet-trigger-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+                    <circle cx="5" cy="10" r="1.5" />
+                    <circle cx="10" cy="10" r="1.5" />
+                    <circle cx="15" cy="10" r="1.5" />
+                  </svg>
+                </span>
+                <span className="immersive-media-dock__sheet-trigger-label">Tùy chọn</span>
               </button>
             </div>
           ) : isNarrationPlayable ? (
@@ -284,20 +303,32 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
             <div className="immersive-media-dock__idle-bar">
               <button
                 type="button"
-                className="immersive-media-dock__action-btn"
+                className="immersive-media-dock__action-btn immersive-media-dock__action-btn--primary"
                 onClick={actions.onPlayNarration}
                 aria-label="Nghe câu chuyện"
               >
-                Nghe câu chuyện
+                <span className="immersive-media-dock__btn-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" width="14" height="14" fill="currentColor">
+                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                  </svg>
+                </span>
+                <span>Nghe câu chuyện</span>
               </button>
               <button
                 type="button"
                 className="immersive-media-dock__sheet-trigger"
                 onClick={() => setIsStorySheetOpen(true)}
-                aria-label="Mở câu chuyện"
-                title="Mở câu chuyện"
+                aria-label="Mở tùy chọn câu chuyện"
+                title="Mở tùy chọn câu chuyện"
               >
-                Mở câu chuyện
+                <span className="immersive-media-dock__sheet-trigger-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+                    <circle cx="5" cy="10" r="1.5" />
+                    <circle cx="10" cy="10" r="1.5" />
+                    <circle cx="15" cy="10" r="1.5" />
+                  </svg>
+                </span>
+                <span className="immersive-media-dock__sheet-trigger-label">Tùy chọn</span>
               </button>
             </div>
           ) : isNarrationUnavailable && vm.transcript.available ? (
@@ -315,10 +346,17 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
                 type="button"
                 className="immersive-media-dock__sheet-trigger"
                 onClick={() => setIsStorySheetOpen(true)}
-                aria-label="Mở câu chuyện"
-                title="Mở câu chuyện"
+                aria-label="Mở tùy chọn câu chuyện"
+                title="Mở tùy chọn câu chuyện"
               >
-                Mở câu chuyện
+                <span className="immersive-media-dock__sheet-trigger-icon" aria-hidden="true">
+                  <svg viewBox="0 0 20 20" width="16" height="16" fill="currentColor">
+                    <circle cx="5" cy="10" r="1.5" />
+                    <circle cx="10" cy="10" r="1.5" />
+                    <circle cx="15" cy="10" r="1.5" />
+                  </svg>
+                </span>
+                <span className="immersive-media-dock__sheet-trigger-label">Tùy chọn</span>
               </button>
             </div>
           ) : null}

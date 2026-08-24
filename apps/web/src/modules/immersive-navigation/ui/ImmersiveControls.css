@@ -859,13 +859,7 @@
 .reference-parity-controls--cinematic
   .reference-parity__rail
   .panorama-tour-rail__btn.is-current::after {
-  position: absolute;
-  right: 0.45rem;
-  bottom: 0;
-  left: 0.45rem;
-  height: 2px;
-  background: var(--color-accent-primary, #e5a95f);
-  content: '';
+  display: none;
 }
 
 .reference-parity-controls--cinematic
@@ -960,6 +954,18 @@
     bottom: max(0.55rem, env(safe-area-inset-bottom));
     width: calc(100vw - 1rem);
     max-width: calc(100vw - 1rem);
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__journey-controls {
+    justify-content: flex-end;
+    padding-right: max(0.45rem, env(safe-area-inset-right));
+    margin-bottom: 0.35rem;
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__start-journey-btn {
+    min-height: 44px;
+    padding: 0 0.65rem;
+    font-size: 0.72rem;
   }
 
   .reference-parity-controls--cinematic .reference-parity__rail ul {
@@ -1172,25 +1178,29 @@
   align-items: center;
   justify-content: center;
   min-height: 44px;
-  padding: 0 1.15rem;
+  padding: 0 1rem;
   border-radius: var(--radius-control, 999px);
-  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 22%, rgb(8 22 18 / 0.88));
-  border: 1px solid var(--color-accent-primary, #e5a95f);
-  color: #fff6dc;
+  background: color-mix(in srgb, rgb(8 22 18 / 0.82) 90%, transparent);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  color: rgb(255 255 255 / 0.85);
   font: inherit;
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-size: 0.78rem;
+  font-weight: 600;
   cursor: pointer;
   backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
   -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
-  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.4);
+  box-shadow: 0 0.35rem 1rem rgb(0 0 0 / 0.3);
   transition:
     background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
     transform 0.15s ease;
 }
 
 .reference-parity__start-journey-btn:hover {
-  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 35%, rgb(8 22 18 / 0.9));
+  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 22%, rgb(8 22 18 / 0.9));
+  border-color: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 60%, transparent);
+  color: #ffffff;
   transform: translateY(-1px);
 }
 

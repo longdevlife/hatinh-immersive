@@ -4,6 +4,52 @@ const publicSceneUrl = '/explore/bien-thien-cam/immersive?mode=panorama&scene=th
 const customerDemoSceneUrl =
   '/explore/bien-thien-cam/immersive?mode=panorama&demo=customer&scene=thien-cam-boardwalk';
 
+type ViewportRect = { x: number; y: number; width: number; height: number };
+
+function rectanglesOverlap(rectA: ViewportRect, rectB: ViewportRect) {
+  return !(
+    rectA.x + rectA.width <= rectB.x ||
+    rectB.x + rectB.width <= rectA.x ||
+    rectA.y + rectA.height <= rectB.y ||
+    rectB.y + rectB.height <= rectA.y
+  );
+}
+
+async function visibleTourArrowBoxes(page: Page) {
+  const arrows = page.locator('.psv-virtual-tour-link, .psv-virtual-tour-arrow');
+
+  await expect
+    .poll(async () => {
+      const boxes = await Promise.all(
+        Array.from({ length: await arrows.count() }, (_, index) => arrows.nth(index).boundingBox()),
+      );
+      return boxes.filter((box): box is ViewportRect => box !== null).length;
+    })
+    .toBeGreaterThan(0);
+
+  const boxes = await Promise.all(
+    Array.from({ length: await arrows.count() }, (_, index) => arrows.nth(index).boundingBox()),
+  );
+
+  return boxes.filter((box): box is ViewportRect => box !== null);
+}
+
+async function expectTourArrowsClearOfControls(page: Page) {
+  const controls = [
+    page.getByRole('region', { name: 'Media dock trải nghiệm' }),
+    page.getByRole('button', { name: 'Bắt đầu hành trình' }),
+    page.getByRole('navigation', { name: 'Hành trình 360 Biển Thiên Cầm' }),
+  ];
+  const arrowBoxes = await visibleTourArrowBoxes(page);
+
+  for (const control of controls) {
+    await expect(control).toBeVisible();
+    const controlBox = await control.boundingBox();
+    expect(controlBox).not.toBeNull();
+    expect(arrowBoxes.some((arrowBox) => rectanglesOverlap(arrowBox, controlBox!))).toBe(false);
+  }
+}
+
 async function capturePanoramaEvidence(
   page: Page,
   testInfo: TestInfo,
@@ -205,7 +251,7 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
   await page.getByRole('button', { name: 'Đóng tiện ích khác' }).click();
   await screenshot('panorama-ux-desktop-idle-1440x900');
 
-  await desktopDock.getByRole('button', { name: 'Mở câu chuyện' }).click();
+  await desktopDock.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }).click();
   const desktopStorySheet = page.getByRole('dialog', { name: 'Câu chuyện' });
   await expect(desktopStorySheet).toBeVisible();
   // The explicit demo SpeechSynthesis policy can narrate this scene but cannot
@@ -246,11 +292,11 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
   await page.goto(customerDemoSceneUrl);
   const mobileDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
   await expect(mobileDock.getByRole('button', { name: 'Nghe câu chuyện' })).toBeVisible();
-  await expect(mobileDock.getByRole('button', { name: 'Mở câu chuyện' })).toBeVisible();
+  await expect(mobileDock.getByRole('button', { name: 'Mở tùy chọn câu chuyện' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Bắt đầu hành trình' })).toBeVisible();
   await screenshot('panorama-ux-mobile-collapsed-390x844');
 
-  await mobileDock.getByRole('button', { name: 'Mở câu chuyện' }).click();
+  await mobileDock.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }).click();
   const mobileStorySheet = page.getByRole('dialog', { name: 'Câu chuyện' });
   await expect(mobileStorySheet).toBeVisible();
   await expect(mobileStorySheet.getByRole('button', { name: /nhạc nền/i })).toHaveCount(0);
@@ -277,7 +323,7 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
 
   await page.setViewportSize({ width: 430, height: 932 });
   await page.goto(customerDemoSceneUrl);
-  await expect(page.getByRole('button', { name: 'Mở câu chuyện' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Mở tùy chọn câu chuyện' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Bắt đầu hành trình' })).toBeVisible();
   await screenshot('panorama-ux-mobile-collapsed-430x932');
 
@@ -299,18 +345,6 @@ test('mobile 390x844 expanded minimap does not overlap Back, utilities, scene id
   const minimap = page.getByRole('application', { name: 'Bản đồ tuyến tham quan' });
   await expect(minimap).toBeVisible();
 
-  const checkOverlap = (
-    rectA: { x: number; y: number; width: number; height: number },
-    rectB: { x: number; y: number; width: number; height: number },
-  ) => {
-    return !(
-      rectA.x + rectA.width <= rectB.x ||
-      rectB.x + rectB.width <= rectA.x ||
-      rectA.y + rectA.height <= rectB.y ||
-      rectB.y + rectB.height <= rectA.y
-    );
-  };
-
   const minimapBBox = await minimap.boundingBox();
   expect(minimapBBox).not.toBeNull();
 
@@ -319,33 +353,57 @@ test('mobile 390x844 expanded minimap does not overlap Back, utilities, scene id
   await expect(backBtn).toBeVisible();
   const backBBox = await backBtn.boundingBox();
   expect(backBBox).not.toBeNull();
-  expect(checkOverlap(minimapBBox!, backBBox!)).toBe(false);
+  expect(rectanglesOverlap(minimapBBox!, backBBox!)).toBe(false);
 
   // 2. Utilities cluster
   const utilities = page.getByTestId('panorama-utility-cluster');
   await expect(utilities).toBeVisible();
   const utilitiesBBox = await utilities.boundingBox();
   expect(utilitiesBBox).not.toBeNull();
-  expect(checkOverlap(minimapBBox!, utilitiesBBox!)).toBe(false);
+  expect(rectanglesOverlap(minimapBBox!, utilitiesBBox!)).toBe(false);
 
   // 3. Scene identity (context title & badge)
   const sceneIdentity = page.locator('.reference-parity__context, .scene-identity').first();
   await expect(sceneIdentity).toBeVisible();
   const identityBBox = await sceneIdentity.boundingBox();
   expect(identityBBox).not.toBeNull();
-  expect(checkOverlap(minimapBBox!, identityBBox!)).toBe(false);
+  expect(rectanglesOverlap(minimapBBox!, identityBBox!)).toBe(false);
 
   // 4. Media dock
   const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
   await expect(mediaDock).toBeVisible();
   const dockBBox = await mediaDock.boundingBox();
   expect(dockBBox).not.toBeNull();
-  expect(checkOverlap(minimapBBox!, dockBBox!)).toBe(false);
+  expect(rectanglesOverlap(minimapBBox!, dockBBox!)).toBe(false);
 
   // 5. Scene thumbnail rail
   const rail = page.getByRole('navigation', { name: 'Hành trình 360 Biển Thiên Cầm' });
   await expect(rail).toBeVisible();
   const railBBox = await rail.boundingBox();
   expect(railBBox).not.toBeNull();
-  expect(checkOverlap(minimapBBox!, railBBox!)).toBe(false);
+  expect(rectanglesOverlap(minimapBBox!, railBBox!)).toBe(false);
+});
+
+test('mobile customer-demo transport keeps primary PSV tour arrows unobscured', async ({
+  page,
+}) => {
+  await installDeterministicDemoNarrationHarness(page);
+
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 430, height: 932 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(customerDemoSceneUrl);
+    await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
+
+    await expectTourArrowsClearOfControls(page);
+
+    if (viewport.width === 390) {
+      const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+      await mediaDock.getByRole('button', { name: 'Nghe câu chuyện' }).click();
+      await expect(mediaDock).toHaveAttribute('data-story-state', 'playing');
+      await expectTourArrowsClearOfControls(page);
+    }
+  }
 });

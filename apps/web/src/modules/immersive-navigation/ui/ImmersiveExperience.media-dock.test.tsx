@@ -175,8 +175,8 @@ describe('ImmersiveExperience Media Dock integration', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Tắt âm thanh' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Mở câu chuyện' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Mở câu chuyện' }));
+    expect(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
     expect(screen.getByRole('button', { name: 'Tắt nhạc nền' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Mở tiện ích khác' }));
