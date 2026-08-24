@@ -5,12 +5,14 @@ import {
   type ImmersiveMediaDockActions,
   type ImmersiveMediaDockVm,
 } from './reference-parity.presentation';
+import type { MinimalTravelAmbientControl } from './minimal-travel-controls.presentation';
 import { ImmersiveTranscriptPanel } from './ImmersiveTranscriptPanel';
 import './ImmersiveMediaDock.css';
 
 export interface ImmersiveMediaDockProps {
   vm: ImmersiveMediaDockVm;
   actions: ImmersiveMediaDockActions;
+  ambientControl: MinimalTravelAmbientControl;
 }
 
 const LOCALE_LABELS: Record<ImmersiveLocale, string> = {

@@ -5,11 +5,13 @@ import type {
   ReferenceParityPresentationVm,
   ReferenceParitySceneVm,
 } from './reference-parity.presentation';
+import type { MinimalTravelJourneyControl } from './minimal-travel-controls.presentation';
 import './ImmersiveControls.css';
 
 export interface ReferenceParityControlsProps {
   vm: ReferenceParityPresentationVm;
   actions: ReferenceParityPresentationActions;
+  journeyControl?: MinimalTravelJourneyControl;
   minimapOpen?: boolean;
   isCustomerDemo?: boolean;
 }

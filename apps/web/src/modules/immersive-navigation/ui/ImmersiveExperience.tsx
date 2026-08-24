@@ -29,6 +29,7 @@ import {
 } from '../../minimap';
 import { ImmersiveControlsGroup } from './ImmersiveControls';
 import { ImmersiveMediaDock } from './ImmersiveMediaDock';
+import { createMinimalTravelControlBindings } from './minimal-travel-controls.presentation';
 import { ReferenceParityControls } from './ReferenceParityControls';
 import {
   buildImmersiveMediaDockVm,
@@ -1408,6 +1409,15 @@ export function ImmersiveExperience({
           captionsEnabled,
         })
       : undefined;
+  const minimalTravelControls =
+    referenceParityPresentation && mediaDockVm
+      ? createMinimalTravelControlBindings({
+          referenceVm: referenceParityPresentation,
+          referenceActions: referenceParityActions,
+          dockVm: mediaDockVm,
+          dockActions: mediaDockActions,
+        })
+      : undefined;
   const rendererContent = (
     <RendererHost
       activeRenderer={navigation.activeRenderer}
@@ -1536,11 +1546,16 @@ export function ImmersiveExperience({
             <ReferenceParityControls
               vm={referenceParityPresentation}
               actions={referenceParityActions}
+              {...(minimalTravelControls ? { journeyControl: minimalTravelControls.journey } : {})}
               minimapOpen={navigation.minimapOpen}
               isCustomerDemo={isCustomerDemo || resolvedPanoramaRuntimeMediaPolicy === 'demo'}
             />
-            {mediaDockVm ? (
-              <ImmersiveMediaDock vm={mediaDockVm} actions={mediaDockActions} />
+            {mediaDockVm && minimalTravelControls ? (
+              <ImmersiveMediaDock
+                vm={mediaDockVm}
+                actions={mediaDockActions}
+                ambientControl={minimalTravelControls.ambient}
+              />
             ) : null}
           </>
         ) : (

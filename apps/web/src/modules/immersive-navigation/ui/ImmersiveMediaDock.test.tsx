@@ -6,7 +6,24 @@ import type {
   ImmersiveMediaDockActions,
   ImmersiveMediaDockVm,
 } from './reference-parity.presentation';
-import { ImmersiveMediaDock } from './ImmersiveMediaDock';
+import {
+  ImmersiveMediaDock as ImmersiveMediaDockComponent,
+  type ImmersiveMediaDockProps,
+} from './ImmersiveMediaDock';
+import type { MinimalTravelAmbientControl } from './minimal-travel-controls.presentation';
+
+const neutralAmbientControl: MinimalTravelAmbientControl = {
+  available: false,
+  enabled: false,
+  onToggle: vi.fn(),
+};
+
+function ImmersiveMediaDock(
+  props: Omit<ImmersiveMediaDockProps, 'ambientControl'> &
+    Partial<Pick<ImmersiveMediaDockProps, 'ambientControl'>>,
+) {
+  return <ImmersiveMediaDockComponent ambientControl={neutralAmbientControl} {...props} />;
+}
 
 const transcript: ImmersiveTranscriptContent = {
   id: 'transcript-son-trang',
