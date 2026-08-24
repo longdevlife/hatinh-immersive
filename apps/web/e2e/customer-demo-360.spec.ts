@@ -384,7 +384,7 @@ test('mobile 390x844 expanded minimap does not overlap Back, utilities, scene id
   expect(rectanglesOverlap(minimapBBox!, railBBox!)).toBe(false);
 });
 
-test('mobile customer-demo transport keeps primary PSV tour arrows unobscured', async ({
+test('mobile customer-demo transport keeps primary PSV tour arrows unobscured and controls non-overlapping', async ({
   page,
 }) => {
   await installDeterministicDemoNarrationHarness(page);
@@ -397,11 +397,52 @@ test('mobile customer-demo transport keeps primary PSV tour arrows unobscured', 
     await page.goto(customerDemoSceneUrl);
     await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
 
+    const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
+    const startAutoTourBtn = page.getByRole('button', { name: 'Bắt đầu hành trình' });
+    const rail = page.getByRole('navigation', { name: 'Hành trình 360 Biển Thiên Cầm' });
+
+    await expect(mediaDock).toBeVisible();
+    await expect(startAutoTourBtn).toBeVisible();
+    await expect(rail).toBeVisible();
+
+    const dockBox = await mediaDock.boundingBox();
+    const autoTourBox = await startAutoTourBtn.boundingBox();
+    const railBox = await rail.boundingBox();
+
+    expect(dockBox).not.toBeNull();
+    expect(autoTourBox).not.toBeNull();
+    expect(railBox).not.toBeNull();
+
+    // 1) dock and Start Auto Tour do not overlap
+    expect(rectanglesOverlap(dockBox!, autoTourBox!)).toBe(false);
+    expect(rectanglesOverlap(dockBox!, railBox!)).toBe(false);
+    expect(rectanglesOverlap(autoTourBox!, railBox!)).toBe(false);
+
+    // 2) both remain reachable with compliant touch target sizes
+    const playBtn = mediaDock.getByRole('button', { name: 'Nghe câu chuyện' });
+    const triggerBtn = mediaDock.getByRole('button', { name: 'Mở tùy chọn câu chuyện' });
+    await expect(playBtn).toBeVisible();
+    await expect(triggerBtn).toBeVisible();
+
+    const playBox = await playBtn.boundingBox();
+    const triggerBox = await triggerBtn.boundingBox();
+    expect(playBox).not.toBeNull();
+    expect(triggerBox).not.toBeNull();
+    expect(playBox!.height).toBeGreaterThanOrEqual(44);
+    expect(triggerBox!.width).toBeGreaterThanOrEqual(44);
+    expect(triggerBox!.height).toBeGreaterThanOrEqual(44);
+    expect(autoTourBox!.height).toBeGreaterThanOrEqual(44);
+
+    // 3) PSV arrow does not overlap either control or rail
     await expectTourArrowsClearOfControls(page);
 
+    // 4) no horizontal overflow
+    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    const clientWidth = await page.evaluate(() => document.documentElement.clientWidth);
+    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+
     if (viewport.width === 390) {
-      const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
-      await mediaDock.getByRole('button', { name: 'Nghe câu chuyện' }).click();
+      await playBtn.click();
       await expect(mediaDock).toHaveAttribute('data-story-state', 'playing');
       await expectTourArrowsClearOfControls(page);
     }
