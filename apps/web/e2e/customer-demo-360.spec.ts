@@ -212,6 +212,9 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
   // play its file-backed ambient track. Keep the sheet capability-truthful:
   // no ambient transport is rendered until the active source can play it.
   await expect(desktopStorySheet.getByRole('button', { name: /nhạc nền/i })).toHaveCount(0);
+  await desktopStorySheet.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
   await screenshot('panorama-ux-desktop-story-sheet-1440x900');
   await desktopStorySheet.getByRole('button', { name: 'Đóng câu chuyện' }).click();
 
@@ -251,6 +254,9 @@ test('captures the final Panorama-only UX acceptance matrix', async ({ page }, t
   const mobileStorySheet = page.getByRole('dialog', { name: 'Câu chuyện' });
   await expect(mobileStorySheet).toBeVisible();
   await expect(mobileStorySheet.getByRole('button', { name: /nhạc nền/i })).toHaveCount(0);
+  await mobileStorySheet.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished));
+  });
   await screenshot('panorama-ux-mobile-story-sheet-390x844');
 
   await mobileStorySheet.getByRole('button', { name: 'Mở bản chép lời' }).click();
