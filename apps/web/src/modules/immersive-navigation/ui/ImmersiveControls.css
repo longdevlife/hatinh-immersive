@@ -1054,12 +1054,148 @@
   right: var(--safe-area-spacing, clamp(1rem, 4vw, 4rem));
   display: flex;
   align-items: center;
-  gap: var(--space-2, 0.5rem);
+  gap: var(--space-2, 0.35rem);
+  padding: 0.2rem 0.35rem;
+  background: color-mix(in srgb, var(--panorama-surface, rgb(8 22 18 / 0.85)) 92%, transparent);
+  border: 1px solid var(--panorama-border, rgb(255 255 255 / 0.18));
+  border-radius: var(--radius-control, 999px);
+  backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  box-shadow: var(--elevation-1, 0 0.75rem 2rem rgb(3 12 9 / 0.22));
   pointer-events: auto;
   z-index: 2;
 }
 
+.reference-parity__utilities .panorama-control {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.reference-parity__utilities .panorama-control:hover,
+.reference-parity__utilities .panorama-control:focus-visible {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.reference-parity__more-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.reference-parity__more-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  background: rgb(8 22 18 / 0.95);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.55);
+  z-index: 10;
+  min-width: 44px;
+}
+
+.reference-parity__more-menu .panorama-control {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 8px;
+}
+
+/* Journey Zone & Auto Tour Controls */
+.reference-parity__journey-controls {
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.reference-parity__autotour-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.65rem;
+  background: color-mix(in srgb, var(--panorama-surface, rgb(8 22 18 / 0.88)) 92%, transparent);
+  border: 1px solid var(--panorama-border, rgb(255 255 255 / 0.18));
+  border-radius: var(--radius-control, 999px);
+  backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  box-shadow: 0 0.75rem 2rem rgb(3 12 9 / 0.38);
+}
+
+.reference-parity__autotour-status {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #fff0c9;
+  letter-spacing: 0.02em;
+  padding: 0 0.35rem;
+  white-space: nowrap;
+}
+
+.reference-parity__autotour-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border-radius: var(--radius-control, 999px);
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.2);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.18s ease;
+}
+
+.reference-parity__autotour-btn:hover {
+  background: rgb(255 255 255 / 0.22);
+}
+
+.reference-parity__autotour-btn:focus-visible,
+.reference-parity__start-journey-btn:focus-visible {
+  outline: 2px solid var(--color-accent-primary, #e5a95f);
+  outline-offset: 2px;
+}
+
+.reference-parity__start-journey-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 1.15rem;
+  border-radius: var(--radius-control, 999px);
+  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 22%, rgb(8 22 18 / 0.88));
+  border: 1px solid var(--color-accent-primary, #e5a95f);
+  color: #fff6dc;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  box-shadow: 0 0.5rem 1.5rem rgb(0 0 0 / 0.4);
+  transition:
+    background-color 0.18s ease,
+    transform 0.15s ease;
+}
+
+.reference-parity__start-journey-btn:hover {
+  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 35%, rgb(8 22 18 / 0.9));
+  transform: translateY(-1px);
+}
+
 .reference-parity__audio-btn.is-active,
+.reference-parity__sound-btn.is-active,
 .reference-parity__ambient-btn.is-active,
 .reference-parity__narration-btn.is-active,
 .reference-parity__autotour-btn.is-active,

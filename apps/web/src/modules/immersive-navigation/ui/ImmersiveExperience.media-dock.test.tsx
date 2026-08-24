@@ -58,7 +58,7 @@ describe('ImmersiveExperience Media Dock integration', () => {
       expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: 'Bắt đầu tự động tham quan' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bắt đầu hành trình' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Bật âm thanh' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tự động tham quan' })).not.toBeInTheDocument();
@@ -174,6 +174,12 @@ describe('ImmersiveExperience Media Dock integration', () => {
       expect(screen.getByRole('button', { name: 'Nghe câu chuyện' })).toBeInTheDocument();
     });
 
+    expect(screen.getByRole('button', { name: 'Tắt âm thanh' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mở câu chuyện' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mở câu chuyện' }));
+    expect(screen.getByRole('button', { name: 'Tắt nhạc nền' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tiện ích khác' }));
     fireEvent.click(screen.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' }));
 
     await waitFor(() => {

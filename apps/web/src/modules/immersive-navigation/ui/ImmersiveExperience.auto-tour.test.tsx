@@ -90,7 +90,7 @@ describe('ImmersiveExperience Auto Tour progression', () => {
     renderTour(factories);
 
     const autoTourButton = await screen.findByRole('button', {
-      name: 'Bắt đầu tự động tham quan',
+      name: 'Bắt đầu hành trình',
     });
     await waitFor(() => {
       expect(autoTourButton).not.toBeDisabled();
@@ -149,7 +149,7 @@ describe('ImmersiveExperience Auto Tour progression', () => {
     renderTour(factories);
 
     const autoTourButton = await screen.findByRole('button', {
-      name: 'Bắt đầu tự động tham quan',
+      name: 'Bắt đầu hành trình',
     });
     await waitFor(() => {
       expect(autoTourButton).not.toBeDisabled();
@@ -197,7 +197,7 @@ describe('ImmersiveExperience Auto Tour progression', () => {
     expect(panorama.requestedSceneIds.filter((id) => id === 'thien-cam-shore')).toHaveLength(
       failedSceneRequestCount,
     );
-    expect(screen.getByRole('button', { name: 'Bắt đầu tự động tham quan' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bắt đầu hành trình' })).toBeInTheDocument();
     expect(screen.queryByTestId('immersive-media-dock-progress')).not.toBeInTheDocument();
   });
 });
