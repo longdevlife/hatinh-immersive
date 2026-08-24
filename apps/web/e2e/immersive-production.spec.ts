@@ -312,7 +312,7 @@ test('connects Sơn Trang detail to linked panorama scene and returns to the des
   const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
   await expect(mediaDock).toBeVisible();
   await expect(mediaDock.locator('.immersive-media-dock__mobile-toggle')).toBeHidden();
-  await expect(mediaDock.getByRole('button', { name: 'Bắt đầu tự động tham quan' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Bắt đầu hành trình' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Tự động tham quan', exact: true })).toHaveCount(0);
 
   const sceneBrowser = page.getByRole('navigation', { name: /Hành trình 360|Danh sách cảnh quan/ });
