@@ -210,6 +210,14 @@ test('desktop scene portal hover label is visibly rendered outside the thumbnail
   );
 
   expect(visibleRatio).toBeGreaterThan(0.95);
+
+  const hoverLabelBox = await hoverLabel.boundingBox();
+  const startJourneyBox = await page
+    .getByRole('button', { name: 'Bắt đầu hành trình' })
+    .boundingBox();
+  expect(hoverLabelBox).not.toBeNull();
+  expect(startJourneyBox).not.toBeNull();
+  expect(rectanglesOverlap(hoverLabelBox!, startJourneyBox!)).toBe(false);
 });
 
 test('captures Product-reviewable panorama evidence for desktop and mobile states', async ({

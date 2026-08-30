@@ -791,6 +791,10 @@
   max-width: min(86vw, 54rem);
 }
 
+.reference-parity-controls--cinematic .reference-parity__journey-controls {
+  margin-bottom: 2.25rem;
+}
+
 .reference-parity-controls--cinematic .reference-parity__rail {
   max-width: 100%;
   background: transparent;
