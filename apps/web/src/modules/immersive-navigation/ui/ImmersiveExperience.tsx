@@ -1555,6 +1555,8 @@ export function ImmersiveExperience({
                 vm={mediaDockVm}
                 actions={mediaDockActions}
                 ambientControl={minimalTravelControls.ambient}
+                externalSecondarySurfaceOpen={Boolean(selectedHotspot && selectedHotspotType)}
+                onOpenSecondarySurface={actions.onCloseHotspot}
               />
             ) : null}
           </>

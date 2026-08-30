@@ -14,6 +14,8 @@ export interface ImmersiveMediaDockProps {
   vm: ImmersiveMediaDockVm;
   actions: ImmersiveMediaDockActions;
   ambientControl: MinimalTravelAmbientControl;
+  externalSecondarySurfaceOpen?: boolean;
+  onOpenSecondarySurface?(): void;
 }
 
 function formatDuration(seconds: number): string {
@@ -50,6 +52,8 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
   vm,
   actions,
   ambientControl,
+  externalSecondarySurfaceOpen = false,
+  onOpenSecondarySurface,
 }) => {
   const [isStorySheetOpen, setIsStorySheetOpen] = useState(false);
   const [isTranscriptOpen, setIsTranscriptOpen] = useState(false);
@@ -61,6 +65,18 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
     }
   }, [vm.soundGateRequired]);
 
+  useEffect(() => {
+    if (!externalSecondarySurfaceOpen) {
+      return;
+    }
+
+    setIsStorySheetOpen(false);
+    if (isTranscriptOpen) {
+      actions.onCloseTranscript();
+      setIsTranscriptOpen(false);
+    }
+  }, [actions, externalSecondarySurfaceOpen, isTranscriptOpen]);
+
   const activeCaption = useMemo(
     () =>
       vm.captionsEnabled
@@ -70,9 +86,16 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
   );
 
   const openTranscript = () => {
+    onOpenSecondarySurface?.();
     actions.onOpenTranscript();
     setIsStorySheetOpen(false);
     setIsTranscriptOpen(true);
+  };
+
+  const openStorySheet = () => {
+    onOpenSecondarySurface?.();
+    setIsTranscriptOpen(false);
+    setIsStorySheetOpen(true);
   };
 
   const closeTranscript = () => {
@@ -152,7 +175,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
               <button
                 type="button"
                 className="immersive-media-dock__sheet-trigger"
-                onClick={() => setIsStorySheetOpen(true)}
+                onClick={openStorySheet}
                 aria-label="Mở tùy chọn câu chuyện"
                 title="Mở tùy chọn câu chuyện"
               >
@@ -224,7 +247,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
               <button
                 type="button"
                 className="immersive-media-dock__sheet-trigger"
-                onClick={() => setIsStorySheetOpen(true)}
+                onClick={openStorySheet}
                 aria-label="Mở tùy chọn câu chuyện"
                 title="Mở tùy chọn câu chuyện"
               >
@@ -284,7 +307,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
               <button
                 type="button"
                 className="immersive-media-dock__sheet-trigger"
-                onClick={() => setIsStorySheetOpen(true)}
+                onClick={openStorySheet}
                 aria-label="Mở tùy chọn câu chuyện"
                 title="Mở tùy chọn câu chuyện"
               >
@@ -317,7 +340,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
               <button
                 type="button"
                 className="immersive-media-dock__sheet-trigger"
-                onClick={() => setIsStorySheetOpen(true)}
+                onClick={openStorySheet}
                 aria-label="Mở tùy chọn câu chuyện"
                 title="Mở tùy chọn câu chuyện"
               >
@@ -345,7 +368,7 @@ export const ImmersiveMediaDock: FC<ImmersiveMediaDockProps> = ({
               <button
                 type="button"
                 className="immersive-media-dock__sheet-trigger"
-                onClick={() => setIsStorySheetOpen(true)}
+                onClick={openStorySheet}
                 aria-label="Mở tùy chọn câu chuyện"
                 title="Mở tùy chọn câu chuyện"
               >
