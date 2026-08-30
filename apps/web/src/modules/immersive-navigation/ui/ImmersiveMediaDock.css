@@ -347,15 +347,17 @@
   position: fixed;
   right: clamp(1.5rem, 4vw, 4rem);
   bottom: clamp(5.25rem, 9.5vh, 7rem);
-  width: 22rem;
+  width: 22.5rem;
   max-width: calc(100vw - 2.5rem);
-  max-height: min(28rem, 65dvh);
-  background: rgb(8 22 18 / 0.96);
-  border: 1px solid rgb(255 255 255 / 0.22);
+  max-height: min(30rem, 70dvh);
+  background: color-mix(in srgb, rgb(8 22 18 / 0.94) 95%, transparent);
+  border: 1px solid rgb(255 255 255 / 0.16);
   border-radius: 16px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  box-shadow: 0 1.25rem 3rem rgb(0 0 0 / 0.65);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 1.25rem 3rem rgb(0 0 0 / 0.65),
+    0 0 1px rgb(255 255 255 / 0.2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -367,19 +369,34 @@
 
 .immersive-story-sheet__header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 0.85rem 1.15rem;
-  border-bottom: 1px solid rgb(255 255 255 / 0.12);
-  background: rgb(255 255 255 / 0.03);
+  padding: 1rem 1.15rem 0.85rem;
+  border-bottom: 1px solid rgb(255 255 255 / 0.1);
+  background: rgb(255 255 255 / 0.02);
+}
+
+.immersive-story-sheet__header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.immersive-story-sheet__eyebrow {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--color-accent-primary, #e5a95f);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .immersive-story-sheet__title {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1.02rem;
   font-weight: 700;
   color: #fff6dc;
   letter-spacing: 0.01em;
+  line-height: 1.25;
 }
 
 .immersive-story-sheet__close-btn {
@@ -388,17 +405,21 @@
   justify-content: center;
   min-height: 44px;
   min-width: 44px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border-radius: 50%;
-  background: rgb(255 255 255 / 0.1);
-  border: 1px solid rgb(255 255 255 / 0.2);
-  color: #ffffff;
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  color: rgb(255 255 255 / 0.8);
   cursor: pointer;
-  transition: background-color 0.18s ease;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
 }
 
 .immersive-story-sheet__close-btn:hover {
-  background: rgb(255 255 255 / 0.22);
+  background: rgb(255 255 255 / 0.18);
+  color: #ffffff;
 }
 
 .immersive-story-sheet__close-btn:focus-visible {
@@ -407,24 +428,103 @@
 }
 
 .immersive-story-sheet__body {
-  padding: 1rem 1.15rem;
+  padding: 0.95rem 1.15rem 1.15rem;
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.75rem;
   overflow-y: auto;
 }
 
-.immersive-story-sheet__narration-row,
-.immersive-story-sheet__ambient-row,
-.immersive-story-sheet__transcript-row,
-.immersive-story-sheet__locales-row {
+.immersive-story-sheet__narration-section {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-direction: column;
+  gap: 0.65rem;
 }
 
-.immersive-story-sheet__primary-btn,
+.immersive-story-sheet__transport-card {
+  padding: 0.85rem;
+  background: rgb(255 255 255 / 0.04);
+  border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.immersive-story-sheet__primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  width: 100%;
+  padding: 0 1rem;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--color-accent-primary, #e5a95f), #c8883b);
+  border: none;
+  color: #081612;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgb(229 169 95 / 0.25);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.immersive-story-sheet__primary-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgb(229 169 95 / 0.35);
+  background: linear-gradient(135deg, #f0be7d, #d49548);
+}
+
+.immersive-story-sheet__primary-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.immersive-story-sheet__primary-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.immersive-story-sheet__options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.immersive-story-sheet__option-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  background: rgb(255 255 255 / 0.03);
+  border-radius: 10px;
+  border: 1px solid rgb(255 255 255 / 0.06);
+  gap: 0.65rem;
+}
+
+.immersive-story-sheet__option-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgb(255 255 255 / 0.88);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.immersive-story-sheet__option-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent-primary, #e5a95f);
+  opacity: 0.9;
+}
+
 .immersive-story-sheet__ambient-btn,
 .immersive-story-sheet__captions-btn,
 .immersive-story-sheet__transcript-btn,
@@ -434,26 +534,26 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 0.95rem;
-  border-radius: var(--radius-control, 999px);
-  background: rgb(255 255 255 / 0.1);
-  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.14);
   color: #ffffff;
   font: inherit;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.18s ease;
+  transition: all 0.18s ease;
+  white-space: nowrap;
 }
 
-.immersive-story-sheet__primary-btn:hover,
 .immersive-story-sheet__ambient-btn:hover,
 .immersive-story-sheet__captions-btn:hover,
 .immersive-story-sheet__transcript-btn:hover,
 .immersive-story-sheet__locale-btn:hover {
-  background: rgb(255 255 255 / 0.2);
+  background: rgb(255 255 255 / 0.16);
+  border-color: rgb(255 255 255 / 0.24);
 }
 
-.immersive-story-sheet__primary-btn:focus-visible,
 .immersive-story-sheet__ambient-btn:focus-visible,
 .immersive-story-sheet__captions-btn:focus-visible,
 .immersive-story-sheet__transcript-btn:focus-visible,
@@ -464,9 +564,23 @@
 
 .immersive-story-sheet__ambient-btn[aria-pressed='true'],
 .immersive-story-sheet__captions-btn[aria-pressed='true'] {
-  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 30%, rgb(8 22 18 / 0.9));
+  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 28%, rgb(8 22 18 / 0.9));
   border-color: var(--color-accent-primary, #e5a95f);
   color: #fff6dc;
+}
+
+.immersive-story-sheet__option-row--locales {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.immersive-story-sheet__locales-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
 }
 
 .immersive-story-sheet__transport-status {
@@ -485,9 +599,12 @@
 
 .immersive-story-sheet__unavailable-text {
   margin: 0;
+  padding: 0.65rem 0.85rem;
   font-size: 0.8rem;
   color: rgb(255 255 255 / 0.72);
   font-style: italic;
+  background: rgb(255 255 255 / 0.03);
+  border-radius: 8px;
 }
 
 .immersive-story-sheet__progress {
@@ -501,7 +618,7 @@
   display: inline-flex;
   align-items: center;
   flex: 1;
-  min-height: 44px;
+  min-height: 36px;
 }
 
 .immersive-story-sheet__progress input[type='range'] {
@@ -509,12 +626,13 @@
   height: 6px;
   border-radius: 3px;
   background: rgb(255 255 255 / 0.22);
+  accent-color: var(--color-accent-primary, #e5a95f);
 }
 
 .immersive-story-sheet__progress output {
   font-size: 0.75rem;
   font-weight: 600;
-  color: rgb(255 255 255 / 0.8);
+  color: rgb(255 255 255 / 0.85);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }

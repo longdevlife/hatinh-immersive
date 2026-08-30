@@ -58,7 +58,10 @@ export const ImmersiveStorySheet: FC<ImmersiveStorySheetProps> = ({
       className="immersive-story-sheet"
     >
       <header className="immersive-story-sheet__header">
-        <p className="immersive-story-sheet__title">{vm.sceneLabel}</p>
+        <div className="immersive-story-sheet__header-text">
+          <span className="immersive-story-sheet__eyebrow">Câu chuyện di sản</span>
+          <h2 className="immersive-story-sheet__title">{vm.sceneLabel}</h2>
+        </div>
         <button
           type="button"
           className="immersive-story-sheet__close-btn"
@@ -83,8 +86,8 @@ export const ImmersiveStorySheet: FC<ImmersiveStorySheetProps> = ({
       </header>
 
       <div className="immersive-story-sheet__body">
-        {/* Primary Narration Control */}
-        <div className="immersive-story-sheet__narration-row">
+        {/* Primary Narration Hero Transport */}
+        <div className="immersive-story-sheet__narration-section">
           {isAutoTourOwned ? (
             <p className="immersive-story-sheet__transport-status">
               {vm.autoTour.isPaused
@@ -94,77 +97,130 @@ export const ImmersiveStorySheet: FC<ImmersiveStorySheetProps> = ({
                   : 'Câu chuyện do hành trình điều khiển'}
             </p>
           ) : isNarrationPlayable ? (
-            <button
-              type="button"
-              className="immersive-story-sheet__primary-btn"
-              onClick={
-                vm.narration.status === 'playing'
-                  ? actions.onPauseNarration
-                  : vm.narration.status === 'paused'
-                    ? actions.onResumeNarration
-                    : actions.onPlayNarration
-              }
-              aria-label={
-                vm.narration.status === 'playing'
-                  ? 'Tạm dừng câu chuyện'
-                  : vm.narration.status === 'paused'
-                    ? 'Tiếp tục câu chuyện'
-                    : 'Nghe câu chuyện'
-              }
-            >
-              {vm.narration.status === 'playing'
-                ? 'Tạm dừng câu chuyện'
-                : vm.narration.status === 'paused'
-                  ? 'Tiếp tục câu chuyện'
-                  : 'Nghe câu chuyện'}
-            </button>
+            <div className="immersive-story-sheet__transport-card">
+              <button
+                type="button"
+                className="immersive-story-sheet__primary-btn"
+                onClick={
+                  vm.narration.status === 'playing'
+                    ? actions.onPauseNarration
+                    : vm.narration.status === 'paused'
+                      ? actions.onResumeNarration
+                      : actions.onPlayNarration
+                }
+                aria-label={
+                  vm.narration.status === 'playing'
+                    ? 'Tạm dừng câu chuyện'
+                    : vm.narration.status === 'paused'
+                      ? 'Tiếp tục câu chuyện'
+                      : 'Nghe câu chuyện'
+                }
+              >
+                <span className="immersive-story-sheet__primary-btn-icon" aria-hidden="true">
+                  {vm.narration.status === 'playing' ? (
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                      <rect x="6" y="4" width="4" height="16" rx="1.5" />
+                      <rect x="14" y="4" width="4" height="16" rx="1.5" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                      <path d="M7 4.5v15a1 1 0 0 0 1.5.86l12-7.5a1 1 0 0 0 0-1.72l-12-7.5A1 1 0 0 0 7 4.5Z" />
+                    </svg>
+                  )}
+                </span>
+                <span>
+                  {vm.narration.status === 'playing'
+                    ? 'Tạm dừng câu chuyện'
+                    : vm.narration.status === 'paused'
+                      ? 'Tiếp tục câu chuyện'
+                      : 'Nghe câu chuyện'}
+                </span>
+              </button>
+
+              {/* Meaningful Progress Bar */}
+              {vm.narration.available && hasMeaningfulNarrationProgress && !isAutoTourOwned ? (
+                <div className="immersive-story-sheet__progress" aria-label="Điều khiển câu chuyện">
+                  <label>
+                    <span className="sr-only">Tiến độ câu chuyện</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={Math.max(0, vm.narration.durationSeconds)}
+                      step={0.1}
+                      value={Math.min(
+                        vm.narration.currentTimeSeconds,
+                        vm.narration.durationSeconds,
+                      )}
+                      disabled={!vm.narration.canSeek}
+                      onChange={(event) => actions.onSeekNarration(Number(event.target.value))}
+                      aria-label="Tiến độ câu chuyện"
+                    />
+                  </label>
+                  <output aria-label="Thời lượng câu chuyện">
+                    {formatDuration(vm.narration.currentTimeSeconds)} /{' '}
+                    {formatDuration(vm.narration.durationSeconds)}
+                  </output>
+                </div>
+              ) : null}
+            </div>
           ) : isNarrationUnavailable ? (
             <p className="immersive-story-sheet__unavailable-text">Âm thanh thuyết minh chưa có</p>
           ) : null}
-
-          {/* Meaningful Progress Bar */}
-          {vm.narration.available && hasMeaningfulNarrationProgress && !isAutoTourOwned ? (
-            <div className="immersive-story-sheet__progress" aria-label="Điều khiển câu chuyện">
-              <label>
-                <span>Tiến độ câu chuyện</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={Math.max(0, vm.narration.durationSeconds)}
-                  step={0.1}
-                  value={Math.min(vm.narration.currentTimeSeconds, vm.narration.durationSeconds)}
-                  disabled={!vm.narration.canSeek}
-                  onChange={(event) => actions.onSeekNarration(Number(event.target.value))}
-                  aria-label="Tiến độ câu chuyện"
-                />
-              </label>
-              <output aria-label="Thời lượng câu chuyện">
-                {formatDuration(vm.narration.currentTimeSeconds)} /{' '}
-                {formatDuration(vm.narration.durationSeconds)}
-              </output>
-            </div>
-          ) : null}
         </div>
 
-        {/* Ambient background music toggle */}
-        {ambientControl.available ? (
-          <div className="immersive-story-sheet__ambient-row">
-            <button
-              type="button"
-              className="immersive-story-sheet__ambient-btn"
-              onClick={ambientControl.onToggle}
-              aria-pressed={ambientControl.enabled}
-              aria-label={ambientControl.enabled ? 'Tắt nhạc nền' : 'Bật nhạc nền'}
-            >
-              {ambientControl.enabled ? 'Tắt nhạc nền' : 'Bật nhạc nền'}
-            </button>
-          </div>
-        ) : null}
+        {/* Quieter Semantic Options / Actions */}
+        <div className="immersive-story-sheet__options-list">
+          {/* Ambient sound toggle */}
+          {ambientControl.available ? (
+            <div className="immersive-story-sheet__option-row">
+              <div className="immersive-story-sheet__option-info">
+                <span className="immersive-story-sheet__option-icon" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M9 18V5l12-2v13" />
+                    <circle cx="6" cy="18" r="3" />
+                    <circle cx="18" cy="16" r="3" />
+                  </svg>
+                </span>
+                <span className="immersive-story-sheet__option-label">Nhạc nền không gian</span>
+              </div>
+              <button
+                type="button"
+                className="immersive-story-sheet__ambient-btn"
+                onClick={ambientControl.onToggle}
+                aria-pressed={ambientControl.enabled}
+                aria-label={ambientControl.enabled ? 'Tắt nhạc nền' : 'Bật nhạc nền'}
+              >
+                {ambientControl.enabled ? 'Tắt nhạc nền' : 'Bật nhạc nền'}
+              </button>
+            </div>
+          ) : null}
 
-        {/* Captions and Transcript */}
-        {vm.transcript.available ? (
-          <div className="immersive-story-sheet__transcript-row">
-            {vm.transcript.capability === 'timed-captions' ? (
+          {/* Captions toggle */}
+          {vm.transcript.available && vm.transcript.capability === 'timed-captions' ? (
+            <div className="immersive-story-sheet__option-row">
+              <div className="immersive-story-sheet__option-info">
+                <span className="immersive-story-sheet__option-icon" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                    <path d="M7 15h3M14 15h3M7 11h10" />
+                  </svg>
+                </span>
+                <span className="immersive-story-sheet__option-label">Phụ đề trên màn hình</span>
+              </div>
               <button
                 type="button"
                 className="immersive-story-sheet__captions-btn"
@@ -174,34 +230,63 @@ export const ImmersiveStorySheet: FC<ImmersiveStorySheetProps> = ({
               >
                 {vm.captionsEnabled ? 'Tắt phụ đề' : 'Bật phụ đề'}
               </button>
-            ) : null}
-            <button
-              type="button"
-              className="immersive-story-sheet__transcript-btn"
-              onClick={onOpenTranscript}
-              aria-label="Mở bản chép lời"
-            >
-              Bản chép lời
-            </button>
-          </div>
-        ) : null}
+            </div>
+          ) : null}
 
-        {/* Locale control in Story Sheet */}
-        {vm.narration.alternateLocales.length > 0 ? (
-          <div className="immersive-story-sheet__locales-row">
-            {vm.narration.alternateLocales.map((locale) => (
+          {/* Transcript entry */}
+          {vm.transcript.available ? (
+            <div className="immersive-story-sheet__option-row">
+              <div className="immersive-story-sheet__option-info">
+                <span className="immersive-story-sheet__option-icon" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    width="16"
+                    height="16"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                </span>
+                <span className="immersive-story-sheet__option-label">
+                  Bản chép lời thuyết minh
+                </span>
+              </div>
               <button
-                key={locale}
                 type="button"
-                className="immersive-story-sheet__locale-btn"
-                onClick={() => actions.onListenInLocale(locale)}
-                aria-label={`Nghe bằng ${LOCALE_LABELS[locale]}`}
+                className="immersive-story-sheet__transcript-btn"
+                onClick={onOpenTranscript}
+                aria-label="Mở bản chép lời"
               >
-                Nghe bằng {LOCALE_LABELS[locale]}
+                Mở bản chép lời
               </button>
-            ))}
-          </div>
-        ) : null}
+            </div>
+          ) : null}
+
+          {/* Locale selection */}
+          {vm.narration.alternateLocales.length > 0 ? (
+            <div className="immersive-story-sheet__option-row immersive-story-sheet__option-row--locales">
+              <div className="immersive-story-sheet__option-info">
+                <span className="immersive-story-sheet__option-label">Ngôn ngữ thuyết minh</span>
+              </div>
+              <div className="immersive-story-sheet__locales-list">
+                {vm.narration.alternateLocales.map((locale) => (
+                  <button
+                    key={locale}
+                    type="button"
+                    className="immersive-story-sheet__locale-btn"
+                    onClick={() => actions.onListenInLocale(locale)}
+                    aria-label={`Nghe bằng ${LOCALE_LABELS[locale]}`}
+                  >
+                    Nghe bằng {LOCALE_LABELS[locale]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
     </section>
   );

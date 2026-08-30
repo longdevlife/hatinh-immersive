@@ -802,9 +802,12 @@
 }
 
 .reference-parity-controls--cinematic .reference-parity__rail ul {
-  align-items: flex-end;
-  gap: clamp(0.45rem, 1.2vw, 1rem);
-  padding: 0.35rem 0.2rem 0.45rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.35rem;
+  list-style: none;
+  margin: 0;
 }
 
 .reference-parity-controls--cinematic .reference-parity__rail li {
@@ -814,28 +817,27 @@
 .reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn {
   position: relative;
   min-width: 44px;
-  min-height: 58px;
-  gap: 0.38rem;
-  padding: 0.35rem 0.35rem 0.55rem;
-  color: rgb(255 255 255 / 0.7);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #ffffff;
   background: transparent;
-  border-radius: 0.4rem;
-  font-size: 0.67rem;
-  text-shadow: 0 0.15rem 0.9rem rgb(0 0 0 / 0.85);
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.18s ease;
 }
 
 .reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn--major {
-  min-width: 82px;
-  color: rgb(255 255 255 / 0.88);
-  font-size: 0.73rem;
-  font-weight: 680;
+  min-width: 58px;
 }
 
 .reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn--connector {
-  min-width: 48px;
-  padding-inline: 0.25rem;
-  color: rgb(255 255 255 / 0.56);
-  font-size: 0.62rem;
+  min-width: 32px;
+  padding: 0 4px;
 }
 
 .reference-parity-controls--cinematic
@@ -844,13 +846,11 @@
 .reference-parity-controls--cinematic
   .reference-parity__rail
   .panorama-tour-rail__btn:focus-visible {
-  color: #ffffff;
-  background: rgb(5 18 14 / 0.18);
+  background: transparent;
   transform: translateY(-2px);
 }
 
 .reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn.is-current {
-  color: #ffffff;
   background: transparent;
   box-shadow: none;
   opacity: 1;
@@ -865,35 +865,91 @@
 .reference-parity-controls--cinematic
   .reference-parity__rail
   .panorama-tour-rail__btn.is-unavailable {
-  opacity: 0.38;
+  opacity: 0.4;
   cursor: not-allowed;
-}
-
-.reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__label {
-  max-width: 8.5rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-decoration: none;
 }
 
 .reference-parity-controls--cinematic
   .reference-parity__rail
-  .panorama-tour-rail__btn--connector
+  .panorama-tour-rail__btn.is-unavailable
+  .reference-parity__rail-thumb {
+  filter: grayscale(70%);
+  opacity: 0.35;
+}
+
+/* Floating label tooltip on Hover / Focus */
+.reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__label {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(8, 22, 18, 0.96), rgba(3, 12, 9, 0.98));
+  color: #fff6dc;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  z-index: 15;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__label::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: rgba(8, 22, 18, 0.96) transparent transparent transparent;
+}
+
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn:hover:not(:disabled)
+  .panorama-tour-rail__label,
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn:focus-visible
   .panorama-tour-rail__label {
-  max-width: 4.5rem;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .reference-parity-controls--cinematic .reference-parity__rail-thumb {
-  width: 78px;
-  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 38px;
   margin: 0;
-  border: 0;
-  border-radius: 0.35rem;
-  box-shadow: 0 0.45rem 1.2rem rgb(0 0 0 / 0.32);
-  opacity: 0.82;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  opacity: 0.76;
+  overflow: hidden;
   transition:
-    transform var(--panorama-motion) var(--panorama-ease),
-    opacity var(--panorama-motion) var(--panorama-ease);
+    transform 0.18s ease,
+    outline 0.18s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .reference-parity-controls--cinematic
@@ -903,20 +959,28 @@
 .reference-parity-controls--cinematic
   .reference-parity__rail
   .panorama-tour-rail__btn:focus-visible
-  .reference-parity__rail-thumb,
-.reference-parity-controls--cinematic
-  .reference-parity__rail
-  .panorama-tour-rail__btn.is-current
   .reference-parity__rail-thumb {
   opacity: 1;
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn:focus-visible
+  .reference-parity__rail-thumb {
+  outline: 2px solid var(--color-accent-primary, #e5a95f);
+  outline-offset: 2px;
 }
 
 .reference-parity-controls--cinematic
   .reference-parity__rail
   .panorama-tour-rail__btn.is-current
   .reference-parity__rail-thumb {
-  outline: 2px solid var(--color-accent-primary, #e5a95f);
-  outline-offset: 3px;
+  opacity: 1;
+  outline: 2px solid var(--color-accent-terracotta, #c86843);
+  outline-offset: 2px;
+  box-shadow: 0 0 12px rgba(200, 104, 67, 0.55);
+  border-color: rgba(255, 255, 255, 0.35);
   transform: translateY(-2px);
 }
 
@@ -970,24 +1034,27 @@
 
   .reference-parity-controls--cinematic .reference-parity__rail ul {
     gap: 0.35rem;
-    padding-inline: 0.15rem;
-    scroll-padding-inline: 0.15rem;
+    padding-inline: 0.2rem;
+    scroll-padding-inline: 0.2rem;
   }
 
   .reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn--major {
-    min-width: 76px;
-    font-size: 0.66rem;
+    min-width: 48px;
   }
 
   .reference-parity-controls--cinematic
     .reference-parity__rail
     .panorama-tour-rail__btn--connector {
-    min-width: 44px;
+    min-width: 32px;
   }
 
   .reference-parity-controls--cinematic .reference-parity__rail-thumb {
-    width: 68px;
-    height: 42px;
+    width: 52px;
+    height: 36px;
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__label {
+    display: none;
   }
 }
 
