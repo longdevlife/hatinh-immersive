@@ -808,6 +808,7 @@
   padding: 0.25rem 0.35rem;
   list-style: none;
   margin: 0;
+  overflow: visible;
 }
 
 .reference-parity-controls--cinematic .reference-parity__rail li {
@@ -1036,6 +1037,8 @@
     gap: 0.35rem;
     padding-inline: 0.2rem;
     scroll-padding-inline: 0.2rem;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 
   .reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn--major {

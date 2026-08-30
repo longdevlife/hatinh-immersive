@@ -184,6 +184,34 @@ test('Sơn Trang remains unavailable when customer demo is explicitly requested'
   await expect(page.getByRole('button', { name: 'Khám phá 360°' })).toHaveCount(0);
 });
 
+test('desktop scene portal hover label is visibly rendered outside the thumbnail strip', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(customerDemoSceneUrl);
+  await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
+
+  const rail = page.getByRole('navigation', { name: 'Hành trình 360 Biển Thiên Cầm' });
+  const shorePortal = rail.getByRole('button', { name: 'Bờ biển Thiên Cầm', exact: true });
+  const hoverLabel = shorePortal.locator('.panorama-tour-rail__label');
+
+  await shorePortal.hover();
+  await expect(hoverLabel).toHaveCSS('opacity', '1');
+
+  const visibleRatio = await hoverLabel.evaluate(
+    (label) =>
+      new Promise<number>((resolve) => {
+        const observer = new IntersectionObserver(([entry]) => {
+          observer.disconnect();
+          resolve(entry?.intersectionRatio ?? 0);
+        });
+        observer.observe(label);
+      }),
+  );
+
+  expect(visibleRatio).toBeGreaterThan(0.95);
+});
+
 test('captures Product-reviewable panorama evidence for desktop and mobile states', async ({
   page,
 }, testInfo) => {
