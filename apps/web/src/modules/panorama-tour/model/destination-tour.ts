@@ -55,7 +55,8 @@ export interface DestinationTourHotspot {
 export interface DestinationTour {
   destinationSlug: string;
   title: string;
-  defaultSceneId: string;
+  /** Empty/public showcase tours have no physical entry scene. */
+  defaultSceneId: string | null;
   mediaMode: DestinationTourMediaMode;
   scenes: readonly DestinationTourScene[];
   links: readonly DestinationTourLink[];
@@ -107,7 +108,11 @@ export function validateDestinationTour(tour: DestinationTour): DestinationTourG
     }
   }
 
-  if (!scenesById.has(tour.defaultSceneId)) {
+  if (tour.defaultSceneId === null) {
+    if (tour.scenes.length > 0) {
+      issues.push('DEFAULT_SCENE_NOT_FOUND:null');
+    }
+  } else if (!scenesById.has(tour.defaultSceneId)) {
     issues.push(`DEFAULT_SCENE_NOT_FOUND:${tour.defaultSceneId}`);
   }
 

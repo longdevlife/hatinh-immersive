@@ -20,10 +20,11 @@ import {
 
 import {
   canEnterSelected3D,
+  DEFAULT_DESTINATION_CAPABILITY_CONFIG,
   resolveDestinationCapabilityConfig,
 } from '../modules/destination-detail/model/destination-capabilities';
 import {
-  DEMO_DESTINATIONS,
+  getDemoDestinationPreviews,
   getDemoManifest,
 } from '../modules/immersive-navigation/fake-mode/demo-catalog';
 import { getDemoSelected3DAnchors } from '../modules/immersive-navigation/fake-mode/selected-3d-demo-anchors';
@@ -41,6 +42,7 @@ import { createHomeDestinationVms } from '../modules/home/model/home-destination
 import { PUBLIC_NAV_ITEMS, PublicLayout } from '../modules/site-shell';
 import { createFakeImmersiveManifest } from '../modules/immersive-navigation/fake-mode/manifest';
 import './styles/index.css';
+import { isCustomerDemoRoute } from './customer-demo';
 
 const LazyImmersiveExperience = lazy(() =>
   import('../modules/immersive-navigation').then(({ ImmersiveExperience }) => ({
@@ -81,32 +83,47 @@ if (import.meta.env.VITE_IMMERSIVE_RENDERER_MODE === 'fake' && e2eFailure) {
 }
 
 const useFakeData = import.meta.env.VITE_IMMERSIVE_DATA_MODE === 'fake';
-const destinationCapabilityConfig = resolveDestinationCapabilityConfig(import.meta.env);
 const selected3DAnchorSource = resolveSelected3DAnchorSource(import.meta.env);
+const isExplicitSelected3DTestMode =
+  selected3DAnchorSource === 'demo' &&
+  import.meta.env.VITE_IMMERSIVE_PANORAMA_TOUR_MEDIA === 'synthetic' &&
+  import.meta.env.VITE_IMMERSIVE_PANORAMA_TOUR_TEST_MODE === 'true';
+const effectiveSelected3DAnchorSource = isExplicitSelected3DTestMode
+  ? selected3DAnchorSource
+  : 'none';
+const destinationCapabilityConfig = isExplicitSelected3DTestMode
+  ? resolveDestinationCapabilityConfig(import.meta.env)
+  : DEFAULT_DESTINATION_CAPABILITY_CONFIG;
 const panoramaTourSource = resolvePanoramaTourSource(import.meta.env);
 const panoramaTourMediaMode = resolvePanoramaTourMediaMode(import.meta.env);
+const fakeDemoMode = panoramaTourSource === 'demo' ? panoramaTourMediaMode : 'public';
 const audioSourcePolicy: ImmersiveAudioSourcePolicy =
   panoramaTourSource === 'demo' ? 'demo-speech-synthesis' : 'browser-file';
-const HOME_DESTINATIONS = createHomeDestinationVms(DEMO_DESTINATIONS.map(({ preview }) => preview));
+const HOME_DESTINATIONS = createHomeDestinationVms(getDemoDestinationPreviews('public'));
 
 function FakeImmersiveExperience() {
   const { destinationSlug = DEFAULT_PUBLIC_DESTINATION_SLUG } = useParams();
-  const demoDestination = DEMO_DESTINATIONS.find(({ preview }) => preview.slug === destinationSlug);
+  const demoDestination = getDemoDestinationPreviews(fakeDemoMode).find(
+    (destination) => destination.slug === destinationSlug,
+  );
   const manifest = demoDestination
-    ? getDemoManifest(destinationSlug, 'synthetic')
+    ? getDemoManifest(destinationSlug, fakeDemoMode)
     : createFakeImmersiveManifest();
   const destinations = demoDestination
-    ? DEMO_DESTINATIONS.map(({ preview }) => preview)
-    : [manifest.destination, ...DEMO_DESTINATIONS.map(({ preview }) => preview)];
+    ? getDemoDestinationPreviews(fakeDemoMode)
+    : [manifest.destination, ...getDemoDestinationPreviews(fakeDemoMode)];
 
   return (
     <Suspense fallback={<ImmersiveRouteLoading />}>
       <LazyImmersiveExperience
         destinations={destinations}
         manifest={manifest}
-        selected3DAnchors={getDemoSelected3DAnchors(destinationSlug)}
+        {...(isExplicitSelected3DTestMode
+          ? { selected3DAnchors: getDemoSelected3DAnchors(destinationSlug) }
+          : {})}
+        selected3DAnchorSource={effectiveSelected3DAnchorSource}
         panoramaTourSource={panoramaTourSource}
-        panoramaTourMediaMode={panoramaTourMediaMode}
+        panoramaTourMediaMode={fakeDemoMode}
         audioSourcePolicy={audioSourcePolicy}
       />
     </Suspense>
@@ -128,7 +145,26 @@ function PublicImmersiveExperience() {
         panoramaTourSource={panoramaTourSource}
         panoramaTourMediaMode={panoramaTourMediaMode}
         audioSourcePolicy={audioSourcePolicy}
-        selected3DAnchorSource={selected3DAnchorSource}
+        selected3DAnchorSource={effectiveSelected3DAnchorSource}
+      />
+    </Suspense>
+  );
+}
+
+function CustomerDemoImmersiveExperience() {
+  const manifest = getDemoManifest('bien-thien-cam', 'public');
+
+  return (
+    <Suspense fallback={<ImmersiveRouteLoading />}>
+      <LazyImmersiveExperience
+        destinations={getDemoDestinationPreviews('public')}
+        manifest={manifest}
+        panoramaTourSource="demo"
+        panoramaTourMediaMode="public"
+        panoramaRuntimeMediaPolicy="demo"
+        isCustomerDemo
+        selected3DAnchorSource="none"
+        audioSourcePolicy="demo-speech-synthesis"
       />
     </Suspense>
   );
@@ -139,7 +175,17 @@ function ImmersiveRoute() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const requestedMode = searchParams.get('mode');
-  const canEnterPanorama = requestedMode === 'panorama';
+  const isCustomerDemo = isCustomerDemoRoute(location.search, destinationSlug);
+  const isCustomerDemoOptIn = searchParams.get('demo') === 'customer';
+  const isUnverifiedPublicFakePanorama =
+    useFakeData &&
+    requestedMode === 'panorama' &&
+    destinationSlug === 'son-trang-co-dam' &&
+    fakeDemoMode !== 'synthetic';
+  const canEnterPanorama =
+    requestedMode === 'panorama' &&
+    !isUnverifiedPublicFakePanorama &&
+    (!isCustomerDemoOptIn || isCustomerDemo);
   const canEnterSelected3D = canEnterSelected3DForSlug(destinationSlug, requestedMode);
 
   if (!canEnterPanorama && !canEnterSelected3D) {
@@ -149,6 +195,10 @@ function ImmersiveRoute() {
         to={createDestinationDetailHref(destinationSlug, searchParams.get('returnTo') ?? undefined)}
       />
     );
+  }
+
+  if (isCustomerDemo) {
+    return <CustomerDemoImmersiveExperience />;
   }
 
   return useFakeData && e2eFailure !== 'manifest' ? (
@@ -168,7 +218,7 @@ function canEnterSelected3DForSlug(destinationSlug: string, requestedMode: strin
 function PublicExplore() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
+  const destinations = useFakeData ? getDemoDestinationPreviews(fakeDemoMode) : undefined;
   const initialDestinationSlug = searchParams.get('destination') ?? undefined;
   const initialQuery = searchParams.get('q') ?? undefined;
   const initialCategory = searchParams.get('category') ?? undefined;
@@ -222,7 +272,7 @@ function PublicPageLayout({ children }: { children: ReactNode }) {
 }
 
 function PublicDestinationDetail() {
-  const destinations = useFakeData ? DEMO_DESTINATIONS.map(({ preview }) => preview) : undefined;
+  const destinations = useFakeData ? getDemoDestinationPreviews(fakeDemoMode) : undefined;
   const sonTrangMedia = useFakeData
     ? {
         hero: getDemoDestinationMedia('son-trang-co-dam')?.hero ?? null,

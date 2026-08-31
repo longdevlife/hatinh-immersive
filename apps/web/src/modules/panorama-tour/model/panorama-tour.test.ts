@@ -128,13 +128,15 @@ describe('Sơn Trang panorama tour model', () => {
   });
 
   it('does not make low-resolution demo media publicly navigable', () => {
-    expect(
-      isPanoramaSceneUsable({
-        ...nodes[0]!,
-        mediaQuality: 'low-resolution',
-        mediaRights: 'demo-only',
-      }),
-    ).toBe(false);
+    const lowResolutionDemoNode = {
+      ...nodes[0]!,
+      mediaQuality: 'low-resolution' as const,
+      mediaRights: 'demo-only' as const,
+      panoramaUrl: '/demo/360/thien-cam-boardwalk/manifest.json',
+    };
+
+    expect(isPanoramaSceneUsable(lowResolutionDemoNode)).toBe(false);
+    expect(isPanoramaSceneUsable(lowResolutionDemoNode, 'demo')).toBe(true);
   });
 
   it('accepts only a linked, usable directional target', () => {

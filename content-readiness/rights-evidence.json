@@ -1,0 +1,95 @@
+{
+  "generatedAt": "2026-08-20",
+  "baseline": "8aa64eeaefceb8fcbbf01cba13442c8dc593f8f3",
+  "policy": {
+    "productionPanoramaRights": ["customer-owned", "licensed"],
+    "productionAudioRights": ["customer-owned", "licensed"],
+    "publicViewerIsReuseGrant": false,
+    "demoOnlyIsProductionEligible": false,
+    "requiredEvidence": ["rightsHolder", "rightsReference", "sourceReference", "version"]
+  },
+  "records": [
+    {
+      "id": "existing-repo-demo-panoramas",
+      "mediaKind": "panorama",
+      "scope": "five reconstructed 2048x1024 equirectangular demo candidates",
+      "sourceReference": "apps/web/public/demo/360",
+      "usageLane": "existing-repo-demo",
+      "rightsStatus": "unverified",
+      "rightsHolder": null,
+      "rightsReference": null,
+      "productionEligible": false,
+      "evidence": [
+        "content-readiness/panorama-inventory.json",
+        "local demo candidate bundle manifest supplied outside the repository"
+      ]
+    },
+    {
+      "id": "son-trang-low-resolution-demo-panoramas",
+      "mediaKind": "panorama",
+      "scope": "eight 256x128 repository derivatives",
+      "sourceReference": "apps/web/public/demo/360/son-trang-tour",
+      "usageLane": "existing-repo-demo",
+      "rightsStatus": "unverified",
+      "rightsHolder": null,
+      "rightsReference": null,
+      "productionEligible": false,
+      "evidence": ["content-readiness/panorama-inventory.json"]
+    },
+    {
+      "id": "hatinh360-public-panorama-candidates",
+      "mediaKind": "panorama",
+      "scope": "public cube-tile candidates for Thiên Cầm and Nguyễn Du",
+      "sourceReference": "https://dulichhatinh360.com/",
+      "usageLane": "discovery-only",
+      "rightsStatus": "unverified",
+      "rightsHolder": null,
+      "rightsReference": null,
+      "productionEligible": false,
+      "evidence": [
+        "content-readiness/external-candidates.json",
+        "content-readiness/hatinh360-download-probe.md"
+      ]
+    },
+    {
+      "id": "hatinh360-reference-audio",
+      "mediaKind": "audio",
+      "scope": "runtime-observed shared ambient and selected prerecorded narration",
+      "sourceReference": "https://dulichhatinh360.com/",
+      "usageLane": "reference-only",
+      "rightsStatus": "unverified",
+      "rightsHolder": null,
+      "rightsReference": null,
+      "productionEligible": false,
+      "evidence": [
+        "content-readiness/audio-inventory.json",
+        "content-readiness/external-candidates.json"
+      ]
+    },
+    {
+      "id": "repository-production-audio",
+      "mediaKind": "audio",
+      "scope": "four ambient targets and nineteen VI narration targets",
+      "sourceReference": "repository audit",
+      "usageLane": "production",
+      "rightsStatus": "missing",
+      "rightsHolder": null,
+      "rightsReference": null,
+      "productionEligible": false,
+      "evidence": ["content-readiness/audio-inventory.json"]
+    },
+    {
+      "id": "repository-production-transcripts",
+      "mediaKind": "transcript",
+      "scope": "nineteen VI transcript targets",
+      "sourceReference": "repository audit",
+      "usageLane": "production",
+      "rightsStatus": "missing",
+      "rightsHolder": null,
+      "rightsReference": null,
+      "productionEligible": false,
+      "evidence": ["content-readiness/transcript-inventory.json"]
+    }
+  ],
+  "verdict": "NO_PRODUCTION_RIGHTS_EVIDENCE_COMPLETE"
+}

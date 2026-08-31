@@ -10,12 +10,14 @@ test('keeps one panorama viewport while following a linked scene', async ({ page
     1,
   );
 
-  await page.evaluate(() => performance.mark('scene-nav-start'));
-  await page
+  const nextSceneButton = page
     .getByRole('navigation', { name: /Hành trình 360|Danh sách cảnh quan/ })
     .getByRole('button')
-    .nth(1)
-    .click();
+    .nth(1);
+  await nextSceneButton.evaluate((button) => {
+    performance.mark('scene-nav-start');
+    (button as HTMLButtonElement).click();
+  });
   await expect(page.getByRole('heading', { name: 'Bờ biển Thiên Cầm' })).toBeVisible();
   await expect(page.getByRole('application', { name: 'Không gian toàn cảnh 360 độ' })).toHaveCount(
     1,

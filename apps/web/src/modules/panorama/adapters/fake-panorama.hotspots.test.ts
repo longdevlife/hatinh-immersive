@@ -34,4 +34,30 @@ describe('FakePanoramaEngine hotspots', () => {
     button?.click();
     expect(selected).toHaveBeenCalledTimes(1);
   });
+
+  it('mirrors image-led scene portal semantics in deterministic mode', async () => {
+    const container = document.createElement('div');
+    const engine = new FakePanoramaEngine();
+    const scenePortal: HotspotVm = {
+      id: 'hotspot-scene-02',
+      sceneId: 'scene-01',
+      type: 'scene-navigation',
+      targetSceneId: 'scene-02',
+      yaw: 90,
+      pitch: 0,
+      label: 'Mở Bờ biển Thiên Cầm',
+      mediaUrl: '/demo/360/thien-cam-shore/preview.webp',
+    };
+
+    await engine.mount(container);
+    engine.setHotspots?.([scenePortal]);
+
+    const button = container.querySelector<HTMLButtonElement>('[data-fake-panorama-hotspot]');
+    const preview = button?.querySelector<HTMLImageElement>(
+      '.panorama-hotspot-marker__preview-image',
+    );
+    expect(button).not.toHaveAttribute('aria-haspopup');
+    expect(preview).toHaveAttribute('src', '/demo/360/thien-cam-shore/preview.webp');
+    expect(preview).toHaveAttribute('alt', '');
+  });
 });

@@ -25,6 +25,8 @@ export default defineConfig({
       VITE_IMMERSIVE_DATA_MODE: 'api',
       VITE_IMMERSIVE_SELECTED_3D_CAPABILITIES:
         'son-trang-co-dam=available,bien-thien-cam=unavailable,generic-fallback=available',
+      VITE_IMMERSIVE_PANORAMA_TOUR_MEDIA: 'synthetic',
+      VITE_IMMERSIVE_PANORAMA_TOUR_TEST_MODE: 'true',
       VITE_IMMERSIVE_SELECTED_3D_ANCHOR_SOURCE: 'demo',
     },
     reuseExistingServer: false,

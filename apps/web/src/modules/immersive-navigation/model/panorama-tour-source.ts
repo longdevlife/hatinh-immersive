@@ -3,7 +3,10 @@ import {
   createDemoPanoramaTourManifest,
   type DemoPanoramaMediaMode,
 } from '../fake-mode/panorama-tour-demo';
-import { getDemoSceneDefinitions } from '../fake-mode/demo-tour-catalog';
+import {
+  getDemoSceneDefinitions,
+  getPublicDemoDestinationPreview,
+} from '../fake-mode/demo-tour-catalog';
 import type { DestinationPreviewVm } from '../../../shared/contracts';
 
 export type PanoramaTourSource = 'demo' | 'none';
@@ -55,9 +58,14 @@ export function composePanoramaTourManifest(
 export function composePanoramaTourDestination(
   destination: DestinationPreviewVm,
   source: PanoramaTourSource,
+  mediaMode: PanoramaTourMediaMode = 'public',
 ): DestinationPreviewVm {
   if (source !== 'demo' || !isDemoTourDestination(destination.slug)) {
     return destination;
+  }
+
+  if (destination.slug === 'son-trang-co-dam' && mediaMode === 'public') {
+    return getPublicDemoDestinationPreview(destination);
   }
 
   return {

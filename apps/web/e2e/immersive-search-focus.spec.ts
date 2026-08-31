@@ -6,9 +6,7 @@ test('keeps the unified media dock keyboard focusable', async ({ page }) => {
   const mediaDock = page.getByRole('region', { name: 'Media dock trải nghiệm' });
   await expect(mediaDock).toBeVisible();
 
-  const autoTourButton = mediaDock.getByRole('button', {
-    name: 'Bắt đầu tự động tham quan',
-  });
+  const autoTourButton = page.getByRole('button', { name: 'Bắt đầu hành trình' });
   await expect(autoTourButton).toBeVisible();
   await autoTourButton.focus();
   await expect(autoTourButton).toBeFocused();

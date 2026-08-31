@@ -416,7 +416,7 @@
 
 .panorama-tour-rail {
   max-width: 100%;
-  background: var(--panorama-surface);
+  background: color-mix(in srgb, var(--panorama-surface) 86%, transparent);
   border: 1px solid var(--panorama-border);
   border-radius: var(--radius-control, 999px);
   box-shadow: var(--elevation-1, 0 0.75rem 2rem rgb(3 12 9 / 0.22));
@@ -431,6 +431,7 @@
   margin: 0;
   padding: 0.25rem 0.35rem;
   overflow-x: auto;
+  scroll-padding-inline: 0.45rem;
   list-style: none;
   scrollbar-width: none;
 }
@@ -481,7 +482,8 @@
 .panorama-tour-rail__btn.is-current {
   font-weight: 740;
   color: var(--color-text-inverse, #fff);
-  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 34%, var(--panorama-surface));
+  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 38%, var(--panorama-surface));
+  box-shadow: inset 0 -2px 0 var(--color-accent-primary, #e5a95f);
   opacity: 1;
 }
 
@@ -492,8 +494,6 @@
 .panorama-tour-rail__btn.is-unavailable {
   opacity: 0.4;
   cursor: not-allowed;
-  text-decoration: line-through;
-  text-decoration-color: rgb(255 255 255 / 0.5);
 }
 
 .panorama-tour-rail__indicator {
@@ -652,6 +652,426 @@
   }
 }
 
+/* ==========================================================================
+   PHASE 3.1 CINEMATIC WAYFINDING
+   Presentation-only reinterpretation of the existing panorama contracts.
+   ========================================================================== */
+
+.reference-parity-controls--cinematic .panorama-tour-top-bar {
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.reference-parity-controls--cinematic .panorama-tour-back-btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 0.25rem;
+  color: rgb(255 255 255 / 0.94);
+  background: transparent;
+  border: 0;
+  border-radius: 0.35rem;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  text-shadow: 0 0.15rem 1rem rgb(0 0 0 / 0.65);
+}
+
+.reference-parity-controls--cinematic .panorama-tour-back-btn:hover {
+  color: var(--color-accent-primary, #e5a95f);
+  background: rgb(5 18 14 / 0.18);
+}
+
+.reference-parity-controls--cinematic .panorama-tour-back-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+.reference-parity-controls--cinematic .panorama-tour-context {
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-height: 44px;
+  padding: 0.16rem 0 0.16rem 0.85rem;
+  background: transparent;
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--color-accent-primary, #e5a95f) 72%, transparent);
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.reference-parity-controls--cinematic .panorama-tour-context__badge {
+  color: rgb(255 255 255 / 0.68);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+}
+
+.reference-parity-controls--cinematic .panorama-tour-context__title {
+  max-width: min(26rem, 42vw);
+  color: #ffffff;
+  font-size: clamp(0.9rem, 1.15vw, 1.08rem);
+  font-weight: 680;
+  letter-spacing: -0.01em;
+  text-shadow: 0 0.15rem 1.25rem rgb(0 0 0 / 0.7);
+}
+
+.reference-parity-controls--cinematic .panorama-demo-badge {
+  color: rgb(255 224 166 / 0.74);
+  font-size: 0.56rem;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.reference-parity-controls--cinematic .reference-parity__utilities {
+  isolation: isolate;
+  gap: 0.05rem;
+  margin: -0.2rem;
+  padding: 0.2rem;
+}
+
+.reference-parity-controls--cinematic .reference-parity__utilities::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  border-radius: 1.35rem;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(4 18 13 / 0.28) 18%,
+    rgb(4 18 13 / 0.48) 52%,
+    rgb(4 18 13 / 0.22) 88%,
+    transparent 100%
+  );
+  box-shadow: 0 0.55rem 1.3rem rgb(0 0 0 / 0.16);
+  content: '';
+  pointer-events: none;
+}
+
+.reference-parity-controls--cinematic .reference-parity__utilities .panorama-control {
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: rgb(255 255 255 / 0.84);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  text-shadow: 0 0.15rem 1rem rgb(0 0 0 / 0.65);
+}
+
+.reference-parity-controls--cinematic .reference-parity__utilities .panorama-control:hover {
+  color: #ffffff;
+  background: rgb(5 18 14 / 0.24);
+}
+
+.reference-parity-controls--cinematic .reference-parity__utilities .panorama-control:focus-visible {
+  outline-offset: -1px;
+}
+
+.reference-parity-controls--cinematic .reference-parity__utilities .panorama-locale-control {
+  font-size: 0.66rem;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+}
+
+.reference-parity-controls--cinematic .reference-parity__minimap-btn.is-active {
+  color: var(--color-accent-primary, #e5a95f);
+  background: transparent;
+  border: 0;
+  box-shadow: inset 0 -2px 0 var(--color-accent-primary, #e5a95f);
+}
+
+.reference-parity-controls--cinematic .reference-parity__scenes {
+  bottom: clamp(1rem, 2.8vw, 1.8rem);
+  width: min(86vw, 54rem);
+  max-width: min(86vw, 54rem);
+}
+
+.reference-parity-controls--cinematic .reference-parity__journey-controls {
+  margin-bottom: 2.25rem;
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail {
+  max-width: 100%;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail ul {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.35rem;
+  list-style: none;
+  margin: 0;
+  overflow: visible;
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail li {
+  flex: 0 0 auto;
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn {
+  position: relative;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #ffffff;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform 0.18s ease;
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn--major {
+  min-width: 58px;
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn--connector {
+  min-width: 32px;
+  padding: 0 4px;
+}
+
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn:hover:not(:disabled),
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn:focus-visible {
+  background: transparent;
+  transform: translateY(-2px);
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn.is-current {
+  background: transparent;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn.is-current::after {
+  display: none;
+}
+
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn.is-unavailable {
+  opacity: 0.4;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn.is-unavailable
+  .reference-parity__rail-thumb {
+  filter: grayscale(70%);
+  opacity: 0.35;
+}
+
+/* Floating label tooltip on Hover / Focus */
+.reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__label {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(8, 22, 18, 0.96), rgba(3, 12, 9, 0.98));
+  color: #fff6dc;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  z-index: 15;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__label::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px;
+  border-style: solid;
+  border-color: rgba(8, 22, 18, 0.96) transparent transparent transparent;
+}
+
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn:hover:not(:disabled)
+  .panorama-tour-rail__label,
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn:focus-visible
+  .panorama-tour-rail__label {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 38px;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  opacity: 0.76;
+  overflow: hidden;
+  transition:
+    transform 0.18s ease,
+    outline 0.18s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.reference-parity-controls--cinematic .reference-parity__rail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn:hover:not(:disabled)
+  .reference-parity__rail-thumb,
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn:focus-visible
+  .reference-parity__rail-thumb {
+  opacity: 1;
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn:focus-visible
+  .reference-parity__rail-thumb {
+  outline: 2px solid var(--color-accent-primary, #e5a95f);
+  outline-offset: 2px;
+}
+
+.reference-parity-controls--cinematic
+  .reference-parity__rail
+  .panorama-tour-rail__btn.is-current
+  .reference-parity__rail-thumb {
+  opacity: 1;
+  outline: 2px solid var(--color-accent-terracotta, #c86843);
+  outline-offset: 2px;
+  box-shadow: 0 0 12px rgba(200, 104, 67, 0.55);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 767px) {
+  .reference-parity-controls--cinematic .reference-parity__top-left .panorama-tour-back-btn {
+    padding-inline: 0.2rem;
+    background: transparent;
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__top-left .reference-parity__context {
+    top: calc(max(0.75rem, env(safe-area-inset-top)) + 3.7rem);
+    right: auto;
+    left: max(0.75rem, env(safe-area-inset-left));
+    width: min(70vw, 18rem);
+    max-width: calc(100vw - 1.5rem);
+    min-height: 0;
+    padding: 0.25rem 0 0.25rem 0.65rem;
+    background: transparent;
+    border-left-width: 2px;
+    box-shadow: none;
+  }
+
+  .reference-parity-controls--cinematic .panorama-tour-context__title {
+    max-width: min(78vw, 20rem);
+    font-size: 0.92rem;
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__utilities {
+    gap: 0;
+    margin: -0.2rem;
+    padding: 0.2rem;
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__scenes {
+    bottom: max(0.55rem, env(safe-area-inset-bottom));
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__journey-controls {
+    justify-content: flex-end;
+    padding-right: max(0.45rem, env(safe-area-inset-right));
+    margin-bottom: 0.35rem;
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__start-journey-btn {
+    min-height: 44px;
+    padding: 0 0.65rem;
+    font-size: 0.72rem;
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__rail ul {
+    gap: 0.35rem;
+    padding-inline: 0.2rem;
+    scroll-padding-inline: 0.2rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn--major {
+    min-width: 48px;
+  }
+
+  .reference-parity-controls--cinematic
+    .reference-parity__rail
+    .panorama-tour-rail__btn--connector {
+    min-width: 32px;
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__rail-thumb {
+    width: 52px;
+    height: 36px;
+  }
+
+  .reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__label {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reference-parity-controls--cinematic .reference-parity__rail .panorama-tour-rail__btn,
+  .reference-parity-controls--cinematic .reference-parity__rail-thumb {
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .panorama-control,
   .panorama-scene-browser button,
@@ -700,18 +1120,166 @@
   box-sizing: border-box;
 }
 
+.panorama-demo-badge {
+  color: var(--color-accent-primary, #e5a95f);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+}
+
 .reference-parity__utilities {
   position: absolute;
   top: var(--safe-area-spacing, clamp(1rem, 2.5vw, 2rem));
   right: var(--safe-area-spacing, clamp(1rem, 4vw, 4rem));
   display: flex;
   align-items: center;
-  gap: var(--space-2, 0.5rem);
+  gap: var(--space-2, 0.35rem);
+  padding: 0.2rem 0.35rem;
+  background: color-mix(in srgb, var(--panorama-surface, rgb(8 22 18 / 0.85)) 92%, transparent);
+  border: 1px solid var(--panorama-border, rgb(255 255 255 / 0.18));
+  border-radius: var(--radius-control, 999px);
+  backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  box-shadow: var(--elevation-1, 0 0.75rem 2rem rgb(3 12 9 / 0.22));
   pointer-events: auto;
   z-index: 2;
 }
 
+.reference-parity__utilities .panorama-control {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.reference-parity__utilities .panorama-control:hover,
+.reference-parity__utilities .panorama-control:focus-visible {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.reference-parity__more-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.reference-parity__more-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  background: rgb(8 22 18 / 0.95);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.55);
+  z-index: 10;
+  min-width: 44px;
+}
+
+.reference-parity__more-menu .panorama-control {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 8px;
+}
+
+/* Journey Zone & Auto Tour Controls */
+.reference-parity__journey-controls {
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.reference-parity__autotour-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.65rem;
+  background: color-mix(in srgb, var(--panorama-surface, rgb(8 22 18 / 0.88)) 92%, transparent);
+  border: 1px solid var(--panorama-border, rgb(255 255 255 / 0.18));
+  border-radius: var(--radius-control, 999px);
+  backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  box-shadow: 0 0.75rem 2rem rgb(3 12 9 / 0.38);
+}
+
+.reference-parity__autotour-status {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: #fff0c9;
+  letter-spacing: 0.02em;
+  padding: 0 0.35rem;
+  white-space: nowrap;
+}
+
+.reference-parity__autotour-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 0.75rem;
+  border-radius: var(--radius-control, 999px);
+  background: rgb(255 255 255 / 0.1);
+  border: 1px solid rgb(255 255 255 / 0.2);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.18s ease;
+}
+
+.reference-parity__autotour-btn:hover {
+  background: rgb(255 255 255 / 0.22);
+}
+
+.reference-parity__autotour-btn:focus-visible,
+.reference-parity__start-journey-btn:focus-visible {
+  outline: 2px solid var(--color-accent-primary, #e5a95f);
+  outline-offset: 2px;
+}
+
+.reference-parity__start-journey-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 1rem;
+  border-radius: var(--radius-control, 999px);
+  background: color-mix(in srgb, rgb(8 22 18 / 0.82) 90%, transparent);
+  border: 1px solid rgb(255 255 255 / 0.16);
+  color: rgb(255 255 255 / 0.85);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur-base, 1rem));
+  box-shadow: 0 0.35rem 1rem rgb(0 0 0 / 0.3);
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.15s ease;
+}
+
+.reference-parity__start-journey-btn:hover {
+  background: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 22%, rgb(8 22 18 / 0.9));
+  border-color: color-mix(in srgb, var(--color-accent-primary, #e5a95f) 60%, transparent);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
 .reference-parity__audio-btn.is-active,
+.reference-parity__sound-btn.is-active,
 .reference-parity__ambient-btn.is-active,
 .reference-parity__narration-btn.is-active,
 .reference-parity__autotour-btn.is-active,
@@ -791,9 +1359,9 @@
   }
 
   .reference-parity__utilities .panorama-control {
-    min-width: 40px;
-    width: 40px;
-    height: 40px;
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
     padding: 0;
   }
 
@@ -805,6 +1373,55 @@
   }
 
   .reference-parity__scenes {
-    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    bottom: max(0.85rem, env(safe-area-inset-bottom));
+    max-width: calc(100vw - 1rem);
+  }
+
+  .reference-parity__rail {
+    border-radius: 16px;
+  }
+
+  .reference-parity__rail ul {
+    padding-inline: 0.4rem;
+  }
+}
+
+/* Keep mobile scene identity readable without competing with the utility cluster. */
+@media (max-width: 767px) {
+  .reference-parity__top-left {
+    position: static;
+    display: contents;
+    max-width: none;
+  }
+
+  .reference-parity__top-left .panorama-tour-back-btn {
+    position: absolute;
+    top: max(0.75rem, env(safe-area-inset-top));
+    left: max(0.75rem, env(safe-area-inset-left));
+    z-index: 3;
+    padding-inline: 0.7rem;
+  }
+
+  .reference-parity__top-left .reference-parity__context {
+    position: absolute;
+    top: calc(max(0.75rem, env(safe-area-inset-top)) + 3.45rem);
+    right: max(0.75rem, env(safe-area-inset-right));
+    left: max(0.75rem, env(safe-area-inset-left));
+    align-items: flex-start;
+    max-width: none;
+    min-height: 0;
+    padding: 0.45rem 0.75rem;
+    border-radius: 0.85rem;
+  }
+
+  .reference-parity__top-left .panorama-tour-context__title {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
+  .reference-parity__utilities {
+    z-index: 3;
   }
 }

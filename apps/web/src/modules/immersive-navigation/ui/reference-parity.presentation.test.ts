@@ -271,7 +271,6 @@ describe('reference parity presentation contract', () => {
     expect(vm.autoTour).toEqual({
       isActive: false,
       isPaused: false,
-      phase: 'idle',
       currentIndex: 0,
       total: 2,
       canStart: true,
@@ -324,7 +323,6 @@ describe('reference parity presentation contract', () => {
     expect(vm.autoTour).toEqual({
       isActive: true,
       isPaused: false,
-      phase: 'narrating',
       currentIndex: 1,
       total: 2,
       canStart: false,

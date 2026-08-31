@@ -111,6 +111,44 @@ describe('ImmersiveControls', () => {
     ).toBeDisabled();
   });
 
+  it('uses canNavigate as the unavailable boundary for a usable low-resolution demo scene', () => {
+    const onSelectScene = vi.fn();
+    const tour = {
+      currentSceneId: 'gate',
+      status: 'ready' as const,
+      isTransitioning: false,
+      scenes: [
+        {
+          id: 'gate',
+          label: 'Cổng demo',
+          role: 'major-stop' as const,
+          isCurrent: true,
+          isVisited: true,
+          mediaQuality: 'low-resolution' as const,
+          canNavigate: true,
+        },
+      ],
+    };
+
+    render(
+      <ImmersiveControlsGroup
+        nodes={[]}
+        tour={tour}
+        tourActions={{
+          onBack: vi.fn(),
+          onRetry: vi.fn(),
+          onSelectScene,
+        }}
+      />,
+    );
+
+    const button = screen.getByRole('button', { name: /^Cổng demo$/ });
+    expect(button).toBeEnabled();
+    expect(button).not.toHaveClass('is-unavailable');
+    fireEvent.click(button);
+    expect(onSelectScene).toHaveBeenCalledWith('gate');
+  });
+
   it('does not render external walk buttons because PSV owns directional navigation', () => {
     render(
       <ImmersiveControlsGroup

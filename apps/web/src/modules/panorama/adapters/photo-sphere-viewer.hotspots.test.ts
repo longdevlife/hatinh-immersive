@@ -119,6 +119,17 @@ const hotspot: HotspotVm = {
   label: 'Câu chuyện địa danh',
 };
 
+const scenePortal: HotspotVm = {
+  id: 'hotspot-next-scene',
+  sceneId: node.id,
+  type: 'scene-navigation',
+  targetSceneId: 'scene-02',
+  yaw: 90,
+  pitch: 0,
+  label: 'Mở Bờ biển Thiên Cầm',
+  mediaUrl: '/demo/360/thien-cam-shore/preview.webp',
+};
+
 type HotspotEngine = PhotoSphereViewerEngine & {
   setHotspots(hotspots: HotspotVm[]): void;
   subscribeHotspotSelected(listener: (hotspotId: string) => void): () => void;
@@ -169,5 +180,30 @@ describe('PhotoSphereViewerEngine panorama hotspots', () => {
     unsubscribe();
     fakeViewer.markers.emit('select-marker', { marker: { id: hotspot.id } });
     expect(selected).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a scene-navigation hotspot as an image-led location portal', async () => {
+    const engine = new PhotoSphereViewerEngine({
+      loadPanorama: async () => ({ id: node.id }),
+      loadRuntime: async () => runtime,
+    }) as HotspotEngine;
+
+    await engine.mount(document.createElement('div'));
+    await engine.loadNode(node);
+    engine.setHotspots([scenePortal]);
+
+    const marker = fakeViewer.markers.setMarkersCalls.at(-1)?.[0] as {
+      element: HTMLElement;
+    };
+    const preview = marker.element.querySelector<HTMLImageElement>(
+      '.panorama-hotspot-marker__preview-image',
+    );
+
+    expect(marker.element).toHaveClass('panorama-hotspot-marker--scene-navigation');
+    expect(marker.element).not.toHaveAttribute('aria-haspopup');
+    expect(marker.element).toHaveAttribute('aria-label', 'Mở Bờ biển Thiên Cầm');
+    expect(preview).not.toBeNull();
+    expect(preview).toHaveAttribute('src', '/demo/360/thien-cam-shore/preview.webp');
+    expect(preview).toHaveAttribute('alt', '');
   });
 });

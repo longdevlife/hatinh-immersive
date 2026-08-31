@@ -6,6 +6,7 @@ import type {
   ReferenceParityPresentationVm,
 } from './reference-parity.presentation';
 import { ReferenceParityControls } from './ReferenceParityControls';
+import type { MinimalTravelJourneyControl } from './minimal-travel-controls.presentation';
 
 function createMockVm(
   overrides: Partial<ReferenceParityPresentationVm> = {},
@@ -96,7 +97,162 @@ function createMockActions(
   };
 }
 
+function createJourneyControl(
+  overrides: Partial<MinimalTravelJourneyControl['state']> = {},
+  actionOverrides: Partial<MinimalTravelJourneyControl['actions']> = {},
+): MinimalTravelJourneyControl {
+  return {
+    state: {
+      isActive: false,
+      isPaused: false,
+      currentIndex: 0,
+      total: 3,
+      canStart: false,
+      canPause: false,
+      canResume: false,
+      canSkipStory: false,
+      canPrevious: false,
+      canNext: false,
+      canExit: false,
+      ...overrides,
+    },
+    actions: {
+      onStartAutoTour: vi.fn(),
+      onPauseAutoTour: vi.fn(),
+      onResumeAutoTour: vi.fn(),
+      onSkipStory: vi.fn(),
+      onPreviousScene: vi.fn(),
+      onNextScene: vi.fn(),
+      onExitAutoTour: vi.fn(),
+      ...actionOverrides,
+    },
+  };
+}
+
 describe('ReferenceParityControls', () => {
+  it('keeps Sound, Minimap and Fullscreen direct while grouping Locale and Share', () => {
+    const baseVm = createMockVm();
+    const vm = createMockVm({
+      audio: {
+        ...baseVm.audio,
+        ambientAvailable: true,
+        masterMuted: false,
+      },
+    });
+
+    render(
+      <ReferenceParityControls
+        vm={vm}
+        actions={createMockActions()}
+        journeyControl={createJourneyControl()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Tắt âm thanh' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Mở bản đồ thu nhỏ' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Toàn màn hình' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Chia sẻ cảnh này' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tiện ích khác' }));
+    expect(screen.getByRole('button', { name: 'Chia sẻ cảnh này' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' })).toBeVisible();
+  });
+
+  it('places Auto Tour controls in Scene Journey and delegates only allowed actions', () => {
+    const onStartAutoTour = vi.fn();
+
+    render(
+      <ReferenceParityControls
+        vm={createMockVm()}
+        actions={createMockActions()}
+        journeyControl={createJourneyControl({ canStart: true }, { onStartAutoTour })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bắt đầu hành trình' }));
+    expect(onStartAutoTour).toHaveBeenCalledTimes(1);
+    expect(
+      screen.queryByRole('button', { name: 'Bắt đầu tự động tham quan' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('uses only Auto Tour transport while the journey is active', () => {
+    const onPauseAutoTour = vi.fn();
+
+    render(
+      <ReferenceParityControls
+        vm={createMockVm()}
+        actions={createMockActions()}
+        journeyControl={createJourneyControl(
+          {
+            isActive: true,
+            isPaused: false,
+            currentIndex: 1,
+            total: 3,
+            canPause: true,
+            canExit: true,
+          },
+          { onPauseAutoTour },
+        )}
+      />,
+    );
+
+    expect(screen.getByText('Đang tham quan 1 / 3')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Tạm dừng tự động tham quan' }));
+    expect(onPauseAutoTour).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses the correct direct sound action for blocked, muted and unmuted states', () => {
+    const blockedActions = createMockActions();
+    const blockedVm = createMockVm({
+      audio: {
+        ...createMockVm().audio,
+        ambientAvailable: true,
+        masterMuted: true,
+        autoplayBlocked: true,
+      },
+    });
+    const view = render(<ReferenceParityControls vm={blockedVm} actions={blockedActions} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Bật âm thanh' }));
+    expect(blockedActions.onEnableAudio).toHaveBeenCalledTimes(1);
+    expect(blockedActions.onToggleMasterMute).not.toHaveBeenCalled();
+
+    const mutedActions = createMockActions();
+    view.rerender(
+      <ReferenceParityControls
+        vm={createMockVm({
+          audio: {
+            ...createMockVm().audio,
+            ambientAvailable: true,
+            masterMuted: true,
+            autoplayBlocked: false,
+          },
+        })}
+        actions={mutedActions}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Bật âm thanh' }));
+    expect(mutedActions.onToggleMasterMute).toHaveBeenCalledTimes(1);
+
+    const unmutedActions = createMockActions();
+    view.rerender(
+      <ReferenceParityControls
+        vm={createMockVm({
+          audio: {
+            ...createMockVm().audio,
+            ambientAvailable: true,
+            masterMuted: false,
+            autoplayBlocked: false,
+          },
+        })}
+        actions={unmutedActions}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Tắt âm thanh' }));
+    expect(unmutedActions.onToggleMasterMute).toHaveBeenCalledTimes(1);
+  });
+
   it('renders top-left back button and destination context with active scene label', () => {
     const actions = createMockActions();
     const vm = createMockVm();
@@ -113,16 +269,53 @@ describe('ReferenceParityControls', () => {
     expect(screen.getAllByText('Lối dạo Thiên Cầm').length).toBeGreaterThan(0);
   });
 
-  it('leaves audio presentation to the unified media dock', () => {
+  it('exposes a panorama-first visual layer and a typed scene journey for QA', () => {
     const actions = createMockActions();
     const vm = createMockVm();
 
     render(<ReferenceParityControls vm={vm} actions={actions} />);
 
-    expect(screen.queryByRole('button', { name: /âm thanh/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Các công cụ tiện ích' })).toHaveAttribute(
+      'data-visual-priority',
+      'panorama',
+    );
+    expect(
+      screen.getByRole('navigation', { name: 'Hành trình 360 Biển Thiên Cầm' }),
+    ).toHaveAttribute('data-journey', 'scene-strip');
+    expect(screen.getByTestId('panorama-utility-cluster')).toHaveAttribute(
+      'data-utility-readability',
+      'scrim',
+    );
+    expect(screen.getByRole('button', { name: 'Lối dạo Thiên Cầm' })).toHaveAttribute(
+      'data-scene-role',
+      'major-stop',
+    );
+    expect(screen.getByRole('button', { name: 'Lối chuyển 1' })).toHaveAttribute(
+      'data-scene-role',
+      'connector',
+    );
+  });
+
+  it('keeps Back reachable while a scene transition is in flight', () => {
+    const actions = createMockActions();
+    const vm = createMockVm({ isTransitioning: true });
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
+    const backButton = screen.getByRole('button', { name: 'Quay lại Biển Thiên Cầm' });
+    expect(backButton).not.toBeDisabled();
+    fireEvent.click(backButton);
+    expect(actions.onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('leaves story narration presentation to the unified media dock', () => {
+    const actions = createMockActions();
+    const vm = createMockVm();
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
     expect(screen.queryByRole('button', { name: /thuyết minh/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /tự động tham quan/i })).not.toBeInTheDocument();
-    expect(actions.onToggleMasterMute).not.toHaveBeenCalled();
     expect(actions.onToggleAmbient).not.toHaveBeenCalled();
     expect(actions.onToggleNarration).not.toHaveBeenCalled();
   });
@@ -195,6 +388,85 @@ describe('ReferenceParityControls', () => {
     expect(actions.onSelectScene).toHaveBeenCalledWith('shore');
   });
 
+  it('treats a customer-demo low-resolution scene as usable when canNavigate is true', () => {
+    const actions = createMockActions();
+    const vm = createMockVm({
+      scenes: createMockVm().scenes.map((scene, index) =>
+        index === 0 ? { ...scene, mediaQuality: 'low-resolution', canNavigate: true } : scene,
+      ),
+    });
+
+    render(<ReferenceParityControls vm={vm} actions={actions} isCustomerDemo />);
+
+    const currentButton = screen.getByRole('button', {
+      name: /^Lối dạo Thiên Cầm$/,
+    });
+    expect(currentButton).toBeEnabled();
+    expect(currentButton).not.toHaveClass('is-unavailable');
+    expect(currentButton).toHaveAttribute('aria-label', 'Lối dạo Thiên Cầm');
+  });
+
+  it('keeps a scene with canNavigate false visibly and semantically unavailable', () => {
+    const actions = createMockActions();
+    const baseVm = createMockVm();
+    const vm = createMockVm({
+      scenes: [
+        ...baseVm.scenes,
+        {
+          ...baseVm.scenes[0],
+          id: 'unavailable-scene',
+          label: 'Không gian chưa có',
+          shortLabel: 'Chưa có',
+          role: 'major-stop',
+          isMajorStop: true,
+          isCurrent: false,
+          isVisited: false,
+          mediaQuality: 'low-resolution',
+          thumbnailUrl: null,
+          canNavigate: false,
+        },
+      ],
+    });
+
+    render(<ReferenceParityControls vm={vm} actions={actions} />);
+
+    const unavailableButton = screen.getByRole('button', {
+      name: 'Không gian chưa có (Chưa có dữ liệu)',
+    });
+    expect(unavailableButton).toBeDisabled();
+    expect(unavailableButton).toHaveClass('is-unavailable');
+  });
+
+  it('keeps the customer demo badge visible as the active scene changes', () => {
+    const actions = createMockActions();
+    const vm = createMockVm();
+
+    const { rerender } = render(
+      <ReferenceParityControls vm={vm} actions={actions} isCustomerDemo />,
+    );
+
+    expect(screen.getByTestId('panorama-demo-badge')).toHaveTextContent(
+      'Bản demo 360° · Ảnh tham khảo',
+    );
+
+    rerender(
+      <ReferenceParityControls
+        vm={{
+          ...vm,
+          currentSceneId: 'shore',
+          scenes: vm.scenes.map((scene) => ({
+            ...scene,
+            isCurrent: scene.id === 'shore',
+          })),
+        }}
+        actions={actions}
+        isCustomerDemo
+      />,
+    );
+
+    expect(screen.getByTestId('panorama-demo-badge')).toBeInTheDocument();
+  });
+
   it('renders one intentional unavailable composition when mediaUnavailable is true', () => {
     const actions = createMockActions();
     const vm = createMockVm({
@@ -239,6 +511,7 @@ describe('ReferenceParityControls', () => {
     fireEvent.click(minimapBtn);
     expect(actions.onToggleMinimap).toHaveBeenCalled();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tiện ích khác' }));
     const shareBtn = screen.getByRole('button', { name: 'Chia sẻ cảnh này' });
     fireEvent.click(shareBtn);
     expect(actions.onShare).toHaveBeenCalled();
@@ -254,6 +527,7 @@ describe('ReferenceParityControls', () => {
 
     render(<ReferenceParityControls vm={vm} actions={actions} />);
 
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tiện ích khác' }));
     const localeButton = screen.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' });
     expect(localeButton).toHaveTextContent('VI');
     fireEvent.click(localeButton);

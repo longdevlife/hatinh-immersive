@@ -1,0 +1,121 @@
+{
+  "generatedAt": "2026-08-20",
+  "baseline": "8aa64eeaefceb8fcbbf01cba13442c8dc593f8f3",
+  "contentReady": false,
+  "phase2Gate": "BLOCKED_BY_CONTENT_READINESS",
+  "summary": {
+    "canonicalScenes": 19,
+    "panoramaProductionReady": 0,
+    "panoramaExternalOfficialCandidateDestinations": 2,
+    "panoramaExternalCurrentGaps": ["son-trang-co-dam", "nga-ba-dong-loc"],
+    "ambientProductionReadyVerified": 0,
+    "viNarrationProductionReadyVerified": 0,
+    "viTranscriptProductionReadyVerified": 0
+  },
+  "panoramaByDestination": [
+    {
+      "destinationSlug": "son-trang-co-dam",
+      "requiredScenes": 8,
+      "existingRepoDemoUsable": 0,
+      "existingRepoPlaceholderScenes": 8,
+      "officialExternalCandidatesFound": 0,
+      "currentDisposition": "REPLACE",
+      "nextEvidenceNeeded": [
+        "real/licensed 2:1 source panoramas for all 8 canonical scenes",
+        "physical scene confirmation",
+        "rights/provenance",
+        "technical QC"
+      ]
+    },
+    {
+      "destinationSlug": "bien-thien-cam",
+      "requiredScenes": 3,
+      "existingRepoDemoUsable": 3,
+      "officialExternalCandidatesFound": "10+ current manifest scenes; 4 ground + 1 aerial in broader manifest",
+      "currentDisposition": "BLOCKED_RIGHTS",
+      "additionalBlockers": [
+        "canonical 3-scene to official scene physical mapping",
+        "no explicit public download/master equirectangular source observed"
+      ],
+      "nextEvidenceNeeded": [
+        "select three physical matches",
+        "permitted source/master or reusable license",
+        "Phase 1C-compatible 2:1 source",
+        "technical/editorial QC"
+      ]
+    },
+    {
+      "destinationSlug": "khu-luu-niem-nguyen-du",
+      "requiredScenes": 4,
+      "existingRepoDemoUsable": 1,
+      "officialExternalCandidatesFound": "4 ground + 1 aerial in tour-42-ha-tinh.xml",
+      "currentDisposition": "BLOCKED_RIGHTS",
+      "additionalBlockers": [
+        "canonical 4-scene to official scene physical mapping",
+        "current direct route returns 404",
+        "no explicit public download/master equirectangular source observed"
+      ],
+      "nextEvidenceNeeded": [
+        "map four canonical scenes to four official ground candidates",
+        "permitted source/master or reusable license",
+        "Phase 1C-compatible 2:1 source",
+        "technical/editorial QC"
+      ]
+    },
+    {
+      "destinationSlug": "nga-ba-dong-loc",
+      "requiredScenes": 4,
+      "existingRepoDemoUsable": 1,
+      "officialExternalCandidatesFound": 0,
+      "currentDisposition": "REPLACE",
+      "additionalBlockers": [
+        "current direct route returns 404",
+        "no Đồng Lộc match in 124 captured public bodies"
+      ],
+      "nextEvidenceNeeded": [
+        "locate another official/public source or acquire new panoramas",
+        "physical scene confirmation",
+        "rights/provenance",
+        "technical QC"
+      ]
+    }
+  ],
+  "audio": {
+    "ambient": {
+      "required": 4,
+      "productionReadyVerified": 0,
+      "disposition": "REPLACE_OR_RECOVER_EXTERNAL"
+    },
+    "viNarration": {
+      "required": 19,
+      "productionReadyVerified": 0,
+      "disposition": "REPLACE_OR_RECOVER_EXTERNAL"
+    },
+    "externalOfficialRecon": {
+      "autotoursFound": 4,
+      "directAudioMediaUrlsObserved": 4,
+      "thienCamAutotourTopLevelAudio": null,
+      "status": "reference-only-audio-observed-rights-unverified"
+    }
+  },
+  "transcripts": {
+    "viRequired": 19,
+    "productionReadyVerified": 0,
+    "disposition": "CREATE_OR_RECOVER_APPROVED_TEXT"
+  },
+  "gateExitCriteria": [
+    "19 canonical scenes reconciled to approved physical locations",
+    "all required panorama scenes assigned publication-eligible Phase 1C panoramas",
+    "4 approved production ambient tracks assigned",
+    "19 approved VI narration tracks assigned",
+    "19 approved matching VI transcripts assigned",
+    "rights/provenance/version evidence complete",
+    "real public-runtime desktop/mobile acceptance passes"
+  ],
+  "notes": [
+    "BLOCKED_RIGHTS does not mean the external candidate is otherwise approved; physical mapping and source-format QC remain required.",
+    "Existing 2048x1024 demo reconstructions are reference/demo only and cannot be upscaled into production.",
+    "No external provider is assumed to be preferred unless evidence proves coverage, quality, source availability and reuse rights.",
+    "Interactive runtime audio evidence is reference-only; no audio files were copied or approved for production rehosting."
+  ]
+}

@@ -132,6 +132,7 @@ export function ExploreMapViewport({
       aria-label="Bản đồ khám phá Hà Tĩnh"
       className="explore-map-viewport"
       data-explore-map-status={status}
+      data-destination-ids={destinations.map((destination) => destination.id).join(',')}
       data-selected-destination-id={selectedDestinationId ?? ''}
       role="region"
     >

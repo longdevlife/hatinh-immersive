@@ -401,6 +401,20 @@ describe('PhotoSphereViewerEngine', () => {
     expect(virtualNode).not.toHaveProperty('thumbnail');
   });
 
+  it('marks a portal-navigation viewer so built-in directional arrows are not presented', async () => {
+    const container = document.createElement('div');
+    const engine = new PhotoSphereViewerEngine({
+      loadPanorama: async () => ({ panorama: 'portal-node' }),
+      loadRuntime: async () => runtime,
+      navigationPresentation: 'scene-portals',
+    });
+
+    await engine.mount(container);
+    await engine.loadNode(node);
+
+    expect(container).toHaveClass('panorama-navigation--scene-portals');
+  });
+
   it('loads the tiled runtime lazily, subscribes view changes, navigates nodes, and cleans up', async () => {
     const loadRuntime = vi.fn(async () => runtime);
     const loadPanorama = vi.fn(async () => ({
