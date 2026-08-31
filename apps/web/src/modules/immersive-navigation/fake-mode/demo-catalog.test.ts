@@ -146,6 +146,21 @@ describe('Hà Tĩnh demo catalog', () => {
     }
   });
 
+  it('gives Thiên Cầm scene-navigation hotspots the target scene preview', () => {
+    const manifest = getDemoManifest('bien-thien-cam', 'public');
+    const shorePortal = manifest.hotspots.find(
+      (hotspot) =>
+        hotspot.sceneId === 'thien-cam-boardwalk' &&
+        hotspot.targetSceneId === 'thien-cam-shore' &&
+        hotspot.type === 'scene-navigation',
+    );
+
+    expect(shorePortal).toMatchObject({
+      label: 'Mở Bờ biển Thiên Cầm',
+      mediaUrl: '/demo/360/thien-cam-shore/preview.webp',
+    });
+  });
+
   it('keeps all destination manifests scene-addressable for content projection', () => {
     for (const { preview } of DEMO_DESTINATIONS) {
       const manifest = getDemoManifest(preview.slug, 'synthetic');

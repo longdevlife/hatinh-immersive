@@ -1,5 +1,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 
+import mapLibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+
 import { requireMinimapStyle, type MinimapStyle } from '../config/minimap-style';
 import type { MinimapEnginePort, MinimapState } from '../domain/minimap-engine.port';
 import {
@@ -86,6 +88,7 @@ export interface MapLibreMinimapEngineOptions {
 
 async function loadMapLibreRuntime(): Promise<MapLibreRuntime> {
   const maplibre = await import('maplibre-gl');
+  maplibre.setWorkerUrl(mapLibreWorkerUrl);
   return {
     Map: maplibre.Map as unknown as MapLibreRuntime['Map'],
     Marker: maplibre.Marker as unknown as MapLibreRuntime['Marker'],

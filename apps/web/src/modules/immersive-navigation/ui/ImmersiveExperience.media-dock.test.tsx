@@ -58,7 +58,7 @@ describe('ImmersiveExperience Media Dock integration', () => {
       expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toBeInTheDocument();
     });
 
-    expect(screen.getByRole('button', { name: 'Bắt đầu tự động tham quan' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bắt đầu hành trình' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Bật âm thanh' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tự động tham quan' })).not.toBeInTheDocument();
@@ -174,6 +174,12 @@ describe('ImmersiveExperience Media Dock integration', () => {
       expect(screen.getByRole('button', { name: 'Nghe câu chuyện' })).toBeInTheDocument();
     });
 
+    expect(screen.getByRole('button', { name: 'Tắt âm thanh' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
+    expect(screen.getByRole('button', { name: 'Tắt nhạc nền' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tiện ích khác' }));
     fireEvent.click(screen.getByRole('button', { name: 'Đổi ngôn ngữ sang Tiếng Anh' }));
 
     await waitFor(() => {
@@ -231,6 +237,62 @@ describe('ImmersiveExperience Media Dock integration', () => {
     expect(screen.getByRole('button', { name: 'Nghe câu chuyện' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Bật thuyết minh' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Tự động tham quan' })).not.toBeInTheDocument();
+  });
+
+  it('keeps hotspot and story details mutually exclusive', async () => {
+    vi.stubGlobal('speechSynthesis', {});
+    vi.stubGlobal('SpeechSynthesisUtterance', class SpeechSynthesisUtterance {});
+
+    const map3d = new FakeMap3DEngine();
+    const minimap = new FakeMinimapEngine();
+    const panorama = new FakePanoramaEngine();
+    const factories: ImmersiveExperienceFactories = {
+      createMap3DEngine: vi.fn(async () => map3d),
+      createMinimapEngine: vi.fn(async () => minimap),
+      createPanoramaEngine: vi.fn(async () => panorama),
+    };
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter
+          initialEntries={[
+            '/explore/bien-thien-cam/immersive?mode=panorama&scene=thien-cam-boardwalk',
+          ]}
+        >
+          <Routes>
+            <Route
+              path="/explore/:destinationSlug/immersive"
+              element={
+                <ImmersiveExperience
+                  factories={factories}
+                  manifest={getDemoManifest('bien-thien-cam', 'synthetic')}
+                  destinations={DEMO_DESTINATIONS.map(({ preview }) => preview)}
+                  panoramaTourSource="demo"
+                  panoramaTourMediaMode="synthetic"
+                />
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+
+    const storyOptions = await screen.findByRole('button', {
+      name: 'Mở tùy chọn câu chuyện',
+    });
+    const hotspot = await screen.findByRole('button', { name: 'Điểm bắt đầu ven biển' });
+
+    fireEvent.click(hotspot);
+    expect(screen.getByRole('dialog', { name: 'Điểm bắt đầu ven biển' })).toBeInTheDocument();
+
+    fireEvent.click(storyOptions);
+    expect(screen.getByRole('dialog', { name: 'Câu chuyện' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Điểm bắt đầu ven biển' })).not.toBeInTheDocument();
+
+    fireEvent.click(hotspot);
+    expect(screen.getByRole('dialog', { name: 'Điểm bắt đầu ven biển' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Câu chuyện' })).not.toBeInTheDocument();
   });
 
   it('keeps hook order stable when the manifest resolves after the loading render', async () => {

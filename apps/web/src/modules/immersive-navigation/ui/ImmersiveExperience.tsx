@@ -29,6 +29,7 @@ import {
 } from '../../minimap';
 import { ImmersiveControlsGroup } from './ImmersiveControls';
 import { ImmersiveMediaDock } from './ImmersiveMediaDock';
+import { createMinimalTravelControlBindings } from './minimal-travel-controls.presentation';
 import { ReferenceParityControls } from './ReferenceParityControls';
 import {
   buildImmersiveMediaDockVm,
@@ -122,6 +123,7 @@ interface PanoramaEntryRouteState {
 function createDefaultFactories(
   initialTarget?: CameraTarget,
   panoramaRuntimeMediaPolicy: PanoramaRuntimeMediaPolicy = 'public',
+  navigationPresentation: 'directional-arrows' | 'scene-portals' = 'directional-arrows',
 ): ImmersiveExperienceFactories {
   const rendererModes = resolveRendererModes(import.meta.env);
 
@@ -143,6 +145,7 @@ function createDefaultFactories(
         ? async () => new FakePanoramaEngine()
         : () =>
             createLazyPhotoSphereViewerEngine({
+              navigationPresentation,
               validatePanorama: (node, manifest) =>
                 assertPanoramaRuntimeMediaAllowed(node, manifest, panoramaRuntimeMediaPolicy),
             }),
@@ -626,8 +629,13 @@ export function ImmersiveExperience({
   }, []);
 
   const defaultFactories = useMemo(
-    () => createDefaultFactories(manifest?.overviewTarget, resolvedPanoramaRuntimeMediaPolicy),
-    [manifest?.overviewTarget, resolvedPanoramaRuntimeMediaPolicy],
+    () =>
+      createDefaultFactories(
+        manifest?.overviewTarget,
+        resolvedPanoramaRuntimeMediaPolicy,
+        isCustomerDemo ? 'scene-portals' : 'directional-arrows',
+      ),
+    [isCustomerDemo, manifest?.overviewTarget, resolvedPanoramaRuntimeMediaPolicy],
   );
   const resolvedFactories = factories ?? defaultFactories;
   const audioTracks = manifest?.audioTracks ?? EMPTY_AUDIO_TRACKS;
@@ -1408,6 +1416,15 @@ export function ImmersiveExperience({
           captionsEnabled,
         })
       : undefined;
+  const minimalTravelControls =
+    referenceParityPresentation && mediaDockVm
+      ? createMinimalTravelControlBindings({
+          referenceVm: referenceParityPresentation,
+          referenceActions: referenceParityActions,
+          dockVm: mediaDockVm,
+          dockActions: mediaDockActions,
+        })
+      : undefined;
   const rendererContent = (
     <RendererHost
       activeRenderer={navigation.activeRenderer}
@@ -1536,11 +1553,18 @@ export function ImmersiveExperience({
             <ReferenceParityControls
               vm={referenceParityPresentation}
               actions={referenceParityActions}
+              {...(minimalTravelControls ? { journeyControl: minimalTravelControls.journey } : {})}
               minimapOpen={navigation.minimapOpen}
               isCustomerDemo={isCustomerDemo || resolvedPanoramaRuntimeMediaPolicy === 'demo'}
             />
-            {mediaDockVm ? (
-              <ImmersiveMediaDock vm={mediaDockVm} actions={mediaDockActions} />
+            {mediaDockVm && minimalTravelControls ? (
+              <ImmersiveMediaDock
+                vm={mediaDockVm}
+                actions={mediaDockActions}
+                ambientControl={minimalTravelControls.ambient}
+                externalSecondarySurfaceOpen={Boolean(selectedHotspot && selectedHotspotType)}
+                onOpenSecondarySurface={actions.onCloseHotspot}
+              />
             ) : null}
           </>
         ) : (

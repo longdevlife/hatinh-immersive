@@ -18,7 +18,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'pnpm --filter @hatinh/web exec vite --host 127.0.0.1 --port 4175',
+    command:
+      'pnpm --filter @hatinh/web build && pnpm --filter @hatinh/web exec vite preview --host 127.0.0.1 --port 4175',
     env: {
       ...process.env,
       VITE_IMMERSIVE_DATA_MODE: 'fake',

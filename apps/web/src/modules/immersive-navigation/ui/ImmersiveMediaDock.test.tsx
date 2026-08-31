@@ -6,7 +6,36 @@ import type {
   ImmersiveMediaDockActions,
   ImmersiveMediaDockVm,
 } from './reference-parity.presentation';
-import { ImmersiveMediaDock } from './ImmersiveMediaDock';
+import {
+  ImmersiveMediaDock as ImmersiveMediaDockComponent,
+  type ImmersiveMediaDockProps,
+} from './ImmersiveMediaDock';
+import type { MinimalTravelAmbientControl } from './minimal-travel-controls.presentation';
+
+const neutralAmbientControl: MinimalTravelAmbientControl = {
+  available: false,
+  enabled: false,
+  onToggle: vi.fn(),
+};
+
+function ImmersiveMediaDock(
+  props: Omit<ImmersiveMediaDockProps, 'ambientControl'> &
+    Partial<Pick<ImmersiveMediaDockProps, 'ambientControl'>>,
+) {
+  return <ImmersiveMediaDockComponent ambientControl={neutralAmbientControl} {...props} />;
+}
+
+function renderDock({
+  vm = createVm(),
+  actions = createActions(),
+  ambientControl = neutralAmbientControl,
+}: {
+  vm?: ImmersiveMediaDockVm;
+  actions?: ImmersiveMediaDockActions;
+  ambientControl?: MinimalTravelAmbientControl;
+} = {}) {
+  return render(<ImmersiveMediaDock vm={vm} actions={actions} ambientControl={ambientControl} />);
+}
 
 const transcript: ImmersiveTranscriptContent = {
   id: 'transcript-son-trang',
@@ -81,15 +110,173 @@ function createActions(): ImmersiveMediaDockActions {
 }
 
 describe('ImmersiveMediaDock semantic contract', () => {
+  it('shows a light Story entry and hides secondary controls until opened', () => {
+    renderDock();
+
+    expect(screen.getByRole('button', { name: 'Nghe câu chuyện' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' })).toBeVisible();
+    expect(screen.queryByRole('dialog', { name: 'Câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tắt nhạc nền' })).not.toBeInTheDocument();
+  });
+
+  it('opens Story Sheet and delegates ambient without owning audio state', () => {
+    const onToggle = vi.fn();
+    renderDock({
+      ambientControl: {
+        available: true,
+        enabled: true,
+        onToggle,
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
+    expect(screen.getByRole('dialog', { name: 'Câu chuyện' })).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Tắt nhạc nền' }));
+    expect(onToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses transcript-only copy and exposes no fake audio action', () => {
+    const baseVm = createVm();
+    renderDock({
+      vm: createVm({
+        sound: { available: false, masterMuted: false },
+        narration: { ...baseVm.narration, available: false, status: 'unavailable' },
+        transcript: { ...baseVm.transcript, available: true },
+      }),
+    });
+
+    expect(screen.getByRole('button', { name: 'Đọc câu chuyện' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
+  });
+
+  it('does not expose a Story entry when ambient is the only media capability', () => {
+    const baseVm = createVm();
+
+    renderDock({
+      vm: createVm({
+        narration: { ...baseVm.narration, available: false, status: 'unavailable' },
+        transcript: { available: false, capability: 'none', content: null },
+      }),
+      ambientControl: { available: true, enabled: true, onToggle: vi.fn() },
+    });
+
+    expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Đọc câu chuyện' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Mở tùy chọn câu chuyện' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('keeps Auto Tour as the narration transport owner', () => {
+    const actions = createActions();
+    const vm = createVm({
+      mode: 'auto-tour',
+      narration: { ...createVm().narration, status: 'playing' },
+      autoTour: {
+        ...createVm().autoTour,
+        isActive: true,
+        canPause: true,
+        canExit: true,
+      },
+    });
+
+    renderDock({ vm, actions });
+
+    expect(screen.queryByRole('button', { name: 'Tạm dừng câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tiếp tục câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
+
+    expect(screen.queryByRole('button', { name: 'Tạm dừng câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tiếp tục câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
+    expect(actions.onPauseNarration).not.toHaveBeenCalled();
+    expect(actions.onResumeNarration).not.toHaveBeenCalled();
+    expect(actions.onPlayNarration).not.toHaveBeenCalled();
+  });
+
+  it('closes Story Sheet before opening the transcript sheet', () => {
+    renderDock();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mở bản chép lời' }));
+
+    expect(screen.queryByRole('dialog', { name: 'Câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: 'Bản chép lời' })).toBeVisible();
+  });
+
+  it('only exposes narration locale actions reported by the frozen capability', () => {
+    const actions = createActions();
+    const baseVm = createVm();
+    const view = renderDock({
+      vm: createVm({
+        narration: { ...baseVm.narration, activeLocale: 'vi', alternateLocales: [] },
+      }),
+      actions,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
+    expect(screen.queryByRole('button', { name: /Nghe bằng/ })).not.toBeInTheDocument();
+
+    view.rerender(
+      <ImmersiveMediaDock
+        vm={createVm({
+          narration: { ...baseVm.narration, activeLocale: 'vi', alternateLocales: ['en'] },
+        })}
+        actions={actions}
+        ambientControl={neutralAmbientControl}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Nghe bằng English' }));
+    expect(actions.onListenInLocale).toHaveBeenCalledWith('en');
+  });
+
   it('shows the Free Explore story action without playing on render', () => {
     const actions = createActions();
 
     render(<ImmersiveMediaDock vm={createVm()} actions={actions} />);
 
-    expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toBeInTheDocument();
+    const dock = screen.getByRole('region', { name: 'Media dock trải nghiệm' });
+    expect(dock).toBeInTheDocument();
+    expect(dock).toHaveAttribute('data-presentation', 'cinematic-wayfinding');
+    expect(dock).toHaveAttribute('data-story-state', 'idle');
     expect(screen.getByRole('button', { name: 'Nghe câu chuyện' })).toBeInTheDocument();
     expect(actions.onPlayNarration).not.toHaveBeenCalled();
     expect(screen.queryByRole('button', { name: 'Bỏ qua câu chuyện' })).not.toBeInTheDocument();
+  });
+
+  it('keeps playing and Auto Tour states legible to presentation QA', () => {
+    const actions = createActions();
+
+    const { rerender } = render(
+      <ImmersiveMediaDock
+        vm={createVm({ narration: { ...createVm().narration, status: 'playing' } })}
+        actions={actions}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toHaveAttribute(
+      'data-story-state',
+      'playing',
+    );
+
+    rerender(
+      <ImmersiveMediaDock
+        vm={createVm({
+          mode: 'auto-tour',
+          autoTour: {
+            ...createVm().autoTour,
+            isActive: true,
+          },
+        })}
+        actions={actions}
+      />,
+    );
+    expect(screen.getByRole('region', { name: 'Media dock trải nghiệm' })).toHaveAttribute(
+      'data-story-state',
+      'auto-tour',
+    );
   });
 
   it('does not show narration progress before duration metadata is meaningful', () => {
@@ -129,6 +316,7 @@ describe('ImmersiveMediaDock semantic contract', () => {
       target: { value: '12' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Tắt phụ đề' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
     fireEvent.click(screen.getByRole('button', { name: 'Mở bản chép lời' }));
 
     expect(actions.onPauseNarration).toHaveBeenCalledTimes(1);
@@ -179,9 +367,46 @@ describe('ImmersiveMediaDock semantic contract', () => {
 
     render(<ImmersiveMediaDock vm={vm} actions={actions} />);
 
+    expect(screen.getByRole('button', { name: 'Đọc câu chuyện' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
     expect(screen.getByText('Âm thanh thuyết minh chưa có')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Mở bản chép lời' })).toBeInTheDocument();
+  });
+
+  it('does not present a play action when narration status is unavailable', () => {
+    const actions = createActions();
+    const vm = createVm({
+      narration: { ...createVm().narration, status: 'unavailable' },
+    });
+
+    render(<ImmersiveMediaDock vm={vm} actions={actions} />);
+
     expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Đọc câu chuyện' })).toBeInTheDocument();
+  });
+
+  it('keeps transcript disclosure reachable on mobile when audio is unavailable', () => {
+    const previousWidth = window.innerWidth;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
+
+    try {
+      const actions = createActions();
+      const vm = createVm({
+        sound: { available: false, masterMuted: false },
+        narration: { ...createVm().narration, available: false, status: 'unavailable' },
+      });
+
+      render(<ImmersiveMediaDock vm={vm} actions={actions} />);
+
+      expect(screen.getByRole('button', { name: 'Đọc câu chuyện' })).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: previousWidth,
+      });
+    }
   });
 
   it('hides captions toggle when capability is plain-transcript but keeps transcript drawer accessible', () => {
@@ -203,6 +428,7 @@ describe('ImmersiveMediaDock semantic contract', () => {
     render(<ImmersiveMediaDock vm={vm} actions={actions} />);
 
     expect(screen.queryByRole('button', { name: /phụ đề/i })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
     expect(screen.getByRole('button', { name: 'Mở bản chép lời' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Mở bản chép lời' }));
@@ -218,44 +444,32 @@ describe('ImmersiveMediaDock semantic contract', () => {
       transcript: { available: false, capability: 'none', content: null },
     });
 
-    render(<ImmersiveMediaDock vm={vm} actions={actions} />);
+    render(
+      <ImmersiveMediaDock
+        vm={vm}
+        actions={actions}
+        ambientControl={{ available: false, enabled: false, onToggle: vi.fn() }}
+      />,
+    );
 
+    expect(screen.queryByRole('button', { name: 'Nghe câu chuyện' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Đọc câu chuyện' })).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: /điều khiển trải nghiệm/i }),
+      screen.queryByRole('button', { name: 'Mở tùy chọn câu chuyện' }),
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /âm thanh/i })).not.toBeInTheDocument();
   });
 
   it('renders the sound gate without starting audio and supports continue-muted', async () => {
     const actions = createActions();
 
-    const view = render(
-      <ImmersiveMediaDock vm={createVm({ soundGateRequired: true })} actions={actions} />,
-    );
+    render(<ImmersiveMediaDock vm={createVm({ soundGateRequired: true })} actions={actions} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Tiếp tục không âm thanh' }));
     expect(actions.onContinueMuted).toHaveBeenCalledTimes(1);
     await waitFor(() => {
       expect(screen.queryByRole('group', { name: 'Âm thanh trải nghiệm' })).not.toBeInTheDocument();
     });
-    view.rerender(
-      <ImmersiveMediaDock
-        vm={createVm({
-          soundGateRequired: true,
-          sound: { available: true, masterMuted: true },
-        })}
-        actions={actions}
-      />,
-    );
-    expect(screen.getByRole('button', { name: 'Bật âm thanh' })).toBeInTheDocument();
-
-    view.unmount();
-    render(<ImmersiveMediaDock vm={createVm({ soundGateRequired: true })} actions={actions} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Tiếp tục không âm thanh' }));
-
-    expect(actions.onContinueMuted).toHaveBeenCalledTimes(2);
     expect(actions.onPlayNarration).not.toHaveBeenCalled();
-    expect(screen.queryByRole('group', { name: 'Âm thanh trải nghiệm' })).not.toBeInTheDocument();
   });
 
   it('keeps the sound recovery prompt visible when enabling audio fails', async () => {
@@ -286,81 +500,74 @@ describe('ImmersiveMediaDock semantic contract', () => {
     expect(actions.onEnableSound).toHaveBeenCalledTimes(1);
   });
 
-  it('lets the visitor mute sound again after enabling it', () => {
+  it('closes Story Sheet through the close button without stopping narration', () => {
     const actions = createActions();
+    renderDock({ actions });
 
-    render(<ImmersiveMediaDock vm={createVm()} actions={actions} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
+    expect(screen.getByRole('dialog', { name: 'Câu chuyện' })).toBeVisible();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Tắt âm thanh' }));
-
-    expect(actions.onToggleMasterMute).toHaveBeenCalledTimes(1);
-  });
-
-  it('exposes distinct Auto Tour controls and preserves their action semantics', () => {
-    const actions = createActions();
-    const vm = createVm({
-      mode: 'auto-tour',
-      autoTour: {
-        isActive: true,
-        isPaused: false,
-        currentIndex: 2,
-        total: 4,
-        canStart: false,
-        canPause: true,
-        canResume: false,
-        canSkipStory: true,
-        canPrevious: true,
-        canNext: true,
-        canExit: true,
-      },
-    });
-
-    render(<ImmersiveMediaDock vm={vm} actions={actions} />);
-
-    expect(screen.getByText('Cảnh 2 / 4')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Tạm dừng câu chuyện' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Tạm dừng tự động tham quan' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cảnh trước' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Bỏ qua câu chuyện' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Cảnh tiếp theo' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Thoát tự động tham quan' }));
-
-    expect(actions.onPauseAutoTour).toHaveBeenCalledTimes(1);
-    expect(actions.onPreviousScene).toHaveBeenCalledTimes(1);
-    expect(actions.onSkipStory).toHaveBeenCalledTimes(1);
-    expect(actions.onNextScene).toHaveBeenCalledTimes(1);
-    expect(actions.onExitAutoTour).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Đóng câu chuyện' }));
+    expect(screen.queryByRole('dialog', { name: 'Câu chuyện' })).not.toBeInTheDocument();
     expect(actions.onPauseNarration).not.toHaveBeenCalled();
-    expect(
-      screen.queryByRole('button', { name: 'Bắt đầu tự động tham quan' }),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByText('narrating')).not.toBeInTheDocument();
   });
 
-  it('supports a mobile collapsed and expanded dock state', () => {
-    const actions = createActions();
+  it('closes Story Sheet when Escape is pressed', () => {
+    renderDock();
 
+    fireEvent.click(screen.getByRole('button', { name: 'Mở tùy chọn câu chuyện' }));
+    expect(screen.getByRole('dialog', { name: 'Câu chuyện' })).toBeVisible();
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Câu chuyện' })).not.toBeInTheDocument();
+  });
+
+  it('keeps the primary story affordance visible on mobile viewport', () => {
+    const actions = createActions();
     const previousWidth = window.innerWidth;
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: 390 });
 
     try {
       render(<ImmersiveMediaDock vm={createVm()} actions={actions} />);
 
-      const expandButton = screen.getByRole('button', { name: 'Mở điều khiển trải nghiệm' });
-      expect(expandButton).toHaveAttribute('aria-expanded', 'false');
-
-      fireEvent.click(expandButton);
-      expect(
-        screen.getByRole('button', { name: 'Thu gọn điều khiển trải nghiệm' }),
-      ).toHaveAttribute('aria-expanded', 'true');
-
-      fireEvent.click(screen.getByRole('button', { name: 'Thu gọn điều khiển trải nghiệm' }));
-      expect(screen.getByRole('button', { name: 'Mở điều khiển trải nghiệm' })).toHaveAttribute(
-        'aria-expanded',
-        'false',
-      );
+      const playButton = screen.getByRole('button', { name: 'Nghe câu chuyện' });
+      expect(playButton).toBeVisible();
+      fireEvent.click(playButton);
+      expect(actions.onPlayNarration).toHaveBeenCalledTimes(1);
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: previousWidth });
     }
+  });
+
+  it('applies desktop-only presentation classes to secondary progress and captions in collapsed dock', () => {
+    const actions = createActions();
+    const vm = createVm({
+      captionsEnabled: true,
+      narration: {
+        ...createVm().narration,
+        status: 'playing',
+        currentTimeSeconds: 2,
+        durationSeconds: 60,
+      },
+      transcript: {
+        available: true,
+        capability: 'timed-captions',
+        content: {
+          id: 't-1',
+          locale: 'vi',
+          title: 'Transcript',
+          timingMode: 'timed',
+          segments: [{ id: '1', startMs: 0, endMs: 5000, text: 'Text' }],
+        },
+      },
+    });
+
+    const { container } = render(<ImmersiveMediaDock vm={vm} actions={actions} />);
+
+    const progress = container.querySelector('.immersive-media-dock__narration-progress');
+    expect(progress).toHaveClass('immersive-media-dock__narration-progress--desktop-only');
+
+    const captionsToggle = container.querySelector('.immersive-media-dock__captions-toggle');
+    expect(captionsToggle).toHaveClass('immersive-media-dock__captions-toggle--desktop-only');
   });
 });

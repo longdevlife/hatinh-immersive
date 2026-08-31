@@ -268,7 +268,7 @@ describe('ImmersiveExperience', () => {
     );
 
     const autoTourButton = await screen.findByRole('button', {
-      name: 'Bắt đầu tự động tham quan',
+      name: 'Bắt đầu hành trình',
     });
     await waitFor(() => expect(autoTourButton).not.toBeDisabled());
     vi.useFakeTimers();

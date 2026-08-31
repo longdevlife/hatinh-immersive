@@ -88,6 +88,7 @@ export interface PhotoSphereViewerRuntime {
 export interface PhotoSphereViewerAdapterOptions {
   loadPanorama?: (node: PanoramaNode) => Promise<unknown>;
   loadRuntime?: () => Promise<PhotoSphereViewerRuntime>;
+  navigationPresentation?: 'directional-arrows' | 'scene-portals';
   validatePanorama?: (node: PanoramaNode, manifest: PanoramaManifest) => void;
 }
 
@@ -146,7 +147,9 @@ function createHotspotMarkerElement(hotspot: HotspotVm): HTMLButtonElement {
   button.type = 'button';
   button.className = `panorama-hotspot-marker panorama-hotspot-marker--${hotspot.type}`;
   button.setAttribute('aria-label', label);
-  button.setAttribute('aria-haspopup', 'dialog');
+  if (hotspot.type !== 'scene-navigation') {
+    button.setAttribute('aria-haspopup', 'dialog');
+  }
   button.dataset.hotspotId = hotspot.id;
 
   const core = document.createElement('span');
@@ -157,7 +160,20 @@ function createHotspotMarkerElement(hotspot: HotspotVm): HTMLButtonElement {
   text.className = 'panorama-hotspot-marker__label';
   text.textContent = label;
 
-  button.append(core, text);
+  if (hotspot.type === 'scene-navigation' && hotspot.mediaUrl) {
+    const preview = document.createElement('span');
+    preview.className = 'panorama-hotspot-marker__preview';
+    preview.setAttribute('aria-hidden', 'true');
+
+    const image = document.createElement('img');
+    image.className = 'panorama-hotspot-marker__preview-image';
+    image.src = hotspot.mediaUrl;
+    image.alt = '';
+    preview.append(image);
+    button.append(core, preview, text);
+  } else {
+    button.append(core, text);
+  }
   return button;
 }
 
@@ -304,7 +320,12 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     this.committedNodeId = null;
     this.virtualNodes.clear();
     this.panoramaCache.clear();
+    this.container?.classList.remove('panorama-navigation--scene-portals');
     this.container = container;
+    container.classList.toggle(
+      'panorama-navigation--scene-portals',
+      this.options.navigationPresentation === 'scene-portals',
+    );
   }
 
   setTour(nodes: PanoramaNode[]): void {
@@ -410,6 +431,7 @@ export class PhotoSphereViewerEngine implements PanoramaEnginePort {
     this.destroyViewer();
     this.suppressedNodeChangeLoads.clear();
     this.committedNodeId = null;
+    this.container?.classList.remove('panorama-navigation--scene-portals');
     this.container = null;
     this.hotspots = [];
     this.hotspotElements.clear();
