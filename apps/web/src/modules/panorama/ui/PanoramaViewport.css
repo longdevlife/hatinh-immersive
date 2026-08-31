@@ -14,6 +14,10 @@
   isolation: isolate;
 }
 
+.panorama-navigation--scene-portals .psv-virtual-tour-arrows {
+  display: none;
+}
+
 .panorama-hotspot-marker__core {
   display: block;
   width: 30px;

@@ -15,38 +15,30 @@ function rectanglesOverlap(rectA: ViewportRect, rectB: ViewportRect) {
   );
 }
 
-async function visibleTourArrowBoxes(page: Page) {
-  const arrows = page.locator('.psv-virtual-tour-link, .psv-virtual-tour-arrow');
-
-  await expect
-    .poll(async () => {
-      const boxes = await Promise.all(
-        Array.from({ length: await arrows.count() }, (_, index) => arrows.nth(index).boundingBox()),
-      );
-      return boxes.filter((box): box is ViewportRect => box !== null).length;
-    })
-    .toBeGreaterThan(0);
+async function visibleScenePortalBoxes(page: Page) {
+  const portals = page.locator('.panorama-hotspot-marker--scene-navigation');
+  await expect(portals).toHaveCount(1);
 
   const boxes = await Promise.all(
-    Array.from({ length: await arrows.count() }, (_, index) => arrows.nth(index).boundingBox()),
+    Array.from({ length: await portals.count() }, (_, index) => portals.nth(index).boundingBox()),
   );
 
   return boxes.filter((box): box is ViewportRect => box !== null);
 }
 
-async function expectTourArrowsClearOfControls(page: Page) {
+async function expectScenePortalsClearOfControls(page: Page) {
   const controls = [
     page.getByRole('region', { name: 'Media dock trải nghiệm' }),
     page.getByRole('button', { name: 'Bắt đầu hành trình' }),
     page.getByRole('navigation', { name: 'Hành trình 360 Biển Thiên Cầm' }),
   ];
-  const arrowBoxes = await visibleTourArrowBoxes(page);
+  const portalBoxes = await visibleScenePortalBoxes(page);
 
   for (const control of controls) {
     await expect(control).toBeVisible();
     const controlBox = await control.boundingBox();
     expect(controlBox).not.toBeNull();
-    expect(arrowBoxes.some((arrowBox) => rectanglesOverlap(arrowBox, controlBox!))).toBe(false);
+    expect(portalBoxes.some((portalBox) => rectanglesOverlap(portalBox, controlBox!))).toBe(false);
   }
 }
 
@@ -170,6 +162,29 @@ test('the same 2048x1024 Thiên Cầm asset is rejected publicly and opens in ex
   await expect(page.getByRole('heading', { name: 'Điểm ngắm Thiên Cầm' })).toBeVisible();
   await expect.poll(() => new URL(page.url()).searchParams.get('scene')).toBe('thien-cam-lookout');
   await expect(page.getByTestId('panorama-demo-badge')).toBeVisible();
+});
+
+test('customer demo uses image-led scene portals instead of PSV directional arrows', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(customerDemoSceneUrl);
+  await expect(page.locator('[data-renderer-status="ready"]')).toBeVisible();
+
+  await expect(page.locator('.psv-virtual-tour-link:visible')).toHaveCount(0);
+
+  const shorePortal = page.getByRole('button', { name: 'Mở Bờ biển Thiên Cầm' });
+  await expect(shorePortal).toBeVisible();
+  await shorePortal.hover();
+  await expect(shorePortal.locator('.panorama-hotspot-marker__preview-image')).toBeVisible();
+  await expect(shorePortal.locator('.panorama-hotspot-marker__preview-image')).toHaveAttribute(
+    'src',
+    '/demo/360/thien-cam-shore/preview.webp',
+  );
+
+  await shorePortal.click();
+  await expect(page.getByRole('heading', { name: 'Bờ biển Thiên Cầm' })).toBeVisible();
+  await expect.poll(() => new URL(page.url()).searchParams.get('scene')).toBe('thien-cam-shore');
 });
 
 test('Sơn Trang remains unavailable when customer demo is explicitly requested', async ({
@@ -420,7 +435,7 @@ test('mobile 390x844 expanded minimap does not overlap Back, utilities, scene id
   expect(rectanglesOverlap(minimapBBox!, railBBox!)).toBe(false);
 });
 
-test('mobile customer-demo transport keeps primary PSV tour arrows unobscured and controls non-overlapping', async ({
+test('mobile customer-demo transport registers scene portals and keeps visible controls non-overlapping', async ({
   page,
 }) => {
   await installDeterministicDemoNarrationHarness(page);
@@ -469,8 +484,8 @@ test('mobile customer-demo transport keeps primary PSV tour arrows unobscured an
     expect(triggerBox!.height).toBeGreaterThanOrEqual(44);
     expect(autoTourBox!.height).toBeGreaterThanOrEqual(44);
 
-    // 3) PSV arrow does not overlap either control or rail
-    await expectTourArrowsClearOfControls(page);
+    // 3) Scene portals do not overlap either control or rail
+    await expectScenePortalsClearOfControls(page);
 
     // 4) no horizontal overflow
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
@@ -480,7 +495,7 @@ test('mobile customer-demo transport keeps primary PSV tour arrows unobscured an
     if (viewport.width === 390) {
       await playBtn.click();
       await expect(mediaDock).toHaveAttribute('data-story-state', 'playing');
-      await expectTourArrowsClearOfControls(page);
+      await expectScenePortalsClearOfControls(page);
     }
   }
 });

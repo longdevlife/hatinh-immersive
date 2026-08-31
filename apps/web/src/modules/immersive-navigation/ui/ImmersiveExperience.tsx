@@ -123,6 +123,7 @@ interface PanoramaEntryRouteState {
 function createDefaultFactories(
   initialTarget?: CameraTarget,
   panoramaRuntimeMediaPolicy: PanoramaRuntimeMediaPolicy = 'public',
+  navigationPresentation: 'directional-arrows' | 'scene-portals' = 'directional-arrows',
 ): ImmersiveExperienceFactories {
   const rendererModes = resolveRendererModes(import.meta.env);
 
@@ -144,6 +145,7 @@ function createDefaultFactories(
         ? async () => new FakePanoramaEngine()
         : () =>
             createLazyPhotoSphereViewerEngine({
+              navigationPresentation,
               validatePanorama: (node, manifest) =>
                 assertPanoramaRuntimeMediaAllowed(node, manifest, panoramaRuntimeMediaPolicy),
             }),
@@ -627,8 +629,13 @@ export function ImmersiveExperience({
   }, []);
 
   const defaultFactories = useMemo(
-    () => createDefaultFactories(manifest?.overviewTarget, resolvedPanoramaRuntimeMediaPolicy),
-    [manifest?.overviewTarget, resolvedPanoramaRuntimeMediaPolicy],
+    () =>
+      createDefaultFactories(
+        manifest?.overviewTarget,
+        resolvedPanoramaRuntimeMediaPolicy,
+        isCustomerDemo ? 'scene-portals' : 'directional-arrows',
+      ),
+    [isCustomerDemo, manifest?.overviewTarget, resolvedPanoramaRuntimeMediaPolicy],
   );
   const resolvedFactories = factories ?? defaultFactories;
   const audioTracks = manifest?.audioTracks ?? EMPTY_AUDIO_TRACKS;

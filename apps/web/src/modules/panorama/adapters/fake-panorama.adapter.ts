@@ -87,7 +87,9 @@ export class FakePanoramaEngine implements PanoramaEnginePort {
       button.className = `panorama-hotspot-marker panorama-hotspot-marker--${hotspot.type}`;
       button.dataset.fakePanoramaHotspot = hotspot.id;
       button.setAttribute('aria-label', label);
-      button.setAttribute('aria-haspopup', 'dialog');
+      if (hotspot.type !== 'scene-navigation') {
+        button.setAttribute('aria-haspopup', 'dialog');
+      }
 
       const core = document.createElement('span');
       core.className = 'panorama-hotspot-marker__core';
@@ -97,7 +99,20 @@ export class FakePanoramaEngine implements PanoramaEnginePort {
       text.className = 'panorama-hotspot-marker__label';
       text.textContent = label;
 
-      button.append(core, text);
+      if (hotspot.type === 'scene-navigation' && hotspot.mediaUrl) {
+        const preview = document.createElement('span');
+        preview.className = 'panorama-hotspot-marker__preview';
+        preview.setAttribute('aria-hidden', 'true');
+
+        const image = document.createElement('img');
+        image.className = 'panorama-hotspot-marker__preview-image';
+        image.src = hotspot.mediaUrl;
+        image.alt = '';
+        preview.append(image);
+        button.append(core, preview, text);
+      } else {
+        button.append(core, text);
+      }
       button.addEventListener('click', () => {
         button.focus({ preventScroll: true });
         for (const listener of this.hotspotListeners) {

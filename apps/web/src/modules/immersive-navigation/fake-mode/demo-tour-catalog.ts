@@ -484,6 +484,7 @@ function createDemoHotspots(
         type: 'scene-navigation',
         targetSceneId: next.id,
         label: `Mở ${next.name}`,
+        mediaUrl: next.thumbnailUrl ?? next.previewUrl,
         yaw: (scene.initialView.heading + 24) % 360,
         pitch: 0,
       });
@@ -497,6 +498,7 @@ function createDemoHotspots(
         type: 'scene-navigation',
         targetSceneId: previous.id,
         label: `Quay lại ${previous.name}`,
+        mediaUrl: previous.thumbnailUrl ?? previous.previewUrl,
         yaw: (scene.initialView.heading + 204) % 360,
         pitch: 0,
       });
